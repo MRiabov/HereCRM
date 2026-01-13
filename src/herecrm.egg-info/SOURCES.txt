@@ -1,0 +1,16 @@
+pyproject.toml
+src/__init__.py
+src/config.py
+src/database.py
+src/llm_client.py
+src/main.py
+src/models.py
+src/repositories.py
+src/uimodels.py
+src/herecrm.egg-info/PKG-INFO
+src/herecrm.egg-info/SOURCES.txt
+src/herecrm.egg-info/dependency_links.txt
+src/herecrm.egg-info/requires.txt
+src/herecrm.egg-info/top_level.txt
+tests/test_llm_parser.py
+tests/test_models.py

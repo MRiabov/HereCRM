@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Generic, TypeVar, Type, Optional, List
 from src.models import Business, User, Customer, Job, Request, ConversationState
@@ -48,13 +48,63 @@ class BusinessRepository(BaseRepository[Business]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
+    def add(self, state: ConversationState):
+        self.session.add(state)
+
+class RequestRepository(BaseRepository[Request]):
+    def __init__(self, session: AsyncSession):
+        super().__init__(session, Request)
+
+    async def search(self, query: str, business_id: int) -> List[Request]:
+        stmt = select(Request).where(
+            Request.business_id == business_id,
+            Request.content.ilike(f"%{query}%")
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().all()
+
 class CustomerRepository(BaseRepository[Customer]):
     def __init__(self, session: AsyncSession):
         super().__init__(session, Customer)
 
+    async def get_by_name(self, name: str, business_id: int) -> Optional[Customer]:
+        query = select(Customer).where(
+            Customer.name == name, 
+            Customer.business_id == business_id
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def get_by_phone(self, phone: str, business_id: int) -> Optional[Customer]:
+        query = select(Customer).where(
+            Customer.phone == phone, 
+            Customer.business_id == business_id
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def search(self, query: str, business_id: int) -> List[Customer]:
+        stmt = select(Customer).where(
+            Customer.business_id == business_id,
+            or_(
+                Customer.name.ilike(f"%{query}%"),
+                Customer.phone.ilike(f"%{query}%")
+            )
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().all()
+
 class JobRepository(BaseRepository[Job]):
     def __init__(self, session: AsyncSession):
         super().__init__(session, Job)
+
+    async def search(self, query: str, business_id: int) -> List[Job]:
+        stmt = select(Job).where(
+            Job.business_id == business_id,
+            Job.description.ilike(f"%{query}%")
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().all()
 
 class ConversationStateRepository:
     def __init__(self, session: AsyncSession):

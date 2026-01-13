@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional, List
+from typing import List, Optional, Any
 from sqlalchemy import String, ForeignKey, DateTime, Text, JSON, Float, Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 import enum
@@ -82,5 +82,7 @@ class ConversationState(Base):
 
     phone_number: Mapped[str] = mapped_column(String, primary_key=True)
     state: Mapped[ConversationStatus] = mapped_column(SAEnum(ConversationStatus), default=ConversationStatus.IDLE)
-    draft_data: Mapped[Optional[dict]] = mapped_column(JSON)
+    draft_data: Mapped[Optional[Any]] = mapped_column(JSON)
+    last_action_metadata: Mapped[Optional[dict]] = mapped_column(JSON)
     last_updated: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+

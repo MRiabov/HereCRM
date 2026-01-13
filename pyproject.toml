@@ -11,7 +11,10 @@ dependencies = [
     "pydantic-settings",
     "python-dotenv",
     "sqlalchemy",
-    "aiosqlite"
+    "aiosqlite",
+    "google-generativeai",
+    "pytest",
+    "pytest-asyncio"
 ]
 
 [build-system]
