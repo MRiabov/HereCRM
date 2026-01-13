@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: herecrm
+Version: 0.1.0
+Summary: A CRM right in Whatsapp!
+Requires-Dist: fastapi
+Requires-Dist: uvicorn[standard]
+Requires-Dist: requests
+Requires-Dist: httpx
+Requires-Dist: pydantic
+Requires-Dist: pydantic-settings
+Requires-Dist: python-dotenv
