@@ -91,7 +91,12 @@ async def webhook(
 
         # 1. Rate Limiting
         if check_rate_limit(payload.from_number):
-            logger.warning(f"Rate limit exceeded for {payload.from_number}")
+            masked_phone = (
+                payload.from_number[:3] + "****" + payload.from_number[-2:]
+                if len(payload.from_number) > 5
+                else "***"
+            )
+            logger.warning(f"Rate limit exceeded for {masked_phone}")
             return {"reply": "Too many requests. Please try again later."}
 
         # 2. Identify or Onboard User

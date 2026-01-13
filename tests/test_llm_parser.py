@@ -26,7 +26,7 @@ async def test_parse_add_job(mock_parser):
     mock_candidate = MagicMock()
     mock_part = MagicMock()
 
-    mock_part.function_call.name = "AddJobTool"
+    mock_part.function_call.name = "add_job_tool"
     mock_part.function_call.args = {
         "customer_name": "John Doe",
         "description": "Fix the leaky faucet",
@@ -116,7 +116,7 @@ async def test_parse_convert_request(mock_parser):
     mock_candidate = MagicMock()
     mock_part = MagicMock()
 
-    mock_part.function_call.name = "ConvertRequestTool"
+    mock_part.function_call.name = "convert_request_tool"
     mock_part.function_call.args = {
         "query": "John",
         "action": "schedule",
@@ -146,7 +146,7 @@ async def test_parse_schedule_with_time(mock_parser):
     mock_candidate = MagicMock()
     mock_part = MagicMock()
 
-    mock_part.function_call.name = "ScheduleJobTool"
+    mock_part.function_call.name = "schedule_job_tool"
     mock_part.function_call.args = {
         "customer_query": "John",
         "time": "tomorrow at 2pm",

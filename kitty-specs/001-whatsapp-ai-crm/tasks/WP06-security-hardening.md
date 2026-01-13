@@ -1,3 +1,7 @@
+---
+lane: "for_review"
+agent: "codex"
+---
 # Task: WP06 - Security Hardening
 
 Protect the WhatsApp AI CRM against common security risks, including SQL injection, prompt injection, and unauthorized data access.
@@ -47,3 +51,8 @@ The application uses SQLAlchemy for database interactions, which provides baseli
 - [ ] `UpdateSettingsTool` rejects keys not in the allowlist.
 - [ ] `tests/test_security.py` passes all scenarios.
 - [ ] No raw SQL usage (`text()`) is found in the codebase.
+
+## Activity Log
+
+- 2026-01-13T21:22:10Z – codex – lane=doing – Started implementation
+- 2026-01-13T21:26:19Z – codex – lane=for_review – Ready for review
