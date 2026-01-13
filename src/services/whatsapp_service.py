@@ -1,6 +1,6 @@
 from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import ConversationState, ConversationStatus, User, Business
+from src.models import ConversationState, ConversationStatus, User, Business, Request
 from src.repositories import (
     ConversationStateRepository,
     UserRepository,
@@ -189,12 +189,20 @@ class WhatsappService:
                     job.status = metadata.get("old_status", "pending")
                     state_record.last_action_metadata = None
                     return "Undone: Job status reverted."
+            elif entity_type == "request":
+                from src.repositories import RequestRepository
+
+                repo = RequestRepository(self.session)
+                req = await repo.get_by_id(entity_id, user.business_id)
+                if req:
+                    req.status = metadata.get("old_status", "pending")
+                    state_record.last_action_metadata = None
+                    return "Undone: Request status reverted."
 
         elif action == "promote":
             # Compensating action: Re-create Request, Delete Job
             if entity_type == "job":
                 from src.repositories import JobRepository, RequestRepository
-                from src.models import Request
 
                 job_repo = JobRepository(self.session)
                 job = await job_repo.get_by_id(entity_id, user.business_id)
