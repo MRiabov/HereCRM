@@ -66,4 +66,5 @@
 
 - [ ] **T018**: Implement specific logic for "Schedule" command (updating existing records). [[WP05-refinement-and-productionizing.md]]
 - [ ] **T019**: Implement fallback logic: Store ambiguous inputs as `Request`. [[WP05-refinement-and-productionizing.md]]
+- [ ] **T019a**: Implement "Help" command to explain bot usage. [[WP05-refinement-and-productionizing.md]]
 - [ ] **T020**: Perform final E2E Walkthrough and verify all Success Criteria. [[WP05-refinement-and-productionizing.md]]

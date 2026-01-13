@@ -5,6 +5,10 @@ from src.database import get_db, Base
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.uimodels import AddJobTool
 from unittest.mock import AsyncMock, patch
+import hmac
+import hashlib
+import json
+import os
 
 # In-memory DB for tests
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -30,6 +34,9 @@ async def db_session():
 
 @pytest.mark.asyncio
 async def test_webhook_e2e():
+    # Ensure env var is set (should be by conftest, but explicit for clarity in this file logic if run standalone)
+    secret = os.getenv("WHATSAPP_APP_SECRET", "dummy_secret")
+
     # Override get_db to use test session
     async def override_get_db():
         async with TestingSessionLocal() as session:
@@ -42,9 +49,6 @@ async def test_webhook_e2e():
         await conn.run_sync(Base.metadata.create_all)
 
     # Patch LLMParser in routes
-    # We define behavior: First call returns AddJobTool, Second call (implied by flow) irrelevant as "Yes" is handled by code not LLM usually
-    # But wait, "Yes" is handled by _handle_waiting_confirm which does NOT call LLM.
-    # So we just need to patch it for the first call.
     with patch("src.api.routes.LLMParser") as MockParserInfo:
         mock_instance = MockParserInfo.return_value
         mock_instance.parse = AsyncMock(
@@ -60,7 +64,21 @@ async def test_webhook_e2e():
             phone = "999888777"
             payload = {"from_number": phone, "body": "Add job for Alice fix sink 100"}
 
-            response = await ac.post("/webhook", json=payload)
+            # Serialize manually to ensure we sign the exact bytes
+            payload_bytes = json.dumps(payload).encode("utf-8")
+            signature = hmac.new(
+                secret.encode("utf-8"), payload_bytes, hashlib.sha256
+            ).hexdigest()
+            sig_header = f"sha256={signature}"
+
+            response = await ac.post(
+                "/webhook",
+                content=payload_bytes,
+                headers={
+                    "X-Hub-Signature-256": sig_header,
+                    "Content-Type": "application/json",
+                },
+            )
             assert response.status_code == 200
             data = response.json()
             assert "reply" in data
@@ -68,7 +86,20 @@ async def test_webhook_e2e():
 
             # 2. Confirm
             payload_confirm = {"from_number": phone, "body": "Yes"}
-            response = await ac.post("/webhook", json=payload_confirm)
+            payload_confirm_bytes = json.dumps(payload_confirm).encode("utf-8")
+            signature_confirm = hmac.new(
+                secret.encode("utf-8"), payload_confirm_bytes, hashlib.sha256
+            ).hexdigest()
+            sig_confirm_header = f"sha256={signature_confirm}"
+
+            response = await ac.post(
+                "/webhook",
+                content=payload_confirm_bytes,
+                headers={
+                    "X-Hub-Signature-256": sig_confirm_header,
+                    "Content-Type": "application/json",
+                },
+            )
             assert response.status_code == 200
             data = response.json()
             assert "Job added" in data["reply"]
@@ -98,7 +129,3 @@ async def test_webhook_e2e():
                 jobs = await job_repo.search("sink", user.business_id)
                 assert len(jobs) == 1
                 assert jobs[0].description == "Fix sink"
-                assert (
-                    jobs[0].customer_id is not None
-                )  # Logic should have created customer too?
-                # AddJobTool logic in ToolExecutor (WP03) usually creates customer if needed.

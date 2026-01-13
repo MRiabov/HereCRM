@@ -5,13 +5,39 @@ subtasks:
   - T015
   - T016
   - T017
-lane: "doing"
-agent: "Antigravity"
+lane: "planned"
+review_status: "has_feedback"
+reviewed_by: "Antigravity"
+agent: spec-kitty
 history:
   - date: 2026-01-13
     status: planned
     agent: spec-kitty
 ---
+## Review Feedback
+
+**Status**: ❌ **Needs Changes**
+
+**Key Issues**:
+
+1. **Broken Tests Out-of-the-Box**: `tests/test_webhook_e2e.py` fails during collection if `GOOGLE_API_KEY` is not set in the environment. Pydantic validation error occurs at import time.
+   - **Fix**: Mock `Settings` or `GOOGLE_API_KEY` in `conftest.py` or use a `.env.test` file. Tests must run `pytest` without extra setup.
+2. **Security - Error Leakage**: `src/api/routes.py:45` `detail=f"Onboarding failed: {str(e)}"` leaks internal exception details to the caller.
+   - **Fix**: Log the error and return a generic "Internal Server Error" or "Processing Failed" message.
+3. **Security - Missing Signature**: No validation of WhatsApp webhook signature.
+   - **Action**: Add a TODO or basic token check if full HMAC verification is out of scope for now.
+
+**What Was Done Well**:
+
+- Clean separation of concerns (Auth vs Service).
+- Integration test covers the full flow clearly.
+
+**Action Items**:
+
+- [ ] Fix test suite to run without external env vars.
+- [ ] Sanitize API error responses (no exception strings).
+- [ ] Add TODO/Basic Auth for webhook security.
+
 # Work Package: Onboarding & End-to-End Wiring
 
 ## Objective
@@ -69,3 +95,5 @@ Users interact via HTTP POST to our webhook. We need to identify them by phone n
 ## Activity Log
 
 - 2026-01-13T12:37:48Z – Antigravity – lane=doing – Started implementation
+- 2026-01-13T12:41:39Z – Antigravity – lane=for_review – Ready for review
+- 2026-01-13T13:10:00Z – Antigravity – lane=planned – Code review complete: Needs changes (Tests, Security)
