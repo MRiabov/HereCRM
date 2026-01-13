@@ -30,7 +30,7 @@ class LLMParser:
         )
 
     async def parse(
-        self, text: str
+        self, text: str, system_time: Optional[str] = None
     ) -> Optional[
         Union[
             AddJobTool,
@@ -54,11 +54,15 @@ class LLMParser:
             return HelpTool()
 
         # 2. Use the model to generate a tool call
+        prompt = text
+        if system_time:
+            prompt = f"Current system time: {system_time}\n\nUser input: {text}\n\nIf the user specifies a time, please resolve it to an ISO format string and put it in the 'iso_time' field of the tool call."
+
         chat = self.model.start_chat()
 
         try:
             # Use async call as per review feedback
-            response = await chat.send_message_async(text)
+            response = await chat.send_message_async(prompt)
         except Exception:
             # Log error if possible, but for now return None on model/network failure
             return None

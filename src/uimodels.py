@@ -24,6 +24,9 @@ class ScheduleJobTool(BaseModel):
     time: str = Field(
         ..., description="Natural language time (e.g., 'Tuesday 2pm', 'tomorrow')"
     )
+    iso_time: Optional[str] = Field(
+        None, description="ISO 8601 formatted datetime string (parsed by LLM)"
+    )
 
 
 class StoreRequestTool(BaseModel):
@@ -58,7 +61,12 @@ class ConvertRequestTool(BaseModel):
     action: str = Field(
         ..., description="Action to perform: 'schedule', 'complete', or 'log'"
     )
-    time: Optional[str] = Field(None, description="Optional time for the action")
+    time: Optional[str] = Field(
+        None, description="Optional time for scheduling or reminders"
+    )
+    iso_time: Optional[str] = Field(
+        None, description="ISO 8601 formatted datetime string (parsed by LLM)"
+    )
 
 
 class HelpTool(BaseModel):

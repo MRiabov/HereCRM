@@ -255,3 +255,51 @@ async def test_undo_settings_update(test_session: AsyncSession):
     )
     user = res.scalar_one()
     assert user.preferences["confirm_by_default"] is False
+
+
+@pytest.mark.asyncio
+async def test_schedule_ambiguous_customer(test_session: AsyncSession):
+    # Setup: Two customers with same name
+    biz = Business(name="Test Biz")
+    test_session.add(biz)
+    await test_session.flush()
+
+    user = User(phone_number="123456789", business_id=biz.id)
+    test_session.add(user)
+
+    from src.models import Customer
+
+    c1 = Customer(name="John Doe", phone="111", business_id=biz.id)
+    c2 = Customer(name="John Doe", phone="222", business_id=biz.id)
+    test_session.add(c1)
+    test_session.add(c2)
+    await test_session.flush()
+
+    # Create one job for the first John
+    job = Job(
+        business_id=biz.id, customer_id=c1.id, description="Sink", status="pending"
+    )
+    test_session.add(job)
+    await test_session.commit()
+
+    # Mock Parser returns ScheduleJobTool
+    from src.uimodels import ScheduleJobTool
+
+    mock_parser = AsyncMock()
+    mock_parser.parse.return_value = ScheduleJobTool(
+        customer_query="John Doe", time="tomorrow"
+    )
+
+    service = WhatsappService(test_session, mock_parser)
+
+    # 1. User says schedule John
+    response = await service.handle_message("123456789", "Schedule John tomorrow")
+
+    # Should ask for confirmation
+    assert "Please confirm: Schedule: John Doe" in response
+
+    # 2. Confirm -> Should hit ToolExecutor and find multiple customers
+    response_confirm = await service.handle_message("123456789", "Yes")
+
+    assert "Multiple customers found matching 'John Doe'" in response_confirm
+    assert "Please be more specific" in response_confirm

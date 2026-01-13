@@ -49,7 +49,10 @@ class WhatsappService:
             return await self._handle_undo(user, state_record)
 
         # Parse with LLM
-        tool_call = await self.parser.parse(text)
+        from datetime import datetime, timezone
+
+        system_time = datetime.now(timezone.utc).isoformat()
+        tool_call = await self.parser.parse(text, system_time=system_time)
 
         if tool_call:
             # Handle HelpTool separately (skip confirmation)
@@ -239,10 +242,25 @@ class WhatsappService:
         return "Could not perform undo for this action."
 
     def _generate_summary(self, tool_call: Any) -> str:
-        # Basic summary generator
-        name = tool_call.__class__.__name__.replace("Tool", "")
-        if hasattr(tool_call, "description"):
+        # Map tool class names to friendly display names
+        friendly_names = {
+            "AddJobTool": "Add Job",
+            "ScheduleJobTool": "Schedule",
+            "StoreRequestTool": "Request",
+            "SearchTool": "Search",
+            "UpdateSettingsTool": "Settings",
+            "ConvertRequestTool": "Convert",
+            "HelpTool": "Help",
+        }
+        model_name = tool_call.__class__.__name__
+        name = friendly_names.get(model_name, model_name.replace("Tool", ""))
+
+        if hasattr(tool_call, "description") and tool_call.description:
             return f"{name}: {tool_call.description}"
+        elif hasattr(tool_call, "customer_query") and tool_call.customer_query:
+            return f"{name}: {tool_call.customer_query}"
+        elif hasattr(tool_call, "customer_name") and tool_call.customer_name:
+            return f"{name}: {tool_call.customer_name}"
         elif hasattr(tool_call, "content"):
             return f"{name}: {tool_call.content[:50]}"
         elif hasattr(tool_call, "query"):

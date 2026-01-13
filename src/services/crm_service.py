@@ -13,7 +13,11 @@ class CRMService:
         self.request_repo = RequestRepository(session)
 
     async def convert_request(
-        self, query: str, action: str, time: Optional[str] = None
+        self,
+        query: str,
+        action: str,
+        time: Optional[str] = None,
+        iso_time: Optional[str] = None,
     ) -> tuple[str, Optional[dict]]:
         # Find the request
         requests = await self.request_repo.search(query, self.business_id)
@@ -45,6 +49,16 @@ class CRMService:
                 description=f"Converted from request: {req.content}. Time: {time or 'N/A'}",
                 status="scheduled" if time else "pending",
             )
+            if iso_time:
+                from datetime import datetime
+
+                try:
+                    job.scheduled_at = datetime.fromisoformat(
+                        iso_time.replace("Z", "+00:00")
+                    )
+                except ValueError:
+                    pass
+
             self.job_repo.add(job)
             await self.session.delete(req)
             await self.session.flush()

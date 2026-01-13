@@ -56,7 +56,7 @@ class ToolExecutor:
             return "Help is handled by the service layer directly.", None
         return "Unknown tool call", None
 
-    async def _execute_add_job(self, tool: AddJobTool) -> str:
+    async def _execute_add_job(self, tool: AddJobTool) -> tuple[str, Optional[dict]]:
         # 1. Find or create customer
         customer = await self.customer_repo.get_by_name(
             tool.customer_name, self.business_id
@@ -106,13 +106,29 @@ class ToolExecutor:
             customers = await self.customer_repo.search(
                 tool.customer_query, self.business_id
             )
-            if customers:
+            if len(customers) == 1:
                 # Use efficient scoped query in repository
                 job = await self.job_repo.get_most_recent_by_customer(
                     customers[0].id, self.business_id
                 )
+            elif len(customers) > 1:
+                return (
+                    f"Multiple customers found matching '{tool.customer_query}'. Please be more specific (e.g., use full name or phone).",
+                    None,
+                )
 
         if job:
+            # Update scheduled_at if iso_time is provided
+            if tool.iso_time:
+                from datetime import datetime
+
+                try:
+                    job.scheduled_at = datetime.fromisoformat(
+                        tool.iso_time.replace("Z", "+00:00")
+                    )
+                except ValueError:
+                    pass  # Fallback to NL description if parsing fails
+
             # For now, we store natural language in description if parsing fails
             # In a real app we'd use a dedicated library like dateparser
             job.status = "scheduled"
@@ -191,4 +207,6 @@ class ToolExecutor:
         self, tool: ConvertRequestTool
     ) -> tuple[str, Optional[dict]]:
         service = CRMService(self.session, self.business_id)
-        return await service.convert_request(tool.query, tool.action, tool.time)
+        return await service.convert_request(
+            tool.query, tool.action, tool.time, tool.iso_time
+        )

@@ -1,7 +1,13 @@
 import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
 from src.llm_client import LLMParser
-from src.uimodels import AddJobTool, ConvertRequestTool, StoreRequestTool, HelpTool
+from src.uimodels import (
+    AddJobTool,
+    ConvertRequestTool,
+    StoreRequestTool,
+    HelpTool,
+    ScheduleJobTool,
+)
 
 
 @pytest.fixture
@@ -130,3 +136,41 @@ async def test_parse_convert_request(mock_parser):
     assert result.query == "John"
     assert result.action == "schedule"
     assert result.time == "tomorrow"
+
+
+@pytest.mark.asyncio
+async def test_parse_schedule_with_time(mock_parser):
+    parser, mock_model = mock_parser
+
+    mock_response = MagicMock()
+    mock_candidate = MagicMock()
+    mock_part = MagicMock()
+
+    mock_part.function_call.name = "ScheduleJobTool"
+    mock_part.function_call.args = {
+        "customer_query": "John",
+        "time": "tomorrow at 2pm",
+        "iso_time": "2026-01-14T14:00:00Z",
+    }
+
+    mock_candidate.content.parts = [mock_part]
+    mock_response.candidates = [mock_candidate]
+
+    mock_chat = MagicMock()
+    mock_chat.send_message_async = AsyncMock(return_value=mock_response)
+    mock_model.start_chat.return_value = mock_chat
+
+    # Test with system_time
+    result = await parser.parse(
+        "Schedule John for tomorrow at 2pm", system_time="2026-01-13T10:00:00Z"
+    )
+
+    assert isinstance(result, ScheduleJobTool)
+    assert result.customer_query == "John"
+    assert result.time == "tomorrow at 2pm"
+    assert result.iso_time == "2026-01-14T14:00:00Z"
+
+    # Verify prompt contains system_time
+    mock_chat.send_message_async.assert_called_once()
+    prompt = mock_chat.send_message_async.call_args[0][0]
+    assert "2026-01-13T10:00:00Z" in prompt
