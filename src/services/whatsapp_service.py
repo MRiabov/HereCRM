@@ -1,18 +1,14 @@
 from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import (
-    ConversationState, 
-    ConversationStatus, 
-    User, 
-    Business
-)
+from src.models import ConversationState, ConversationStatus, User, Business
 from src.repositories import (
-    ConversationStateRepository, 
-    UserRepository, 
-    BusinessRepository
+    ConversationStateRepository,
+    UserRepository,
+    BusinessRepository,
 )
 from src.llm_client import LLMParser
 from src.tool_executor import ToolExecutor
+
 
 class WhatsappService:
     def __init__(self, session: AsyncSession, parser: LLMParser):
@@ -38,7 +34,9 @@ class WhatsappService:
         # 2. Fetch Conversation State
         state_record = await self.state_repo.get_by_phone(user_phone)
         if not state_record:
-            state_record = ConversationState(phone_number=user_phone, state=ConversationStatus.IDLE)
+            state_record = ConversationState(
+                phone_number=user_phone, state=ConversationStatus.IDLE
+            )
             self.state_repo.add(state_record)
             await self.session.flush()
 
@@ -48,7 +46,9 @@ class WhatsappService:
         else:
             return await self._handle_idle(user, state_record, message_text)
 
-    async def _handle_idle(self, user: User, state_record: ConversationState, text: str) -> str:
+    async def _handle_idle(
+        self, user: User, state_record: ConversationState, text: str
+    ) -> str:
         lower_text = text.lower().strip()
 
         # Handle Undo
@@ -57,34 +57,38 @@ class WhatsappService:
 
         # Parse with LLM
         tool_call = await self.parser.parse(text)
-        
+
         if tool_call:
             # Store draft and transition to WAITING_CONFIRM
             # tool_call is a Pydantic model, need to serialize it
             state_record.draft_data = {
                 "tool_name": tool_call.__class__.__name__,
-                "arguments": tool_call.model_dump()
+                "arguments": tool_call.model_dump(),
             }
             state_record.state = ConversationStatus.WAITING_CONFIRM
-            
+
             # Simple summary for confirmation
             summary = self._generate_summary(tool_call)
-            return f"Please confirm: {summary}\n(Reply 'Yes' to confirm, 'No' to cancel)"
-        
+            return (
+                f"Please confirm: {summary}\n(Reply 'Yes' to confirm, 'No' to cancel)"
+            )
+
         # If no tool call, maybe it's just a greeting or unclear
         return "I'm not sure how to help with that. Try saying 'Add job: ...' or 'Show all jobs'."
 
-    async def _handle_waiting_confirm(self, user: User, state_record: ConversationState, text: str) -> str:
+    async def _handle_waiting_confirm(
+        self, user: User, state_record: ConversationState, text: str
+    ) -> str:
         lower_text = text.lower().strip()
-        
+
         if lower_text in ["yes", "y", "confirm"]:
             return await self._execute_draft(user, state_record)
-        
+
         elif lower_text in ["no", "n", "cancel"]:
             state_record.state = ConversationStatus.IDLE
             state_record.draft_data = None
             return "Action cancelled."
-        
+
         else:
             # Handle edge case: new command while waiting for confirm
             confirm_by_default = user.preferences.get("confirm_by_default", False)
@@ -109,21 +113,26 @@ class WhatsappService:
         draft = state_record.draft_data
         tool_name = draft["tool_name"]
         arguments = draft["arguments"]
-        
+
         # Import tools for reconstruction (could be improved)
         from src.uimodels import (
-            AddJobTool, ScheduleJobTool, StoreRequestTool, 
-            SearchTool, UpdateSettingsTool, ConvertRequestTool
+            AddJobTool,
+            ScheduleJobTool,
+            StoreRequestTool,
+            SearchTool,
+            UpdateSettingsTool,
+            ConvertRequestTool,
         )
+
         model_map = {
             "AddJobTool": AddJobTool,
             "ScheduleJobTool": ScheduleJobTool,
             "StoreRequestTool": StoreRequestTool,
             "SearchTool": SearchTool,
             "UpdateSettingsTool": UpdateSettingsTool,
-            "ConvertRequestTool": ConvertRequestTool
+            "ConvertRequestTool": ConvertRequestTool,
         }
-        
+
         tool_cls = model_map.get(tool_name)
         if not tool_cls:
             state_record.state = ConversationStatus.IDLE
@@ -131,19 +140,19 @@ class WhatsappService:
             return "Error: Unknown tool in draft."
 
         tool_call = tool_cls(**arguments)
-        
+
         # Execute
         executor = ToolExecutor(self.session, user.business_id)
         result, metadata = await executor.execute(tool_call)
-        
+
         # Track for Undo
         if metadata:
             state_record.last_action_metadata = metadata
-        
+
         # Reset state
         state_record.state = ConversationStatus.IDLE
         state_record.draft_data = None
-        
+
         return f"{result}\n(Reply 'undo' to revert)"
 
     async def _handle_undo(self, user: User, state_record: ConversationState) -> str:
@@ -158,10 +167,8 @@ class WhatsappService:
         if action == "create":
             # Compensating action: delete
             from src.repositories import JobRepository, RequestRepository
-            repo_map = {
-                "job": JobRepository,
-                "request": RequestRepository
-            }
+
+            repo_map = {"job": JobRepository, "request": RequestRepository}
             repo_cls = repo_map.get(entity_type)
             if repo_cls:
                 repo = repo_cls(self.session)
@@ -170,11 +177,12 @@ class WhatsappService:
                     await self.session.delete(entity)
                     state_record.last_action_metadata = None
                     return f"Undone: Deleted {entity_type}."
-        
+
         elif action == "update":
             # Compensating action: revert status (simplified)
             if entity_type == "job":
                 from src.repositories import JobRepository
+
                 repo = JobRepository(self.session)
                 job = await repo.get_by_id(entity_id, user.business_id)
                 if job:

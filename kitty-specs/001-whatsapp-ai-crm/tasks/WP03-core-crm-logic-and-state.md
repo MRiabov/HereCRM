@@ -5,13 +5,45 @@ subtasks:
   - T011
   - T012
   - T013
-lane: "for_review"
+lane: "planned"
+review_status: "has_feedback"
+reviewed_by: "antigravity"
 agent: "codex"
 history:
   - date: 2026-01-13
     status: planned
     agent: spec-kitty
+  - date: 2026-01-13
+    status: for_review
+    agent: codex
 ---
+
+## Review Feedback
+
+**Status**: ❌ **Needs Changes**
+
+**Key Issues**:
+
+1. **Inefficient Query**: `ToolExecutor._execute_schedule_job` (line 79) fetches all jobs from the database and filters them in Python. This will not scale. Please implement a scoped query in `JobRepository`.
+2. **Incomplete Implementation**: `ToolExecutor._execute_update_settings` is not implemented (returns a placeholder message). The prompt requires mapping this to `UserRepository.update_preferences()`.
+3. **Hardcoded ID**: `ToolExecutor._execute_convert_request` (line 151) uses a hardcoded `customer_id=1`. This should at least look for a default customer or use the business owner's contact.
+4. **Incorrect Type Hint**: `BusinessRepository.add` in `repositories.py` has a copy-paste error: `def add(self, state: ConversationState)`.
+5. **Undo Completeness**: Undo for the "promote" action (Request -> Job) is not implemented. Since you already store `old_request_content` in metadata, the undo should recreate the Request and delete the Job.
+
+**What Was Done Well**:
+
+- Clean State Machine transition logic in `WhatsappService`.
+- Good use of `ilike` for fuzzy searching.
+- Tests cover the core state transitions effectively.
+
+**Action Items**:
+
+- [ ] Fix inefficient job filtering in `ToolExecutor`.
+- [ ] Implement `update_settings` logic.
+- [ ] Remove hardcoded `customer_id=1` in request conversion.
+- [ ] Fix `BusinessRepository.add` type hint.
+- [ ] Implement undo logic for "promote" actions.
+
 # Work Package: Core CRM Logic & State Machine
 
 ## Objective
@@ -92,3 +124,5 @@ Messages cannot just be executed immediately. We need a State Machine (IDLE -> W
 
 - 2026-01-13T11:55:14Z – codex – lane=doing – Started implementation
 - 2026-01-13T12:01:52Z – codex – lane=for_review – Ready for review
+- 2026-01-13T12:10:00Z – antigravity – lane=planned – Needs changes: Inefficient queries, incomplete settings, hardcoded IDs, and incomplete Undo for promotion.
+- 2026-01-13T12:05:50Z – codex – lane=planned – Needs changes: Inefficient queries, incomplete settings, hardcoded IDs, and incomplete Undo for promotion.

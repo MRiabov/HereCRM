@@ -5,20 +5,25 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 import enum
 from src.database import Base
 
+
 class UserRole(str, enum.Enum):
     OWNER = "owner"
     MEMBER = "member"
 
+
 class ConversationStatus(str, enum.Enum):
     IDLE = "idle"
     WAITING_CONFIRM = "waiting_confirm"
+
 
 class Business(Base):
     __tablename__ = "businesses"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String, index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
 
     # Relationships
     users: Mapped[List["User"]] = relationship(back_populates="business")
@@ -26,17 +31,23 @@ class Business(Base):
     jobs: Mapped[List["Job"]] = relationship(back_populates="business")
     requests: Mapped[List["Request"]] = relationship(back_populates="business")
 
+
 class User(Base):
     __tablename__ = "users"
 
     phone_number: Mapped[str] = mapped_column(String, primary_key=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"))
     role: Mapped[UserRole] = mapped_column(SAEnum(UserRole), default=UserRole.MEMBER)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
-    preferences: Mapped[dict] = mapped_column(JSON, default=lambda: {"confirm_by_default": False})
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+    preferences: Mapped[dict] = mapped_column(
+        JSON, default=lambda: {"confirm_by_default": False}
+    )
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="users")
+
 
 class Customer(Base):
     __tablename__ = "customers"
@@ -51,6 +62,7 @@ class Customer(Base):
     business: Mapped["Business"] = relationship(back_populates="customers")
     jobs: Mapped[List["Job"]] = relationship(back_populates="customer")
 
+
 class Job(Base):
     __tablename__ = "jobs"
 
@@ -61,14 +73,15 @@ class Job(Base):
     status: Mapped[str] = mapped_column(String, default="pending")
     value: Mapped[Optional[float]] = mapped_column(Float)
     location: Mapped[Optional[str]] = mapped_column(String)
-    
+
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="jobs")
     customer: Mapped["Customer"] = relationship(back_populates="jobs")
 
+
 class Request(Base):
     __tablename__ = "requests"
-    
+
     id: Mapped[int] = mapped_column(primary_key=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     content: Mapped[str] = mapped_column(Text)
@@ -77,12 +90,18 @@ class Request(Base):
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="requests")
 
+
 class ConversationState(Base):
     __tablename__ = "conversation_states"
 
     phone_number: Mapped[str] = mapped_column(String, primary_key=True)
-    state: Mapped[ConversationStatus] = mapped_column(SAEnum(ConversationStatus), default=ConversationStatus.IDLE)
+    state: Mapped[ConversationStatus] = mapped_column(
+        SAEnum(ConversationStatus), default=ConversationStatus.IDLE
+    )
     draft_data: Mapped[Optional[Any]] = mapped_column(JSON)
     last_action_metadata: Mapped[Optional[dict]] = mapped_column(JSON)
-    last_updated: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-
+    last_updated: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )

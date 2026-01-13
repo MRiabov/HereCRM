@@ -14,8 +14,11 @@ VERIFY_TOKEN = "vibecoding"
 @app.get("/webhook")
 async def verify_webhook(req: Request):
     if req.query_params.get("hub.verify_token") == VERIFY_TOKEN:
-        return Response(content=req.query_params.get("hub.challenge"), media_type="text/plain")
+        return Response(
+            content=req.query_params.get("hub.challenge"), media_type="text/plain"
+        )
     return "error"
+
 
 @app.post("/webhook")
 async def webhook(req: Request):
