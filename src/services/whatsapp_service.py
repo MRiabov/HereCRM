@@ -142,7 +142,7 @@ class WhatsappService:
         tool_call = tool_cls(**arguments)
 
         # Execute
-        executor = ToolExecutor(self.session, user.business_id)
+        executor = ToolExecutor(self.session, user.business_id, user.phone_number)
         result, metadata = await executor.execute(tool_call)
 
         # Track for Undo
@@ -189,6 +189,30 @@ class WhatsappService:
                     job.status = metadata.get("old_status", "pending")
                     state_record.last_action_metadata = None
                     return "Undone: Job status reverted."
+
+        elif action == "promote":
+            # Compensating action: Re-create Request, Delete Job
+            if entity_type == "job":
+                from src.repositories import JobRepository, RequestRepository
+                from src.models import Request
+
+                job_repo = JobRepository(self.session)
+                job = await job_repo.get_by_id(entity_id, user.business_id)
+                if job:
+                    # Re-create the request
+                    old_content = metadata.get("old_request_content")
+                    if old_content:
+                        req = Request(
+                            business_id=user.business_id,
+                            content=old_content,
+                            status="pending",
+                        )
+                        self.session.add(req)
+                    
+                    # Delete the job
+                    await self.session.delete(job)
+                    state_record.last_action_metadata = None
+                    return "Undone: Reverted Job promotion back to Request."
 
         return "Could not perform undo for this action."
 

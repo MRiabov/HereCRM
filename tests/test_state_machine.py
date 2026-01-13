@@ -148,3 +148,47 @@ async def test_undo_functionality(test_session: AsyncSession):
 
     res = await test_session.execute(select(Job))
     assert res.scalar_one_or_none() is None
+@pytest.mark.asyncio
+async def test_undo_promotion(test_session: AsyncSession):
+    # Setup: Business, User, Job (promoted from Request)
+    biz = Business(name="Test Biz")
+    test_session.add(biz)
+    await test_session.flush()
+
+    user = User(phone_number="123456789", business_id=biz.id)
+    test_session.add(user)
+
+    job = Job(business_id=biz.id, customer_id=1, description="Promoted job", status="scheduled")
+    test_session.add(job)
+    await test_session.flush()
+
+    state = ConversationState(
+        phone_number="123456789",
+        state=ConversationStatus.IDLE,
+        last_action_metadata={
+            "action": "promote",
+            "entity": "job",
+            "id": job.id,
+            "old_request_content": "Original request content",
+        },
+    )
+    test_session.add(state)
+    await test_session.commit()
+
+    mock_parser = AsyncMock()
+    service = WhatsappService(test_session, mock_parser)
+
+    # Undo
+    response = await service.handle_message("123456789", "undo")
+
+    assert "Reverted Job promotion back to Request" in response
+
+    # Verify job deleted
+    from sqlalchemy import select
+    res = await test_session.execute(select(Job))
+    assert res.scalar_one_or_none() is None
+
+    # Verify request re-created
+    res = await test_session.execute(select(Request))
+    req = res.scalar_one()
+    assert req.content == "Original request content"

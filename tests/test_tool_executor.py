@@ -30,7 +30,7 @@ async def test_execute_add_job_new_customer(test_session: AsyncSession):
     test_session.add(biz)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id)
+    executor = ToolExecutor(test_session, biz.id, "123456789")
     tool = AddJobTool(
         customer_name="Alice",
         customer_phone="555-1234",
@@ -68,7 +68,7 @@ async def test_execute_convert_request(test_session: AsyncSession):
     test_session.add(req)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id)
+    executor = ToolExecutor(test_session, biz.id, "123456789")
     tool = ConvertRequestTool(query="roof", action="schedule", time="tomorrow")
 
     result, metadata = await executor.execute(tool)

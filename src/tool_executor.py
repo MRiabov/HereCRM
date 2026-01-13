@@ -18,9 +18,10 @@ from src.uimodels import (
 
 
 class ToolExecutor:
-    def __init__(self, session: AsyncSession, business_id: int):
+    def __init__(self, session: AsyncSession, business_id: int, user_phone: str):
         self.session = session
         self.business_id = business_id
+        self.user_phone = user_phone
         self.job_repo = JobRepository(session)
         self.customer_repo = CustomerRepository(session)
         self.request_repo = RequestRepository(session)
@@ -102,13 +103,10 @@ class ToolExecutor:
                 tool.customer_query, self.business_id
             )
             if customers:
-                # Get the most recent job for the first matching customer
-                jobs = await self.job_repo.get_all(self.business_id)
-                # Simple filter for demo purposes, in real app would be better query
-                customer_ids = [c.id for c in customers]
-                matching_jobs = [j for j in jobs if j.customer_id in customer_ids]
-                if matching_jobs:
-                    job = matching_jobs[-1]  # Most recent
+                # Use efficient scoped query in repository
+                job = await self.job_repo.get_most_recent_by_customer(
+                    customers[0].id, self.business_id
+                )
 
         if job:
             job.description = f"{job.description} (Scheduled: {tool.time})"
@@ -163,14 +161,18 @@ class ToolExecutor:
     async def _execute_update_settings(
         self, tool: UpdateSettingsTool
     ) -> tuple[str, Optional[dict]]:
-        # This usually applies to the user who sent the command
-        # Since we don't have the user object here easily, we might need to pass it or find by phone
-        # For now, let's assume we update all users in the business or it's handled differently
-        # Actually, WP prompt says Maps UpdateSettingsTool -> UserRepository.update_preferences()
-        # We need a phone number to identify the specific user.
+        user = await self.user_repo.get_by_phone(self.user_phone)
+        if not user:
+            return "User not found.", None
+
+        # Update preferences (stored as JSON)
+        prefs = dict(user.preferences or {})
+        prefs[tool.setting_key] = tool.setting_value
+        user.preferences = prefs
+
         return (
-            "Settings update not implemented in ToolExecutor yet (needs user context).",
-            None,
+            f"✔ Updated setting '{tool.setting_key}' to '{tool.setting_value}'",
+            {"action": "update_settings", "old_value": user.preferences.get(tool.setting_key)},
         )
 
     async def _execute_convert_request(
@@ -185,13 +187,27 @@ class ToolExecutor:
 
         if tool.action == "schedule":
             # Promotion logic: Request -> Job
-            # For now, we don't have customer data in Request, so we might need fuzzy search or ask
-            # Simplified: Create a Job with current request content
-            # Assuming we can find a customer associated with the request (future)
-            # For now, just create a job and delete request
+            # Robust Customer Resolution: Try fuzzy match first, then fallback
+            customers = await self.customer_repo.search(tool.query, self.business_id)
+            if not customers:
+                # If no match, try finding any customer in the business
+                all_customers = await self.customer_repo.get_all(self.business_id)
+                if all_customers:
+                    customer_id = all_customers[0].id
+                else:
+                    # Last resort: Create a "General Customer"
+                    new_customer = Customer(
+                        name="General Customer", business_id=self.business_id
+                    )
+                    self.customer_repo.add(new_customer)
+                    await self.session.flush()
+                    customer_id = new_customer.id
+            else:
+                customer_id = customers[0].id
+
             job = Job(
                 business_id=self.business_id,
-                customer_id=1,  # Default or fuzzy find
+                customer_id=customer_id,
                 description=f"Converted from request: {req.content}. Time: {tool.time or 'N/A'}",
                 status="scheduled" if tool.time else "pending",
             )

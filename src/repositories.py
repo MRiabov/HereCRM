@@ -53,8 +53,8 @@ class BusinessRepository(BaseRepository[Business]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    def add(self, state: ConversationState):
-        self.session.add(state)
+    def add(self, business: Business):
+        self.session.add(business)
 
 
 class RequestRepository(BaseRepository[Request]):
@@ -106,6 +106,18 @@ class JobRepository(BaseRepository[Job]):
         )
         result = await self.session.execute(stmt)
         return result.scalars().all()
+
+    async def get_most_recent_by_customer(
+        self, customer_id: int, business_id: int
+    ) -> Optional[Job]:
+        stmt = (
+            select(Job)
+            .where(Job.customer_id == customer_id, Job.business_id == business_id)
+            .order_by(Job.id.desc())
+            .limit(1)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
 
 
 class ConversationStateRepository:

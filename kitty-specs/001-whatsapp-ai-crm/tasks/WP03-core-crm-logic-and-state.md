@@ -5,7 +5,7 @@ subtasks:
   - T011
   - T012
   - T013
-lane: "planned"
+lane: "for_review"
 review_status: "has_feedback"
 reviewed_by: "antigravity"
 agent: "codex"
@@ -126,3 +126,5 @@ Messages cannot just be executed immediately. We need a State Machine (IDLE -> W
 - 2026-01-13T12:01:52Z – codex – lane=for_review – Ready for review
 - 2026-01-13T12:10:00Z – antigravity – lane=planned – Needs changes: Inefficient queries, incomplete settings, hardcoded IDs, and incomplete Undo for promotion.
 - 2026-01-13T12:05:50Z – codex – lane=planned – Needs changes: Inefficient queries, incomplete settings, hardcoded IDs, and incomplete Undo for promotion.
+- 2026-01-13T12:07:17Z – codex – lane=doing – Addressing review feedback
+- 2026-01-13T12:11:10Z – codex – lane=for_review – Feedback addressed: Inefficient queries fixed, settings implemented, hardcoded IDs removed, and undo for promote complete.
