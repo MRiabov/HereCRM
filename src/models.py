@@ -73,6 +73,7 @@ class Job(Base):
     status: Mapped[str] = mapped_column(String, default="pending")
     value: Mapped[Optional[float]] = mapped_column(Float)
     location: Mapped[Optional[str]] = mapped_column(String)
+    scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="jobs")

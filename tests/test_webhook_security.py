@@ -1,12 +1,10 @@
 import pytest
 from httpx import AsyncClient, ASGITransport
 from src.main import app
-from src.database import get_db
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 import hmac
 import hashlib
 import json
-import os
 
 # Dummy secret for tests
 SECRET = "dummy_secret"

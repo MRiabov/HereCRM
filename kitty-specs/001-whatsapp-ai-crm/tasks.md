@@ -51,10 +51,10 @@
 **Priority**: Medium - Integration
 **Test**: `pytest tests/test_webhook.py` (Mocked end-to-end flow)
 
-- [ ] **T014**: Implement FastAPI Webhook Entrypoint (`POST /webhook`). [[WP04-onboarding-and-integration.md]]
-- [ ] **T015**: Implement Middleware/Service logic for User Identification (auto-create Business/User if new). [[WP04-onboarding-and-integration.md]]
-- [ ] **T016**: Connect Webhook -> Service -> LLM -> DB pipeline. [[WP04-onboarding-and-integration.md]]
-- [ ] **T017**: Write Integration Tests for Scenario 1 (Add: Job). [[WP04-onboarding-and-integration.md]]
+- [x] **T014**: Implement FastAPI Webhook Entrypoint (`POST /webhook`). [[WP04-onboarding-and-integration.md]]
+- [x] **T015**: Implement Middleware/Service logic for User Identification (auto-create Business/User if new). [[WP04-onboarding-and-integration.md]]
+- [x] **T016**: Connect Webhook -> Service -> LLM -> DB pipeline. [[WP04-onboarding-and-integration.md]]
+- [x] **T017**: Write Integration Tests for Scenario 1 (Add: Job). [[WP04-onboarding-and-integration.md]]
 
 ---
 

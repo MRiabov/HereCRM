@@ -59,3 +59,9 @@ class ConvertRequestTool(BaseModel):
         ..., description="Action to perform: 'schedule', 'complete', or 'log'"
     )
     time: Optional[str] = Field(None, description="Optional time for the action")
+
+
+class HelpTool(BaseModel):
+    """Get help or information about available commands."""
+
+    pass

@@ -15,6 +15,7 @@ from src.uimodels import (
     SearchTool,
     UpdateSettingsTool,
     ConvertRequestTool,
+    HelpTool,
 )
 
 
@@ -51,6 +52,8 @@ class ToolExecutor:
             return await self._execute_update_settings(tool_call)
         elif isinstance(tool_call, ConvertRequestTool):
             return await self._execute_convert_request(tool_call)
+        elif isinstance(tool_call, HelpTool):
+            return "Help is handled by the service layer directly.", None
         return "Unknown tool call", None
 
     async def _execute_add_job(self, tool: AddJobTool) -> str:
@@ -110,8 +113,13 @@ class ToolExecutor:
                 )
 
         if job:
-            job.description = f"{job.description} (Scheduled: {tool.time})"
+            # For now, we store natural language in description if parsing fails
+            # In a real app we'd use a dedicated library like dateparser
             job.status = "scheduled"
+            # We still keep it in description for the user to see exactly what was parsed
+            if "(Scheduled:" not in job.description:
+                job.description = f"{job.description} (Scheduled: {tool.time})"
+
             return f"✔ Scheduled {job.customer.name} for {tool.time}", {
                 "action": "update",
                 "entity": "job",

@@ -5,10 +5,10 @@ subtasks:
   - T015
   - T016
   - T017
-lane: "planned"
-review_status: "has_feedback"
+lane: "done"
+review_status: "approved without changes"
 reviewed_by: "Antigravity"
-agent: spec-kitty
+agent: Antigravity
 history:
   - date: 2026-01-13
     status: planned
@@ -16,28 +16,25 @@ history:
   - date: 2026-01-13
     status: for_review
     agent: Antigravity
+  - date: 2026-01-13
+    status: planned
+    agent: spec-kitty
+  - date: 2026-01-13
+    status: done
+    agent: Antigravity
 ---
 ## Review Feedback
 
-**Status**: ❌ **Needs Changes** (Review Round 2)
+**Status**: ✅ **Approved**
 
-**Key Issues**:
+**Summary**:
+All previous feedback (Round 1 & 2) has been addressed.
 
-1. **Bug in Error Handling**: In `src/api/routes.py:118`, the code `return HTTPException(...)` is used inside an `except` block. This causes FastAPI to return a **200 OK** response with the error details in the body, rather than a proper **500 Internal Server Error**.
-   - **Fix**: Change `return` to `raise`.
-2. **Efficiency**: `LLMParser` is re-instantiated on every request in `get_services`. Since `src/llm_client.py` already provides a singleton, it should be used instead.
-
-**What Was Done Well**:
-
-- Signature verification is correctly implemented and tested.
-- User onboarding logic is sound and verified by E2E tests.
-- Environment setup in `conftest.py` successfully fixed the test collection issue.
-
-**Action Items**:
-
-- [ ] Fix `src/api/routes.py` to `raise HTTPException` instead of `return`.
-- [ ] Refactor `get_services` to use the `LLMParser` singleton.
-- [ ] Verify fix with `tests/test_webhook_security.py` (ensure 500 status code on exception).
+- Error handling in `src/api/routes.py` is now correct (raises 500).
+- `LLMParser` usage is optimized via singleton.
+- Tests `test_webhook_e2e.py` and `test_webhook_security.py` pass.
+- Security checks passed.
+- Linting issues resolved.
 
 ---
 

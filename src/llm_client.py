@@ -9,6 +9,7 @@ from src.uimodels import (
     SearchTool,
     UpdateSettingsTool,
     ConvertRequestTool,
+    HelpTool,
 )
 
 
@@ -22,6 +23,7 @@ class LLMParser:
             SearchTool,
             UpdateSettingsTool,
             ConvertRequestTool,
+            HelpTool,
         ]
         self.model = genai.GenerativeModel(
             model_name=settings.gemini_model, tools=self.tools
@@ -37,6 +39,7 @@ class LLMParser:
             SearchTool,
             UpdateSettingsTool,
             ConvertRequestTool,
+            HelpTool,
         ]
     ]:
         """
@@ -47,6 +50,8 @@ class LLMParser:
         lower_text = text.lower().strip()
         if lower_text in ["undo", "cancel"]:
             return None
+        if lower_text in ["help", "usage", "commands"]:
+            return HelpTool()
 
         # 2. Use the model to generate a tool call
         chat = self.model.start_chat()
@@ -60,7 +65,7 @@ class LLMParser:
 
         # 3. Robust candidate and part access
         if not response.candidates or not response.candidates[0].content.parts:
-            return None
+            return StoreRequestTool(content=text)
 
         part = response.candidates[0].content.parts[0]
 
@@ -73,7 +78,8 @@ class LLMParser:
                 # Convert the function call arguments (dict-like) to the Pydantic model
                 return model_cls(**fn.args)
 
-        return None
+        # 4. Fallback to StoreRequestTool if no tool identified
+        return StoreRequestTool(content=text)
 
 
 # Singleton instance

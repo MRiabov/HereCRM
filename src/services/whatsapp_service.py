@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import ConversationState, ConversationStatus, User, Request
 from src.repositories import (
@@ -52,8 +52,13 @@ class WhatsappService:
         tool_call = await self.parser.parse(text)
 
         if tool_call:
+            # Handle HelpTool separately (skip confirmation)
+            from src.uimodels import HelpTool
+
+            if isinstance(tool_call, HelpTool):
+                return self._generate_help_message()
+
             # Store draft and transition to WAITING_CONFIRM
-            # tool_call is a Pydantic model, need to serialize it
             state_record.draft_data = {
                 "tool_name": tool_call.__class__.__name__,
                 "arguments": tool_call.model_dump(),
@@ -115,6 +120,7 @@ class WhatsappService:
             SearchTool,
             UpdateSettingsTool,
             ConvertRequestTool,
+            HelpTool,
         )
 
         model_map = {
@@ -124,6 +130,7 @@ class WhatsappService:
             "SearchTool": SearchTool,
             "UpdateSettingsTool": UpdateSettingsTool,
             "ConvertRequestTool": ConvertRequestTool,
+            "HelpTool": HelpTool,
         }
 
         tool_cls = model_map.get(tool_name)
@@ -154,7 +161,7 @@ class WhatsappService:
             return "Nothing to undo."
 
         action = metadata.get("action")
-        entity_type = metadata.get("entity")
+        entity_type = cast(str, metadata.get("entity", ""))
         entity_id = metadata.get("id")
 
         if action == "create":
@@ -163,7 +170,7 @@ class WhatsappService:
 
             repo_map = {"job": JobRepository, "request": RequestRepository}
             repo_cls = repo_map.get(entity_type)
-            if repo_cls:
+            if repo_cls and isinstance(entity_id, int):
                 repo = repo_cls(self.session)
                 entity = await repo.get_by_id(entity_id, user.business_id)
                 if entity:
@@ -173,28 +180,28 @@ class WhatsappService:
 
         elif action == "update":
             # Compensating action: revert status (simplified)
-            if entity_type == "job":
+            if entity_type == "job" and isinstance(entity_id, int):
                 from src.repositories import JobRepository
 
                 repo = JobRepository(self.session)
                 job = await repo.get_by_id(entity_id, user.business_id)
                 if job:
-                    job.status = metadata.get("old_status", "pending")
+                    job.status = cast(str, metadata.get("old_status", "pending"))
                     state_record.last_action_metadata = None
                     return "Undone: Job status reverted."
-            elif entity_type == "request":
+            elif entity_type == "request" and isinstance(entity_id, int):
                 from src.repositories import RequestRepository
 
                 repo = RequestRepository(self.session)
                 req = await repo.get_by_id(entity_id, user.business_id)
                 if req:
-                    req.status = metadata.get("old_status", "pending")
+                    req.status = cast(str, metadata.get("old_status", "pending"))
                     state_record.last_action_metadata = None
                     return "Undone: Request status reverted."
 
         elif action == "promote":
             # Compensating action: Re-create Request, Delete Job
-            if entity_type == "job":
+            if entity_type == "job" and isinstance(entity_id, int):
                 from src.repositories import JobRepository, RequestRepository
 
                 job_repo = JobRepository(self.session)
@@ -205,7 +212,7 @@ class WhatsappService:
                     if old_content:
                         req = Request(
                             business_id=user.business_id,
-                            content=old_content,
+                            content=cast(str, old_content),
                             status="pending",
                         )
                         self.session.add(req)
@@ -220,13 +227,14 @@ class WhatsappService:
 
             repo = UserRepository(self.session)
             old_value = metadata.get("old_value")
-            key = metadata.get("setting_key")
-            phone = metadata.get("phone")
+            key = cast(str, metadata.get("setting_key", ""))
+            phone = cast(str, metadata.get("phone", ""))
 
-            # Revert to old value
-            await repo.update_preferences(phone, key, old_value)
-            state_record.last_action_metadata = None
-            return f"Undone: Restored setting '{key}' to its previous value."
+            if key and phone:
+                # Revert to old value
+                await repo.update_preferences(phone, key, old_value)
+                state_record.last_action_metadata = None
+                return f"Undone: Restored setting '{key}' to its previous value."
 
         return "Could not perform undo for this action."
 
@@ -240,3 +248,14 @@ class WhatsappService:
         elif hasattr(tool_call, "query"):
             return f"{name}: {tool_call.query}"
         return f"{name} operation"
+
+    def _generate_help_message(self) -> str:
+        return (
+            "Available commands:\n"
+            "- *Add Job*: 'Add: John, 123 Main St, $50'\n"
+            "- *Schedule*: 'Schedule John tomorrow at 2pm'\n"
+            "- *Search*: 'Find John' or 'Show all jobs'\n"
+            "- *Settings*: 'Update settings'\n"
+            "- *Requests*: Any other text will be stored as a request for later review.\n\n"
+            "You can always reply 'undo' to revert your last action."
+        )

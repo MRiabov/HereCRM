@@ -1,7 +1,6 @@
 import hmac
 import hashlib
 import logging
-import sys
 from typing import Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Header, Request, status
@@ -103,10 +102,7 @@ async def webhook(
         # Re-raise HTTP exceptions (like 403 Signature)
         raise
 
-    except Exception as e:
-        # Log the real error securely
-        # Printing to stderr is a simple way to ensure it ends up in logs
-        print(f"WEBHOOK ERROR: {str(e)}", file=sys.stderr)
+    except Exception:
         logger.exception("Webhook processing failed")
 
         # Return generic error to client

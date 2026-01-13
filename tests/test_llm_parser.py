@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
 from src.llm_client import LLMParser
-from src.uimodels import AddJobTool, ConvertRequestTool
+from src.uimodels import AddJobTool, ConvertRequestTool, StoreRequestTool, HelpTool
 
 
 @pytest.fixture
@@ -66,7 +66,8 @@ async def test_parse_empty_candidates(mock_parser):
     mock_model.start_chat.return_value = mock_chat
 
     result = await parser.parse("Something that triggers safety filter")
-    assert result is None
+    assert isinstance(result, StoreRequestTool)
+    assert result.content == "Something that triggers safety filter"
 
 
 @pytest.mark.asyncio
@@ -87,7 +88,18 @@ async def test_parse_no_tool_call(mock_parser):
     mock_model.start_chat.return_value = mock_chat
 
     result = await parser.parse("Hello")
-    assert result is None
+    assert isinstance(result, StoreRequestTool)
+    assert result.content == "Hello"
+
+
+@pytest.mark.asyncio
+async def test_parse_help(mock_parser):
+    parser, _ = mock_parser
+
+    # Pre-filtering should catch these
+    assert isinstance(await parser.parse("help"), HelpTool)
+    assert isinstance(await parser.parse("Usage"), HelpTool)
+    assert isinstance(await parser.parse("commands"), HelpTool)
 
 
 @pytest.mark.asyncio
