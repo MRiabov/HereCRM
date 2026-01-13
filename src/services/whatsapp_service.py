@@ -8,12 +8,19 @@ from src.repositories import (
 )
 from src.llm_client import LLMParser
 from src.tool_executor import ToolExecutor
+from src.services.template_service import TemplateService
 
 
 class WhatsappService:
-    def __init__(self, session: AsyncSession, parser: LLMParser):
+    def __init__(
+        self,
+        session: AsyncSession,
+        parser: LLMParser,
+        template_service: TemplateService,
+    ):
         self.session = session
         self.parser = parser
+        self.template_service = template_service
         self.state_repo = ConversationStateRepository(session)
         self.user_repo = UserRepository(session)
         self.business_repo = BusinessRepository(session)
@@ -22,7 +29,7 @@ class WhatsappService:
         # 1. Identify User/Business (Placeholder for WP04 logic)
         user = await self.user_repo.get_by_phone(user_phone)
         if not user:
-            return "Error: User access required."
+            return self.template_service.render("error_user_required")
 
         # 2. Fetch Conversation State
         state_record = await self.state_repo.get_by_phone(user_phone)
@@ -64,18 +71,16 @@ class WhatsappService:
             # Store draft and transition to WAITING_CONFIRM
             state_record.draft_data = {
                 "tool_name": tool_call.__class__.__name__,
-                "arguments": tool_call.model_dump(),
+                "arguments": tool_call.dict(),
             }
             state_record.state = ConversationStatus.WAITING_CONFIRM
 
             # Simple summary for confirmation
             summary = self._generate_summary(tool_call)
-            return (
-                f"Please confirm: {summary}\n(Reply 'Yes' to confirm, 'No' to cancel)"
-            )
+            return self.template_service.render("confirm_prompt", summary=summary)
 
         # If no tool call, maybe it's just a greeting or unclear
-        return "I'm not sure how to help with that. Try saying 'Add job: ...' or 'Show all jobs'."
+        return self.template_service.render("error_unclear_input")
 
     async def _handle_waiting_confirm(
         self, user: User, state_record: ConversationState, text: str
@@ -88,7 +93,7 @@ class WhatsappService:
         elif lower_text in ["no", "n", "cancel"]:
             state_record.state = ConversationStatus.IDLE
             state_record.draft_data = None
-            return "Action cancelled."
+            return self.template_service.render("action_cancelled")
 
         else:
             # Handle edge case: new command while waiting for confirm
@@ -108,7 +113,7 @@ class WhatsappService:
     async def _execute_draft(self, user: User, state_record: ConversationState) -> str:
         if not state_record.draft_data:
             state_record.state = ConversationStatus.IDLE
-            return "No draft to execute."
+            return self.template_service.render("error_no_draft")
 
         # Reconstruct tool call from draft_data
         draft = state_record.draft_data
@@ -140,12 +145,14 @@ class WhatsappService:
         if not tool_cls:
             state_record.state = ConversationStatus.IDLE
             state_record.draft_data = None
-            return "Error: Unknown tool in draft."
+            return self.template_service.render("error_unknown_tool")
 
         tool_call = tool_cls(**arguments)
 
         # Execute
-        executor = ToolExecutor(self.session, user.business_id, user.phone_number)
+        executor = ToolExecutor(
+            self.session, user.business_id, user.phone_number, self.template_service
+        )
         result, metadata = await executor.execute(tool_call)
 
         # Track for Undo
@@ -156,12 +163,13 @@ class WhatsappService:
         state_record.state = ConversationStatus.IDLE
         state_record.draft_data = None
 
-        return f"{result}\n(Reply 'undo' to revert)"
+        undo_hint = self.template_service.render("undo_hint")
+        return f"{result}\n{undo_hint}"
 
     async def _handle_undo(self, user: User, state_record: ConversationState) -> str:
         metadata = state_record.last_action_metadata
         if not metadata:
-            return "Nothing to undo."
+            return self.template_service.render("error_undo_nothing")
 
         action = metadata.get("action")
         entity_type = cast(str, metadata.get("entity", ""))
@@ -179,7 +187,9 @@ class WhatsappService:
                 if entity:
                     await self.session.delete(entity)
                     state_record.last_action_metadata = None
-                    return f"Undone: Deleted {entity_type}."
+                    return self.template_service.render(
+                        "undo_deleted", entity_type=entity_type
+                    )
 
         elif action == "update":
             # Compensating action: revert status (simplified)
@@ -191,7 +201,7 @@ class WhatsappService:
                 if job:
                     job.status = cast(str, metadata.get("old_status", "pending"))
                     state_record.last_action_metadata = None
-                    return "Undone: Job status reverted."
+                    return self.template_service.render("undo_job_reverted")
             elif entity_type == "request" and isinstance(entity_id, int):
                 from src.repositories import RequestRepository
 
@@ -200,7 +210,7 @@ class WhatsappService:
                 if req:
                     req.status = cast(str, metadata.get("old_status", "pending"))
                     state_record.last_action_metadata = None
-                    return "Undone: Request status reverted."
+                    return self.template_service.render("undo_request_reverted")
 
         elif action == "promote":
             # Compensating action: Re-create Request, Delete Job
@@ -223,7 +233,7 @@ class WhatsappService:
                     # Delete the job
                     await self.session.delete(job)
                     state_record.last_action_metadata = None
-                    return "Undone: Reverted Job promotion back to Request."
+                    return self.template_service.render("undo_promotion_reverted")
 
         elif action == "update_settings":
             from src.repositories import UserRepository
@@ -237,9 +247,9 @@ class WhatsappService:
                 # Revert to old value
                 await repo.update_preferences(phone, key, old_value)
                 state_record.last_action_metadata = None
-                return f"Undone: Restored setting '{key}' to its previous value."
+                return self.template_service.render("undo_setting_reverted", key=key)
 
-        return "Could not perform undo for this action."
+        return self.template_service.render("error_undo_failed")
 
     def _generate_summary(self, tool_call: Any) -> str:
         # Map tool class names to friendly display names
@@ -268,12 +278,4 @@ class WhatsappService:
         return f"{name} operation"
 
     def _generate_help_message(self) -> str:
-        return (
-            "Available commands:\n"
-            "- *Add Job*: 'Add: John, 123 Main St, $50'\n"
-            "- *Schedule*: 'Schedule John tomorrow at 2pm'\n"
-            "- *Search*: 'Find John' or 'Show all jobs'\n"
-            "- *Settings*: 'Update settings'\n"
-            "- *Requests*: Any other text will be stored as a request for later review.\n\n"
-            "You can always reply 'undo' to revert your last action."
-        )
+        return self.template_service.render("help_message")

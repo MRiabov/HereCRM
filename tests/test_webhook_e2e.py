@@ -34,7 +34,7 @@ async def db_session():
 
 @pytest.mark.asyncio
 async def test_webhook_e2e():
-    # Ensure env var is set (should be by conftest, but explicit for clarity in this file logic if run standalone)
+    # Ensure env var is set
     secret = os.getenv("WHATSAPP_APP_SECRET", "dummy_secret")
 
     # Override get_db to use test session
@@ -44,17 +44,27 @@ async def test_webhook_e2e():
 
     app.dependency_overrides[get_db] = override_get_db
 
-    # Initialize DB (fixture logic included here for simplicity in this flow)
+    # Initialize DB
     async with engine_test.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    # Patch LLMParser in routes
-    with patch("src.api.routes.llm_parser") as mock_parser:
-        mock_parser.parse = AsyncMock(
-            return_value=AddJobTool(
-                customer_name="Alice", description="Fix sink", price=100.0
-            )
+    # Patch LLMParser.parse singleton and TemplateService
+    with (
+        patch("src.llm_client.parser.parse", new_callable=AsyncMock) as mock_parse,
+        patch("src.api.routes.template_service") as mock_template_service,
+    ):
+        mock_parse.return_value = AddJobTool(
+            customer_name="Alice",
+            customer_phone=None,
+            location=None,
+            price=100.0,
+            description="Fix sink",
         )
+
+        mock_template_service.render.side_effect = lambda key, **kwargs: {
+            "confirm_prompt": "Please confirm",
+            "job_added": "Job added",
+        }.get(key, key)
 
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
@@ -121,7 +131,7 @@ async def test_webhook_e2e():
                 biz_repo = BusinessRepository(session)
                 biz = await biz_repo.get_by_id_global(user.business_id)
                 assert biz is not None
-                assert "999888777" in biz.name
+                assert phone in biz.name
 
                 # Check Job created
                 job_repo = JobRepository(session)

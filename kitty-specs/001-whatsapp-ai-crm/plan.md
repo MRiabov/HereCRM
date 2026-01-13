@@ -60,6 +60,14 @@ New SQLAlchemy models for multi-tenancy:
 - Implementation of tool logic (CRUD operations).
 - **Security Check**: Enforce Tenant Isolation (Business ID) on every query.
 
+- **Security Check**: Enforce Tenant Isolation (Business ID) on every query.
+
+#### [NEW] [template_service.py](file:///home/maksym/Work/proj/HereCRM/.worktrees/001-whatsapp-ai-crm/src/services/template_service.py)
+
+- `TemplateService` class to load and render messages from YAML.
+- **Source**: `src/assets/messages.yaml`.
+- **Method**: `get_message(key, **kwargs)` with variable interpolation.
+
 ### UX Flows
 
 1. **Mutation**: User says "Add job..." -> LLM parses -> App saves draft to `ConversationState` -> App replies "Confirm? [Yes/No]"

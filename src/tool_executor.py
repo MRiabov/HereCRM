@@ -8,6 +8,7 @@ from src.repositories import (
     UserRepository,
 )
 from src.services.crm_service import CRMService
+from src.services.template_service import TemplateService
 from src.uimodels import (
     AddJobTool,
     ScheduleJobTool,
@@ -20,10 +21,17 @@ from src.uimodels import (
 
 
 class ToolExecutor:
-    def __init__(self, session: AsyncSession, business_id: int, user_phone: str):
+    def __init__(
+        self,
+        session: AsyncSession,
+        business_id: int,
+        user_phone: str,
+        template_service: TemplateService,
+    ):
         self.session = session
         self.business_id = business_id
         self.user_phone = user_phone
+        self.template_service = template_service
         self.job_repo = JobRepository(session)
         self.customer_repo = CustomerRepository(session)
         self.request_repo = RequestRepository(session)
@@ -88,7 +96,12 @@ class ToolExecutor:
         await self.session.flush()
 
         return (
-            f"✔ Job added: {customer.name} – {job.location or 'No location'} – {f'€{job.value}' if job.value else 'No price'}",
+            self.template_service.render(
+                "job_added",
+                name=customer.name,
+                location=job.location or "No location",
+                price=f"€{job.value}" if job.value else "No price",
+            ),
             {"action": "create", "entity": "job", "id": job.id},
         )
 
@@ -136,7 +149,9 @@ class ToolExecutor:
             if "(Scheduled:" not in job.description:
                 job.description = f"{job.description} (Scheduled: {tool.time})"
 
-            return f"✔ Scheduled {job.customer.name} for {tool.time}", {
+            return self.template_service.render(
+                "job_scheduled", name=job.customer.name, time=tool.time
+            ), {
                 "action": "update",
                 "entity": "job",
                 "id": job.id,
@@ -153,7 +168,9 @@ class ToolExecutor:
         )
         self.request_repo.add(req)
         await self.session.flush()
-        return f"✔ Request stored: {tool.content[:50]}...", {
+        return self.template_service.render(
+            "request_stored", content=tool.content[:50]
+        ), {
             "action": "create",
             "entity": "request",
             "id": req.id,
@@ -179,7 +196,9 @@ class ToolExecutor:
                 lines.append(f"- {r.content} (Status: {r.status})")
 
         if not lines:
-            return f"No results found for '{tool.query}'", None
+            return self.template_service.render(
+                "search_no_results", query=tool.query
+            ), None
 
         return "\n".join(lines), None
 
@@ -193,7 +212,9 @@ class ToolExecutor:
             return "User not found.", None
 
         return (
-            f"✔ Updated setting '{tool.setting_key}' to '{tool.setting_value}'",
+            self.template_service.render(
+                "setting_updated", key=tool.setting_key, value=tool.setting_value
+            ),
             {
                 "action": "update_settings",
                 "entity": "user",

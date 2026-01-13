@@ -1,0 +1,42 @@
+# General Errors
+error_user_required: "Error: User access required."
+error_unknown_tool: "Error: Unknown tool in draft."
+error_no_draft: "No draft to execute."
+error_undo_nothing: "Nothing to undo."
+error_undo_failed: "Could not perform undo for this action."
+error_unclear_input: "I'm not sure how to help with that. Try saying 'Add job: ...' or 'Show all jobs'."
+
+# Confirmation Flow
+confirm_prompt: "Please confirm: {summary}\n(Reply 'Yes' to confirm, 'No' to cancel)"
+action_cancelled: "Action cancelled."
+undo_hint: "(Reply 'undo' to revert)"
+
+# Tool Execution Success
+job_added: "✔ Job added: {name} – {location} – {price}"
+job_scheduled: "✔ Scheduled {name} for {time}"
+request_stored: "✔ Request stored: {content}..."
+setting_updated: "✔ Updated setting '{key}' to '{value}'"
+search_no_results: "No results found for '{query}'"
+
+# Undo Success
+undo_deleted: "Undone: Deleted {entity_type}."
+undo_job_reverted: "Undone: Job status reverted."
+undo_request_reverted: "Undone: Request status reverted."
+undo_promotion_reverted: "Undone: Reverted Job promotion back to Request."
+undo_setting_reverted: "Undone: Restored setting '{key}' to its previous value."
+help_summary: "Help: Commands & usage"
+convert_success: "✔ Converted Request to Job: {description}"
+convert_failed: "Could not find request matching '{query}'"
+job_multiple_found: "Multiple customers found matching '{query}'. Please be more specific (e.g., use full name or phone)."
+undo_deleted_job: "Undone: Deleted job for {customer_name}"
+
+# Help Message
+help_message: |
+  Available commands:
+  - *Add Job*: 'Add: John, 123 Main St, $50'
+  - *Schedule*: 'Schedule John tomorrow at 2pm'
+  - *Search*: 'Find John' or 'Show all jobs'
+  - *Settings*: 'Update settings'
+  - *Requests*: Any other text will be stored as a request for later review.
+
+  You can always reply 'undo' to revert your last action.

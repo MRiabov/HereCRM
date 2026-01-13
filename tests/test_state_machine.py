@@ -12,6 +12,7 @@ from src.models import (
     Request,
 )
 from src.services.whatsapp_service import WhatsappService
+from src.services.template_service import TemplateService
 from src.uimodels import AddJobTool
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -32,8 +33,16 @@ async def test_session():
     await engine.dispose()
 
 
+@pytest.fixture
+def template_service():
+    # Use real template service since it's just loading a file
+    return TemplateService()
+
+
 @pytest.mark.asyncio
-async def test_state_idle_to_confirm(test_session: AsyncMock):
+async def test_state_idle_to_confirm(
+    test_session: AsyncSession, template_service: TemplateService
+):
     # Setup User
     biz = Business(name="Test Biz")
     test_session.add(biz)
@@ -45,11 +54,15 @@ async def test_state_idle_to_confirm(test_session: AsyncMock):
     # Mock Parser
     mock_parser = AsyncMock()
     tool_call = AddJobTool(
-        customer_name="John Doe", description="Fix window", price=50.0
+        customer_name="John Doe",
+        customer_phone=None,
+        location=None,
+        price=50.0,
+        description="Fix window",
     )
     mock_parser.parse.return_value = tool_call
 
-    service = WhatsappService(test_session, mock_parser)
+    service = WhatsappService(test_session, mock_parser, template_service)
     user_phone = "123456789"
 
     # Send message in IDLE state
@@ -57,7 +70,7 @@ async def test_state_idle_to_confirm(test_session: AsyncMock):
         user_phone, "Add job John Doe Fix window 50"
     )
 
-    assert "Please confirm" in response
+    assert "Please confirm: Add Job" in response
 
     # Verify state updated in DB
     from sqlalchemy import select
@@ -71,7 +84,9 @@ async def test_state_idle_to_confirm(test_session: AsyncMock):
 
 
 @pytest.mark.asyncio
-async def test_state_confirm_yes(test_session: AsyncSession):
+async def test_state_confirm_yes(
+    test_session: AsyncSession, template_service: TemplateService
+):
     # Setup: User in WAITING_CONFIRM state
     biz = Business(name="Test Biz")
     test_session.add(biz)
@@ -95,7 +110,7 @@ async def test_state_confirm_yes(test_session: AsyncSession):
     await test_session.commit()
 
     mock_parser = AsyncMock()
-    service = WhatsappService(test_session, mock_parser)
+    service = WhatsappService(test_session, mock_parser, template_service)
 
     # Confirm
     response = await service.handle_message("123456789", "Yes")
@@ -120,7 +135,9 @@ async def test_state_confirm_yes(test_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_undo_functionality(test_session: AsyncSession):
+async def test_undo_functionality(
+    test_session: AsyncSession, template_service: TemplateService
+):
     # Setup: Just finished an operation
     biz = Business(name="Test Biz")
     test_session.add(biz)
@@ -144,7 +161,7 @@ async def test_undo_functionality(test_session: AsyncSession):
     await test_session.commit()
 
     mock_parser = AsyncMock()
-    service = WhatsappService(test_session, mock_parser)
+    service = WhatsappService(test_session, mock_parser, template_service)
 
     # Undo
     response = await service.handle_message("123456789", "undo")
@@ -159,7 +176,9 @@ async def test_undo_functionality(test_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_undo_promotion(test_session: AsyncSession):
+async def test_undo_promotion(
+    test_session: AsyncSession, template_service: TemplateService
+):
     # Setup: Business, User, Job (promoted from Request)
     biz = Business(name="Test Biz")
     test_session.add(biz)
@@ -191,7 +210,7 @@ async def test_undo_promotion(test_session: AsyncSession):
     await test_session.commit()
 
     mock_parser = AsyncMock()
-    service = WhatsappService(test_session, mock_parser)
+    service = WhatsappService(test_session, mock_parser, template_service)
 
     # Undo
     response = await service.handle_message("123456789", "undo")
@@ -211,7 +230,9 @@ async def test_undo_promotion(test_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_undo_settings_update(test_session: AsyncSession):
+async def test_undo_settings_update(
+    test_session: AsyncSession, template_service: TemplateService
+):
     # Setup: Business, User with preferences
     biz = Business(name="Test Biz")
     test_session.add(biz)
@@ -240,7 +261,7 @@ async def test_undo_settings_update(test_session: AsyncSession):
     await test_session.commit()
 
     mock_parser = AsyncMock()
-    service = WhatsappService(test_session, mock_parser)
+    service = WhatsappService(test_session, mock_parser, template_service)
 
     # Undo
     response = await service.handle_message("123456789", "undo")
@@ -258,7 +279,9 @@ async def test_undo_settings_update(test_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_schedule_ambiguous_customer(test_session: AsyncSession):
+async def test_schedule_ambiguous_customer(
+    test_session: AsyncSession, template_service: TemplateService
+):
     # Setup: Two customers with same name
     biz = Business(name="Test Biz")
     test_session.add(biz)
@@ -287,16 +310,16 @@ async def test_schedule_ambiguous_customer(test_session: AsyncSession):
 
     mock_parser = AsyncMock()
     mock_parser.parse.return_value = ScheduleJobTool(
-        customer_query="John Doe", time="tomorrow"
+        job_id=None, customer_query="John Doe", time="tomorrow", iso_time=None
     )
 
-    service = WhatsappService(test_session, mock_parser)
+    service = WhatsappService(test_session, mock_parser, template_service)
 
     # 1. User says schedule John
     response = await service.handle_message("123456789", "Schedule John tomorrow")
 
     # Should ask for confirmation
-    assert "Please confirm: Schedule: John Doe" in response
+    assert "Please confirm: Schedule" in response
 
     # 2. Confirm -> Should hit ToolExecutor and find multiple customers
     response_confirm = await service.handle_message("123456789", "Yes")

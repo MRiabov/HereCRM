@@ -4,9 +4,11 @@ subtasks:
   - T018
   - T019
   - T019a
+  - T020a
+  - T020b
   - T020
 lane: "doing"
-agent: "codex"
+agent: "antigravity"
 history:
   - date: 2026-01-13
     status: planned
@@ -37,14 +39,16 @@ The core paths works, but we need to handle "Schedule..." commands which might i
 - In `LLMParser`, if the intent is unclear or parsing fails, return `StoreRequestTool`.
 - This ensures no data is lost; it just goes into the "Requests" bucket for manual review.
 
-### T019a: Help Logic
+### T020a: Configurable YAML Boilerplates
 
-- Implement logic to handle "help", "usage", or "commands".
-- Return a concise list of available commands and examples:
-  - Add Job: "Add: John, 123 Main St, $50"
-  - Schedule: "Schedule John tomorrow at 2pm"
-  - Settings: "Update settings"
-- Ensure this bypasses the LLM if matched exactly, or is handled by LLM as a `HelpTool`.
+- Create `src/assets/messages.yaml` with configurable text blocks.
+- Support variables using `{}` or `{{}}`.
+- Implement a `TemplateService` to load and render these messages.
+
+### T020b: Message Refactoring
+
+- Identify all hardcoded user-facing strings in `WhatsappService`, `LLMTools`, etc.
+- Replace them with calls to `TemplateService`.
 
 ### T020: Final E2E Walkthrough
 
@@ -59,6 +63,7 @@ The core paths works, but we need to handle "Schedule..." commands which might i
 
 - [ ] "Schedule" command works for clear cases.
 - [ ] Ambiguous input saves as a Request.
+- [ ] YAML boilerplates are used for all customer-facing messages.
 - [ ] Walkthrough artifact created/updated.
 - [ ] Feature is ready for merge.
 
@@ -66,3 +71,5 @@ The core paths works, but we need to handle "Schedule..." commands which might i
 
 - 2026-01-13T13:17:05Z – codex – lane=doing – Started implementation
 - 2026-01-13T17:59:24Z – codex – lane=doing – Started implementation
+- 2026-01-13T20:43:36Z – codex – lane=for_review – Moved to for_review
+- 2026-01-13T21:00:00Z – antigravity – lane=doing – Added YAML boilerplate requirement (T020a, T020b) and resumed implementation.

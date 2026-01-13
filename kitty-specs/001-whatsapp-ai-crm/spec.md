@@ -47,6 +47,16 @@ The system must parse free-form messages to perform structured actions.
   - Example: `✔ Job added: John – High Road 34 – €50`
 - **Undo/Edit**: The confirmation response must include options (buttons or text hints) to `Reply: undo | edit`.
 - **Undo Action**: Reverts the last operation.
+- **Configurable Messaging**: All system-generated messages sent to customers must be configurable via a YAML file to allow easy text editing without code changes. These messages support variable interpolation using `{}` or `{{}}` syntax.
+
+### 2.5. Security & Safety
+
+- **Rate Limiting**: The system must include rate limiting on the public webhook to prevent denial-of-service and LLM credit exhaustion.
+- **Input Validation**: All user inputs (webhook payload, LLM tool arguments) must be validated for length and expected format.
+- **Prompt Injection Defense**: The system must be resilient against prompt injection attempts that try to subvert the LLM's tool-calling logic or access unauthorized data.
+- **Safe State Updates**: Modifications to user preferences/settings must be restricted to an allowlist of approved keys.
+- **Multi-Tenant Isolation**: Ensure all database queries are strictly scoped to the Business ID (Tenant Isolation).
+- **Safe Error Handling**: API responses must not leak sensitive information (PII or technical stack details) in error messages.
 
 ## 3. Data Model (Conceptual)
 

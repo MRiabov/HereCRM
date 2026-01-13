@@ -10,3 +10,4 @@ aiosqlite
 google-generativeai
 pytest
 pytest-asyncio
+PyYAML

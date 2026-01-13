@@ -4,14 +4,18 @@ import logging
 from typing import Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Header, Request, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
 from src.services.auth_service import AuthService
 from src.services.whatsapp_service import WhatsappService
 from src.llm_client import parser as llm_parser
+from src.services.template_service import TemplateService
 from src.config import settings
+from src.security_utils import check_rate_limit
+
+template_service = TemplateService()
 
 router = APIRouter()
 
@@ -20,8 +24,8 @@ logger = logging.getLogger(__name__)
 
 
 class WebhookPayload(BaseModel):
-    from_number: str
-    body: str
+    from_number: str = Field(..., max_length=20, pattern=r"^\+?[1-9]\d{1,14}$")
+    body: str = Field(..., max_length=1000)
 
 
 async def verify_signature(request: Request, x_hub_signature_256: str = Header(None)):
@@ -71,8 +75,8 @@ async def get_services(
     """
     auth_service = AuthService(session)
 
-    # Use singleton parser
-    whatsapp_service = WhatsappService(session, llm_parser)
+    # Use singleton parser and template service
+    whatsapp_service = WhatsappService(session, llm_parser, template_service)
 
     return auth_service, whatsapp_service
 
@@ -85,7 +89,12 @@ async def webhook(
     try:
         auth_service, whatsapp_service = services
 
-        # 1. Identify or Onboard User
+        # 1. Rate Limiting
+        if check_rate_limit(payload.from_number):
+            logger.warning(f"Rate limit exceeded for {payload.from_number}")
+            return {"reply": "Too many requests. Please try again later."}
+
+        # 2. Identify or Onboard User
         user = await auth_service.get_or_create_user(payload.from_number)
 
         # 2. Process Message
@@ -112,5 +121,5 @@ async def webhook(
         # Let's stick to 500 for now as 'Internal Server Error' is standard.
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal Server Error",
+            detail="An internal error occurred. Our team has been notified.",
         )

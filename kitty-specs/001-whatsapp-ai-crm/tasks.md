@@ -2,7 +2,7 @@
 
 **Feature**: WhatsApp AI CRM
 **Status**: Planned
-**Work Packages**: 5
+**Work Packages**: 6
 
 ## Work Package 1: Scaffolding & Core Models
 
@@ -67,4 +67,20 @@
 - [ ] **T018**: Implement specific logic for "Schedule" command (updating existing records). [[WP05-refinement-and-productionizing.md]]
 - [ ] **T019**: Implement fallback logic: Store ambiguous inputs as `Request`. [[WP05-refinement-and-productionizing.md]]
 - [ ] **T019a**: Implement "Help" command to explain bot usage. [[WP05-refinement-and-productionizing.md]]
+- [ ] **T020a**: Implement Configurable YAML Boilerplates for customer messages. [[WP05-refinement-and-productionizing.md]]
+- [ ] **T020b**: Refactor hardcoded messages to use YAML templates. [[WP05-refinement-and-productionizing.md]]
 - [ ] **T020**: Perform final E2E Walkthrough and verify all Success Criteria. [[WP05-refinement-and-productionizing.md]]
+
+---
+
+## Work Package 6: Security Hardening
+
+**Goal**: Protect the application against common web vulnerabilities and Ensure multi-tenant safety.
+**Priority**: High - Security
+**Test**: `pytest tests/test_security.py` (Verify rate limiting, input validation, and tenant isolation)
+
+- [ ] **T021**: Implement Rate Limiting middleware for the webhook endpoint. [[WP06-security-hardening.md]]
+- [ ] **T022**: Implement Input Validation and character limits for Webhook payload and LLM Tool arguments. [[WP06-security-hardening.md]]
+- [ ] **T023**: Harden LLM System Instructions to prevent prompt injection and restrict `UpdateSettingsTool` keys. [[WP06-security-hardening.md]]
+- [ ] **T024**: Implement a security audit tool/script to verify multi-tenant scoping in the repository layer. [[WP06-security-hardening.md]]
+- [ ] **T025**: Refactor error handling to return generic messages and prevent PII leakage in logs. [[WP06-security-hardening.md]]

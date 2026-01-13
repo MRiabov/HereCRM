@@ -14,3 +14,4 @@ Requires-Dist: aiosqlite
 Requires-Dist: google-generativeai
 Requires-Dist: pytest
 Requires-Dist: pytest-asyncio
+Requires-Dist: PyYAML
