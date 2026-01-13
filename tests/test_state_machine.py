@@ -34,6 +34,14 @@ async def test_session():
 
 @pytest.mark.asyncio
 async def test_state_idle_to_confirm(test_session: AsyncMock):
+    # Setup User
+    biz = Business(name="Test Biz")
+    test_session.add(biz)
+    await test_session.flush()
+    user = User(phone_number="123456789", business_id=biz.id, role="owner")
+    test_session.add(user)
+    await test_session.flush()
+
     # Mock Parser
     mock_parser = AsyncMock()
     tool_call = AddJobTool(

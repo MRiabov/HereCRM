@@ -5,7 +5,8 @@ subtasks:
   - T015
   - T016
   - T017
-lane: planned
+lane: "doing"
+agent: "Antigravity"
 history:
   - date: 2026-01-13
     status: planned
@@ -64,3 +65,7 @@ Users interact via HTTP POST to our webhook. We need to identify them by phone n
 - [ ] New phone numbers automatically trigger account creation.
 - [ ] Full loop from HTTP Request -> DB -> HTTP Response works.
 - [ ] Integration tests prove the "Zero-Friction Onboarding" scenario.
+
+## Activity Log
+
+- 2026-01-13T12:37:48Z – Antigravity – lane=doing – Started implementation

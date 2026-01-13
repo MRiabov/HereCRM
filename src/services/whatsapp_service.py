@@ -1,6 +1,6 @@
 from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import ConversationState, ConversationStatus, User, Business, Request
+from src.models import ConversationState, ConversationStatus, User, Request
 from src.repositories import (
     ConversationStateRepository,
     UserRepository,
@@ -22,14 +22,7 @@ class WhatsappService:
         # 1. Identify User/Business (Placeholder for WP04 logic)
         user = await self.user_repo.get_by_phone(user_phone)
         if not user:
-            # For now, let's auto-onboard a default business if user doesn't exist
-            # This will be replaced by robust logic in WP04
-            business = Business(name="New Business")
-            self.session.add(business)
-            await self.session.flush()
-            user = User(phone_number=user_phone, business_id=business.id, role="owner")
-            self.user_repo.add(user)
-            await self.session.flush()
+            return "Error: User access required."
 
         # 2. Fetch Conversation State
         state_record = await self.state_repo.get_by_phone(user_phone)

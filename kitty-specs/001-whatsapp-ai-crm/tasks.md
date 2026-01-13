@@ -37,11 +37,11 @@
 **Priority**: High - Core Feature
 **Test**: `pytest tests/test_state_machine.py` (Verify state transitions IDLE -> CONFIRM -> IDLE)
 
-- [ ] **T010**: Implement `WhatsappService` class structure. [[WP03-core-crm-logic-and-state.md]]
-- [ ] **T011**: Implement Confirmation Flow: Save draft to `ConversationState`, handle "Yes/No". [[WP03-core-crm-logic-and-state.md]]
-- [ ] **T012**: Implement Undo Logic: Transaction rollback or compensation mechanism. [[WP03-core-crm-logic-and-state.md]]
-- [ ] **T012a**: Implement Request Conversion Logic (Promote Request -> Job). [[WP03-core-crm-logic-and-state.md]]
-- [ ] **T013**: Wire up Tool Execution: Map LLM Tool Calls to Repository CRUD methods. [[WP03-core-crm-logic-and-state.md]]
+- [x] **T010**: Implement `WhatsappService` class structure. [[WP03-core-crm-logic-and-state.md]]
+- [x] **T011**: Implement Confirmation Flow: Save draft to `ConversationState`, handle "Yes/No". [[WP03-core-crm-logic-and-state.md]]
+- [x] **T012**: Implement Undo Logic: Transaction rollback or compensation mechanism. [[WP03-core-crm-logic-and-state.md]]
+- [x] **T012a**: Implement Request Conversion Logic (Promote Request -> Job). [[WP03-core-crm-logic-and-state.md]]
+- [x] **T013**: Wire up Tool Execution: Map LLM Tool Calls to Repository CRUD methods. [[WP03-core-crm-logic-and-state.md]]
 
 ---
 
