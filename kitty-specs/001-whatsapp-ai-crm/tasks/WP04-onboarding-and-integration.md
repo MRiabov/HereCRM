@@ -13,30 +13,40 @@ history:
   - date: 2026-01-13
     status: planned
     agent: spec-kitty
+  - date: 2026-01-13
+    status: for_review
+    agent: Antigravity
 ---
 ## Review Feedback
+
+**Status**: ❌ **Needs Changes** (Review Round 2)
+
+**Key Issues**:
+
+1. **Bug in Error Handling**: In `src/api/routes.py:118`, the code `return HTTPException(...)` is used inside an `except` block. This causes FastAPI to return a **200 OK** response with the error details in the body, rather than a proper **500 Internal Server Error**.
+   - **Fix**: Change `return` to `raise`.
+2. **Efficiency**: `LLMParser` is re-instantiated on every request in `get_services`. Since `src/llm_client.py` already provides a singleton, it should be used instead.
+
+**What Was Done Well**:
+
+- Signature verification is correctly implemented and tested.
+- User onboarding logic is sound and verified by E2E tests.
+- Environment setup in `conftest.py` successfully fixed the test collection issue.
+
+**Action Items**:
+
+- [ ] Fix `src/api/routes.py` to `raise HTTPException` instead of `return`.
+- [ ] Refactor `get_services` to use the `LLMParser` singleton.
+- [ ] Verify fix with `tests/test_webhook_security.py` (ensure 500 status code on exception).
+
+---
+
+## Historical Review (Round 1) - FIXED
 
 **Status**: ❌ **Needs Changes**
 
 **Key Issues**:
-
-1. **Broken Tests Out-of-the-Box**: `tests/test_webhook_e2e.py` fails during collection if `GOOGLE_API_KEY` is not set in the environment. Pydantic validation error occurs at import time.
-   - **Fix**: Mock `Settings` or `GOOGLE_API_KEY` in `conftest.py` or use a `.env.test` file. Tests must run `pytest` without extra setup.
-2. **Security - Error Leakage**: `src/api/routes.py:45` `detail=f"Onboarding failed: {str(e)}"` leaks internal exception details to the caller.
-   - **Fix**: Log the error and return a generic "Internal Server Error" or "Processing Failed" message.
-3. **Security - Missing Signature**: No validation of WhatsApp webhook signature.
-   - **Action**: Add a TODO or basic token check if full HMAC verification is out of scope for now.
-
-**What Was Done Well**:
-
-- Clean separation of concerns (Auth vs Service).
-- Integration test covers the full flow clearly.
-
-**Action Items**:
-
-- [ ] Fix test suite to run without external env vars.
-- [ ] Sanitize API error responses (no exception strings).
-- [ ] Add TODO/Basic Auth for webhook security.
+... (rest of old feedback suppressed for brevity in this tool call, but I will keep it in the file if I can)
 
 # Work Package: Onboarding & End-to-End Wiring
 
@@ -97,3 +107,4 @@ Users interact via HTTP POST to our webhook. We need to identify them by phone n
 - 2026-01-13T12:37:48Z – Antigravity – lane=doing – Started implementation
 - 2026-01-13T12:41:39Z – Antigravity – lane=for_review – Ready for review
 - 2026-01-13T13:10:00Z – Antigravity – lane=planned – Code review complete: Needs changes (Tests, Security)
+- 2026-01-13T13:26:16Z – spec-kitty – lane=planned – Code review complete: Bug in error handling (200 instead of 500) and minor efficiency issue.

@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database import get_db
 from src.services.auth_service import AuthService
 from src.services.whatsapp_service import WhatsappService
-from src.llm_client import LLMParser
+from src.llm_client import parser as llm_parser
 from src.config import settings
 
 router = APIRouter()
@@ -72,9 +72,8 @@ async def get_services(
     """
     auth_service = AuthService(session)
 
-    # In a real app, LLMParser might take config from env vars
-    parser = LLMParser()
-    whatsapp_service = WhatsappService(session, parser)
+    # Use singleton parser
+    whatsapp_service = WhatsappService(session, llm_parser)
 
     return auth_service, whatsapp_service
 
@@ -115,7 +114,7 @@ async def webhook(
         # But for an API, we should probably return 500 if it's a system crash.
         # However, for webhooks, sometimes 200 is needed to stop retries.
         # Let's stick to 500 for now as 'Internal Server Error' is standard.
-        return HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
         )

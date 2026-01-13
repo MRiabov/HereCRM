@@ -49,9 +49,8 @@ async def test_webhook_e2e():
         await conn.run_sync(Base.metadata.create_all)
 
     # Patch LLMParser in routes
-    with patch("src.api.routes.LLMParser") as MockParserInfo:
-        mock_instance = MockParserInfo.return_value
-        mock_instance.parse = AsyncMock(
+    with patch("src.api.routes.llm_parser") as mock_parser:
+        mock_parser.parse = AsyncMock(
             return_value=AddJobTool(
                 customer_name="Alice", description="Fix sink", price=100.0
             )
