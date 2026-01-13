@@ -17,7 +17,47 @@ history:
   - date: 2026-01-13
     status: for_review
     agent: antigravity
+  - date: 2026-01-13
+    status: planned
+    agent: antigravity
+    note: "Needs changes: Missing dependencies and quality issues."
+  - date: 2026-01-13
+    status: doing
+    agent: antigravity
+    note: "Addressing review feedback"
+  - date: 2026-01-13
+    status: for_review
+    agent: antigravity
+    note: "Fixed missing dependencies, utcnow() deprecation, and type inconsistencies."
 ---
+## Review Feedback
+
+**Status**: ❌ **Needs Changes**
+
+**Key Issues**:
+
+1. **Missing Dependencies**: `sqlalchemy` and `aiosqlite` are missing from `pyproject.toml`. The app will not run without them.
+2. **Missing Package Marker**: `src/__init__.py` is missing, causing import issues for tests and potentially for the runner.
+3. **Deprecated Methods**: Used `datetime.utcnow()` which is deprecated in Python 3.12. Use `datetime.now(timezone.utc)` instead.
+4. **Type Inconsistencies**:
+   - `Job.value` is `Integer` in DB but comment says "python float". Should use `Float` or `Numeric`.
+   - `ConversationState.draft_data` should be `JSON` type for better integration.
+
+**What Was Done Well**:
+
+- Good use of `asynccontextmanager` for FastAPI lifespan.
+- Clean repository pattern with tenant isolation filtering.
+- Models correctly implement foreign keys to `business_id`.
+
+**Action Items**:
+
+- [ ] Add `sqlalchemy` and `aiosqlite` to `pyproject.toml`.
+- [ ] Create `src/__init__.py`.
+- [ ] Update `datetime.utcnow()` to `datetime.now(timezone.utc)`.
+- [ ] Fix `Job.value` type to match its intended use (Float/Numeric).
+- [ ] Change `ConversationState.draft_data` to `JSON` type.
+- [ ] Ensure all tests pass without manual `PYTHONPATH` manipulation (fix `src` as package).
+
 # Work Package: Scaffolding & Core Models
 
 ## Objective
