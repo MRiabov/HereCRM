@@ -86,3 +86,30 @@ async def test_execute_convert_request(test_session: AsyncSession):
     job = res.scalar_one()
     assert "Converted from request: I want to fix my roof" in job.description
     assert job.status == "scheduled"
+
+
+@pytest.mark.asyncio
+async def test_execute_log_request(test_session: AsyncSession):
+    biz = Business(name="Test Biz")
+    test_session.add(biz)
+    await test_session.flush()
+
+    # Pre-existing request
+    req = Request(business_id=biz.id, content="Info only request", status="pending")
+    test_session.add(req)
+    await test_session.flush()
+
+    executor = ToolExecutor(test_session, biz.id, "123456789")
+    tool = ConvertRequestTool(query="Info", action="log")
+
+    result, metadata = await executor.execute(tool)
+
+    assert "Request logged" in result
+    assert metadata["action"] == "update"
+
+    # Verify status changed but request still exists
+    from sqlalchemy import select
+
+    res = await test_session.execute(select(Request).where(Request.id == req.id))
+    updated_req = res.scalar_one()
+    assert updated_req.status == "logged"

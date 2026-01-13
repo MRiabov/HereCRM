@@ -208,11 +208,24 @@ class WhatsappService:
                             status="pending",
                         )
                         self.session.add(req)
-                    
+
                     # Delete the job
                     await self.session.delete(job)
                     state_record.last_action_metadata = None
                     return "Undone: Reverted Job promotion back to Request."
+
+        elif action == "update_settings":
+            from src.repositories import UserRepository
+
+            repo = UserRepository(self.session)
+            old_value = metadata.get("old_value")
+            key = metadata.get("setting_key")
+            phone = metadata.get("phone")
+
+            # Revert to old value
+            await repo.update_preferences(phone, key, old_value)
+            state_record.last_action_metadata = None
+            return f"Undone: Restored setting '{key}' to its previous value."
 
         return "Could not perform undo for this action."
 

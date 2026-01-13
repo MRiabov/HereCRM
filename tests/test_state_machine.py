@@ -1,6 +1,6 @@
 import pytest
 import pytest_asyncio
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
 from src.models import (
@@ -12,7 +12,7 @@ from src.models import (
     Request,
 )
 from src.services.whatsapp_service import WhatsappService
-from src.uimodels import AddJobTool, StoreRequestTool
+from src.uimodels import AddJobTool
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -148,6 +148,8 @@ async def test_undo_functionality(test_session: AsyncSession):
 
     res = await test_session.execute(select(Job))
     assert res.scalar_one_or_none() is None
+
+
 @pytest.mark.asyncio
 async def test_undo_promotion(test_session: AsyncSession):
     # Setup: Business, User, Job (promoted from Request)
@@ -158,7 +160,12 @@ async def test_undo_promotion(test_session: AsyncSession):
     user = User(phone_number="123456789", business_id=biz.id)
     test_session.add(user)
 
-    job = Job(business_id=biz.id, customer_id=1, description="Promoted job", status="scheduled")
+    job = Job(
+        business_id=biz.id,
+        customer_id=1,
+        description="Promoted job",
+        status="scheduled",
+    )
     test_session.add(job)
     await test_session.flush()
 
@@ -185,6 +192,7 @@ async def test_undo_promotion(test_session: AsyncSession):
 
     # Verify job deleted
     from sqlalchemy import select
+
     res = await test_session.execute(select(Job))
     assert res.scalar_one_or_none() is None
 
@@ -192,3 +200,50 @@ async def test_undo_promotion(test_session: AsyncSession):
     res = await test_session.execute(select(Request))
     req = res.scalar_one()
     assert req.content == "Original request content"
+
+
+@pytest.mark.asyncio
+async def test_undo_settings_update(test_session: AsyncSession):
+    # Setup: Business, User with preferences
+    biz = Business(name="Test Biz")
+    test_session.add(biz)
+    await test_session.flush()
+
+    user = User(
+        phone_number="123456789",
+        business_id=biz.id,
+        preferences={"confirm_by_default": True},
+    )
+    test_session.add(user)
+    await test_session.flush()
+
+    state = ConversationState(
+        phone_number="123456789",
+        state=ConversationStatus.IDLE,
+        last_action_metadata={
+            "action": "update_settings",
+            "entity": "user",
+            "phone": "123456789",
+            "setting_key": "confirm_by_default",
+            "old_value": False,
+        },
+    )
+    test_session.add(state)
+    await test_session.commit()
+
+    mock_parser = AsyncMock()
+    service = WhatsappService(test_session, mock_parser)
+
+    # Undo
+    response = await service.handle_message("123456789", "undo")
+
+    assert "Restored setting 'confirm_by_default' to its previous value" in response
+
+    # Verify preference reverted
+    from sqlalchemy import select
+
+    res = await test_session.execute(
+        select(User).where(User.phone_number == "123456789")
+    )
+    user = res.scalar_one()
+    assert user.preferences["confirm_by_default"] is False

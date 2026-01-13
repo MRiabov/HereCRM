@@ -1,6 +1,6 @@
 from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Generic, TypeVar, Type, Optional, List
+from typing import Generic, TypeVar, Type, Optional, List, Any
 from src.models import Business, User, Customer, Job, Request, ConversationState
 
 T = TypeVar("T")
@@ -40,6 +40,21 @@ class UserRepository:
 
     def add(self, user: User):
         self.session.add(user)
+
+    async def update_preferences(
+        self, phone: str, key: str, value: Any
+    ) -> Optional[Any]:
+        user = await self.get_by_phone(phone)
+        if not user:
+            return None
+
+        old_value = (user.preferences or {}).get(key)
+
+        # Update preferences
+        prefs = dict(user.preferences or {})
+        prefs[key] = value
+        user.preferences = prefs
+        return old_value
 
 
 class BusinessRepository(BaseRepository[Business]):

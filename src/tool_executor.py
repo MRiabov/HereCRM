@@ -7,6 +7,7 @@ from src.repositories import (
     RequestRepository,
     UserRepository,
 )
+from src.services.crm_service import CRMService
 from src.uimodels import (
     AddJobTool,
     ScheduleJobTool,
@@ -161,72 +162,25 @@ class ToolExecutor:
     async def _execute_update_settings(
         self, tool: UpdateSettingsTool
     ) -> tuple[str, Optional[dict]]:
-        user = await self.user_repo.get_by_phone(self.user_phone)
-        if not user:
+        old_value = await self.user_repo.update_preferences(
+            self.user_phone, tool.setting_key, tool.setting_value
+        )
+        if old_value is None and not await self.user_repo.get_by_phone(self.user_phone):
             return "User not found.", None
-
-        # Update preferences (stored as JSON)
-        prefs = dict(user.preferences or {})
-        prefs[tool.setting_key] = tool.setting_value
-        user.preferences = prefs
 
         return (
             f"✔ Updated setting '{tool.setting_key}' to '{tool.setting_value}'",
-            {"action": "update_settings", "old_value": user.preferences.get(tool.setting_key)},
+            {
+                "action": "update_settings",
+                "entity": "user",
+                "phone": self.user_phone,
+                "setting_key": tool.setting_key,
+                "old_value": old_value,
+            },
         )
 
     async def _execute_convert_request(
         self, tool: ConvertRequestTool
     ) -> tuple[str, Optional[dict]]:
-        # Find the request
-        requests = await self.request_repo.search(tool.query, self.business_id)
-        if not requests:
-            return f"Could not find request matching '{tool.query}'", None
-
-        req = requests[0]
-
-        if tool.action == "schedule":
-            # Promotion logic: Request -> Job
-            # Robust Customer Resolution: Try fuzzy match first, then fallback
-            customers = await self.customer_repo.search(tool.query, self.business_id)
-            if not customers:
-                # If no match, try finding any customer in the business
-                all_customers = await self.customer_repo.get_all(self.business_id)
-                if all_customers:
-                    customer_id = all_customers[0].id
-                else:
-                    # Last resort: Create a "General Customer"
-                    new_customer = Customer(
-                        name="General Customer", business_id=self.business_id
-                    )
-                    self.customer_repo.add(new_customer)
-                    await self.session.flush()
-                    customer_id = new_customer.id
-            else:
-                customer_id = customers[0].id
-
-            job = Job(
-                business_id=self.business_id,
-                customer_id=customer_id,
-                description=f"Converted from request: {req.content}. Time: {tool.time or 'N/A'}",
-                status="scheduled" if tool.time else "pending",
-            )
-            self.job_repo.add(job)
-            await self.session.delete(req)
-            return f"✔ Converted Request to Job: {job.description}", {
-                "action": "promote",
-                "entity": "job",
-                "id": job.id,
-                "old_request_content": req.content,
-            }
-
-        elif tool.action == "complete":
-            req.status = "completed"
-            return f"✔ Request marked as completed: {req.content[:30]}", {
-                "action": "update",
-                "entity": "request",
-                "id": req.id,
-                "old_status": "pending",
-            }
-
-        return f"Unknown action: {tool.action}", None
+        service = CRMService(self.session, self.business_id)
+        return await service.convert_request(tool.query, tool.action, tool.time)
