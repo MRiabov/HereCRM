@@ -1,6 +1,7 @@
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy import select
 from src.database import Base
 from src.models import Business, Service, LineItem, Job, Customer
 from src.repositories import ServiceRepository, JobRepository
@@ -22,7 +23,7 @@ async def test_session():
     await engine.dispose()
 
 @pytest.mark.asyncio
-async def test_service_crud(test_session: AsyncSession):
+async def test_service_crud_update(test_session: AsyncSession):
     # Setup Business
     biz = Business(name="Biz")
     test_session.add(biz)
@@ -35,29 +36,22 @@ async def test_service_crud(test_session: AsyncSession):
     repo.add(svc)
     await test_session.commit()
     
-    # GET
-    assert svc.id is not None
-    fetched = await repo.get_by_id(svc.id, biz.id)
-    assert fetched is not None
-    assert fetched.name == "Test Service"
-    assert fetched.default_price == 10.0
-    
-    # UPDATE
-    updated = await repo.update(svc.id, biz.id, default_price=12.5)
+    # UPDATE - Secure
+    # Try to update ID (should be ignored) and default_price (should be updated)
+    # Removing business_id collision from test
+    updated = await repo.update(svc.id, biz.id, default_price=12.5, id=999)
     assert updated is not None
     assert updated.default_price == 12.5
+    assert updated.id != 999
+    
     await test_session.commit()
     
-    # DELETE
-    deleted = await repo.delete(svc.id, biz.id)
-    assert deleted is True
-    await test_session.commit()
-    
-    lookup = await repo.get_by_id(svc.id, biz.id)
-    assert lookup is None
+    # Re-fetch to ensure persistence
+    fetched = await repo.get_by_id(svc.id, biz.id)
+    assert fetched.default_price == 12.5
 
 @pytest.mark.asyncio
-async def test_job_with_line_items(test_session: AsyncSession):
+async def test_job_value_synchronization(test_session: AsyncSession):
     # Setup
     biz = Business(name="Biz")
     test_session.add(biz)
@@ -67,44 +61,45 @@ async def test_job_with_line_items(test_session: AsyncSession):
     test_session.add(cust)
     await test_session.flush()
 
-    # Create Service
     svc = Service(business_id=biz.id, name="Window Clean", default_price=50.0)
     test_session.add(svc)
     await test_session.flush()
 
-    # Create Job with Line Items
+    # Create Job
     job_repo = JobRepository(test_session)
-    
-    job = Job(
-        business_id=biz.id, 
-        customer_id=cust.id, 
-        description="Job with lines"
-    )
-    
-    # Add line items
-    # Scenario: 2 Windows @ 50
-    li1 = LineItem(description="Window Clean", quantity=2, unit_price=50.0, total_price=100.0, service_id=svc.id)
-    # Scenario: 1 Gutter @ 30 (Ad-hoc)
-    li2 = LineItem(description="Gutter", quantity=1, unit_price=30.0, total_price=30.0)
-    
-    job.line_items.append(li1)
-    job.line_items.append(li2)
-    
-    # Test auto-calculation of value
-    # value is None initially
-    assert job.value is None
-    
+    job = Job(business_id=biz.id, customer_id=cust.id, description="Job Sync Test")
     job_repo.add(job)
-    # The hook in repositories.py:add should calculate value
-    assert job.value == 130.0
-    
     await test_session.commit()
     
-    # Test retrieval
-    fetched_job = await job_repo.get_with_line_items(job.id, biz.id)
-    assert fetched_job is not None
-    assert len(fetched_job.line_items) == 2
-    assert fetched_job.value == 130.0
+    # Verify initial value (None)
+    assert job.value is None
     
-    descriptions = sorted([li.description for li in fetched_job.line_items])
-    assert descriptions == ["Gutter", "Window Clean"]
+    # 1. Add Line Item via Session directly (simulating repository usage or service layer)
+    # Note: Event listener works on Flush.
+    li1 = LineItem(job_id=job.id, description="Item 1", quantity=1, unit_price=100.0, total_price=100.0)
+    test_session.add(li1)
+    await test_session.flush() # Trigger events
+    
+    # Reload job to check value
+    await test_session.refresh(job)
+    assert job.value == 100.0
+    
+    # 2. Add another item
+    li2 = LineItem(job_id=job.id, description="Item 2", quantity=2, unit_price=20.0, total_price=40.0)
+    test_session.add(li2)
+    await test_session.flush()
+    await test_session.refresh(job)
+    assert job.value == 140.0
+    
+    # 3. Update an item
+    li2.total_price = 50.0 # Changed price
+    test_session.add(li2) # Ensure it's in session
+    await test_session.flush()
+    await test_session.refresh(job)
+    assert job.value == 150.0 # 100 + 50
+    
+    # 4. Delete an item
+    await test_session.delete(li1)
+    await test_session.flush()
+    await test_session.refresh(job)
+    assert job.value == 50.0

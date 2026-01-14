@@ -1,8 +1,17 @@
 from pydantic.v1 import BaseModel, Field, validator
-from typing import Optional
+from typing import Optional, List
 
 # Allowlist for settings that can be updated via LLM
 ALLOWED_SETTING_KEYS = ["confirm_by_default", "language", "timezone", "notifications"]
+
+
+class LineItemInfo(BaseModel):
+    """Information about a single line item."""
+
+    description: str = Field(..., description="Description of the service or item")
+    quantity: float = Field(1.0, description="Quantity or amount")
+    unit_price: Optional[float] = Field(None, description="Price per unit")
+    total_price: Optional[float] = Field(None, description="Total price for this line item")
 
 
 class AddJobTool(BaseModel):
@@ -16,12 +25,15 @@ class AddJobTool(BaseModel):
     location: Optional[str] = Field(
         None, description="Address or location of the job", max_length=200
     )
-    price: Optional[float] = Field(None, description="Price or value of the job")
+    price: Optional[float] = Field(None, description="Total price or value of the job")
     description: Optional[str] = Field(
         None, description="Details of the work to be done", max_length=500
     )
     status: Optional[str] = Field(
         "pending", description="Status: 'pending', 'done', 'scheduled'"
+    )
+    line_items: Optional[List[LineItemInfo]] = Field(
+        None, description="List of structured line items for the job"
     )
 
 

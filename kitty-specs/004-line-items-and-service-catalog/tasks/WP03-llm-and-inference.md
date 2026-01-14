@@ -7,9 +7,9 @@ subtasks:
   - "T013"
 title: "LLM & Line Item Inference"
 phase: "Phase 2 - Feature Development"
-lane: "planned"
+lane: "for_review"
 assignee: ""
-agent: ""
+agent: "system"
 shell_pid: ""
 review_status: ""
 reviewed_by: ""
@@ -89,3 +89,4 @@ history:
 ## Activity Log
 
 - 2026-01-14T19:10:01Z – antigravity – lane=planned – Prompt generated via /spec-kitty.tasks
+- 2026-01-14T20:57:12Z – system – shell_pid= – lane=for_review – Ready for review

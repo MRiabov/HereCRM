@@ -14,6 +14,7 @@ class UserRole(str, enum.Enum):
 class ConversationStatus(str, enum.Enum):
     IDLE = "idle"
     WAITING_CONFIRM = "waiting_confirm"
+    SETTINGS = "settings"
 
 
 class Business(Base):

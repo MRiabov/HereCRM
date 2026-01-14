@@ -118,7 +118,14 @@ class LLMParser:
             "   - If user wants to UPDATE or EDIT an existing customer/lead (e.g., 'update phone for John', 'edit address for Margaret', 'change price for high street 123', 'update 12345678 to Mary') -> use EditCustomerTool. 'query' MUST be the search term (Name, Phone, or Address) used to identify them. 'name', 'phone', 'location', 'details' should ONLY be populated with the NEW values being changed. If they want to rename someone, 'query' is the OLD name, and 'name' is the NEW name.\n"
             "   - If 'request' is explicitly mentioned with 'add' (e.g., 'add request: ...') -> use AddRequestTool. Extract any mentioned time (e.g., 'tomorrow') into the 'time' field. Default to 'anytime' if not specified.\n"
             "   - If user indicates the job is 'done', 'completed' or 'finished' (even with a past time) -> use AddJobTool with status='done'. Do NOT use ScheduleJobTool for past events.\n"
-            "   - If 'schedule' is used or a specific future time is provided -> use ScheduleJobTool."
+            "   - If 'schedule' is used or a specific future time is provided -> use ScheduleJobTool.\n"
+            "7. LINE ITEM EXTRACTION (for AddJobTool):\n"
+            "   - If multiple tasks or items are mentioned with prices/quantities, extract them into 'line_items'.\n"
+            "   - Examples (for window cleaning company):\n"
+            "     - 'John Doe, Window Clean $50, Gutter Clean $30' -> line_items: [{description: 'Window Clean', total_price: 50.0}, {description: 'Gutter Clean', total_price: 30.0}]\n"
+            "     - '3x Windows for $15 each' -> line_items: [{description: 'Windows', quantity: 3.0, unit_price: 15.0, total_price: 45.0}]\n"
+            "     - 'Gutter Clean, $45' -> line_items: [{description: 'Gutter Clean', total_price: 45.0}]\n"
+            "     - '2 Garden trees' -> line_items: [{description: 'Garden trees', quantity: 2.0}]"
         )
 
     async def parse(

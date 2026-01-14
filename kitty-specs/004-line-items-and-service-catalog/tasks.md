@@ -21,11 +21,11 @@ description: "Work package task list for Line Items & Service Catalog implementa
 
 ### Included Subtasks
 
-- [ ] T001 Implement `Service` model in `src/models.py`
-- [ ] T002 Implement `LineItem` model and update `Job` model in `src/models.py`
-- [ ] T003 [P] Create database migration for `Service` and `LineItem` tables
-- [ ] T004 [P] Implement `ServiceRepository` in `src/repositories.py`
-- [ ] T005 Update `JobRepository` to handle `LineItem` persistence and total value sync
+- [x] T001 Implement `Service` model in `src/models.py`
+- [x] T002 Implement `LineItem` model and update `Job` model in `src/models.py`
+- [x] T003 [P] Create database migration for `Service` and `LineItem` tables
+- [x] T004 [P] Implement `ServiceRepository` in `src/repositories.py`
+- [x] T005 Update `JobRepository` to handle `LineItem` persistence and total value sync
 
 ### Implementation Notes
 
@@ -51,10 +51,10 @@ description: "Work package task list for Line Items & Service Catalog implementa
 
 ### Included Subtasks
 
-- [ ] T006 Add Settings message templates to `src/assets/messages.yaml`
-- [ ] T007 Implement `SETTINGS` state in `WhatsAppService` (`src/services/whatsapp_service.py`)
-- [ ] T008 Implement CRUD operations for `Service` via `SETTINGS` menu commands
-- [ ] T009 [P] Create `chat_utils.py` for generic menu/table rendering if needed
+- [x] T006 Add Settings message templates to `src/assets/messages.yaml`
+- [x] T007 Implement `SETTINGS` state in `WhatsAppService` (`src/services/whatsapp_service.py`)
+- [x] T008 Implement CRUD operations for `Service` via `SETTINGS` menu commands
+- [x] T009 [P] Create `chat_utils.py` for generic menu/table rendering if needed
 
 ### Implementation Notes
 
@@ -79,10 +79,10 @@ description: "Work package task list for Line Items & Service Catalog implementa
 
 ### Included Subtasks
 
-- [ ] T010 Update `AddJobTool` schema in `src/uimodels.py` to include `line_items`
-- [ ] T011 Update `llm_client.py` system prompt and tool definition for line item extraction
-- [ ] T012 Update `ToolExecutor` to process `line_items` during job creation
-- [ ] T013 Implement unit price/quantity/total inference logic in LLM prompting or backend
+- [x] T010 Update `AddJobTool` schema in `src/uimodels.py` to include `line_items`
+- [x] T011 Update `llm_client.py` system prompt and tool definition for line item extraction
+- [x] T012 Update `ToolExecutor` to process `line_items` during job creation
+- [x] T013 Implement unit price/quantity/total inference logic in LLM prompting or backend
 
 ### Implementation Notes
 

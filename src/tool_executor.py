@@ -10,6 +10,7 @@ from src.repositories import (
 from src.services.crm_service import CRMService
 from src.services.template_service import TemplateService
 from src.services.geocoding import GeocodingService
+from src.services.inference_service import InferenceService
 from src.uimodels import (
     AddJobTool,
     AddLeadTool,
@@ -208,6 +209,13 @@ class ToolExecutor:
             location=tool.location,
             status=tool.status or "pending",
         )
+
+        if tool.line_items:
+            inference_service = InferenceService(self.session)
+            job.line_items = await inference_service.infer_line_items(
+                self.business_id, tool.line_items
+            )
+
         self.job_repo.add(job)
         await self.session.flush()
 

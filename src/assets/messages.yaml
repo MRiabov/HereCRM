@@ -72,6 +72,21 @@ convert_success: "✔ Converted Request to Job: {description}"
 convert_failed: "Could not find request matching '{query}'"
 job_multiple_found: "Multiple customers found matching '{query}'. Please be more specific (e.g., use full name or phone)."
 undo_deleted_job: "Undone: Deleted job for {customer_name}"
+settings_menu: |
+  ⚙️ *Settings Mode*
+  
+  Options:
+  - *List Services*: 'List' or 'Show services'
+  - *Add Service*: 'Add Service [Name] [Price]' (e.g., 'Add Service Window Clean 50')
+  - *Delete Service*: 'Delete Service [ID]'
+  - *Exit*: 'Exit' or 'Back'
+service_list: |
+  *Service Catalog*:
+  {services}
+service_added: "✅ Service *'{name}'* added at ${price}."
+service_deleted: "🗑️ Service {id} deleted."
+error_service_not_found: "❌ Service {id} not found."
+error_invalid_service_format: "❌ Invalid format. Usage: 'Add Service [Name] [Price]'"
 
 # Help Message
 help_message: |

@@ -1,12 +1,14 @@
 import logging
 from typing import Any, cast
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import ConversationState, ConversationStatus, User, Request
 from src.repositories import (
     ConversationStateRepository,
     UserRepository,
     BusinessRepository,
+    ServiceRepository,
 )
+from src.models import ConversationState, ConversationStatus, User, Request, Service
+from src.services.chat_utils import format_service_list
 from src.llm_client import LLMParser
 from src.tool_executor import ToolExecutor
 from src.services.template_service import TemplateService
@@ -63,6 +65,9 @@ class WhatsappService:
         if state_record.state == ConversationStatus.WAITING_CONFIRM:
             self.logger.info(f"User {user_phone} in WAITING_CONFIRM mode")
             return await self._handle_waiting_confirm(user, state_record, message_text)
+        elif state_record.state == ConversationStatus.SETTINGS:
+            self.logger.info(f"User {user_phone} in SETTINGS mode")
+            return await self._handle_settings(user, state_record, message_text)
         else:
             return await self._handle_idle(user, state_record, message_text)
 
@@ -82,6 +87,11 @@ class WhatsappService:
         # Handle Edit Last
         if lower_text == "edit last":
             return await self._handle_edit_last(user, state_record)
+
+        # Handle Settings Entry
+        if lower_text in ["settings", "update settings", "config"]:
+            state_record.state = ConversationStatus.SETTINGS
+            return self.template_service.render("settings_menu")
 
         # Parse with LLM
         from datetime import datetime, timezone
@@ -426,3 +436,69 @@ class WhatsappService:
 
     def _generate_help_message(self) -> str:
         return self.template_service.render("help_message")
+
+    async def _handle_settings(
+        self, user: User, state_record: ConversationState, text: str
+    ) -> str:
+        lower_text = text.lower().strip()
+        service_repo = ServiceRepository(self.session)
+
+        # EXIT
+        if lower_text in ["exit", "back", "done", "quit"]:
+            state_record.state = ConversationStatus.IDLE
+            return self.template_service.render("welcome_back")
+
+        # LIST
+        if lower_text in ["list", "show services", "services"]:
+            services = await service_repo.get_all_for_business(user.business_id)
+            formatted = format_service_list(services)
+            return self.template_service.render("service_list", services=formatted)
+
+        # ADD: "Add Service [Name] [Price]"
+        if lower_text.startswith("add service"):
+            # Expected format: "add service Window Clean 50"
+            parts = text.strip().split()
+            # We need at least 4 parts: "Add", "Service", "Name", "Price"
+            # But Name can be multiple words. The last one should be price.
+            if len(parts) < 4:
+                return self.template_service.render("error_invalid_service_format")
+
+            try:
+                price_str = parts[-1]
+                price = float(price_str.replace("$", ""))
+                name = " ".join(parts[2:-1])  # "Window Clean"
+
+                new_service = Service(
+                    business_id=user.business_id,
+                    name=name,
+                    default_price=price,
+                )
+                service_repo.add(new_service)
+                await self.session.commit() # Immediate commit for settings interactions
+
+                return self.template_service.render(
+                    "service_added", name=name, price=f"{price:.2f}"
+                )
+            except ValueError:
+                return self.template_service.render("error_invalid_service_format")
+
+        # DELETE: "Delete Service [ID]"
+        if lower_text.startswith("delete service"):
+            parts = lower_text.split()
+            if len(parts) < 3:
+                return "Usage: Delete Service [ID]"
+            
+            try:
+                svc_id = int(parts[2])
+                success = await service_repo.delete(svc_id, user.business_id)
+                await self.session.commit()
+                
+                if success:
+                    return self.template_service.render("service_deleted", id=svc_id)
+                else:
+                    return self.template_service.render("error_service_not_found", id=svc_id)
+            except ValueError:
+                return "Invalid ID format."
+
+        # UNKNOWN
+        return self.template_service.render("settings_menu")
