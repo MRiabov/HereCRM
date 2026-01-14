@@ -338,6 +338,30 @@ class ToolExecutor:
                 tool.center_lat = lat
                 tool.center_lon = lon
 
+        # Helper to format customer string with smart address
+        def format_customer_str(c: Customer, show_city: bool) -> str:
+            parts = [c.name]
+            if c.phone:
+                parts.append(f"({c.phone})")
+            
+            # Address logic
+            addr_parts = []
+            if c.street:
+                addr_parts.append(c.street)
+            elif c.original_address_input:
+                addr_parts.append(c.original_address_input)
+            
+            if show_city and c.city:
+                addr_parts.append(c.city)
+            
+            if addr_parts:
+                parts.append(f"- {', '.join(addr_parts)}")
+            
+            if c.details:
+                parts.append(f"- {c.details}")
+            
+            return " ".join(parts)
+
         # Dispatch based on entity_type
         if tool.entity_type == "job":
             jobs = await self.job_repo.search(
@@ -353,11 +377,16 @@ class ToolExecutor:
                 center_address=tool.center_address,
             )
             if jobs:
+                # determine city visibility
+                cities = {j.customer.city for j in jobs if j.customer and j.customer.city}
+                show_city = len(cities) > 1
+
                 lines.append("Jobs:")
                 for j in jobs:
+                    cust_str = format_customer_str(j.customer, show_city)
                     desc = j.description or "No description"
                     lines.append(
-                        f"- {j.customer.name}: {desc} (Status: {j.status}) - {j.scheduled_at or 'No schedule'}"
+                        f"- {cust_str}: {desc} (Status: {j.status}) - {j.scheduled_at or 'No schedule'}"
                     )
 
         elif tool.entity_type in ["customer", "lead"]:
@@ -374,11 +403,14 @@ class ToolExecutor:
                 center_address=tool.center_address,
             )
             if customers:
+                # determine city visibility
+                cities = {c.city for c in customers if c.city}
+                show_city = len(cities) > 1
+
                 header = "Leads:" if tool.entity_type == "lead" else "Customers:"
                 lines.append(header)
                 for c in customers:
-                    details_str = f" - {c.details}" if c.details else ""
-                    lines.append(f"- {c.name} ({c.phone or 'No phone'}){details_str}")
+                    lines.append(f"- {format_customer_str(c, show_city)}")
 
         elif tool.entity_type == "request":
             requests = await self.request_repo.search(
@@ -394,13 +426,7 @@ class ToolExecutor:
                     lines.append(f"- {r.content} (Status: {r.status})")
 
         else:
-            # General Search (fallback to original behavior but with date filters if applicable?)
-            # Usually "general" search is text based. If dates are provided, we should probably prefer structured.
-            # But the user might say "search all for 'foo' today".
-            # Let's run all searches with the date filters (best effort)
-
-            # NOTE: For mix of "all", we default to "scheduled" for jobs and "added" for others?
-            # Or just pass dates to all.
+            # General Search
             pass_query_type = tool.query_type
 
             customers = await self.customer_repo.search(
@@ -408,10 +434,7 @@ class ToolExecutor:
                 self.business_id,
                 query_type=pass_query_type
                 if pass_query_type == "added"
-                else None,  # Only filter customers by date if explicitly "added" query?
-                # actually if user says "who did we schedule today", intent is Job.
-                # If user says "who did we add today", intent is Customer/Job created.
-                # Let's pass date filters to all repos.
+                else None,
                 min_date=min_date,
                 max_date=max_date,
                 radius=tool.radius,
@@ -439,16 +462,27 @@ class ToolExecutor:
                 status=tool.status,
             )
 
+            # We need to calculate city visibility across BOTH lists if we want perfect consistency?
+            # Or per-section? The user request implies "client/job search output".
+            # If I have a list of Customers and a list of Jobs, they are separate sections.
+            # I will calculate visibility per section for cleaner reading.
+            
             if customers:
+                cities = {c.city for c in customers if c.city}
+                show_city = len(cities) > 1
                 lines.append("Customers:")
                 for c in customers:
-                    details_str = f" - {c.details}" if c.details else ""
-                    lines.append(f"- {c.name} ({c.phone or 'No phone'}){details_str}")
+                    lines.append(f"- {format_customer_str(c, show_city)}")
+            
             if jobs:
+                cities = {j.customer.city for j in jobs if j.customer and j.customer.city}
+                show_city = len(cities) > 1
                 lines.append("Jobs:")
                 for j in jobs:
+                    cust_str = format_customer_str(j.customer, show_city)
                     desc = j.description or "No description"
-                    lines.append(f"- {j.customer.name}: {desc} (Status: {j.status})")
+                    lines.append(f"- {cust_str}: {desc} (Status: {j.status})")
+
             if requests:
                 lines.append("Requests:")
                 for r in requests:
