@@ -9,6 +9,7 @@ from src.repositories import (
 from src.llm_client import LLMParser
 from src.tool_executor import ToolExecutor
 from src.services.template_service import TemplateService
+from src.uimodels import AddJobTool
 
 
 class WhatsappService:
@@ -54,6 +55,10 @@ class WhatsappService:
         # Handle Undo
         if lower_text == "undo":
             return await self._handle_undo(user, state_record)
+
+        # Handle Edit Last
+        if lower_text == "edit last":
+            return await self._handle_edit_last(user, state_record)
 
         # Parse with LLM
         from datetime import datetime, timezone
@@ -163,8 +168,7 @@ class WhatsappService:
         state_record.state = ConversationStatus.IDLE
         state_record.draft_data = None
 
-        undo_hint = self.template_service.render("undo_hint")
-        return f"{result}\n{undo_hint}"
+        return f"{result}"
 
     async def _handle_undo(self, user: User, state_record: ConversationState) -> str:
         metadata = state_record.last_action_metadata
@@ -251,6 +255,39 @@ class WhatsappService:
 
         return self.template_service.render("error_undo_failed")
 
+    async def _handle_edit_last(
+        self, user: User, state_record: ConversationState
+    ) -> str:
+        metadata = state_record.last_action_metadata
+        if not metadata:
+            return self.template_service.render("error_edit_nothing")
+
+        entity_type = cast(str, metadata.get("entity", "item"))
+        # Construct summary from metadata
+        details_list = []
+        if name := metadata.get("customer_name"):
+            details_list.append(name)
+        if price := metadata.get("price"):
+            # Format price for display
+            if isinstance(price, (int, float)):
+                price_str = f"{int(price)}$" if price == int(price) else f"{price:.2f}$"
+            else:
+                price_str = str(price)
+            details_list.append(price_str)
+        if location := metadata.get("location"):
+            details_list.append(location)
+        if description := metadata.get("description"):
+            details_list.append(description)
+        if content := metadata.get("content"):
+            details_list.append(content[:50])
+
+        details = ", ".join(details_list) if details_list else "no details"
+        return self.template_service.render(
+            "edit_last_prompt",
+            category=metadata.get("category", entity_type).capitalize(),
+            details=details,
+        )
+
     def _generate_summary(self, tool_call: Any) -> str:
         # Map tool class names to friendly display names
         friendly_names = {
@@ -264,6 +301,29 @@ class WhatsappService:
         }
         model_name = tool_call.__class__.__name__
         name = friendly_names.get(model_name, model_name.replace("Tool", ""))
+
+        # Use category if available (e.g. for AddJobTool)
+        if hasattr(tool_call, "category") and tool_call.category:
+            name = f"Add {tool_call.category.capitalize()}"
+
+        if isinstance(tool_call, AddJobTool):
+            price_val = "Not supplied"
+            if tool_call.price is not None:
+                if tool_call.price == int(tool_call.price):
+                    price_val = f"{int(tool_call.price)}$"
+                else:
+                    price_val = f"{tool_call.price:.2f}$"
+
+            return self.template_service.render(
+                "job_summary",
+                category=tool_call.category.capitalize()
+                if tool_call.category
+                else "Job",
+                name=tool_call.customer_name or "Not supplied",
+                address=tool_call.location or "Not supplied",
+                price=price_val,
+                description=tool_call.description or "Not supplied",
+            )
 
         if hasattr(tool_call, "description") and tool_call.description:
             return f"{name}: {tool_call.description}"

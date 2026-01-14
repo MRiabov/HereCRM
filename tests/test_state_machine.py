@@ -59,6 +59,7 @@ async def test_state_idle_to_confirm(
         location=None,
         price=50.0,
         description="Fix window",
+        category="job",
     )
     mock_parser.parse.return_value = tool_call
 
@@ -70,7 +71,7 @@ async def test_state_idle_to_confirm(
         user_phone, "Add job John Doe Fix window 50"
     )
 
-    assert "Please confirm: Add Job" in response
+    assert "Job details:" in response
 
     # Verify state updated in DB
     from sqlalchemy import select
@@ -102,6 +103,9 @@ async def test_state_confirm_yes(
                 "customer_name": "John Doe",
                 "description": "Fix window",
                 "price": 50.0,
+                "category": "job",
+                "customer_phone": None,
+                "location": None,
             },
         },
     )
@@ -326,3 +330,60 @@ async def test_schedule_ambiguous_customer(
 
     assert "Multiple customers found matching 'John Doe'" in response_confirm
     assert "Please be more specific" in response_confirm
+
+
+@pytest.mark.asyncio
+async def test_edit_last_flow(test_session, template_service):
+    # Setup
+    biz = Business(name="Test Biz")
+    test_session.add(biz)
+    await test_session.flush()
+    user = User(phone_number="123456789", business_id=biz.id)
+    test_session.add(user)
+    await test_session.commit()
+
+    mock_parser = AsyncMock()
+    service = WhatsappService(test_session, mock_parser, template_service)
+
+    # 1. Add a job successfully
+    from src.uimodels import AddJobTool
+
+    mock_parser.parse.return_value = AddJobTool(
+        customer_name="John",
+        price=50.0,
+        description="faucet",
+        category="job",
+        customer_phone=None,
+        location=None,
+    )
+    await service.handle_message("123456789", "Add John faucet $50")
+    await service.handle_message("123456789", "yes")
+
+    # 2. Check edit last
+    reply = await service.handle_message("123456789", "edit last")
+    assert "Edit the last Job" in reply
+    assert "John" in reply
+    assert "50$" in reply
+    assert "faucet" in reply
+
+
+@pytest.mark.asyncio
+async def test_unparseable_input_help(test_session, template_service):
+    # Setup
+    biz = Business(name="Test Biz")
+    test_session.add(biz)
+    await test_session.flush()
+    user = User(phone_number="123456789", business_id=biz.id)
+    test_session.add(user)
+    await test_session.commit()
+
+    mock_parser = AsyncMock()
+    service = WhatsappService(test_session, mock_parser, template_service)
+
+    # LLM returns None for unclear input
+    mock_parser.parse.return_value = None
+    reply = await service.handle_message("123456789", "blablabla")
+
+    assert "Sorry, we couldn't understand your request" in reply
+    assert "Available commands" in reply
+    assert "help" in reply

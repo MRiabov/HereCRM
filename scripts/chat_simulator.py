@@ -40,17 +40,20 @@ async def send_message(phone: str, body: str, client: httpx.AsyncClient):
         "Content-Type": "application/json",
     }
 
-    try:
-        response = await client.post(
-            f"{BASE_URL}/webhook", content=payload_bytes, headers=headers
-        )
-        if response.status_code == 200:
-            data = response.json()
-            return data.get("reply", "No reply received.")
-        else:
-            return f"Error {response.status_code}: {response.text}"
-    except Exception as e:
-        return f"Request failed: {e}"
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        try:
+            response = await client.post(
+                f"{BASE_URL}/webhook", content=payload_bytes, headers=headers
+            )
+            if response.status_code == 200:
+                data = response.json()
+                return data.get("reply", "No reply received.")
+            else:
+                return f"Error {response.status_code}: {response.text}"
+        except httpx.ReadTimeout:
+            return "Request failed: Timeout (Server took too long to respond - LLM might be slow)"
+        except Exception as e:
+            return f"Request failed: {type(e).__name__}: {e}"
 
 
 async def main():
@@ -61,7 +64,7 @@ async def main():
 
     current_phone = DEFAULT_PHONE
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=60.0) as client:
         while True:
             try:
                 user_input = input(f"[{current_phone}] > ").strip()

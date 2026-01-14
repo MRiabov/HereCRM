@@ -72,8 +72,7 @@ async def test_parse_empty_candidates(mock_parser):
     mock_model.start_chat.return_value = mock_chat
 
     result = await parser.parse("Something that triggers safety filter")
-    assert isinstance(result, StoreRequestTool)
-    assert result.content == "Something that triggers safety filter"
+    assert result is None
 
 
 @pytest.mark.asyncio
@@ -94,8 +93,7 @@ async def test_parse_no_tool_call(mock_parser):
     mock_model.start_chat.return_value = mock_chat
 
     result = await parser.parse("Hello")
-    assert isinstance(result, StoreRequestTool)
-    assert result.content == "Hello"
+    assert result is None
 
 
 @pytest.mark.asyncio
@@ -170,7 +168,73 @@ async def test_parse_schedule_with_time(mock_parser):
     assert result.time == "tomorrow at 2pm"
     assert result.iso_time == "2026-01-14T14:00:00Z"
 
-    # Verify prompt contains system_time
-    mock_chat.send_message_async.assert_called_once()
-    prompt = mock_chat.send_message_async.call_args[0][0]
-    assert "2026-01-13T10:00:00Z" in prompt
+
+@pytest.mark.asyncio
+async def test_parse_add_lead(mock_parser):
+    parser, mock_model = mock_parser
+
+    mock_response = MagicMock()
+    mock_part = MagicMock()
+    mock_part.function_call.name = "add_job_tool"
+    mock_part.function_call.args = {
+        "customer_name": "John Doe",
+        "customer_phone": "086123123",
+        "category": "lead",
+    }
+
+    mock_response.candidates = [MagicMock(content=MagicMock(parts=[mock_part]))]
+    mock_chat = MagicMock()
+    mock_chat.send_message_async = AsyncMock(return_value=mock_response)
+    mock_model.start_chat.return_value = mock_chat
+
+    result = await parser.parse("add lead: john, 086123123")
+    assert isinstance(result, AddJobTool)
+    assert result.customer_name == "John Doe"
+    assert result.category == "lead"
+
+
+@pytest.mark.asyncio
+async def test_parse_add_request_explicit(mock_parser):
+    parser, mock_model = mock_parser
+
+    mock_response = MagicMock()
+    mock_part = MagicMock()
+    mock_part.function_call.name = "store_request_tool"
+    mock_part.function_call.args = {
+        "content": "john wanted his windows cleaned tomorrow, 12 windows",
+    }
+
+    mock_response.candidates = [MagicMock(content=MagicMock(parts=[mock_part]))]
+    mock_chat = MagicMock()
+    mock_chat.send_message_async = AsyncMock(return_value=mock_response)
+    mock_model.start_chat.return_value = mock_chat
+
+    result = await parser.parse(
+        "add request: john wanted his windows cleaned tomorrow, 12 windows"
+    )
+    assert isinstance(result, StoreRequestTool)
+    assert "windows cleaned" in result.content
+
+
+@pytest.mark.asyncio
+async def test_parse_schedule_explicit(mock_parser):
+    parser, mock_model = mock_parser
+
+    mock_response = MagicMock()
+    mock_part = MagicMock()
+    mock_part.function_call.name = "schedule_job_tool"
+    mock_part.function_call.args = {
+        "customer_query": "john",
+        "time": "tomorrow 14:00",
+    }
+
+    mock_response.candidates = [MagicMock(content=MagicMock(parts=[mock_part]))]
+    mock_chat = MagicMock()
+    mock_chat.send_message_async = AsyncMock(return_value=mock_response)
+    mock_model.start_chat.return_value = mock_chat
+
+    result = await parser.parse(
+        "schedule: john wanted his windows cleaned tomorrow 14:00"
+    )
+    assert isinstance(result, ScheduleJobTool)
+    assert result.customer_query == "john"

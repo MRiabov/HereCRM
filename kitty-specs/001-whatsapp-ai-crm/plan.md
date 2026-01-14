@@ -53,6 +53,10 @@ New SQLAlchemy models for multi-tenancy:
 
 - `LLMParser` class.
 - Defines tools: `add_job`, `add_customer`, `schedule_job`, `edit_customer`.
+- Classification Logic:
+  - If a price tag or job description is supplied -> `AddJob`.
+  - If "add:" is explicitly followed by "request" -> `StoreRequest`.
+  - If "schedule:" is used or a specific time in the future is supplied -> `ScheduleJob`.
 - Returns structured Tool Calls.
 
 #### [NEW] [tools.py](file:///home/maksym/Work/proj/HereCRM/.worktrees/001-whatsapp-ai-crm/src/tools.py)
@@ -71,8 +75,10 @@ New SQLAlchemy models for multi-tenancy:
 ### UX Flows
 
 1. **Mutation**: User says "Add job..." -> LLM parses -> App saves draft to `ConversationState` -> App replies "Confirm? [Yes/No]"
-2. **Confirmation**: User says "Yes" -> App reads draft -> commits to DB -> Clears State -> Replies "Saved. [Undo]".
-3. **Undo**: User says "Undo" -> App checks `last_operation_id` -> Reverses DB change.
+2. **Confirmation**: User says "Yes" -> App reads draft -> commits to DB -> Clears State -> Replies "Saved. [Undo | Edit]".
+3. **Undo**: User says "Undo" -> App checks `last_action_metadata` -> Reverses DB change.
+4. **Edit Last**: User says "edit last" -> App checks `last_action_metadata` -> Generates prompt from metadata -> Replies with edit instructions.
+5. **Error Handling**: If LLM cannot parse input -> App replies "Sorry, we couldn't understand your request" + Help block.
 
 ## Verification Plan
 

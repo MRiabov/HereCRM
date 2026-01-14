@@ -34,10 +34,11 @@ The core paths works, but we need to handle "Schedule..." commands which might i
   - If multiple found, ask user to clarify (or just pick latest for MVP).
   - Update the `Job` record with the new time.
 
-### T019: Fallback to Requests
+### T019: Refined Error Handling
 
-- In `LLMParser`, if the intent is unclear or parsing fails, return `StoreRequestTool`.
-- This ensures no data is lost; it just goes into the "Requests" bucket for manual review.
+- In `LLMParser`, if the intent is unclear or parsing fails, return `None` (stop defaulting to `StoreRequestTool`).
+- In `WhatsappService`, handle `None` by displaying a helpful error message + Help block.
+- This prevents cluttering the "Requests" bucket with random chatter or misunderstood commands.
 
 ### T020a: Configurable YAML Boilerplates
 
@@ -62,7 +63,7 @@ The core paths works, but we need to handle "Schedule..." commands which might i
 ## Definition of Done
 
 - [ ] "Schedule" command works for clear cases.
-- [ ] Ambiguous input saves as a Request.
+- [ ] Ambiguous input returns helpful error and help message.
 - [ ] YAML boilerplates are used for all customer-facing messages.
 - [ ] Walkthrough artifact created/updated.
 - [ ] Feature is ready for merge.

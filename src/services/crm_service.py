@@ -68,6 +68,7 @@ class CRMService:
                 "entity": "job",
                 "id": job.id,
                 "old_request_content": req.content,
+                "description": job.description,
             }
 
         elif action == "complete":

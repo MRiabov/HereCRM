@@ -24,10 +24,10 @@
 **Priority**: High - Core Feature
 **Test**: `pytest tests/test_llm_parser.py` (Verify extraction accuracy >95% on sample set)
 
-- [ ] **T006**: Setup Gemini Client wrapper and configuration. [[WP02-llm-parsing-engine.md]]
-- [ ] **T007**: Define Pydantic models for Tools (`AddJob`, `ScheduleJob`, `StoreRequest`, `ConvertRequest`). [[WP02-llm-parsing-engine.md]]
-- [ ] **T008**: Implement `LLMParser.parse(text)` to return structured Tool Calls. [[WP02-llm-parsing-engine.md]]
-- [ ] **T009**: Write unit tests for `LLMParser` with various input scenarios. [[WP02-llm-parsing-engine.md]]
+- [x] **T006**: Setup Gemini Client wrapper and configuration. [[WP02-llm-parsing-engine.md]]
+- [x] **T007**: Define Pydantic models for Tools (`AddJob`, `ScheduleJob`, `StoreRequest`, `ConvertRequest`). [[WP02-llm-parsing-engine.md]]
+- [x] **T008**: Implement `LLMParser.parse(text)` with refined classification logic (Price/Desc -> Job, "add request" -> Request, Time -> Schedule). [[WP02-llm-parsing-engine.md]]
+- [x] **T009**: Write unit tests for `LLMParser` covering user-specified intent nuances. [[WP02-llm-parsing-engine.md]]
 
 ---
 
@@ -40,6 +40,7 @@
 - [x] **T010**: Implement `WhatsappService` class structure. [[WP03-core-crm-logic-and-state.md]]
 - [x] **T011**: Implement Confirmation Flow: Save draft to `ConversationState`, handle "Yes/No". [[WP03-core-crm-logic-and-state.md]]
 - [x] **T012**: Implement Undo Logic: Transaction rollback or compensation mechanism. [[WP03-core-crm-logic-and-state.md]]
+- [ ] **T012b**: Implement "Edit Last" Logic: Generate edit prompt from last action metadata. [[WP03-core-crm-logic-and-state.md]]
 - [x] **T012a**: Implement Request Conversion Logic (Promote Request -> Job). [[WP03-core-crm-logic-and-state.md]]
 - [x] **T013**: Wire up Tool Execution: Map LLM Tool Calls to Repository CRUD methods. [[WP03-core-crm-logic-and-state.md]]
 
@@ -65,10 +66,11 @@
 **Test**: Manual E2E Walkthrough
 
 - [ ] **T018**: Implement specific logic for "Schedule" command (updating existing records). [[WP05-refinement-and-productionizing.md]]
-- [ ] **T019**: Implement fallback logic: Store ambiguous inputs as `Request`. [[WP05-refinement-and-productionizing.md]]
+- [ ] **T019**: Refine error handling: Display helpful error + Help message for unparseable inputs instead of storing as Request. [[WP05-refinement-and-productionizing.md]]
 - [ ] **T019a**: Implement "Help" command to explain bot usage. [[WP05-refinement-and-productionizing.md]]
 - [ ] **T020a**: Implement Configurable YAML Boilerplates for customer messages. [[WP05-refinement-and-productionizing.md]]
 - [ ] **T020b**: Refactor hardcoded messages to use YAML templates. [[WP05-refinement-and-productionizing.md]]
+- [ ] **T020c**: Verify refined intent nuances with `chat_simulator.py`. [[WP05-refinement-and-productionizing.md]]
 - [ ] **T020**: Perform final E2E Walkthrough and verify all Success Criteria. [[WP05-refinement-and-productionizing.md]]
 
 ---
@@ -79,8 +81,8 @@
 **Priority**: High - Security
 **Test**: `pytest tests/test_security.py` (Verify rate limiting, input validation, and tenant isolation)
 
-- [ ] **T021**: Implement Rate Limiting middleware for the webhook endpoint. [[WP06-security-hardening.md]]
-- [ ] **T022**: Implement Input Validation and character limits for Webhook payload and LLM Tool arguments. [[WP06-security-hardening.md]]
-- [ ] **T023**: Harden LLM System Instructions to prevent prompt injection and restrict `UpdateSettingsTool` keys. [[WP06-security-hardening.md]]
-- [ ] **T024**: Implement a security audit tool/script to verify multi-tenant scoping in the repository layer. [[WP06-security-hardening.md]]
-- [ ] **T025**: Refactor error handling to return generic messages and prevent PII leakage in logs. [[WP06-security-hardening.md]]
+- [x] **T021**: Implement Rate Limiting middleware for the webhook endpoint. [[WP06-security-hardening.md]]
+- [x] **T022**: Implement Input Validation and character limits for Webhook payload and LLM Tool arguments. [[WP06-security-hardening.md]]
+- [x] **T023**: Harden LLM System Instructions to prevent prompt injection and restrict `UpdateSettingsTool` keys. [[WP06-security-hardening.md]]
+- [x] **T024**: Implement a security audit tool/script to verify multi-tenant scoping in the repository layer. [[WP06-security-hardening.md]]
+- [x] **T025**: Refactor error handling to return generic messages and prevent PII leakage in logs. [[WP06-security-hardening.md]]

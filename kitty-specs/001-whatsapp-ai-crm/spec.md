@@ -20,18 +20,18 @@ A lightning-fast, text-first CRM living entirely within WhatsApp. It is designed
 
 The system must parse free-form messages to perform structured actions.
 
-- **Add Job**:
-  - Input: "Add: John, 085 1231234, High Road 34, 50EUR"
-  - Action: Create specific Job record linked to Customer (create if new).
-  - Extraction: Name, Phone (optional), Location, Price.
+- **Add Job/Lead/Client**:
+  - Input: "add John, fix leaky faucet, 086123123" or "add John, 085123123"
+  - Action: Create Job record linked to Customer. If a price tag (e.g., "50EUR", "$150") or a job description (e.g., "fix leaky faucet") is supplied, it's a job. Adding a lead/client/customer without details also defaults to adding a job.
+  - Extraction: Name, Phone (optional), Location, Price, Description.
   
 - **Schedule**:
-  - Input: "schedule 085123123 at 14:00" or "schedule High Road 34"
-  - Action: Update Job or Customer record with a time/date.
+  - Input: "schedule 085123123 at 14:00" or "schedule: john wanted his windows cleaned tomorrow 14:00"
+  - Action: Update Job or Customer record with a time/date. Triggered if "schedule:" is used or a specific time in the future is supplied.
   
 - **Store Request**:
-  - Input: "Customer called to come later" (implied request)
-  - Action: Store as a "Request" item for later triage.
+  - Input: "add request: john wanted his windows cleaned tomorrow, 12 windows"
+  - Action: Store as a "Request" item for later triage. ONLY stored as a request if "add:" is explicitly followed by "request".
 
 ### 2.3. Querying
 
@@ -47,6 +47,7 @@ The system must parse free-form messages to perform structured actions.
   - Example: `✔ Job added: John – High Road 34 – €50`
 - **Undo/Edit**: The confirmation response must include options (buttons or text hints) to `Reply: undo | edit`.
 - **Undo Action**: Reverts the last operation.
+- **Edit Last Action**: Prompt the user to edit the last successful job, customer, or request. Example reply: `Edit the last job (John, 50$, No location). Type the job or customer details as you would before.`
 - **Configurable Messaging**: All system-generated messages sent to customers must be configurable via a YAML file to allow easy text editing without code changes. These messages support variable interpolation using `{}` or `{{}}` syntax.
 
 ### 2.5. Security & Safety
@@ -77,6 +78,13 @@ The system must parse free-form messages to perform structured actions.
 4. **User** replies: "undo"
 5. **System** replies: `All changes reverted.`
 
+### Scenario 1b: Edit Last
+
+1. **User** sends: "Add: John, 50$"
+2. **System** replies: `✔ Job added: John – No location – €50.0 (Reply 'undo' to revert)`
+3. **User** sends: "edit last"
+4. **System** replies: `Edit the last job (John, 50$, No location). Type the job or customer details as you would before.`
+
 ### Scenario 2: Team Collaboration
 
 1. **Owner** sends: "Add user 555-0200"
@@ -84,11 +92,14 @@ The system must parse free-form messages to perform structured actions.
 3. **Colleague** (555-0200) sends: "Show all jobs"
 4. **System** returns list of jobs created by Owner.
 
-### Scenario 3: Scheduling
+### Scenario 3: Scheduling & Requests
 
-1. **User** sends: "Schedule Sarah at 2pm tomorrow"
-2. **System** updates Sarah's latest job/record with appointment time 2026-01-14T14:00:00.
-3. **System** replies: `✔ Scheduled Sarah Smith for Tomorrow 14:00`
+1. **User** sends: "add request: Sarah wanted her windows cleaned, 12 windows"
+2. **System** creates a Request for Sarah.
+3. **System** replies: `✔ Request stored: Sarah wanted her windows cleaned`
+4. **User** sends: "schedule Sarah at 2pm tomorrow"
+5. **System** updates Sarah's latest job/record with appointment time 2026-01-14T14:00:00.
+6. **System** replies: `✔ Scheduled Sarah Smith for Tomorrow 14:00`
 
 ## 5. Success Criteria
 
@@ -101,5 +112,5 @@ The system must parse free-form messages to perform structured actions.
 
 - **WhatsApp API**: We assume using the existing a WhatsApp webhook setup.
 - **LLM Cost**: Per-message LLM processing is acceptable for the business model.
-- **Parsing**: Ambiguous inputs will default to "Requests" storage if structured extraction fails.
+- **Parsing**: If structured extraction fails, the system will respond with a "Sorry, we couldn't understand your request" message followed by a help guide, rather than storing it as a Request.
 - **Phone Numbers**: Assumed to be unique identifiers for users.

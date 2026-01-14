@@ -5,6 +5,7 @@ from src.database import Base
 from src.models import Business, Job, Customer, Request
 from src.tool_executor import ToolExecutor
 from src.uimodels import AddJobTool, ConvertRequestTool
+from src.services.template_service import TemplateService
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -24,13 +25,20 @@ async def test_session():
     await engine.dispose()
 
 
+@pytest.fixture
+def template_service():
+    return TemplateService()
+
+
 @pytest.mark.asyncio
-async def test_execute_add_job_new_customer(test_session: AsyncSession):
+async def test_execute_add_job_new_customer(
+    test_session: AsyncSession, template_service: TemplateService
+):
     biz = Business(name="Test Biz")
     test_session.add(biz)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id, "123456789")
+    executor = ToolExecutor(test_session, biz.id, "123456789", template_service)
     tool = AddJobTool(
         customer_name="Alice",
         customer_phone="555-1234",
@@ -58,7 +66,9 @@ async def test_execute_add_job_new_customer(test_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_execute_convert_request(test_session: AsyncSession):
+async def test_execute_convert_request(
+    test_session: AsyncSession, template_service: TemplateService
+):
     biz = Business(name="Test Biz")
     test_session.add(biz)
     await test_session.flush()
@@ -68,7 +78,7 @@ async def test_execute_convert_request(test_session: AsyncSession):
     test_session.add(req)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id, "123456789")
+    executor = ToolExecutor(test_session, biz.id, "123456789", template_service)
     tool = ConvertRequestTool(query="roof", action="schedule", time="tomorrow")
 
     result, metadata = await executor.execute(tool)
@@ -89,7 +99,9 @@ async def test_execute_convert_request(test_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_execute_log_request(test_session: AsyncSession):
+async def test_execute_log_request(
+    test_session: AsyncSession, template_service: TemplateService
+):
     biz = Business(name="Test Biz")
     test_session.add(biz)
     await test_session.flush()
@@ -99,7 +111,7 @@ async def test_execute_log_request(test_session: AsyncSession):
     test_session.add(req)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id, "123456789")
+    executor = ToolExecutor(test_session, biz.id, "123456789", template_service)
     tool = ConvertRequestTool(query="Info", action="log")
 
     result, metadata = await executor.execute(tool)

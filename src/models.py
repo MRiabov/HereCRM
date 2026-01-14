@@ -69,7 +69,7 @@ class Job(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"))
-    description: Mapped[str] = mapped_column(Text)
+    description: Mapped[Optional[str]] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String, default="pending")
     value: Mapped[Optional[float]] = mapped_column(Float)
     location: Mapped[Optional[str]] = mapped_column(String)

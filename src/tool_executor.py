@@ -95,14 +95,29 @@ class ToolExecutor:
         self.job_repo.add(job)
         await self.session.flush()
 
+        category = tool.category.lower() if tool.category else "job"
+        price_info = ""
+        if category != "lead":
+            price_info = f" – €{job.value}" if job.value else " – No price"
+
         return (
             self.template_service.render(
                 "job_added",
+                category=category.capitalize(),
                 name=customer.name,
                 location=job.location or "No location",
-                price=f"€{job.value}" if job.value else "No price",
+                price_info=price_info,
             ),
-            {"action": "create", "entity": "job", "id": job.id},
+            {
+                "action": "create",
+                "entity": "job",
+                "id": job.id,
+                "category": tool.category or "job",
+                "customer_name": customer.name,
+                "price": job.value,
+                "location": job.location,
+                "description": job.description,
+            },
         )
 
     async def _execute_schedule_job(
@@ -146,8 +161,10 @@ class ToolExecutor:
             # In a real app we'd use a dedicated library like dateparser
             job.status = "scheduled"
             # We still keep it in description for the user to see exactly what was parsed
-            if "(Scheduled:" not in job.description:
+            if job.description and "(Scheduled:" not in job.description:
                 job.description = f"{job.description} (Scheduled: {tool.time})"
+            elif not job.description:
+                job.description = f"(Scheduled: {tool.time})"
 
             return self.template_service.render(
                 "job_scheduled", name=job.customer.name, time=tool.time
@@ -156,6 +173,8 @@ class ToolExecutor:
                 "entity": "job",
                 "id": job.id,
                 "old_status": "pending",
+                "customer_name": job.customer.name,
+                "description": job.description,
             }
 
         return "Could not find a job to schedule. Try adding a job first.", None
@@ -174,6 +193,7 @@ class ToolExecutor:
             "action": "create",
             "entity": "request",
             "id": req.id,
+            "content": tool.content,
         }
 
     async def _execute_search(self, tool: SearchTool) -> tuple[str, Optional[dict]]:

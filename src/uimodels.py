@@ -6,7 +6,9 @@ ALLOWED_SETTING_KEYS = ["confirm_by_default", "language", "timezone", "notificat
 
 
 class AddJobTool(BaseModel):
-    """Add a new job/work order for a customer."""
+    """Add a new job, lead, client, or customer.
+    Triggered if a price tag or job description is supplied,
+    or if adding a person/entity without specific 'request' keyword."""
 
     customer_name: str = Field(..., description="Name of the customer", max_length=100)
     customer_phone: Optional[str] = Field(
@@ -16,13 +18,17 @@ class AddJobTool(BaseModel):
         None, description="Address or location of the job", max_length=200
     )
     price: Optional[float] = Field(None, description="Price or value of the job")
-    description: str = Field(
-        ..., description="Details of the work to be done", max_length=500
+    description: Optional[str] = Field(
+        None, description="Details of the work to be done", max_length=500
+    )
+    category: Optional[str] = Field(
+        "job", description="Category: job, lead, client, customer"
     )
 
 
 class ScheduleJobTool(BaseModel):
-    """Schedule an existing or new job for a specific time."""
+    """Schedule an existing or new job for a specific time.
+    Triggered if 'schedule' is used or a specific time/date in the future is supplied."""
 
     job_id: Optional[int] = Field(None, description="ID of the job if known")
     customer_query: Optional[str] = Field(
@@ -41,7 +47,8 @@ class ScheduleJobTool(BaseModel):
 
 
 class StoreRequestTool(BaseModel):
-    """Store a general request or note from a customer that isn't a job yet."""
+    """Store a general request or note.
+    ONLY triggered if user explicitly says 'add request' or similar."""
 
     content: str = Field(..., description="The content of the request or note")
 

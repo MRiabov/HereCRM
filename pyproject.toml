@@ -3,7 +3,7 @@ name = "herecrm"
 version = "0.1.0"
 description = "A CRM right in Whatsapp!"
 dependencies = [
-    "fastapi",
+    "fastapi[standard]",
     "uvicorn[standard]",
     "requests",
     "httpx",
@@ -15,7 +15,7 @@ dependencies = [
     "google-generativeai",
     "pytest",
     "pytest-asyncio",
-    "PyYAML"
+    "PyYAML",
 ]
 
 [build-system]
