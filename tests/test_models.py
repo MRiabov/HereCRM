@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, User, Customer, Job, UserRole
+from src.models import Business, Job
 from src.repositories import JobRepository
 
 # Use in-memory SQLite for tests
@@ -61,3 +61,30 @@ async def test_tenant_isolation(test_session: AsyncSession):
     # Verify we cannot see Job B
     job_lookup = await repo.get_by_id(id=job_b.id, business_id=biz_a.id)
     assert job_lookup is None
+
+
+@pytest.mark.asyncio
+async def test_message_log_creation(test_session: AsyncSession):
+    from src.models import MessageLog, MessageType, MessageStatus
+
+    log = MessageLog(
+        recipient_phone="1234567890",
+        content="Hello Test",
+        message_type=MessageType.WHATSAPP,
+        status=MessageStatus.PENDING,
+        trigger_source="test_source",
+    )
+    test_session.add(log)
+    await test_session.commit()
+
+    # Query it back
+    from sqlalchemy import select
+
+    result = await test_session.execute(select(MessageLog).where(MessageLog.id == log.id))
+    db_log = result.scalar_one()
+
+    assert db_log.recipient_phone == "1234567890"
+    assert db_log.content == "Hello Test"
+    assert db_log.message_type == MessageType.WHATSAPP
+    assert db_log.status == MessageStatus.PENDING
+    assert db_log.created_at is not None
