@@ -9,7 +9,7 @@ from src.repositories import (
 from src.llm_client import LLMParser
 from src.tool_executor import ToolExecutor
 from src.services.template_service import TemplateService
-from src.uimodels import AddJobTool, ScheduleJobTool, StoreRequestTool
+from src.uimodels import AddJobTool, AddCustomerTool, ScheduleJobTool, StoreRequestTool
 
 
 class WhatsappService:
@@ -128,6 +128,7 @@ class WhatsappService:
         # Import tools for reconstruction (could be improved)
         from src.uimodels import (
             AddJobTool,
+            AddCustomerTool,
             ScheduleJobTool,
             StoreRequestTool,
             SearchTool,
@@ -138,6 +139,7 @@ class WhatsappService:
 
         model_map = {
             "AddJobTool": AddJobTool,
+            "AddCustomerTool": AddCustomerTool,
             "ScheduleJobTool": ScheduleJobTool,
             "StoreRequestTool": StoreRequestTool,
             "SearchTool": SearchTool,
@@ -321,22 +323,26 @@ class WhatsappService:
                 address=tool_call.location or "Not supplied",
             )
 
-            if tool_call.category and tool_call.category.lower() == "lead":
-                return self.template_service.render(
-                    "lead_summary",
-                    client_details=client_details,
-                    description=tool_call.description or "Not supplied",
-                )
-
             return self.template_service.render(
                 "job_summary",
-                category=tool_call.category.capitalize()
-                if tool_call.category
-                else "Job",
+                category="Job",  # AddJobTool is now strictly jobs
                 client_details=client_details,
                 price=price_val,
                 description=tool_call.description or "Not supplied",
                 status=tool_call.status.capitalize() if tool_call.status else "Pending",
+            )
+
+        if isinstance(tool_call, AddCustomerTool):
+            client_details = self.template_service.render(
+                "client_details",
+                name=tool_call.name,
+                phone=tool_call.phone or "Not supplied",
+                address=tool_call.location or "Not supplied",
+            )
+            return self.template_service.render(
+                "lead_summary",
+                client_details=client_details,
+                description=tool_call.details or "Not supplied",
             )
 
         if isinstance(tool_call, ScheduleJobTool):
@@ -362,6 +368,7 @@ class WhatsappService:
             return self.template_service.render(
                 "request_summary",
                 client_details=client_details,
+                time=tool_call.time,
                 content=tool_call.content,
             )
 

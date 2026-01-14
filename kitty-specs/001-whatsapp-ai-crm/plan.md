@@ -28,13 +28,13 @@ Build a multi-tenant, text-driven CRM within WhatsApp. Users can manage jobs, cu
 
 New SQLAlchemy models for multi-tenancy:
 
-- `Business`: Tenant root.
-- `User`: Linked to Business (many-to-one). Phone number is unique.
-- `Customer`: Linked to Business.
-- `Job`: Linked to Business & Customer.
-- `RecallRequest`: Unstructured requests.
+- `Business`: Tenant root. **New**: `settings` (JSON) for defaults like `default_city`, `default_country`.
+- `User`: Linked to Business (many-to-one). Phone number is unique. **New**: `timezone` field (default 'UTC').
+- `Customer`: Linked to Business. Is defined as Lead if no Job is attached. **New**: `street`, `city`, `country`, `original_address_input`, `created_at` timestamp, `latitude`, `longitude`.
+- `Job`: Linked to Business & Customer. **New**: `created_at` timestamp, `latitude`, `longitude`.
+- `Request`: Unstructured requests. **New**: `created_at` timestamp.
 - `ConversationState`: For multi-turn flows (confirmations, ambiguities).
-  - Fields: `phone_number`, `state_enum` (IDLE, WAITING_CONFIRM), `draft_data` (JSON), `last_updated`.
+  - Fields: `phone_number`, `state_enum` (IDLE, WAITING_CONFIRM), `draft_data` (JSON), `last_updated`, `last_action_metadata`.
 
 ### Application Logic
 
@@ -52,11 +52,22 @@ New SQLAlchemy models for multi-tenancy:
 #### [NEW] [llm_client.py](file:///home/maksym/Work/proj/HereCRM/.worktrees/001-whatsapp-ai-crm/src/llm_client.py)
 
 - `LLMParser` class.
-- Defines tools: `add_job`, `add_customer`, `schedule_job`, `edit_customer`.
+- Defines tools:
+  - `AddJobTool`: identifying a job request (has price or job task description).
+  - `AddCustomerTool`: identifying a lead/client/customer (no job details). We first search for a customer! Extracts `street`, `city`, `country`, `original_address_input`. Defaults for city/country applied from Business settings if missing.
+  - `EditCustomerTool`: updating customer details.
+  - `EditCustomerTool`: updating customer details.
+  - `StoreRequestTool`: storing generic requests.
+  - `SearchTool`: **Enhanced** to support structured queries:
+    - `entity_type` (Job, Customer, Request, Lead).
+    - `query_type` (General, Added, Scheduled).
+    - `min_date` / `max_date` (ISO strings for flexible date ranges).
+    - `status` (pending, done, etc.).
 - Classification Logic:
   - If a price tag or job description is supplied -> `AddJob`.
   - If "add:" is explicitly followed by "request" -> `StoreRequest`.
-  - If "schedule:" is used or a specific time in the future is supplied -> `ScheduleJob`.
+  - If "add lead" or just a person's details without job info -> `AddCustomerTool`.
+  - **Definition**: A "Lead" is explicitly defined as a **Customer with no associated Jobs**.
 - Returns structured Tool Calls.
 
 #### [NEW] [tools.py](file:///home/maksym/Work/proj/HereCRM/.worktrees/001-whatsapp-ai-crm/src/tools.py)
@@ -90,6 +101,19 @@ New SQLAlchemy models for multi-tenancy:
   - `test_state_machine.py`: Simulate multi-turn flows (Command -> Wait -> Confirm).
 - **Integration Tests**:
   - `test_webhook.py`: Mock WhatsApp request -> Verify DB state changes.
+  - `test_search_features.py`: **New** Test suite covering 15+ complex search scenarios:
+    - "jobs scheduled for today" vs "jobs added today"
+    - "customers with jobs today"
+    - "leads added yesterday" (filtering customers w/o jobs + date)
+    - "leads added yesterday" (filtering customers w/o jobs + date)
+    - "search within 200m of..." (Geo-spatial proximity)
+    - Timezone-aware date calculations.
+
+### Geo-Spatial Verification
+
+- Verify `haversine_distance` calculation in Repositories.
+- Verify mocks for Geocoding (London/Dublin).
+- Ensure coordinates are correctly stored on create/add.
 
 ### Manual Verification
 

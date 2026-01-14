@@ -71,7 +71,7 @@ async def test_state_idle_to_confirm(
         user_phone, "Add job John Doe Fix window 50"
     )
 
-    assert "Job details:" in response
+    assert "Job summary:" in response
 
     # Verify state updated in DB
     from sqlalchemy import select

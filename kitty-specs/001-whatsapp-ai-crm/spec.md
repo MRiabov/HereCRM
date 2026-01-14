@@ -20,10 +20,16 @@ A lightning-fast, text-first CRM living entirely within WhatsApp. It is designed
 
 The system must parse free-form messages to perform structured actions.
 
-- **Add Job/Lead/Client**:
-  - Input: "add John, fix leaky faucet, 086123123" or "add John, 085123123"
-  - Action: Create Job record linked to Customer. If a price tag (e.g., "50EUR", "$150") or a job description (e.g., "fix leaky faucet") is supplied, it's a job. Adding a lead/client/customer without details also defaults to adding a job.
+- **Add Job**:
+  - Input: "add John, fix leaky faucet, 086123123" or "add John, 085123123, 50eur"
+  - Action: Create Job record linked to Customer. Requires a price or job description.
   - Extraction: Name, Phone (optional), Location, Price, Description.
+
+- **Add Lead/Client**:
+  - Input: "add lead John, 085123123"
+  - Action: Create Customer record ONLY. No Job is created.
+  - Definition: A "Lead" is a Customer with no associated Jobs.
+  - Extraction: Name, Phone, Address (Street, City, Country - default from settings if missing), Original Address Input, Description (stored in Customer details).
   
 - **Schedule**:
   - Input: "schedule 085123123 at 14:00" or "schedule: john wanted his windows cleaned tomorrow 14:00"
@@ -31,14 +37,34 @@ The system must parse free-form messages to perform structured actions.
   
 - **Store Request**:
   - Input: "add request: john wanted his windows cleaned tomorrow, 12 windows"
-  - Action: Store as a "Request" item for later triage. ONLY stored as a request if "add:" is explicitly followed by "request".
+  - Input: "add request: john wanted his windows cleaned tomorrow, 12 windows"
+  - Action: Store as a "Request" item with structured content and time. ONLY stored as a request if "add:" is explicitly followed by "request".
+  - Extraction: Content, Client Details (if available), Time (default: "anytime").
 
 ### 2.3. Querying
 
 - **Natural Language Search**:
-  - "show jobs for customer with 085 123123"
-  - "all customers named John"
-  - "requests"
+  - Job querying:
+    - "show jobs for customer with 085 123123"
+    - "show jobs for customer with on High Street 44"
+    - "who did we schedule on 14:00 today?"
+    - "which job did we do on 10:00 today?"
+    - "which job do we have on 10:00 today?"
+    - "show jobs for today"
+    - "show schedule for today"
+    - "show completed jobs for today"
+  - Customer querying:
+    - "all customers named John"
+    - "show all leads"
+    - "show leads added today"
+    - "show customers which jobs we did today".
+    - "show all leads without jobs".
+  - Request querying:
+    - "show requests"
+    - "Which requests are scheduled for saturday?"
+  - **Geo-Search** (New):
+    - "Search within 200m from me" (using User's location)
+    - "Search within 1km of High Street 34, Dublin" (using OpenStreetMap Geocoding)
 - **Output**: Formatted list of results (concise).
 
 ### 2.4. User Experience
@@ -61,10 +87,10 @@ The system must parse free-form messages to perform structured actions.
 
 ## 3. Data Model (Conceptual)
 
-- **Business**: [ID, Name, CreatedAt]
+- **Business**: [ID, Name, Settings (JSON, includes default_city, default_country), CreatedAt]
 - **User**: [ID, Phone, Role (Owner/Member), BusinessID]
-- **Customer**: [ID, Name, Phone, BusinessID]
-- **Job**: [ID, CustomerID, Location, Value, Status, BusinessID]
+- **Customer**: [ID, Name, Phone, Street, City, Country, OriginalAddressInput, Latitude, Longitude, BusinessID]
+- **Job**: [ID, CustomerID, Location, Value, Status, Latitude, Longitude, BusinessID]
 - **Request**: [ID, Content, Status, BusinessID]
 - **Appointment**: [ID, JobID, Time, BusinessID] (or field on Job)
 

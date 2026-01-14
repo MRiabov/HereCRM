@@ -44,6 +44,7 @@ class User(Base):
     preferences: Mapped[dict] = mapped_column(
         JSON, default=lambda: {"confirm_by_default": False}
     )
+    timezone: Mapped[str] = mapped_column(String, default="UTC")
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="users")
@@ -57,6 +58,15 @@ class Customer(Base):
     name: Mapped[str] = mapped_column(String, index=True)
     phone: Mapped[Optional[str]] = mapped_column(String)
     details: Mapped[Optional[str]] = mapped_column(Text)
+    street: Mapped[Optional[str]] = mapped_column(String)
+    city: Mapped[Optional[str]] = mapped_column(String)
+    country: Mapped[Optional[str]] = mapped_column(String)
+    original_address_input: Mapped[Optional[str]] = mapped_column(String)
+    latitude: Mapped[Optional[float]] = mapped_column(Float)
+    longitude: Mapped[Optional[float]] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="customers")
@@ -73,7 +83,12 @@ class Job(Base):
     status: Mapped[str] = mapped_column(String, default="pending")
     value: Mapped[Optional[float]] = mapped_column(Float)
     location: Mapped[Optional[str]] = mapped_column(String)
+    latitude: Mapped[Optional[float]] = mapped_column(Float)
+    longitude: Mapped[Optional[float]] = mapped_column(Float)
     scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="jobs")
@@ -87,6 +102,9 @@ class Request(Base):
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     content: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String, default="pending")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="requests")

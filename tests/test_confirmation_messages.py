@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock
 from src.services.whatsapp_service import WhatsappService
-from src.uimodels import AddJobTool, ScheduleJobTool
+from src.uimodels import AddJobTool, ScheduleJobTool, StoreRequestTool
 from src.services.template_service import TemplateService
 
 
@@ -68,3 +68,27 @@ def test_lead_summary(service):
     assert "Description: Interested in quote" in summary
     assert "Status:" not in summary
     assert "Value:" not in summary
+
+
+def test_request_summary(service):
+    tool = StoreRequestTool(
+        content="Call John tomorrow", customer_name="John", customer_phone="0861234567"
+    )
+    summary = service._generate_summary(tool)
+    print(f"DEBUG: Generated Request Summary:\n{summary}")
+    assert "Request details:" in summary
+    assert "Client details:" in summary
+    assert "Name: John" in summary
+    assert "Phone: 0861234567" in summary
+    assert "Content: Call John tomorrow" in summary
+    # Default is "anytime" in the model, but here not specified in constructor, let's see default.
+    # Actually invalid because 'time' field in StoreRequestTool has a default "anytime"
+    # But let's pass it explicitly to be safe and test it.
+
+
+def test_request_summary_with_time(service):
+    tool = StoreRequestTool(
+        content="Call John tomorrow", customer_name="John", time="Tomorrow"
+    )
+    summary = service._generate_summary(tool)
+    assert "Time: Tomorrow" in summary

@@ -2,7 +2,38 @@
 
 **Feature**: WhatsApp AI CRM
 **Status**: Planned
-**Work Packages**: 6
+**Work Packages**: 8
+
+## Work Package 7: Advanced Search & Filtering
+
+**Goal**: Enable structured queries by date, type, status.
+**Priority**: High - Core Feature
+**Test**: `pytest tests/test_search_features.py`
+
+- [x] **T026**: Update `SearchTool` definition. [[WP07-advanced-search.md]]
+- [x] **T027**: Implement Repo logic for Customer searches. [[WP07-advanced-search.md]]
+- [x] **T028**: Implement Repo logic for Job searches. [[WP07-advanced-search.md]]
+- [x] **T029**: Implement Repo logic for Request searches. [[WP07-advanced-search.md]]
+- [x] **T030**: Wire up ToolExecutor for structured search. [[WP07-advanced-search.md]]
+- [x] **T031**: Verify with Test Suite. [[WP07-advanced-search.md]]
+
+---
+
+## Work Package 8: Geolocation & Maps Integration
+
+**Goal**: Store coordinates and enable proximity-based search.
+**Priority**: Medium - Enhancement
+**Test**: `pytest tests/test_search_features.py`
+
+- [x] **T032**: Data Model updates (lat/lon). [[WP08-geolocation.md]]
+- [x] **T033**: SearchTool updates (radius/center). [[WP08-geolocation.md]]
+- [x] **T034**: Spatial Filtering Logic (Haversine). [[WP08-geolocation.md]]
+- [x] **T035**: Wiring spatial search in ToolExecutor. [[WP08-geolocation.md]]
+- [ ] **T036**: Real Geocoding implementation using OpenStreetMap (Nominatim). [[WP08-geolocation.md]]
+- [ ] **T037**: Integration tests for Geocoding. [[WP08-geolocation.md]]
+- [ ] **T038**: WhatsApp Location handling. [[WP08-geolocation.md]]
+
+---
 
 ## Work Package 1: Scaffolding & Core Models
 
@@ -40,7 +71,7 @@
 - [x] **T010**: Implement `WhatsappService` class structure. [[WP03-core-crm-logic-and-state.md]]
 - [x] **T011**: Implement Confirmation Flow: Save draft to `ConversationState`, handle "Yes/No". [[WP03-core-crm-logic-and-state.md]]
 - [x] **T012**: Implement Undo Logic: Transaction rollback or compensation mechanism. [[WP03-core-crm-logic-and-state.md]]
-- [ ] **T012b**: Implement "Edit Last" Logic: Generate edit prompt from last action metadata. [[WP03-core-crm-logic-and-state.md]]
+- [x] **T012b**: Implement "Edit Last" Logic: Generate edit prompt from last action metadata. [[WP03-core-crm-logic-and-state.md]]
 - [x] **T012a**: Implement Request Conversion Logic (Promote Request -> Job). [[WP03-core-crm-logic-and-state.md]]
 - [x] **T013**: Wire up Tool Execution: Map LLM Tool Calls to Repository CRUD methods. [[WP03-core-crm-logic-and-state.md]]
 

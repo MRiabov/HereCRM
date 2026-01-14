@@ -6,9 +6,8 @@ ALLOWED_SETTING_KEYS = ["confirm_by_default", "language", "timezone", "notificat
 
 
 class AddJobTool(BaseModel):
-    """Add a new job, lead, client, or customer.
-    Triggered if a price tag or job description is supplied,
-    or if adding a person/entity without specific 'request' keyword."""
+    """Add a new job.
+    Triggered if a price, job description, or specific job task is supplied."""
 
     customer_name: str = Field(..., description="Name of the customer", max_length=100)
     customer_phone: Optional[str] = Field(
@@ -21,11 +20,35 @@ class AddJobTool(BaseModel):
     description: Optional[str] = Field(
         None, description="Details of the work to be done", max_length=500
     )
-    category: Optional[str] = Field(
-        "job", description="Category: job, lead, client, customer"
-    )
     status: Optional[str] = Field(
         "pending", description="Status: 'pending', 'done', 'scheduled'"
+    )
+
+
+class AddCustomerTool(BaseModel):
+    """Add a new lead, client, or customer without a job.
+    Triggered when adding a person/entity without specific job details or 'request' keyword."""
+
+    name: str = Field(..., description="Name of the customer/lead", max_length=100)
+    phone: Optional[str] = Field(None, description="Phone number", max_length=20)
+    street: Optional[str] = Field(
+        None, description="Street address (e.g. 'High Street 44')", max_length=200
+    )
+    city: Optional[str] = Field(
+        None, description="City (e.g. 'Dublin')", max_length=100
+    )
+    country: Optional[str] = Field(
+        None, description="Country (e.g. 'Ireland')", max_length=100
+    )
+    location: Optional[str] = Field(
+        None,
+        description="Original full address string if parsing fails",
+        max_length=200,
+    )
+    details: Optional[str] = Field(
+        None,
+        description="Additional details or description about the lead/client",
+        max_length=500,
     )
 
 
@@ -60,6 +83,16 @@ class StoreRequestTool(BaseModel):
     customer_phone: Optional[str] = Field(
         None, description="Phone number of the customer if mentioned", max_length=20
     )
+    time: str = Field(
+        "anytime",
+        description="Natural language time (e.g., 'tomorrow at 2pm', 'anytime')",
+        max_length=100,
+    )
+    iso_time: Optional[str] = Field(
+        None,
+        description="ISO 8601 formatted datetime string (parsed by LLM)",
+        max_length=50,
+    )
 
 
 class SearchTool(BaseModel):
@@ -67,8 +100,39 @@ class SearchTool(BaseModel):
 
     query: str = Field(
         ...,
-        description="The search term (name, phone, or job description)",
+        description="The search term (name, phone, job description, or 'all')",
         max_length=100,
+    )
+    entity_type: Optional[str] = Field(
+        None,
+        description="Filter by entity type: 'job', 'customer', 'request', 'lead'. If not specified, searches all.",
+    )
+    query_type: Optional[str] = Field(
+        "general",
+        description="Type of query: 'general' (text match), 'added' (created_at), 'scheduled' (scheduled_at). Defaults to 'general' if not time-based.",
+    )
+    min_date: Optional[str] = Field(
+        None,
+        description="Start date for range filtering in ISO format (YYYY-MM-DDTHH:MM:SS)",
+    )
+    max_date: Optional[str] = Field(
+        None,
+        description="End date for range filtering in ISO format (YYYY-MM-DDTHH:MM:SS)",
+    )
+    status: Optional[str] = Field(
+        None, description="Filter by status (e.g., 'pending', 'done', 'completed')"
+    )
+    radius: Optional[float] = Field(
+        None, description="Search radius in meters (default 200m if location provided)"
+    )
+    center_lat: Optional[float] = Field(
+        None, description="Latitude for proximity search"
+    )
+    center_lon: Optional[float] = Field(
+        None, description="Longitude for proximity search"
+    )
+    center_address: Optional[str] = Field(
+        None, description="Address for proximity search (e.g., 'High Street 34')"
     )
 
 
