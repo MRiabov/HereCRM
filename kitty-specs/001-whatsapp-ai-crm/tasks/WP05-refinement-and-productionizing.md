@@ -89,11 +89,11 @@ The core paths works, but we need to handle "Schedule..." commands which might i
 
 ## Definition of Done
 
-- [ ] "Schedule" command works for clear cases.
-- [ ] Ambiguous input returns helpful error and help message.
-- [ ] YAML boilerplates are used for all customer-facing messages.
-- [ ] Walkthrough artifact created/updated.
-- [ ] Feature is ready for merge.
+- [x] "Schedule" command works for clear cases.
+- [x] Ambiguous input returns helpful error and help message.
+- [x] YAML boilerplates are used for all customer-facing messages.
+- [x] Walkthrough artifact created/updated.
+- [x] Feature is ready for merge.
 
 ## Activity Log
 
@@ -103,3 +103,4 @@ The core paths works, but we need to handle "Schedule..." commands which might i
 - 2026-01-13T21:00:00Z – antigravity – lane=doing – Added YAML boilerplate requirement (T020a, T020b) and resumed implementation.
 - 2026-01-14T16:20:00Z – antigravity – lane=planned – Review complete: Needs changes (broken tests, missing walkthrough, inconsistent schema).
 - 2026-01-14T16:13:41Z – antigravity – lane=doing – Starting implementation to address review feedback
+- 2026-01-14T16:43:37Z – antigravity – shell_pid= – lane=done – Review complete: Renamed tools and fixed tests.

@@ -8,7 +8,7 @@ subtasks:
 lane: "done"
 review_status: "approved without changes"
 reviewed_by: "Antigravity"
-agent: Antigravity
+agent: "antigravity"
 history:
   - date: 2026-01-13
     status: planned
@@ -105,3 +105,4 @@ Users interact via HTTP POST to our webhook. We need to identify them by phone n
 - 2026-01-13T12:41:39Z – Antigravity – lane=for_review – Ready for review
 - 2026-01-13T13:10:00Z – Antigravity – lane=planned – Code review complete: Needs changes (Tests, Security)
 - 2026-01-13T13:26:16Z – spec-kitty – lane=planned – Code review complete: Bug in error handling (200 instead of 500) and minor efficiency issue.
+- 2026-01-14T16:43:37Z – antigravity – shell_pid= – lane=done – Onboarding logic complete and verified.

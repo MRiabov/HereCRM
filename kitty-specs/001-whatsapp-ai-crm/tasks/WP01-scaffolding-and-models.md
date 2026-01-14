@@ -9,6 +9,7 @@ subtasks:
 lane: done
 review_status: "approved"
 reviewed_by: antigravity
+agent: "antigravity"
 history:
   - date: 2026-01-13
     status: planned
@@ -116,7 +117,11 @@ This is the first step in the implementation. We are building a multi-tenant sys
 
 ## Definition of Done
 
-- [ ] FastAPI app runs (`uvicorn src.main:app`).
-- [ ] Database file is created on startup.
-- [ ] All models are migratable/syncable (using `Base.metadata.create_all` for MVP).
-- [ ] Tests in `tests/test_models.py` pass, specifically verifying that a User from Business A cannot access Customer from Business B.
+- [x] FastAPI app runs (`uvicorn src.main:app`).
+- [x] Database file is created on startup.
+- [x] All models are migratable/syncable (using `Base.metadata.create_all` for MVP).
+- [x] Tests in `tests/test_models.py` pass, specifically verifying that a User from Business A cannot access Customer from Business B.
+
+## Activity Log
+
+- 2026-01-14T16:43:36Z – antigravity – shell_pid= – lane=done – Initial approval and completion.
