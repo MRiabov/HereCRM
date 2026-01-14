@@ -1,5 +1,6 @@
 import os
 import pytest
+import asyncio
 
 # Inject dummy keys BEFORE standard imports can fail
 os.environ["GOOGLE_API_KEY"] = "dummy_test_key"
@@ -17,3 +18,21 @@ def set_test_env():
     os.environ["WA_TOKEN"] = "dummy_token"
     os.environ["WA_PHONE_ID"] = "dummy_phone_id"
     yield
+
+
+@pytest.fixture(scope="function", autouse=True)
+async def setup_database():
+    """Create database tables before each test."""
+    from src.database import engine, Base
+    
+    # Create all tables
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    
+    yield
+    
+    # Drop all tables after test
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+    
+    await engine.dispose()
