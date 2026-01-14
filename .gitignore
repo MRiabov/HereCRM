@@ -13,8 +13,6 @@
 .github/copilot/
 .kittify/.dashboard
 .env
-.worktrees/
-.agent/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
