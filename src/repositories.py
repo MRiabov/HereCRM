@@ -3,7 +3,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Generic, TypeVar, Type, Optional, List, Any
 from datetime import datetime
-from src.models import Business, User, Customer, Job, Request, ConversationState
+from src.models import Business, User, Customer, Job, Request, ConversationState, Service, LineItem
 import math
 
 
@@ -89,6 +89,31 @@ class BusinessRepository(BaseRepository[Business]):
 
     def add(self, business: Business):
         self.session.add(business)
+
+
+class ServiceRepository(BaseRepository[Service]):
+    def __init__(self, session: AsyncSession):
+        super().__init__(session, Service)
+
+    async def get_all_for_business(self, business_id: int) -> List[Service]:
+        return await self.get_all(business_id)
+
+    async def update(self, service_id: int, business_id: int, **kwargs) -> Optional[Service]:
+        service = await self.get_by_id(service_id, business_id)
+        if not service:
+            return None
+
+        for key, value in kwargs.items():
+            if hasattr(service, key):
+                setattr(service, key, value)
+        return service
+
+    async def delete(self, service_id: int, business_id: int) -> bool:
+        service = await self.get_by_id(service_id, business_id)
+        if not service:
+            return False
+        await self.session.delete(service)
+        return True
 
 
 class RequestRepository(BaseRepository[Request]):
@@ -302,7 +327,23 @@ class JobRepository(BaseRepository[Job]):
             .limit(1)
         )
         result = await self.session.execute(stmt)
+
         return result.scalar_one_or_none()
+
+    async def get_with_line_items(self, job_id: int, business_id: int) -> Optional[Job]:
+        stmt = (
+            select(Job)
+            .options(joinedload(Job.line_items), joinedload(Job.customer))
+            .where(Job.id == job_id, Job.business_id == business_id)
+        )
+        result = await self.session.execute(stmt)
+        return result.unique().scalar_one_or_none()
+
+    def add(self, item: Job):
+        # Auto-calculate value from line items if not explicitly set
+        if item.line_items and item.value is None:
+            item.value = sum(li.total_price for li in item.line_items)
+        super().add(item)
 
 
 class ConversationStateRepository:

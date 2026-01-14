@@ -30,6 +30,7 @@ class Business(Base):
     customers: Mapped[List["Customer"]] = relationship(back_populates="business")
     jobs: Mapped[List["Job"]] = relationship(back_populates="business")
     requests: Mapped[List["Request"]] = relationship(back_populates="business")
+    services: Mapped[List["Service"]] = relationship(back_populates="business")
 
 
 class User(Base):
@@ -48,6 +49,39 @@ class User(Base):
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="users")
+
+
+class Service(Base):
+    __tablename__ = "services"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
+    name: Mapped[str] = mapped_column(String, index=True)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    default_price: Mapped[float] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+
+    # Relationships
+    business: Mapped["Business"] = relationship(back_populates="services")
+    line_items: Mapped[List["LineItem"]] = relationship(back_populates="service")
+
+
+class LineItem(Base):
+    __tablename__ = "line_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id"), index=True)
+    service_id: Mapped[Optional[int]] = mapped_column(ForeignKey("services.id"), nullable=True)
+    description: Mapped[str] = mapped_column(String)
+    quantity: Mapped[float] = mapped_column(Float, default=1.0)
+    unit_price: Mapped[float] = mapped_column(Float)
+    total_price: Mapped[float] = mapped_column(Float)
+
+    # Relationships
+    job: Mapped["Job"] = relationship(back_populates="line_items")
+    service: Mapped[Optional["Service"]] = relationship(back_populates="line_items")
 
 
 class Customer(Base):
@@ -93,6 +127,7 @@ class Job(Base):
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="jobs")
     customer: Mapped["Customer"] = relationship(back_populates="jobs")
+    line_items: Mapped[List["LineItem"]] = relationship(back_populates="job", cascade="all, delete-orphan")
 
 
 class Request(Base):
