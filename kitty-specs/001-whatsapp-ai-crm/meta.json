@@ -12,5 +12,21 @@
   "acceptance_mode": "local",
   "accepted_at": "2026-01-14T16:52:15Z",
   "accepted_by": "maksym",
-  "accepted_from_commit": "cf990df46317b41db5811ff4d78652092c213123"
+  "accepted_from_commit": "cf990df46317b41db5811ff4d78652092c213123",
+  "merge_history": [
+    {
+      "merge_commit": "2ae70922602e7a8fb563c5789736ea9947eb8a6f",
+      "merged_at": "2026-01-14T17:06:25Z",
+      "merged_by": "MRiabov",
+      "pushed": false,
+      "strategy": "merge",
+      "target": "main"
+    }
+  ],
+  "merged_at": "2026-01-14T17:06:25Z",
+  "merged_by": "MRiabov",
+  "merged_commit": "2ae70922602e7a8fb563c5789736ea9947eb8a6f",
+  "merged_into": "main",
+  "merged_push": false,
+  "merged_strategy": "merge"
 }
