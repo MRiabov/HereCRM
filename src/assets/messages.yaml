@@ -36,10 +36,18 @@ job_summary: |
   - Status: {status}
   - Value: {price}
   - Description: {description}
+lead_summary: |
+  Lead details:
+  {client_details}
+  - Description: {description}
 schedule_summary: |
   Schedule Job:
   {client_details}
   - Time: {time}
+request_summary: |
+  Request details:
+  {client_details}
+  - Content: {content}
 confirm_prompt: "Please confirm: {summary}\n(Reply 'Yes' to confirm, 'No' to cancel)"
 action_cancelled: "Action cancelled."
 undo_hint: "(Reply 'undo' to revert)"

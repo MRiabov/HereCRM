@@ -9,7 +9,7 @@ from src.repositories import (
 from src.llm_client import LLMParser
 from src.tool_executor import ToolExecutor
 from src.services.template_service import TemplateService
-from src.uimodels import AddJobTool
+from src.uimodels import AddJobTool, ScheduleJobTool, StoreRequestTool
 
 
 class WhatsappService:
@@ -314,15 +314,55 @@ class WhatsappService:
                 else:
                     price_val = f"{tool_call.price:.2f}$"
 
+            client_details = self.template_service.render(
+                "client_details",
+                name=tool_call.customer_name or "Not supplied",
+                phone=tool_call.customer_phone or "Not supplied",
+                address=tool_call.location or "Not supplied",
+            )
+
+            if tool_call.category and tool_call.category.lower() == "lead":
+                return self.template_service.render(
+                    "lead_summary",
+                    client_details=client_details,
+                    description=tool_call.description or "Not supplied",
+                )
+
             return self.template_service.render(
                 "job_summary",
                 category=tool_call.category.capitalize()
                 if tool_call.category
                 else "Job",
-                name=tool_call.customer_name or "Not supplied",
-                address=tool_call.location or "Not supplied",
+                client_details=client_details,
                 price=price_val,
                 description=tool_call.description or "Not supplied",
+                status=tool_call.status.capitalize() if tool_call.status else "Pending",
+            )
+
+        if isinstance(tool_call, ScheduleJobTool):
+            client_details = self.template_service.render(
+                "client_details",
+                name=tool_call.customer_query or "Unknown",
+                phone="Not supplied",
+                address="Not supplied",
+            )
+            return self.template_service.render(
+                "schedule_summary",
+                client_details=client_details,
+                time=tool_call.time,
+            )
+
+        if isinstance(tool_call, StoreRequestTool):
+            client_details = self.template_service.render(
+                "client_details",
+                name=tool_call.customer_name or "Not supplied",
+                phone=tool_call.customer_phone or "Not supplied",
+                address="Not supplied",
+            )
+            return self.template_service.render(
+                "request_summary",
+                client_details=client_details,
+                content=tool_call.content,
             )
 
         if hasattr(tool_call, "description") and tool_call.description:

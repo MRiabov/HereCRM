@@ -24,6 +24,9 @@ class AddJobTool(BaseModel):
     category: Optional[str] = Field(
         "job", description="Category: job, lead, client, customer"
     )
+    status: Optional[str] = Field(
+        "pending", description="Status: 'pending', 'done', 'scheduled'"
+    )
 
 
 class ScheduleJobTool(BaseModel):
@@ -51,6 +54,12 @@ class StoreRequestTool(BaseModel):
     ONLY triggered if user explicitly says 'add request' or similar."""
 
     content: str = Field(..., description="The content of the request or note")
+    customer_name: Optional[str] = Field(
+        None, description="Name of the customer if mentioned", max_length=100
+    )
+    customer_phone: Optional[str] = Field(
+        None, description="Phone number of the customer if mentioned", max_length=20
+    )
 
 
 class SearchTool(BaseModel):

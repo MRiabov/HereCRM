@@ -157,8 +157,8 @@ def test_llm_instruction_hardening():
     """Verify that LLMParser has security hardening in its system instructions."""
     from src.llm_client import LLMParser
 
-    with patch("google.generativeai.configure"):
-        with patch("google.generativeai.GenerativeModel"):
+    with patch("google.genai.configure"):
+        with patch("google.genai.GenerativeModel"):
             parser = LLMParser()
             instr = parser.system_instruction.lower()
             assert "ignore" in instr

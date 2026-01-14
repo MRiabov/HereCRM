@@ -12,8 +12,8 @@ from src.uimodels import (
 
 @pytest.fixture
 def mock_parser():
-    with patch("google.generativeai.configure"):
-        with patch("google.generativeai.GenerativeModel") as MockModel:
+    with patch("google.genai.configure"):
+        with patch("google.genai.GenerativeModel") as MockModel:
             parser = LLMParser()
             yield parser, MockModel.return_value
 

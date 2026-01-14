@@ -6,9 +6,9 @@ load_dotenv()
 
 
 class Settings(BaseSettings):
-    google_api_key: str
+    openrouter_api_key: str
     whatsapp_app_secret: str
-    gemini_model: str = "gemini-3-flash"
+    openrouter_model: str = "meta-llama/llama-3.1-8b-instruct"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
