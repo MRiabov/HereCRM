@@ -10,6 +10,8 @@ lane: done
 review_status: "approved"
 reviewed_by: antigravity
 agent: "antigravity"
+assignee: "maksym"
+shell_pid: "2044822"
 history:
   - date: 2026-01-13
     status: planned
@@ -78,21 +80,21 @@ This is the first step in the implementation. We are building a multi-tenant sys
 
 ## Subtasks
 
-### T001: Setup FastAPI & Async DB
+### [x] T001: Setup FastAPI & Async DB
 
 - Initialize a new FastAPI project structure in `src/`.
 - Configure `sqlalchemy` with `aiosqlite` driver.
 - Create a `database.py` file with `get_db` dependency.
 - Ensure `pyproject.toml` has necessary dependencies (`fastapi`, `uvicorn`, `sqlalchemy`, `aiosqlite`, `pydantic-settings`).
 
-### T002: Implement Business & User Models
+### [x] T002: Implement Business & User Models
 
 - Create `src/models.py`.
 - Define `Business` model: `id` (PK), `name`, `created_at`.
 - Define `User` model: `phone_number` (PK), `business_id` (FK), `role`, `created_at`, `preferences` (JSON, default=`{"confirm_by_default": false}`).
 - **Constraint**: `User.phone_number` must be unique across the system (global identifier).
 
-### T003: Implement Domain Models
+### [x] T003: Implement Domain Models
 
 - Add to `src/models.py`:
   - `Customer`: `id`, `business_id`, `name`, `phone`, `details`.
@@ -100,7 +102,7 @@ This is the first step in the implementation. We are building a multi-tenant sys
   - `Request`: `id`, `business_id`, `content`, `status`.
 - **Constraint**: All these models MUST have a `business_id` Foreign Key.
 
-### T004: Implement ConversationState Model
+### [x] T004: Implement ConversationState Model
 
 - Add `ConversationState` to `src/models.py`:
   - `phone_number` (PK) - Links to User.
@@ -108,7 +110,7 @@ This is the first step in the implementation. We are building a multi-tenant sys
   - `draft_data` (JSON/Text) - Stores pending command data.
   - `last_updated` (DateTime).
 
-### T005: Tenant Isolation Repositories
+### [x] T005: Tenant Isolation Repositories
 
 - Create `src/repositories.py`.
 - Implement a `BaseRepository` or specific repositories (`UserRepository`, `JobRepository`, etc.).

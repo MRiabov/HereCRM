@@ -5,10 +5,12 @@ subtasks:
   - T015
   - T016
   - T017
-lane: "done"
-review_status: "approved without changes"
+lane: done
+review_status: "approved"
 reviewed_by: "Antigravity"
 agent: "antigravity"
+assignee: "maksym"
+shell_pid: "2044822"
 history:
   - date: 2026-01-13
     status: planned

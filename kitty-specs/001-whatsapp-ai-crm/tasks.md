@@ -1,7 +1,7 @@
 # Implementation Tasks: WhatsApp AI CRM
 
 **Feature**: WhatsApp AI CRM
-**Status**: Planned
+**Status**: Done
 **Work Packages**: 8
 
 ## Work Package 7: Advanced Search & Filtering
@@ -29,9 +29,9 @@
 - [x] **T033**: SearchTool updates (radius/center). [[WP08-geolocation.md]]
 - [x] **T034**: Spatial Filtering Logic (Haversine). [[WP08-geolocation.md]]
 - [x] **T035**: Wiring spatial search in ToolExecutor. [[WP08-geolocation.md]]
-- [ ] **T036**: Real Geocoding implementation using OpenStreetMap (Nominatim). [[WP08-geolocation.md]]
-- [ ] **T037**: Integration tests for Geocoding. [[WP08-geolocation.md]]
-- [ ] **T038**: WhatsApp Location handling. [[WP08-geolocation.md]]
+- [x] **T036**: Real Geocoding implementation using OpenStreetMap (Nominatim). [[WP08-geolocation.md]]
+- [x] **T037**: Integration tests for Geocoding. [[WP08-geolocation.md]]
+- [x] **T038**: WhatsApp Location handling. [[WP08-geolocation.md]]
 
 ---
 
@@ -41,11 +41,11 @@
 **Priority**: Critical - Foundational
 **Test**: `pytest tests/test_models.py` (Verify tenant isolation explicitly)
 
-- [ ] **T001**: Setup FastAPI project structure and Async SQLite database connection (SQLAlchemy). [[WP01-scaffolding-and-models.md]]
-- [ ] **T002**: Implement `Business` and `User` SQLAlchemy models and Pydantic schemas. [[WP01-scaffolding-and-models.md]]
-- [ ] **T003**: Implement `Customer`, `Job`, `Request` models and schemas. [[WP01-scaffolding-and-models.md]]
-- [ ] **T004**: Implement `ConversationState` model for state management. [[WP01-scaffolding-and-models.md]]
-- [ ] **T005**: Implement CRUD Repository layer with mandatory Tenant Isolation (Business ID check). [[WP01-scaffolding-and-models.md]]
+- [x] **T001**: Setup FastAPI project structure and Async SQLite database connection (SQLAlchemy). [[WP01-scaffolding-and-models.md]]
+- [x] **T002**: Implement `Business` and `User` SQLAlchemy models and Pydantic schemas. [[WP01-scaffolding-and-models.md]]
+- [x] **T003**: Implement `Customer`, `Job`, `Request` models and schemas. [[WP01-scaffolding-and-models.md]]
+- [x] **T004**: Implement `ConversationState` model for state management. [[WP01-scaffolding-and-models.md]]
+- [x] **T005**: Implement CRUD Repository layer with mandatory Tenant Isolation (Business ID check). [[WP01-scaffolding-and-models.md]]
 
 ---
 

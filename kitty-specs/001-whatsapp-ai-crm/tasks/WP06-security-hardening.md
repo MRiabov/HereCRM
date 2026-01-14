@@ -1,6 +1,10 @@
 ---
-lane: "done"
-agent: "codex"
+work_package_id: WP06
+lane: done
+status: done
+assignee: "maksym"
+agent: "antigravity"
+shell_pid: "2044822"
 ---
 # Task: WP06 - Security Hardening
 

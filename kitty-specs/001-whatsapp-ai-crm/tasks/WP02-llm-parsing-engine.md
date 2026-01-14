@@ -7,6 +7,8 @@ subtasks:
   - T009
 lane: "done"
 agent: "antigravity"
+assignee: "maksym"
+shell_pid: "2044822"
 review_status: "approved without changes"
 reviewed_by: "antigravity"
 history:
@@ -55,13 +57,13 @@ The system relies on LLM to interpret user intents ("Add job", "Schedule"). We n
 
 ## Subtasks
 
-### T006: Gemini Client Setup
+### [x] T006: Gemini Client Setup
 
 - Create `src/llm_client.py`.
 - Initialize Vertex AI or Google Generative AI client.
 - Use `pydantic-settings` for API key/project ID configuration.
 
-### T007: Tool Definitions
+### [x] T007: Tool Definitions
 
 - Define Pydantic models for valid tools in `src/uimodels.py` or inside `llm_client.py`:
   - `AddJobTool`: `customer_name`, `customer_phone`, `location`, `price`, `description` (now optional to support simple leads).
@@ -71,7 +73,7 @@ The system relies on LLM to interpret user intents ("Add job", "Schedule"). We n
   - `ConvertRequestTool`: `query` (phone/name matches), `action` (schedule/complete/log), `time` (optional).
   - `SearchTool`: `query`.
 
-### T008: Implement LLMParser
+### [x] T008: Implement LLMParser
 
 - Implement `LLMParser` class.
 - Method `parse(user_text: str) -> ToolCall`.
@@ -79,7 +81,7 @@ The system relies on LLM to interpret user intents ("Add job", "Schedule"). We n
 - **Prompting**: Include system instructions for refined classification: Price/Desc -> Job, "add request" -> Request, Time -> Schedule, Person only -> Job (Lead).
 - handle "Undo" or "Cancel" as specific high-level intents or handled before LLM.
 
-### T009: Unit Tests
+### [x] T009: Unit Tests
 
 - Create `tests/test_llm_parser.py`.
 - Test cases:
