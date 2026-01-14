@@ -3,7 +3,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Generic, TypeVar, Type, Optional, List, Any
 from datetime import datetime
-from src.models import Business, User, Customer, Job, Request, ConversationState
+from src.models import Business, User, Customer, Job, Request, ConversationState, PipelineStage
 import math
 
 
@@ -241,6 +241,17 @@ class CustomerRepository(BaseRepository[Customer]):
 
         return customers
 
+    async def get_pipeline_summary(self, business_id: int) -> dict[PipelineStage, List[Customer]]:
+        query = select(Customer).where(Customer.business_id == business_id)
+        result = await self.session.execute(query)
+        customers = list(result.scalars().all())
+
+        summary = {stage: [] for stage in PipelineStage}
+        for customer in customers:
+            summary[customer.pipeline_stage].append(customer)
+        return summary
+
+
     async def get_leads(self, business_id: int) -> List[Customer]:
         return await self.search(
             query="all", business_id=business_id, entity_type="lead"
@@ -303,6 +314,14 @@ class JobRepository(BaseRepository[Job]):
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_count_by_customer(self, customer_id: int, business_id: int) -> int:
+        from sqlalchemy import func
+        stmt = select(func.count()).where(
+            Job.customer_id == customer_id, Job.business_id == business_id
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
 
 
 class ConversationStateRepository:

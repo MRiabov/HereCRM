@@ -15,6 +15,7 @@ from src.uimodels import (
     UpdateSettingsTool,
     ConvertRequestTool,
     HelpTool,
+    GetPipelineTool,
 )
 
 
@@ -101,6 +102,14 @@ class LLMParser:
                     "parameters": HelpTool.schema(),
                 },
             },
+            {
+                "type": "function",
+                "function": {
+                    "name": "GetPipelineTool",
+                    "description": "Get a summary of the sales pipeline (funnel counts).",
+                    "parameters": GetPipelineTool.schema(),
+                },
+            },
         ]
 
         self.system_instruction = (
@@ -118,7 +127,8 @@ class LLMParser:
             "   - If user wants to UPDATE or EDIT an existing customer/lead (e.g., 'update phone for John', 'edit address for Margaret', 'change price for high street 123', 'update 12345678 to Mary') -> use EditCustomerTool. 'query' MUST be the search term (Name, Phone, or Address) used to identify them. 'name', 'phone', 'location', 'details' should ONLY be populated with the NEW values being changed. If they want to rename someone, 'query' is the OLD name, and 'name' is the NEW name.\n"
             "   - If 'request' is explicitly mentioned with 'add' (e.g., 'add request: ...') -> use AddRequestTool. Extract any mentioned time (e.g., 'tomorrow') into the 'time' field. Default to 'anytime' if not specified.\n"
             "   - If user indicates the job is 'done', 'completed' or 'finished' (even with a past time) -> use AddJobTool with status='done'. Do NOT use ScheduleJobTool for past events.\n"
-            "   - If 'schedule' is used or a specific future time is provided -> use ScheduleJobTool."
+            "   - If 'schedule' is used or a specific future time is provided -> use ScheduleJobTool.\n"
+            "   - If user asks for a pipeline summary, funnel health, or 'how are we doing' in terms of sales -> use GetPipelineTool."
         )
 
     async def parse(
@@ -133,6 +143,7 @@ class LLMParser:
             UpdateSettingsTool,
             ConvertRequestTool,
             HelpTool,
+            GetPipelineTool,
         ]
     ]:
         # 1. Keyword pre-filtering
@@ -190,6 +201,7 @@ class LLMParser:
                     "UpdateSettingsTool": UpdateSettingsTool,
                     "ConvertRequestTool": ConvertRequestTool,
                     "HelpTool": HelpTool,
+                    "GetPipelineTool": GetPipelineTool,
                 }
 
                 model_cls = model_map.get(function_name)

@@ -1,8 +1,9 @@
 ---
 work_package_id: WP03
 slug: pipeline-querying
-lane: planned
+lane: "for_review"
 subtasks: [T009, T010, T011]
+agent: "codex"
 history:
   - date: 2026-01-14
     event: Created work package prompt.
@@ -51,3 +52,8 @@ The user wants to see "the health of the sales funnel". This means getting count
 - User can ask "how is our pipeline doing?" and get a formatted response.
 - Response includes counts per stage.
 - Performance is <3s as per performance goals.
+
+## Activity Log
+
+- 2026-01-14T21:03:28Z – codex – lane=doing – Started implementation
+- 2026-01-14T21:07:14Z – codex – lane=for_review – Ready for review

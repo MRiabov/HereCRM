@@ -20,6 +20,7 @@ from src.uimodels import (
     UpdateSettingsTool,
     ConvertRequestTool,
     HelpTool,
+    GetPipelineTool,
 )
 
 
@@ -52,6 +53,8 @@ class ToolExecutor:
             SearchTool,
             UpdateSettingsTool,
             ConvertRequestTool,
+            HelpTool,
+            GetPipelineTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
         if isinstance(tool_call, AddJobTool):
@@ -76,6 +79,8 @@ class ToolExecutor:
             return await self._execute_convert_request(tool_call)
         elif isinstance(tool_call, HelpTool):
             return "Help is handled by the service layer directly.", None
+        elif isinstance(tool_call, GetPipelineTool):
+            return await self._execute_get_pipeline(tool_call)
         return "Unknown tool call", None
 
     async def _execute_add_lead(  # Renamed from _execute_add_customer
@@ -199,17 +204,15 @@ class ToolExecutor:
             self.customer_repo.add(customer)
             await self.session.flush()
 
-        # 2. Create job
-        job = Job(
-            business_id=self.business_id,
+        # 2. Create job using CRMService to ensure events are fired
+        crm_service = CRMService(self.session, self.business_id)
+        job = await crm_service.create_job(
             customer_id=customer.id,
             description=tool.description,
             value=tool.price,
             location=tool.location,
             status=tool.status or "pending",
         )
-        self.job_repo.add(job)
-        await self.session.flush()
 
         price_info = f" – €{job.value}" if job.value else " – No price"
 
@@ -301,6 +304,21 @@ class ToolExecutor:
         )
         self.request_repo.add(req)
         await self.session.flush()
+        
+        # Check for implicit contact event
+        if tool.customer_name or tool.customer_phone:
+            customer = None
+            if tool.customer_name:
+                customer = await self.customer_repo.get_by_name(tool.customer_name, self.business_id)
+            if not customer and tool.customer_phone:
+                customer = await self.customer_repo.get_by_phone(tool.customer_phone, self.business_id)
+            
+            if customer:
+                from src.events import event_bus
+                await event_bus.emit(
+                    "CONTACT_EVENT",
+                    {"customer_id": customer.id, "business_id": self.business_id}
+                )
         return self.template_service.render(
             "request_stored", content=tool.content[:50]
         ), {
@@ -490,3 +508,11 @@ class ToolExecutor:
         return await service.convert_request(
             tool.query, tool.action, tool.time, tool.iso_time
         )
+
+    async def _execute_get_pipeline(
+        self, tool: GetPipelineTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        crm_service = CRMService(self.session, self.business_id)
+        report = await crm_service.format_pipeline_summary()
+        return report, {"action": "query", "entity": "pipeline"}
+

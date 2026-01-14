@@ -190,3 +190,11 @@ class HelpTool(BaseModel):
     """Get help or information about available commands."""
 
     pass
+
+
+class GetPipelineTool(BaseModel):
+    """Get a summary of the sales pipeline (funnel).
+    Triggered when the user asks about the health of the business, pipeline status, or funnel."""
+
+    pass
+

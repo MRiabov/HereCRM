@@ -8,10 +8,10 @@
 - **Priority**: P1
 - **Success Criteria**: `PipelineStage` enum exists, `Customer` has the field, `EventBus` can register and emit events.
 - **Subtasks**:
-  - [ ] **T001**: Define `PipelineStage` Enum in `src/models.py`. [P]
-  - [ ] **T002**: Add `pipeline_stage` field to `Customer` model in `src/models.py` (default `NOT_CONTACTED`). [P]
-  - [ ] **T003**: Implement a simple `EventBus` in `src/events.py`. [P]
-  - [ ] **T004**: Initialize `EventBus` and register handlers in `src/main.py`.
+  - [x] **T001**: Define `PipelineStage` Enum in `src/models.py`. [P]
+  - [x] **T002**: Add `pipeline_stage` field to `Customer` model in `src/models.py` (default `NOT_CONTACTED`). [P]
+  - [x] **T003**: Implement a simple `EventBus` in `src/events.py`. [P]
+  - [x] **T004**: Initialize `EventBus` and register handlers in `src/main.py`.
 - **Implementation Sketch**: Start with model updates, then build the EventBus to be used for decoupled service communication.
 - **Prompt**: [tasks/WP01-foundational-infrastructure.md](file:///home/maksym/Work/proj/HereCRM/.worktrees/002-pipeline-progression/kitty-specs/002-pipeline-progression/tasks/WP01-foundational-infrastructure.md)
 

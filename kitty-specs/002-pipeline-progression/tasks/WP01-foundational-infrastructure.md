@@ -1,7 +1,9 @@
 ---
 work_package_id: WP01
 slug: foundational-infrastructure
-lane: "doing"
+lane: "done"
+review_status: "approved without changes"
+reviewed_by: "antigravity"
 subtasks: [T001, T002, T003, T004]
 agent: "codex"
 history:
@@ -54,3 +56,5 @@ We need to track customer stages (`Not Contacted`, `Contacted`, `Converted Once`
 ## Activity Log
 
 - 2026-01-14T19:19:56Z – codex – lane=doing – Started implementation
+- 2026-01-14T19:28:49Z – codex – lane=for_review – Ready for review
+- 2026-01-14T20:00:00Z – antigravity – lane=done – Approved without changes
