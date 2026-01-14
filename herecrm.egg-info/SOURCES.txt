@@ -1,7 +1,0 @@
-main.py
-pyproject.toml
-herecrm.egg-info/PKG-INFO
-herecrm.egg-info/SOURCES.txt
-herecrm.egg-info/dependency_links.txt
-herecrm.egg-info/requires.txt
-herecrm.egg-info/top_level.txt

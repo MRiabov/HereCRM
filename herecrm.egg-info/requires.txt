@@ -1,7 +1,0 @@
-fastapi
-uvicorn[standard]
-requests
-httpx
-pydantic
-pydantic-settings
-python-dotenv
