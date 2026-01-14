@@ -16,6 +16,15 @@ class ConversationStatus(str, enum.Enum):
     WAITING_CONFIRM = "waiting_confirm"
 
 
+class PipelineStage(str, enum.Enum):
+    NOT_CONTACTED = "not_contacted"
+    CONTACTED = "contacted"
+    CONVERTED_ONCE = "converted_once"
+    CONVERTED_RECURRENT = "converted_recurrent"
+    NOT_INTERESTED = "not_interested"
+    LOST = "lost"
+
+
 class Business(Base):
     __tablename__ = "businesses"
 
@@ -64,6 +73,9 @@ class Customer(Base):
     original_address_input: Mapped[Optional[str]] = mapped_column(String)
     latitude: Mapped[Optional[float]] = mapped_column(Float)
     longitude: Mapped[Optional[float]] = mapped_column(Float)
+    pipeline_stage: Mapped[PipelineStage] = mapped_column(
+        SAEnum(PipelineStage), default=PipelineStage.NOT_CONTACTED
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
