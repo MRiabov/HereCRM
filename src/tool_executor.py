@@ -11,6 +11,7 @@ from src.services.crm_service import CRMService
 from src.services.template_service import TemplateService
 from src.services.geocoding import GeocodingService
 from src.services.inference_service import InferenceService
+from src.services.chat_utils import format_line_items
 from src.uimodels import (
     AddJobTool,
     AddLeadTool,
@@ -220,6 +221,9 @@ class ToolExecutor:
         await self.session.flush()
 
         price_info = f" – €{job.value}" if job.value else " – No price"
+        line_items_summary = ""
+        if job.line_items:
+            line_items_summary = f"\n{format_line_items(job.line_items)}"
 
         return (
             self.template_service.render(
@@ -228,7 +232,8 @@ class ToolExecutor:
                 name=customer.name,
                 location=job.location or "No location",
                 price_info=price_info,
-            ),
+            )
+            + line_items_summary,
             {
                 "action": "create",
                 "entity": "job",
@@ -364,9 +369,14 @@ class ToolExecutor:
                 lines.append("Jobs:")
                 for j in jobs:
                     desc = j.description or "No description"
-                    lines.append(
-                        f"- {j.customer.name}: {desc} (Status: {j.status}) - {j.scheduled_at or 'No schedule'}"
-                    )
+                    line_str = f"- {j.customer.name}: {desc} (Status: {j.status})"
+                    if j.scheduled_at:
+                        line_str += f" - {j.scheduled_at.strftime('%Y-%m-%d %H:%M')}"
+                    lines.append(line_str)
+                    
+                    if j.line_items:
+                        lines.append(format_line_items(j.line_items))
+                        lines.append(f"`Total: €{j.value}`")
 
         elif tool.entity_type in ["customer", "lead"]:
             customers = await self.customer_repo.search(

@@ -7,19 +7,51 @@ subtasks:
   - "T013"
 title: "LLM & Line Item Inference"
 phase: "Phase 2 - Feature Development"
-lane: "for_review"
+lane: "planned"
 assignee: ""
-agent: "system"
+agent: "antigravity"
 shell_pid: ""
-review_status: ""
-reviewed_by: ""
+review_status: "has_feedback"
+reviewed_by: "antigravity"
 history:
   - timestamp: "2026-01-14T19:10:01Z"
     lane: "planned"
     agent: "antigravity"
     shell_pid: ""
     action: "Prompt generated via /spec-kitty.tasks"
+  - timestamp: "2026-01-14T20:57:12Z"
+    lane: "for_review"
+    agent: "system"
+    shell_pid: ""
+    action: "Ready for review"
+  - timestamp: "2026-01-14T21:15:00Z"
+    lane: "planned"
+    agent: "antigravity"
+    shell_pid: ""
+    action: "Review complete: Needs changes due to failing tests and stale state issues"
 ---
+
+## Review Feedback
+
+**Status**: ❌ **Needs Changes**
+
+**Key Issues**:
+
+1. **Failing Test**: `tests/test_inference_logic.py::test_tool_executor_with_line_items` fails with `assert None == 110.0`. The `Job.value` is not correctly reflected in the job object after line items are added.
+2. **Stale Object State**: The event listener in `src/repositories.py` (lines 376-397) uses a direct SQL `UPDATE` during `after_insert`/`after_update` of `LineItem`. While this updates the database, it does NOT update the `Job` object currently in the SQLAlchemy session's identity map. This leads to stale data (`None` or old value) throughout the rest of the transaction.
+3. **Inference / ToolExecutor Race**: If both `tool.price` and `tool.line_items` are provided, the `Job` is initialized with `tool.price` first, then line items are added. The listener aims to overwrite the value, but the inconsistency between the object state and DB can cause issues.
+
+**What Was Done Well**:
+
+- `InferenceService` logic is solid and covers all requested scenarios.
+- LLM system instructions are clear and provide helpful examples.
+- Data models and Pydantic schemas are correctly implemented.
+
+**Action Items**:
+
+- [ ] Fix `Job.value` synchronization to ensure the `Job` object in the session is updated or refreshed.
+- [ ] ensure all tests in `tests/test_inference_logic.py` pass.
+- [ ] Verify that adding a job with BOTH a top-level price and specific line items results in a consistent `Job.value`.
 
 # Work Package Prompt: WP03 – LLM & Line Item Inference
 

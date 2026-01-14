@@ -105,6 +105,7 @@ async def test_tool_executor_with_line_items(
     stmt = select(Job).options(joinedload(Job.line_items)).where(Job.id == metadata["id"])
     res = await test_session.execute(stmt)
     job = res.unique().scalar_one()
+    await test_session.refresh(job)
 
     assert len(job.line_items) == 2
     

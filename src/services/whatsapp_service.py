@@ -8,7 +8,7 @@ from src.repositories import (
     ServiceRepository,
 )
 from src.models import ConversationState, ConversationStatus, User, Request, Service
-from src.services.chat_utils import format_service_list
+from src.services.chat_utils import format_service_list, format_line_items
 from src.llm_client import LLMParser
 from src.tool_executor import ToolExecutor
 from src.services.template_service import TemplateService
@@ -357,6 +357,10 @@ class WhatsappService:
                 address=tool_call.location or "Not supplied",
             )
 
+            line_items_detail = ""
+            if hasattr(tool_call, "line_items") and tool_call.line_items:
+                line_items_detail = f"\n{format_line_items(tool_call.line_items)}"
+
             return self.template_service.render(
                 "job_summary",
                 category="Job",  # AddJobTool is now strictly jobs
@@ -366,6 +370,7 @@ class WhatsappService:
                 status=tool_call.status.capitalize()
                 if tool_call.status
                 else "Pending confirmation",
+                line_items=line_items_detail,
             )
 
         if isinstance(tool_call, AddLeadTool):

@@ -35,7 +35,7 @@ job_summary: |
   {client_details}
   - Status: {status}
   - Value: {price}
-  - Description: {description}
+  - Description: {description}{line_items}
 lead_summary: |
   Lead details:
   {client_details}
