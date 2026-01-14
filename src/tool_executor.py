@@ -13,6 +13,7 @@ from src.services.geocoding import GeocodingService
 from src.uimodels import (
     AddJobTool,
     AddCustomerTool,
+    EditCustomerTool,
     ScheduleJobTool,
     StoreRequestTool,
     SearchTool,
@@ -37,7 +38,6 @@ class ToolExecutor:
         self.job_repo = JobRepository(session)
         self.customer_repo = CustomerRepository(session)
         self.request_repo = RequestRepository(session)
-        self.request_repo = RequestRepository(session)
         self.user_repo = UserRepository(session)
         self.geocoding_service = GeocodingService()
 
@@ -46,6 +46,7 @@ class ToolExecutor:
         tool_call: Union[
             AddJobTool,
             AddCustomerTool,
+            EditCustomerTool,
             ScheduleJobTool,
             StoreRequestTool,
             SearchTool,
@@ -57,6 +58,8 @@ class ToolExecutor:
             return await self._execute_add_job(tool_call)
         elif isinstance(tool_call, AddCustomerTool):
             return await self._execute_add_customer(tool_call)
+        elif isinstance(tool_call, EditCustomerTool):
+            return await self._execute_edit_customer(tool_call)
         elif isinstance(tool_call, ScheduleJobTool):
             return await self._execute_schedule_job(tool_call)
         elif isinstance(tool_call, StoreRequestTool):
@@ -74,35 +77,36 @@ class ToolExecutor:
     async def _execute_add_customer(
         self, tool: AddCustomerTool
     ) -> tuple[str, Optional[dict]]:
-        # 1. Deduplication: Check if customer already exists
-        customer = await self.customer_repo.get_by_name(tool.name, self.business_id)
-        if not customer and tool.phone:
-            customer = await self.customer_repo.get_by_phone(
+        # 1. Check for duplicates
+        customer_name = tool.name.title() if tool.name else "Unknown"
+        existing = await self.customer_repo.get_by_name(customer_name, self.business_id)
+        if not existing and tool.phone:
+            existing = await self.customer_repo.get_by_phone(
                 tool.phone, self.business_id
             )
 
-        action = "create"
-        if customer:
-            action = "update"
-            # Update missing details if applicable, but usually we just want to confirm existing
-            if tool.details:
-                if customer.details:
-                    customer.details = f"{customer.details}\n{tool.details}"
-                else:
-                    customer.details = tool.details
-        else:
-            customer = Customer(
-                name=tool.name,
-                phone=tool.phone,
-                details=tool.details,
-                street=tool.street,
-                city=tool.city,
-                country=tool.country,
-                original_address_input=tool.location,  # Map tool.location to raw input
-                business_id=self.business_id,
-            )
-            self.customer_repo.add(customer)
+        if existing:
+            return f"Note: Customer '{customer_name}' already exists.", None
 
+        # 2. Extract address
+        lat, lon, street, city, country = await self.geocoding_service.geocode(
+            tool.location
+        )
+
+        # 3. Create customer
+        customer = Customer(
+            business_id=self.business_id,
+            name=customer_name,
+            phone=tool.phone,
+            details=tool.details,
+            original_address_input=tool.location,
+            latitude=lat,
+            longitude=lon,
+            street=street,
+            city=city,
+            country=country,
+        )
+        self.customer_repo.add(customer)
         await self.session.flush()
 
         # Render Lead/Customer summary
@@ -120,7 +124,7 @@ class ToolExecutor:
                 description=customer.details or "Not supplied",
             ),
             {
-                "action": action,
+                "action": "create",
                 "entity": "lead",  # Using 'lead' as generic term for customer w/o job in UI context
                 "id": customer.id,
                 "customer_name": customer.name,
@@ -129,11 +133,50 @@ class ToolExecutor:
             },
         )
 
+    async def _execute_edit_customer(
+        self, tool: EditCustomerTool
+    ) -> tuple[str, Optional[dict]]:
+        # Find customer by query (Name, Phone, or Address)
+        # We use repository search which handles name, phone, and original_address_input
+        customers = await self.customer_repo.search(tool.query, self.business_id)
+        if not customers:
+            return f"Could not find customer matching '{tool.query}'", None
+        if len(customers) > 1:
+            return (
+                f"Multiple customers found matching '{tool.query}'. Please be more specific.",
+                None,
+            )
+
+        customer = customers[0]
+        old_data = {
+            "name": customer.name,
+            "phone": customer.phone,
+            "details": customer.details,
+            "street": customer.street,
+        }
+
+        if tool.name:
+            customer.name = tool.name.title()
+        if tool.phone:
+            customer.phone = tool.phone
+        if tool.location:
+            customer.original_address_input = tool.location
+        if tool.details:
+            customer.details = tool.details
+
+        await self.session.flush()
+
+        return f"✔ Updated customer: {customer.name}", {
+            "action": "update",
+            "entity": "customer",
+            "id": customer.id,
+            "old_data": old_data,
+        }
+
     async def _execute_add_job(self, tool: AddJobTool) -> tuple[str, Optional[dict]]:
         # 1. Find or create customer (Deduplication)
-        customer = await self.customer_repo.get_by_name(
-            tool.customer_name, self.business_id
-        )
+        customer_name = tool.customer_name.title() if tool.customer_name else "Unknown"
+        customer = await self.customer_repo.get_by_name(customer_name, self.business_id)
         if not customer and tool.customer_phone:
             customer = await self.customer_repo.get_by_phone(
                 tool.customer_phone, self.business_id
@@ -141,14 +184,10 @@ class ToolExecutor:
 
         if not customer:
             customer = Customer(
-                name=tool.customer_name,
-                phone=tool.customer_phone,
                 business_id=self.business_id,
-                # Store location in details if it's a new customer?
-                # Or maybe we need location on Customer model?
-                # The model has 'details' and 'phone'. 'Location' is on Job usually.
-                # But 'client_details' template uses address.
-                # Let's assume tool.location is for the Job, but if it helps identify customer...
+                name=customer_name,
+                phone=tool.customer_phone,
+                original_address_input=tool.location,
             )
             self.customer_repo.add(customer)
             await self.session.flush()
@@ -308,8 +347,9 @@ class ToolExecutor:
             if jobs:
                 lines.append("Jobs:")
                 for j in jobs:
+                    desc = j.description or "No description"
                     lines.append(
-                        f"- {j.description} (Status: {j.status}) - {j.scheduled_at or 'No schedule'}"
+                        f"- {j.customer.name}: {desc} (Status: {j.status}) - {j.scheduled_at or 'No schedule'}"
                     )
 
         elif tool.entity_type in ["customer", "lead"]:
@@ -399,7 +439,8 @@ class ToolExecutor:
             if jobs:
                 lines.append("Jobs:")
                 for j in jobs:
-                    lines.append(f"- {j.description} (Status: {j.status})")
+                    desc = j.description or "No description"
+                    lines.append(f"- {j.customer.name}: {desc} (Status: {j.status})")
             if requests:
                 lines.append("Requests:")
                 for r in requests:

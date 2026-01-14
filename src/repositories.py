@@ -1,4 +1,5 @@
 from sqlalchemy import select, or_, and_
+from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Generic, TypeVar, Type, Optional, List, Any
 from datetime import datetime
@@ -141,6 +142,11 @@ class CustomerRepository(BaseRepository[Customer]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
+    def add(self, item: Customer):
+        if item.name:
+            item.name = item.name.title()
+        super().add(item)
+
     async def search(
         self,
         query: str,
@@ -157,12 +163,22 @@ class CustomerRepository(BaseRepository[Customer]):
         conditions = [Customer.business_id == business_id]
 
         # Name/Phone Text Search
-        if query and query.strip().lower() not in [
+        ignore_keywords = [
             "all",
             "customers",
             "leads",
             "show leads",
-        ]:
+            "show customers",
+            "show all",
+            "all leads",
+            "all customers",
+            "all clients",
+            "clients",
+            "show all clients",
+            "show all customers",
+            "show active customers",
+        ]
+        if query and query.strip().lower() not in ignore_keywords:
             conditions.append(
                 or_(
                     Customer.name.ilike(f"%{query}%"),
@@ -250,7 +266,8 @@ class JobRepository(BaseRepository[Job]):
     ) -> List[Job]:
         conditions = [Job.business_id == business_id]
 
-        if query and query.strip().lower() not in ["all", "jobs", "show jobs"]:
+        ignore_keywords = ["all", "jobs", "show jobs", "show all jobs", "list jobs"]
+        if query and query.strip().lower() not in ignore_keywords:
             conditions.append(
                 or_(
                     Job.description.ilike(f"%{query}%"),
@@ -271,7 +288,7 @@ class JobRepository(BaseRepository[Job]):
         if max_date:
             conditions.append(date_column <= max_date)
 
-        stmt = select(Job).where(and_(*conditions))
+        stmt = select(Job).options(joinedload(Job.customer)).where(and_(*conditions))
         result = await self.session.execute(stmt)
         jobs = result.scalars().all()
 

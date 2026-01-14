@@ -290,6 +290,9 @@ async def test_search_geo_proximity(
 ):
     business_id, user_phone = setup_search_data
     executor = ToolExecutor(db_session, business_id, user_phone, mock_template_service)
+    # Mock GeocodingService
+    executor.geocoding_service = AsyncMock()
+    executor.geocoding_service.get_coordinates.return_value = (None, None)
 
     # Search within 1000m of London coordinates (should find Jane Smith)
     tool = SearchTool(

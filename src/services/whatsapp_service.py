@@ -1,3 +1,4 @@
+import logging
 from typing import Any, cast
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import ConversationState, ConversationStatus, User, Request
@@ -9,7 +10,17 @@ from src.repositories import (
 from src.llm_client import LLMParser
 from src.tool_executor import ToolExecutor
 from src.services.template_service import TemplateService
-from src.uimodels import AddJobTool, AddCustomerTool, ScheduleJobTool, StoreRequestTool
+from src.uimodels import (
+    AddJobTool,
+    AddCustomerTool,
+    EditCustomerTool,
+    ScheduleJobTool,
+    StoreRequestTool,
+    SearchTool,
+    UpdateSettingsTool,
+    ConvertRequestTool,
+    HelpTool,
+)
 
 
 class WhatsappService:
@@ -22,11 +33,14 @@ class WhatsappService:
         self.session = session
         self.parser = parser
         self.template_service = template_service
+        self.logger = logging.getLogger(__name__)
         self.state_repo = ConversationStateRepository(session)
         self.user_repo = UserRepository(session)
         self.business_repo = BusinessRepository(session)
 
-    async def handle_message(self, user_phone: str, message_text: str) -> str:
+    async def handle_message(
+        self, user_phone: str, message_text: str, is_new_user: bool = False
+    ) -> str:
         # 1. Identify User/Business (Placeholder for WP04 logic)
         user = await self.user_repo.get_by_phone(user_phone)
         if not user:
@@ -42,7 +56,12 @@ class WhatsappService:
             await self.session.flush()
 
         # 3. State Machine Logic
+        if is_new_user:
+            self.logger.info(f"New user onboarding for {user_phone}")
+            return self.template_service.render("welcome_message")
+
         if state_record.state == ConversationStatus.WAITING_CONFIRM:
+            self.logger.info(f"User {user_phone} in WAITING_CONFIRM mode")
             return await self._handle_waiting_confirm(user, state_record, message_text)
         else:
             return await self._handle_idle(user, state_record, message_text)
@@ -51,6 +70,10 @@ class WhatsappService:
         self, user: User, state_record: ConversationState, text: str
     ) -> str:
         lower_text = text.lower().strip()
+
+        # Handle Greetings
+        if lower_text in ["hi", "hello", "hey", "greetings"]:
+            return self.template_service.render("welcome_back")
 
         # Handle Undo
         if lower_text == "undo":
@@ -68,8 +91,6 @@ class WhatsappService:
 
         if tool_call:
             # Handle HelpTool separately (skip confirmation)
-            from src.uimodels import HelpTool
-
             if isinstance(tool_call, HelpTool):
                 return self._generate_help_message()
 
@@ -82,9 +103,14 @@ class WhatsappService:
 
             # Simple summary for confirmation
             summary = self._generate_summary(tool_call)
-            return self.template_service.render("confirm_prompt", summary=summary)
+            prompt_key = (
+                "confirm_edit_prompt"
+                if isinstance(tool_call, EditCustomerTool)
+                else "confirm_prompt"
+            )
+            return self.template_service.render(prompt_key, summary=summary)
 
-        # If no tool call, maybe it's just a greeting or unclear
+        # If truly unclear
         return self.template_service.render("error_unclear_input")
 
     async def _handle_waiting_confirm(
@@ -96,6 +122,7 @@ class WhatsappService:
             return await self._execute_draft(user, state_record)
 
         elif lower_text in ["no", "n", "cancel"]:
+            self.logger.info(f"User {user.phone_number} cancelled action")
             state_record.state = ConversationStatus.IDLE
             state_record.draft_data = None
             return self.template_service.render("action_cancelled")
@@ -125,21 +152,10 @@ class WhatsappService:
         tool_name = draft["tool_name"]
         arguments = draft["arguments"]
 
-        # Import tools for reconstruction (could be improved)
-        from src.uimodels import (
-            AddJobTool,
-            AddCustomerTool,
-            ScheduleJobTool,
-            StoreRequestTool,
-            SearchTool,
-            UpdateSettingsTool,
-            ConvertRequestTool,
-            HelpTool,
-        )
-
         model_map = {
             "AddJobTool": AddJobTool,
             "AddCustomerTool": AddCustomerTool,
+            "EditCustomerTool": EditCustomerTool,
             "ScheduleJobTool": ScheduleJobTool,
             "StoreRequestTool": StoreRequestTool,
             "SearchTool": SearchTool,
@@ -160,7 +176,13 @@ class WhatsappService:
         executor = ToolExecutor(
             self.session, user.business_id, user.phone_number, self.template_service
         )
-        result, metadata = await executor.execute(tool_call)
+        try:
+            result, metadata = await executor.execute(tool_call)
+        except Exception as e:
+            self.logger.exception(f"Tool execution failed: {e}")
+            state_record.state = ConversationStatus.IDLE
+            state_record.draft_data = None
+            return f"Error during execution: {e}"
 
         # Track for Undo
         if metadata:
@@ -294,6 +316,8 @@ class WhatsappService:
         # Map tool class names to friendly display names
         friendly_names = {
             "AddJobTool": "Add Job",
+            "AddCustomerTool": "Add Customer",
+            "EditCustomerTool": "Edit Customer",
             "ScheduleJobTool": "Schedule",
             "StoreRequestTool": "Request",
             "SearchTool": "Search",
@@ -329,7 +353,9 @@ class WhatsappService:
                 client_details=client_details,
                 price=price_val,
                 description=tool_call.description or "Not supplied",
-                status=tool_call.status.capitalize() if tool_call.status else "Pending",
+                status=tool_call.status.capitalize()
+                if tool_call.status
+                else "Pending confirmation",
             )
 
         if isinstance(tool_call, AddCustomerTool):
@@ -344,6 +370,20 @@ class WhatsappService:
                 client_details=client_details,
                 description=tool_call.details or "Not supplied",
             )
+
+        if isinstance(tool_call, EditCustomerTool):
+            changes = []
+            if tool_call.name:
+                changes.append(f"Name to '{tool_call.name}'")
+            if tool_call.phone:
+                changes.append(f"Phone to '{tool_call.phone}'")
+            if tool_call.location:
+                changes.append(f"Address to '{tool_call.location}'")
+            if tool_call.details:
+                changes.append(f"Notes to '{tool_call.details}'")
+
+            change_summary = ", ".join(changes) if changes else "no changes"
+            return f"Updating {tool_call.query}: {change_summary}"
 
         if isinstance(tool_call, ScheduleJobTool):
             client_details = self.template_service.render(

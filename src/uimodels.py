@@ -52,6 +52,20 @@ class AddCustomerTool(BaseModel):
     )
 
 
+class EditCustomerTool(BaseModel):
+    """Update customer details like phone, address, or notes."""
+
+    query: str = Field(
+        ..., description="Name or phone to find the customer", max_length=100
+    )
+    name: Optional[str] = Field(None, description="New name", max_length=100)
+    phone: Optional[str] = Field(None, description="New phone number", max_length=20)
+    location: Optional[str] = Field(None, description="New address", max_length=200)
+    details: Optional[str] = Field(
+        None, description="New details/notes", max_length=500
+    )
+
+
 class ScheduleJobTool(BaseModel):
     """Schedule an existing or new job for a specific time.
     Triggered if 'schedule' is used or a specific time/date in the future is supplied."""

@@ -9,14 +9,15 @@ class AuthService:
         self.user_repo = UserRepository(session)
         self.business_repo = BusinessRepository(session)
 
-    async def get_or_create_user(self, phone: str) -> User:
+    async def get_or_create_user(self, phone: str) -> tuple[User, bool]:
         """
         Retrieves a user by phone number. If not found, creates a new Business
         and a new User (Owner) linked to that business.
+        Returns a tuple of (User, is_new).
         """
         user = await self.user_repo.get_by_phone(phone)
         if user:
-            return user
+            return user, False
 
         # Create new Business and User
         business = Business(name=f"Business of {phone}")
@@ -30,4 +31,4 @@ class AuthService:
         # and ensure IDs are generated if needed immediately
         await self.session.flush()
 
-        return user
+        return user, True

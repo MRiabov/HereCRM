@@ -100,11 +100,11 @@ async def webhook(
             return {"reply": "Too many requests. Please try again later."}
 
         # 2. Identify or Onboard User
-        user = await auth_service.get_or_create_user(payload.from_number)
+        user, is_new = await auth_service.get_or_create_user(payload.from_number)
 
         # 2. Process Message
         response_text = await whatsapp_service.handle_message(
-            user_phone=user.phone_number, message_text=payload.body
+            user_phone=user.phone_number, message_text=payload.body, is_new_user=is_new
         )
 
         # 3. Commit Transaction

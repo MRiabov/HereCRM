@@ -50,6 +50,7 @@ request_summary: |
   - Time: {time}
   - Content: {content}
 confirm_prompt: "Please confirm: {summary}\n(Reply 'Yes' to confirm, 'No' to cancel)"
+confirm_edit_prompt: "Review changes: {summary}\n(Reply 'Yes' to update, 'No' to cancel)"
 action_cancelled: "Action cancelled."
 undo_hint: "(Reply 'undo' to revert)"
 
@@ -85,3 +86,23 @@ help_message: |
   - *Edit*: 'Edit Job, Lead or Request: John on High Street 34, call 0871235678 tomorrow at 12:00'
   
   Note: Ideally, identify all customers by phone number or street address to avoid ambiguity or duplicates.
+
+# Onboarding
+welcome_message: |
+  Welcome to HereCRM! 🚀
+  
+  I'm your AI assistant to help you manage your business via WhatsApp.
+  
+  You can:
+  - *Add Jobs*: 'Fix sink for John $50'
+  - *Add Leads*: 'Add lead Mary'
+  - *Schedule*: 'Schedule John for tomorrow 2pm'
+  - *Search*: 'Show my jobs for today'
+  
+  Try saying "Add job Fix faucet for Bob at 42 Wallaby Way $80" to get started!
+
+welcome_back: |
+  Welcome back! 👋
+  
+  What can I help you with today? 
+  (Type 'help' to see available commands)

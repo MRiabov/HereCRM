@@ -45,3 +45,15 @@ class GeocodingService:
         except (ValueError, KeyError) as e:
             logger.error(f"Error parsing geocoding response: {e}")
             return None, None
+
+    async def geocode(
+        self, address: str
+    ) -> Tuple[
+        Optional[float], Optional[float], Optional[str], Optional[str], Optional[str]
+    ]:
+        """
+        Geocodes an address and returns (lat, lon, street, city, country).
+        """
+        lat, lon = await self.get_coordinates(address)
+        # For now, we only get lat/lon from the current Nominatim implementation
+        return lat, lon, None, None, None
