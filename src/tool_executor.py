@@ -1,4 +1,4 @@
-from typing import Union, Optional
+from typing import Union, Optional, Tuple, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import Job, Customer, Request
 from src.repositories import (
@@ -12,10 +12,10 @@ from src.services.template_service import TemplateService
 from src.services.geocoding import GeocodingService
 from src.uimodels import (
     AddJobTool,
-    AddCustomerTool,
+    AddLeadTool,
     EditCustomerTool,
     ScheduleJobTool,
-    StoreRequestTool,
+    AddRequestTool,
     SearchTool,
     UpdateSettingsTool,
     ConvertRequestTool,
@@ -45,24 +45,28 @@ class ToolExecutor:
         self,
         tool_call: Union[
             AddJobTool,
-            AddCustomerTool,
+            AddLeadTool,
             EditCustomerTool,
             ScheduleJobTool,
-            StoreRequestTool,
+            AddRequestTool,
             SearchTool,
             UpdateSettingsTool,
             ConvertRequestTool,
         ],
-    ) -> tuple[str, Optional[dict]]:
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
         if isinstance(tool_call, AddJobTool):
             return await self._execute_add_job(tool_call)
-        elif isinstance(tool_call, AddCustomerTool):
-            return await self._execute_add_customer(tool_call)
+        elif isinstance(
+            tool_call, AddLeadTool
+        ):  # Changed from AddCustomerTool to AddLeadTool
+            return await self._execute_add_lead(tool_call)  # Changed method call
         elif isinstance(tool_call, EditCustomerTool):
             return await self._execute_edit_customer(tool_call)
         elif isinstance(tool_call, ScheduleJobTool):
             return await self._execute_schedule_job(tool_call)
-        elif isinstance(tool_call, StoreRequestTool):
+        elif isinstance(
+            tool_call, AddRequestTool
+        ):  # Changed from StoreRequestTool to AddRequestTool
             return await self._execute_store_request(tool_call)
         elif isinstance(tool_call, SearchTool):
             return await self._execute_search(tool_call)
@@ -74,9 +78,10 @@ class ToolExecutor:
             return "Help is handled by the service layer directly.", None
         return "Unknown tool call", None
 
-    async def _execute_add_customer(
-        self, tool: AddCustomerTool
-    ) -> tuple[str, Optional[dict]]:
+    async def _execute_add_lead(  # Renamed from _execute_add_customer
+        self,
+        tool: AddLeadTool,  # Changed type hint from AddCustomerTool to AddLeadTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:  # Changed return type hint
         # 1. Check for duplicates
         customer_name = tool.name.title() if tool.name else "Unknown"
         existing = await self.customer_repo.get_by_name(customer_name, self.business_id)
@@ -135,7 +140,7 @@ class ToolExecutor:
 
     async def _execute_edit_customer(
         self, tool: EditCustomerTool
-    ) -> tuple[str, Optional[dict]]:
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:  # Changed return type hint
         # Find customer by query (Name, Phone, or Address)
         # We use repository search which handles name, phone, and original_address_input
         customers = await self.customer_repo.search(tool.query, self.business_id)
@@ -173,7 +178,9 @@ class ToolExecutor:
             "old_data": old_data,
         }
 
-    async def _execute_add_job(self, tool: AddJobTool) -> tuple[str, Optional[dict]]:
+    async def _execute_add_job(
+        self, tool: AddJobTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:  # Changed return type hint
         # 1. Find or create customer (Deduplication)
         customer_name = tool.customer_name.title() if tool.customer_name else "Unknown"
         customer = await self.customer_repo.get_by_name(customer_name, self.business_id)
@@ -228,7 +235,7 @@ class ToolExecutor:
 
     async def _execute_schedule_job(
         self, tool: ScheduleJobTool
-    ) -> tuple[str, Optional[dict]]:
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:  # Changed return type hint
         # This is a bit complex as it might be a new job or existing
         # For now, let's assume it updates the most recent job or finds by query
         job = None
@@ -285,9 +292,10 @@ class ToolExecutor:
 
         return "Could not find a job to schedule. Try adding a job first.", None
 
-    async def _execute_store_request(
-        self, tool: StoreRequestTool
-    ) -> tuple[str, Optional[dict]]:
+    async def _execute_store_request(  # Renamed from _execute_store_request
+        self,
+        tool: AddRequestTool,  # Changed type hint from StoreRequestTool to AddRequestTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:  # Changed return type hint
         req = Request(
             business_id=self.business_id, content=tool.content, status="pending"
         )

@@ -40,7 +40,7 @@ class BaseRepository(Generic[T]):
     async def get_all(self, business_id: int) -> List[T]:
         query = select(self.model).where(self.model.business_id == business_id)
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     def add(self, item: T):
         self.session.add(item)
@@ -118,7 +118,7 @@ class RequestRepository(BaseRepository[Request]):
 
         stmt = select(Request).where(and_(*conditions))
         result = await self.session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
 
 class CustomerRepository(BaseRepository[Customer]):
@@ -225,7 +225,7 @@ class CustomerRepository(BaseRepository[Customer]):
         stmt = stmt.where(and_(*conditions)).distinct()
 
         result = await self.session.execute(stmt)
-        customers = result.scalars().all()
+        customers = list(result.scalars().all())
 
         # Spatial Filtering (Python-side)
         if center_lat is not None and center_lon is not None and radius:
@@ -290,21 +290,7 @@ class JobRepository(BaseRepository[Job]):
 
         stmt = select(Job).options(joinedload(Job.customer)).where(and_(*conditions))
         result = await self.session.execute(stmt)
-        jobs = result.scalars().all()
-
-        # Spatial Filtering (Python-side)
-        if center_lat is not None and center_lon is not None and radius:
-            filtered = []
-            for j in jobs:
-                if j.latitude is not None and j.longitude is not None:
-                    dist = haversine_distance(
-                        center_lat, center_lon, j.latitude, j.longitude
-                    )
-                    if dist <= radius:
-                        filtered.append(j)
-            return filtered
-
-        return jobs
+        return list(result.scalars().all())
 
     async def get_most_recent_by_customer(
         self, customer_id: int, business_id: int

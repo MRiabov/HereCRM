@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from src.database import Base
 from src.models import Business, Job, Customer, Request
 from src.tool_executor import ToolExecutor
-from src.uimodels import AddJobTool, AddCustomerTool, ConvertRequestTool, SearchTool
+from src.uimodels import AddJobTool, AddLeadTool, ConvertRequestTool, SearchTool
 from src.services.template_service import TemplateService
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -138,7 +138,7 @@ async def test_execute_add_lead_implicit(
     executor = ToolExecutor(test_session, biz.id, "123456789", template_service)
 
     # 1. Add Lead
-    tool = AddCustomerTool(
+    tool = AddLeadTool(
         name="Bob The Lead",
         phone="555-LEAD",
         details="Just inquiring",
@@ -195,7 +195,7 @@ async def test_deduplication(
     executor = ToolExecutor(test_session, biz.id, "123456789", template_service)
 
     # 1. Add Customer Case-Sensitive
-    tool = AddCustomerTool(name="John Doe", phone="555-0000")
+    tool = AddLeadTool(name="John Doe", phone="555-0000")
     await executor.execute(tool)
 
     # 2. Add Job with Case-Insensitive Name

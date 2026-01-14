@@ -96,13 +96,13 @@
 **Priority**: Low - Polish
 **Test**: Manual E2E Walkthrough
 
-- [ ] **T018**: Implement specific logic for "Schedule" command (updating existing records). [[WP05-refinement-and-productionizing.md]]
-- [ ] **T019**: Refine error handling: Display helpful error + Help message for unparseable inputs instead of storing as Request. [[WP05-refinement-and-productionizing.md]]
-- [ ] **T019a**: Implement "Help" command to explain bot usage. [[WP05-refinement-and-productionizing.md]]
-- [ ] **T020a**: Implement Configurable YAML Boilerplates for customer messages. [[WP05-refinement-and-productionizing.md]]
-- [ ] **T020b**: Refactor hardcoded messages to use YAML templates. [[WP05-refinement-and-productionizing.md]]
-- [ ] **T020c**: Verify refined intent nuances with `chat_simulator.py`. [[WP05-refinement-and-productionizing.md]]
-- [ ] **T020**: Perform final E2E Walkthrough and verify all Success Criteria. [[WP05-refinement-and-productionizing.md]]
+- [x] **T018**: Implement specific logic for "Schedule" command (updating existing records). [[WP05-refinement-and-productionizing.md]]
+- [x] **T019**: Refine error handling: Display helpful error + Help message for unparseable inputs instead of storing as Request. [[WP05-refinement-and-productionizing.md]]
+- [x] **T019a**: Implement "Help" command to explain bot usage. [[WP05-refinement-and-productionizing.md]]
+- [x] **T020a**: Implement Configurable YAML Boilerplates for customer messages. [[WP05-refinement-and-productionizing.md]]
+- [x] **T020b**: Refactor hardcoded messages to use YAML templates. [[WP05-refinement-and-productionizing.md]]
+- [x] **T020c**: Verify refined intent nuances with `chat_simulator.py`. [[WP05-refinement-and-productionizing.md]]
+- [x] **T020**: Perform final E2E Walkthrough and verify all Success Criteria. [[WP05-refinement-and-productionizing.md]]
 
 ---
 

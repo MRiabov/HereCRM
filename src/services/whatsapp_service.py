@@ -12,10 +12,10 @@ from src.tool_executor import ToolExecutor
 from src.services.template_service import TemplateService
 from src.uimodels import (
     AddJobTool,
-    AddCustomerTool,
+    AddLeadTool,
     EditCustomerTool,
     ScheduleJobTool,
-    StoreRequestTool,
+    AddRequestTool,
     SearchTool,
     UpdateSettingsTool,
     ConvertRequestTool,
@@ -154,10 +154,10 @@ class WhatsappService:
 
         model_map = {
             "AddJobTool": AddJobTool,
-            "AddCustomerTool": AddCustomerTool,
+            "AddLeadTool": AddLeadTool,
             "EditCustomerTool": EditCustomerTool,
             "ScheduleJobTool": ScheduleJobTool,
-            "StoreRequestTool": StoreRequestTool,
+            "AddRequestTool": AddRequestTool,
             "SearchTool": SearchTool,
             "UpdateSettingsTool": UpdateSettingsTool,
             "ConvertRequestTool": ConvertRequestTool,
@@ -315,11 +315,11 @@ class WhatsappService:
     def _generate_summary(self, tool_call: Any) -> str:
         # Map tool class names to friendly display names
         friendly_names = {
-            "AddJobTool": "Add Job",
-            "AddCustomerTool": "Add Customer",
-            "EditCustomerTool": "Edit Customer",
+            "AddJobTool": "Job",
+            "AddLeadTool": "Add Lead",
+            "EditCustomerTool": "Update",
             "ScheduleJobTool": "Schedule",
-            "StoreRequestTool": "Request",
+            "AddRequestTool": "Request",
             "SearchTool": "Search",
             "UpdateSettingsTool": "Settings",
             "ConvertRequestTool": "Convert",
@@ -358,7 +358,7 @@ class WhatsappService:
                 else "Pending confirmation",
             )
 
-        if isinstance(tool_call, AddCustomerTool):
+        if isinstance(tool_call, AddLeadTool):
             client_details = self.template_service.render(
                 "client_details",
                 name=tool_call.name,
@@ -398,7 +398,7 @@ class WhatsappService:
                 time=tool_call.time,
             )
 
-        if isinstance(tool_call, StoreRequestTool):
+        if isinstance(tool_call, AddRequestTool):
             client_details = self.template_service.render(
                 "client_details",
                 name=tool_call.customer_name or "Not supplied",

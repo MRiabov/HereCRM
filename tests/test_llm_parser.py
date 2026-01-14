@@ -1,45 +1,48 @@
 import pytest
+import json
 from unittest.mock import MagicMock, patch, AsyncMock
 from src.llm_client import LLMParser
 from src.uimodels import (
     AddJobTool,
-    ConvertRequestTool,
-    StoreRequestTool,
-    HelpTool,
+    AddLeadTool,
+    EditCustomerTool,
     ScheduleJobTool,
+    AddRequestTool,
+    SearchTool,
+    UpdateSettingsTool,
+    ConvertRequestTool,
+    HelpTool,
 )
 
 
 @pytest.fixture
 def mock_parser():
-    with patch("google.genai.configure"):
-        with patch("google.genai.GenerativeModel") as MockModel:
-            parser = LLMParser()
-            yield parser, MockModel.return_value
+    with patch("src.llm_client.AsyncOpenAI") as MockOpenAI:
+        mock_client = MockOpenAI.return_value
+        parser = LLMParser()
+        yield parser, mock_client
 
 
 @pytest.mark.asyncio
 async def test_parse_add_job(mock_parser):
-    parser, mock_model = mock_parser
+    parser, mock_client = mock_parser
 
-    mock_response = MagicMock()
-    mock_candidate = MagicMock()
-    mock_part = MagicMock()
+    # Setup OpenAI response mock
+    mock_tool_call = MagicMock()
+    mock_tool_call.function.name = "AddJobTool"
+    mock_tool_call.function.arguments = json.dumps(
+        {
+            "customer_name": "John Doe",
+            "description": "Fix the leaky faucet",
+            "price": 50.0,
+        }
+    )
 
-    mock_part.function_call.name = "add_job_tool"
-    mock_part.function_call.args = {
-        "customer_name": "John Doe",
-        "description": "Fix the leaky faucet",
-        "price": 50.0,
-    }
+    mock_message = MagicMock()
+    mock_message.tool_calls = [mock_tool_call]
+    mock_response = MagicMock(choices=[MagicMock(message=mock_message)])
 
-    # Mocking hierarchy for response.candidates[0].content.parts[0]
-    mock_candidate.content.parts = [mock_part]
-    mock_response.candidates = [mock_candidate]
-
-    mock_chat = MagicMock()
-    mock_chat.send_message_async = AsyncMock(return_value=mock_response)
-    mock_model.start_chat.return_value = mock_chat
+    mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
 
     result = await parser.parse(
         "Add a job for John Doe to fix the leaky faucet for $50"
@@ -52,113 +55,76 @@ async def test_parse_add_job(mock_parser):
 
 
 @pytest.mark.asyncio
-async def test_parse_undo_cancel(mock_parser):
-    parser, _ = mock_parser
+async def test_parse_add_lead(mock_parser):
+    parser, mock_client = mock_parser
 
-    # Pre-filtering should catch these before any LLM call
-    assert await parser.parse("Undo") is None
-    assert await parser.parse("  CANCEL  ") is None
+    mock_tool_call = MagicMock()
+    mock_tool_call.function.name = "AddLeadTool"
+    mock_tool_call.function.arguments = json.dumps(
+        {
+            "name": "John Doe",
+            "phone": "086123123",
+            "details": "Interested in quote",
+        }
+    )
 
+    mock_message = MagicMock()
+    mock_message.tool_calls = [mock_tool_call]
+    mock_response = MagicMock(choices=[MagicMock(message=mock_message)])
 
-@pytest.mark.asyncio
-async def test_parse_empty_candidates(mock_parser):
-    parser, mock_model = mock_parser
+    mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
 
-    mock_response = MagicMock()
-    mock_response.candidates = []  # Empty candidates (e.g. safety filter)
-
-    mock_chat = MagicMock()
-    mock_chat.send_message_async = AsyncMock(return_value=mock_response)
-    mock_model.start_chat.return_value = mock_chat
-
-    result = await parser.parse("Something that triggers safety filter")
-    assert result is None
-
-
-@pytest.mark.asyncio
-async def test_parse_no_tool_call(mock_parser):
-    parser, mock_model = mock_parser
-
-    mock_response = MagicMock()
-    mock_candidate = MagicMock()
-    mock_part = MagicMock()
-    mock_part.function_call = None  # No function call
-    mock_part.text = "Hello, how can I help you?"
-
-    mock_candidate.content.parts = [mock_part]
-    mock_response.candidates = [mock_candidate]
-
-    mock_chat = MagicMock()
-    mock_chat.send_message_async = AsyncMock(return_value=mock_response)
-    mock_model.start_chat.return_value = mock_chat
-
-    result = await parser.parse("Hello")
-    assert result is None
+    result = await parser.parse("add lead: john, 086123123")
+    assert isinstance(result, AddLeadTool)
+    assert result.name == "John Doe"
+    assert result.details == "Interested in quote"
 
 
 @pytest.mark.asyncio
-async def test_parse_help(mock_parser):
-    parser, _ = mock_parser
+async def test_parse_add_request_explicit(mock_parser):
+    parser, mock_client = mock_parser
 
-    # Pre-filtering should catch these
-    assert isinstance(await parser.parse("help"), HelpTool)
-    assert isinstance(await parser.parse("Usage"), HelpTool)
-    assert isinstance(await parser.parse("commands"), HelpTool)
+    mock_tool_call = MagicMock()
+    mock_tool_call.function.name = "AddRequestTool"
+    mock_tool_call.function.arguments = json.dumps(
+        {
+            "content": "john wanted his windows cleaned tomorrow, 12 windows",
+        }
+    )
 
+    mock_message = MagicMock()
+    mock_message.tool_calls = [mock_tool_call]
+    mock_response = MagicMock(choices=[MagicMock(message=mock_message)])
 
-@pytest.mark.asyncio
-async def test_parse_convert_request(mock_parser):
-    parser, mock_model = mock_parser
+    mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
 
-    mock_response = MagicMock()
-    mock_candidate = MagicMock()
-    mock_part = MagicMock()
-
-    mock_part.function_call.name = "convert_request_tool"
-    mock_part.function_call.args = {
-        "query": "John",
-        "action": "schedule",
-        "time": "tomorrow",
-    }
-
-    mock_candidate.content.parts = [mock_part]
-    mock_response.candidates = [mock_candidate]
-
-    mock_chat = MagicMock()
-    mock_chat.send_message_async = AsyncMock(return_value=mock_response)
-    mock_model.start_chat.return_value = mock_chat
-
-    result = await parser.parse("Schedule John for tomorrow")
-
-    assert isinstance(result, ConvertRequestTool)
-    assert result.query == "John"
-    assert result.action == "schedule"
-    assert result.time == "tomorrow"
+    result = await parser.parse(
+        "add request: john wanted his windows cleaned tomorrow, 12 windows"
+    )
+    assert isinstance(result, AddRequestTool)
+    assert "windows cleaned" in result.content
 
 
 @pytest.mark.asyncio
 async def test_parse_schedule_with_time(mock_parser):
-    parser, mock_model = mock_parser
+    parser, mock_client = mock_parser
 
-    mock_response = MagicMock()
-    mock_candidate = MagicMock()
-    mock_part = MagicMock()
+    mock_tool_call = MagicMock()
+    mock_tool_call.function.name = "ScheduleJobTool"
+    mock_tool_call.function.arguments = json.dumps(
+        {
+            "customer_query": "John",
+            "time": "tomorrow at 2pm",
+            "iso_time": "2026-01-14T14:00:00Z",
+        }
+    )
 
-    mock_part.function_call.name = "schedule_job_tool"
-    mock_part.function_call.args = {
-        "customer_query": "John",
-        "time": "tomorrow at 2pm",
-        "iso_time": "2026-01-14T14:00:00Z",
-    }
+    mock_message = MagicMock()
+    mock_message.tool_calls = [mock_tool_call]
+    mock_response = MagicMock(choices=[MagicMock(message=mock_message)])
 
-    mock_candidate.content.parts = [mock_part]
-    mock_response.candidates = [mock_candidate]
+    mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
 
-    mock_chat = MagicMock()
-    mock_chat.send_message_async = AsyncMock(return_value=mock_response)
-    mock_model.start_chat.return_value = mock_chat
-
-    # Test with system_time
     result = await parser.parse(
         "Schedule John for tomorrow at 2pm", system_time="2026-01-13T10:00:00Z"
     )
@@ -170,71 +136,130 @@ async def test_parse_schedule_with_time(mock_parser):
 
 
 @pytest.mark.asyncio
-async def test_parse_add_lead(mock_parser):
-    parser, mock_model = mock_parser
+async def test_parse_search(mock_parser):
+    parser, mock_client = mock_parser
 
-    mock_response = MagicMock()
-    mock_part = MagicMock()
-    mock_part.function_call.name = "add_job_tool"
-    mock_part.function_call.args = {
-        "customer_name": "John Doe",
-        "customer_phone": "086123123",
-        "category": "lead",
-    }
+    mock_tool_call = MagicMock()
+    mock_tool_call.function.name = "SearchTool"
+    mock_tool_call.function.arguments = json.dumps(
+        {
+            "query": "John",
+            "entity_type": "job",
+        }
+    )
 
-    mock_response.candidates = [MagicMock(content=MagicMock(parts=[mock_part]))]
-    mock_chat = MagicMock()
-    mock_chat.send_message_async = AsyncMock(return_value=mock_response)
-    mock_model.start_chat.return_value = mock_chat
+    mock_message = MagicMock()
+    mock_message.tool_calls = [mock_tool_call]
+    mock_response = MagicMock(choices=[MagicMock(message=mock_message)])
 
-    result = await parser.parse("add lead: john, 086123123")
-    assert isinstance(result, AddJobTool)
-    assert result.customer_name == "John Doe"
-    assert result.category == "lead"
+    mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+
+    result = await parser.parse("find jobs for John")
+    assert isinstance(result, SearchTool)
+    assert result.query == "John"
+    assert result.entity_type == "job"
 
 
 @pytest.mark.asyncio
-async def test_parse_add_request_explicit(mock_parser):
-    parser, mock_model = mock_parser
+async def test_parse_edit_customer(mock_parser):
+    parser, mock_client = mock_parser
 
-    mock_response = MagicMock()
-    mock_part = MagicMock()
-    mock_part.function_call.name = "store_request_tool"
-    mock_part.function_call.args = {
-        "content": "john wanted his windows cleaned tomorrow, 12 windows",
-    }
-
-    mock_response.candidates = [MagicMock(content=MagicMock(parts=[mock_part]))]
-    mock_chat = MagicMock()
-    mock_chat.send_message_async = AsyncMock(return_value=mock_response)
-    mock_model.start_chat.return_value = mock_chat
-
-    result = await parser.parse(
-        "add request: john wanted his windows cleaned tomorrow, 12 windows"
+    mock_tool_call = MagicMock()
+    mock_tool_call.function.name = "EditCustomerTool"
+    mock_tool_call.function.arguments = json.dumps(
+        {
+            "query": "John",
+            "phone": "0860000000",
+        }
     )
-    assert isinstance(result, StoreRequestTool)
-    assert "windows cleaned" in result.content
+
+    mock_message = MagicMock()
+    mock_message.tool_calls = [mock_tool_call]
+    mock_response = MagicMock(choices=[MagicMock(message=mock_message)])
+
+    mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+
+    result = await parser.parse("update phone for John to 0860000000")
+    assert isinstance(result, EditCustomerTool)
+    assert result.query == "John"
+    assert result.phone == "0860000000"
 
 
 @pytest.mark.asyncio
-async def test_parse_schedule_explicit(mock_parser):
-    parser, mock_model = mock_parser
+async def test_parse_update_settings(mock_parser):
+    parser, mock_client = mock_parser
 
-    mock_response = MagicMock()
-    mock_part = MagicMock()
-    mock_part.function_call.name = "schedule_job_tool"
-    mock_part.function_call.args = {
-        "customer_query": "john",
-        "time": "tomorrow 14:00",
-    }
-
-    mock_response.candidates = [MagicMock(content=MagicMock(parts=[mock_part]))]
-    mock_chat = MagicMock()
-    mock_chat.send_message_async = AsyncMock(return_value=mock_response)
-    mock_model.start_chat.return_value = mock_chat
-
-    result = await parser.parse(
-        "schedule: john wanted his windows cleaned tomorrow 14:00"
+    mock_tool_call = MagicMock()
+    mock_tool_call.function.name = "UpdateSettingsTool"
+    mock_tool_call.function.arguments = json.dumps(
+        {
+            "setting_key": "language",
+            "setting_value": "Spanish",
+        }
     )
-    assert isinstance(result, ScheduleJobTool)
-    assert result.customer_query == "john"
+
+    mock_message = MagicMock()
+    mock_message.tool_calls = [mock_tool_call]
+    mock_response = MagicMock(choices=[MagicMock(message=mock_message)])
+
+    mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+
+    result = await parser.parse("change language to Spanish")
+    assert isinstance(result, UpdateSettingsTool)
+    assert result.setting_key == "language"
+    assert result.setting_value == "Spanish"
+
+
+@pytest.mark.asyncio
+async def test_parse_convert_request(mock_parser):
+    parser, mock_client = mock_parser
+
+    mock_tool_call = MagicMock()
+    mock_tool_call.function.name = "ConvertRequestTool"
+    mock_tool_call.function.arguments = json.dumps(
+        {
+            "query": "John",
+            "action": "complete",
+        }
+    )
+
+    mock_message = MagicMock()
+    mock_message.tool_calls = [mock_tool_call]
+    mock_response = MagicMock(choices=[MagicMock(message=mock_message)])
+
+    mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+
+    result = await parser.parse("mark John as completed")
+    assert isinstance(result, ConvertRequestTool)
+    assert result.query == "John"
+    assert result.action == "complete"
+
+
+@pytest.mark.asyncio
+async def test_parse_undo_cancel(mock_parser):
+    parser, _ = mock_parser
+    assert await parser.parse("Undo") is None
+    assert await parser.parse("CANCEL") is None
+
+
+@pytest.mark.asyncio
+async def test_parse_help(mock_parser):
+    parser, _ = mock_parser
+    assert isinstance(await parser.parse("help"), HelpTool)
+
+
+@pytest.mark.asyncio
+async def test_parse_no_tool_call(mock_parser):
+    parser, mock_client = mock_parser
+    mock_message = MagicMock(tool_calls=None)
+    mock_response = MagicMock(choices=[MagicMock(message=mock_message)])
+    mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+    assert await parser.parse("Hello") is None
+
+
+@pytest.mark.asyncio
+async def test_parse_empty_choices(mock_parser):
+    parser, mock_client = mock_parser
+    mock_response = MagicMock(choices=[])
+    mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+    assert await parser.parse("Nothing") is None

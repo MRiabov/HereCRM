@@ -25,7 +25,7 @@ class AddJobTool(BaseModel):
     )
 
 
-class AddCustomerTool(BaseModel):
+class AddLeadTool(BaseModel):
     """Add a new lead, client, or customer without a job.
     Triggered when adding a person/entity without specific job details or 'request' keyword."""
 
@@ -86,7 +86,7 @@ class ScheduleJobTool(BaseModel):
     )
 
 
-class StoreRequestTool(BaseModel):
+class AddRequestTool(BaseModel):
     """Store a general request or note.
     ONLY triggered if user explicitly says 'add request' or similar."""
 
