@@ -1,4 +1,4 @@
-from sqlalchemy import select, or_, and_
+from sqlalchemy import select, or_, and_, event, func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Generic, TypeVar, Type, Optional, List, Any
@@ -103,8 +103,9 @@ class ServiceRepository(BaseRepository[Service]):
         if not service:
             return None
 
+        allowed_fields = {"name", "description", "default_price"}
         for key, value in kwargs.items():
-            if hasattr(service, key):
+            if key in allowed_fields and hasattr(service, key):
                 setattr(service, key, value)
         return service
 
@@ -315,7 +316,22 @@ class JobRepository(BaseRepository[Job]):
 
         stmt = select(Job).options(joinedload(Job.customer)).where(and_(*conditions))
         result = await self.session.execute(stmt)
-        return list(result.scalars().all())
+        jobs = list(result.scalars().all())
+
+        # Spatial Filtering (Python-side)
+        if center_lat is not None and center_lon is not None and radius:
+            filtered = []
+            for j in jobs:
+                # Job has latitude/longitude fields directly
+                if j.latitude is not None and j.longitude is not None:
+                    dist = haversine_distance(
+                        center_lat, center_lon, j.latitude, j.longitude
+                    )
+                    if dist <= radius:
+                        filtered.append(j)
+            return filtered
+
+        return jobs
 
     async def get_most_recent_by_customer(
         self, customer_id: int, business_id: int
@@ -340,9 +356,6 @@ class JobRepository(BaseRepository[Job]):
         return result.unique().scalar_one_or_none()
 
     def add(self, item: Job):
-        # Auto-calculate value from line items if not explicitly set
-        if item.line_items and item.value is None:
-            item.value = sum(li.total_price for li in item.line_items)
         super().add(item)
 
 
@@ -357,3 +370,27 @@ class ConversationStateRepository:
 
     def add(self, state: ConversationState):
         self.session.add(state)
+
+
+# Event Listeners for Job Value Synchronization
+def update_job_value(mapper, connection, target):
+    # This runs synchronously in the flush transaction
+    # We need to recalculate the job value.
+    # Target is the LineItem instance.
+    job_id = target.job_id
+    
+    # We execute a direct SQL update to avoid object session confusion during flush
+    # Sum all line items for this job
+    connection.execute(
+        Job.__table__.update()
+        .where(Job.id == job_id)
+        .values(
+            value=select(func.sum(LineItem.total_price))
+            .where(LineItem.job_id == job_id)
+            .scalar_subquery()
+        )
+    )
+
+event.listen(LineItem, "after_insert", update_job_value)
+event.listen(LineItem, "after_update", update_job_value)
+event.listen(LineItem, "after_delete", update_job_value)
