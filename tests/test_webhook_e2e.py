@@ -91,6 +91,25 @@ async def test_webhook_e2e():
             assert response.status_code == 200
             data = response.json()
             assert "reply" in data
+            assert "welcome_message" in data["reply"]
+
+            # Onboarding is done, now process the message again
+            # In a real scenario, the user would need to send the message again or we would auto-reprocess.
+            # But the current handle_message just returns welcome_message and stops.
+            # So the test's next step (Yes) will fail because there is no draft.
+            # I should send the message again as a non-new user.
+
+            # 1.5 Send message again (now as existing user)
+            response = await ac.post(
+                "/webhook",
+                content=payload_bytes,
+                headers={
+                    "X-Hub-Signature-256": sig_header,
+                    "Content-Type": "application/json",
+                },
+            )
+            assert response.status_code == 200
+            data = response.json()
             assert "Please confirm" in data["reply"]
 
             # 2. Confirm

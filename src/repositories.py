@@ -301,7 +301,21 @@ class JobRepository(BaseRepository[Job]):
 
         stmt = select(Job).options(joinedload(Job.customer)).where(and_(*conditions))
         result = await self.session.execute(stmt)
-        return list(result.scalars().all())
+        jobs = list(result.scalars().all())
+
+        # Spatial Filtering (Python-side)
+        if center_lat is not None and center_lon is not None and radius:
+            filtered = []
+            for j in jobs:
+                if j.latitude is not None and j.longitude is not None:
+                    dist = haversine_distance(
+                        center_lat, center_lon, j.latitude, j.longitude
+                    )
+                    if dist <= radius:
+                        filtered.append(j)
+            return filtered
+
+        return jobs
 
     async def get_most_recent_by_customer(
         self, customer_id: int, business_id: int
