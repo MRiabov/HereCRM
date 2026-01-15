@@ -5,6 +5,13 @@ from typing import Generic, TypeVar, Type, Optional, List, Any
 from datetime import datetime
 from src.models import Business, User, Customer, Job, Request, ConversationState, Service, LineItem
 import math
+import re
+
+def normalize_phone(phone: str) -> str:
+    """Standardize phone number by removing whitespace and dashes."""
+    if not phone:
+        return phone
+    return re.sub(r'[\s\-]', '', phone)
 
 
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -53,11 +60,14 @@ class UserRepository:
 
     async def get_by_phone(self, phone: str) -> Optional[User]:
         # This is GLOBAL lookup to identify the user
+        phone = normalize_phone(phone)
         query = select(User).where(User.phone_number == phone)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     def add(self, user: User):
+        if user.phone_number:
+            user.phone_number = normalize_phone(user.phone_number)
         self.session.add(user)
 
     async def update_preferences(
@@ -162,6 +172,7 @@ class CustomerRepository(BaseRepository[Customer]):
         # Phone numbers can be tricky, but for now we'll do literal match or maybe strip spaces/dashes?
         # User asked for deduplication robustness. Let's just do exact map for phone for now as 'ilike' for phone is weird.
         # But wait, plan says "case-insensitive". For phone that doesn't matter much unless letters are used.
+        phone = normalize_phone(phone)
         query = select(Customer).where(
             Customer.phone == phone, Customer.business_id == business_id
         )
@@ -171,6 +182,8 @@ class CustomerRepository(BaseRepository[Customer]):
     def add(self, item: Customer):
         if item.name:
             item.name = item.name.title()
+        if item.phone:
+            item.phone = normalize_phone(item.phone)
         super().add(item)
 
     async def search(
@@ -205,10 +218,11 @@ class CustomerRepository(BaseRepository[Customer]):
             "show active customers",
         ]
         if query and query.strip().lower() not in ignore_keywords:
+            norm_query = normalize_phone(query)
             conditions.append(
                 or_(
                     Customer.name.ilike(f"%{query}%"),
-                    Customer.phone.ilike(f"%{query}%"),
+                    Customer.phone.ilike(f"%{norm_query}%"),
                     Customer.street.ilike(f"%{query}%"),
                     Customer.city.ilike(f"%{query}%"),
                     Customer.original_address_input.ilike(f"%{query}%"),
@@ -364,11 +378,14 @@ class ConversationStateRepository:
         self.session = session
 
     async def get_by_phone(self, phone: str) -> Optional[ConversationState]:
+        phone = normalize_phone(phone)
         query = select(ConversationState).where(ConversationState.phone_number == phone)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     def add(self, state: ConversationState):
+        if state.phone_number:
+            state.phone_number = normalize_phone(state.phone_number)
         self.session.add(state)
 
 
