@@ -1,6 +1,6 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import Job, Customer
+from src.models import Job, Customer, PipelineStage
 from src.repositories import JobRepository, CustomerRepository, RequestRepository
 
 
@@ -157,4 +157,18 @@ class CRMService:
                 line += f" ({', '.join(examples)})"
             lines.append(line)
         return "\n".join(lines)
+
+    async def update_customer_stage(self, customer_id: int, stage: str) -> Customer:
+        customer = await self.customer_repo.get_by_id(customer_id, self.business_id)
+        if not customer:
+            raise ValueError(f"Customer with ID {customer_id} not found.")
+
+        try:
+            new_stage = PipelineStage(stage)
+        except ValueError:
+            raise ValueError(f"Invalid pipeline stage: {stage}")
+
+        customer.pipeline_stage = new_stage
+        await self.session.flush()
+        return customer
 

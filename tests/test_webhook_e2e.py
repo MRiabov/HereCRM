@@ -90,6 +90,27 @@ async def test_webhook_e2e():
             )
             assert response.status_code == 200
             data = response.json()
+            # New user gets welcome message first (mocked to return the key)
+            assert data["reply"] == "welcome_message"
+
+            # 2. Resend Command (now user is registered)
+            payload_retry = {"from_number": phone, "body": "Add job for Alice fix sink 100"}
+            payload_retry_bytes = json.dumps(payload_retry).encode("utf-8")
+            signature_retry = hmac.new(
+                secret.encode("utf-8"), payload_retry_bytes, hashlib.sha256
+            ).hexdigest()
+            sig_retry_header = f"sha256={signature_retry}"
+
+            response = await ac.post(
+                "/webhook",
+                content=payload_retry_bytes,
+                headers={
+                    "X-Hub-Signature-256": sig_retry_header,
+                    "Content-Type": "application/json",
+                },
+            )
+            assert response.status_code == 200
+            data = response.json()
             assert "reply" in data
             assert "welcome_message" in data["reply"]
 
@@ -112,7 +133,7 @@ async def test_webhook_e2e():
             data = response.json()
             assert "Please confirm" in data["reply"]
 
-            # 2. Confirm
+            # 3. Confirm
             payload_confirm = {"from_number": phone, "body": "Yes"}
             payload_confirm_bytes = json.dumps(payload_confirm).encode("utf-8")
             signature_confirm = hmac.new(

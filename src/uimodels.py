@@ -148,6 +148,9 @@ class SearchTool(BaseModel):
     center_address: Optional[str] = Field(
         None, description="Address for proximity search (e.g., 'High Street 34')"
     )
+    pipeline_stage: Optional[str] = Field(
+        None, description="Filter by pipeline stage (e.g., 'not_contacted', 'lost')"
+    )
 
 
 class UpdateSettingsTool(BaseModel):
@@ -197,4 +200,17 @@ class GetPipelineTool(BaseModel):
     Triggered when the user asks about the health of the business, pipeline status, or funnel."""
 
     pass
+
+
+class UpdateCustomerStageTool(BaseModel):
+    """Update a customer's pipeline stage manually.
+    Triggered when user says 'Mark John as Lost', 'Customer is not interested', or similar."""
+
+    query: str = Field(
+        ..., description="Name or phone to find the customer", max_length=100
+    )
+    stage: str = Field(
+        ...,
+        description="The new pipeline stage: 'not_contacted', 'contacted', 'converted_once', 'converted_recurrent', 'not_interested', 'lost'",
+    )
 
