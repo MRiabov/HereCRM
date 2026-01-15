@@ -105,7 +105,13 @@ async def test_tool_executor_with_line_items(
     stmt = select(Job).options(joinedload(Job.line_items)).where(Job.id == metadata["id"])
     res = await test_session.execute(stmt)
     job = res.unique().scalar_one()
+    # Refresh to get the DB-updated 'value' (from listener or ToolExecutor)
     await test_session.refresh(job)
+    
+    # To avoid MissingGreenlet, re-query with joinedload if we need to check line_items again
+    stmt = select(Job).options(joinedload(Job.line_items)).where(Job.id == job.id)
+    res = await test_session.execute(stmt)
+    job = res.unique().scalar_one()
 
     assert len(job.line_items) == 2
     

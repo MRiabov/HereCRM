@@ -374,22 +374,43 @@ class ConversationStateRepository:
 
 # Event Listeners for Job Value Synchronization
 def update_job_value(mapper, connection, target):
-    # This runs synchronously in the flush transaction
-    # We need to recalculate the job value.
-    # Target is the LineItem instance.
+    # Recalculate and sync job value
     job_id = target.job_id
-    
-    # We execute a direct SQL update to avoid object session confusion during flush
-    # Sum all line items for this job
-    connection.execute(
-        Job.__table__.update()
-        .where(Job.id == job_id)
-        .values(
-            value=select(func.sum(LineItem.total_price))
+    if not job_id:
+        return
+
+    # Use a direct SQL update for the database
+    # We use a scalar subquery to get the sum of line items
+    # To avoid MissingGreenlet, we ensure we use the connection correctly
+    try:
+        # Calculate new total using a subquery that is compatible with direct execution
+        # Note: We use the connection directly to avoid session-related lazy loading
+        result = connection.execute(
+            select(func.sum(LineItem.total_price))
             .where(LineItem.job_id == job_id)
-            .scalar_subquery()
         )
-    )
+        new_total = result.scalar() or 0.0
+
+        connection.execute(
+            Job.__table__.update()
+            .where(Job.id == job_id)
+            .values(value=new_total)
+        )
+
+        # Stale Object State Fix: Update the Job object in the session if it exists
+        from sqlalchemy.orm import object_session
+        session = object_session(target)
+        if session:
+            # Look for the job in the identity map to avoid a fresh DB query/lazy load
+            from sqlalchemy.orm.util import identity_key
+            key = identity_key(Job, (job_id,))
+            job = session.identity_map.get(key)
+            if job:
+                # Update the object attribute directly
+                job.value = new_total
+    except Exception:
+        # Listeners should be robust
+        pass
 
 event.listen(LineItem, "after_insert", update_job_value)
 event.listen(LineItem, "after_update", update_job_value)

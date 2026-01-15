@@ -216,6 +216,9 @@ class ToolExecutor:
             job.line_items = await inference_service.infer_line_items(
                 self.business_id, tool.line_items
             )
+            # Ensure price consistency: if line items exist, they define the value.
+            # This also avoids the stale state during the initial flush.
+            job.value = round(sum(li.total_price for li in job.line_items), 2)
 
         self.job_repo.add(job)
         await self.session.flush()

@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import List, Optional, Any
 from sqlalchemy import String, ForeignKey, DateTime, Text, JSON, Float, Enum as SAEnum
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 import enum
 from src.database import Base
 
@@ -68,6 +68,12 @@ class Service(Base):
     business: Mapped["Business"] = relationship(back_populates="services")
     line_items: Mapped[List["LineItem"]] = relationship(back_populates="service")
 
+    @validates("default_price")
+    def validate_price(self, key, value):
+        if value is not None and value < 0:
+            raise ValueError(f"Service price cannot be negative: {value}")
+        return value
+
 
 class LineItem(Base):
     __tablename__ = "line_items"
@@ -83,6 +89,12 @@ class LineItem(Base):
     # Relationships
     job: Mapped["Job"] = relationship(back_populates="line_items")
     service: Mapped[Optional["Service"]] = relationship(back_populates="line_items")
+
+    @validates("quantity", "unit_price", "total_price")
+    def validate_non_negative(self, key, value):
+        if value is not None and value < 0:
+            raise ValueError(f"{key.capitalize()} cannot be negative: {value}")
+        return value
 
 
 class Customer(Base):
@@ -129,6 +141,12 @@ class Job(Base):
     business: Mapped["Business"] = relationship(back_populates="jobs")
     customer: Mapped["Customer"] = relationship(back_populates="jobs")
     line_items: Mapped[List["LineItem"]] = relationship(back_populates="job", cascade="all, delete-orphan")
+
+    @validates("value")
+    def validate_value(self, key, value):
+        if value is not None and value < 0:
+            raise ValueError(f"Job value cannot be negative: {value}")
+        return value
 
 
 class Request(Base):

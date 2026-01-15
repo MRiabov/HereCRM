@@ -71,7 +71,7 @@ description: "Work package task list for Line Items & Service Catalog implementa
 
 ---
 
-## Work Package WP03: LLM & Line Item Inference (Priority: P1) 🎯 MVP
+## [x] Work Package WP03: LLM & Line Item Inference (Priority: P1) 🎯 MVP
 
 **Goal**: Update the LLM integration to intelligently infer line items from natural language input.
 **Independent Test**: Simulated chat inputs correctly populate the `line_items` field in `AddJobTool`.

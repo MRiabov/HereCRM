@@ -13,6 +13,14 @@ class LineItemInfo(BaseModel):
     unit_price: Optional[float] = Field(None, description="Price per unit")
     total_price: Optional[float] = Field(None, description="Total price for this line item")
 
+    @validator("quantity", "unit_price", "total_price")
+    def validate_non_negative(cls, v, field):
+        if v is not None and v < 0:
+            raise ValueError(f"{field.name} cannot be negative")
+        if field.name == "quantity" and v is not None and v > 1_000_000:
+            raise ValueError("Quantity is nonsensically high (> 1 million)")
+        return v
+
 
 class AddJobTool(BaseModel):
     """Add a new job.
@@ -35,6 +43,12 @@ class AddJobTool(BaseModel):
     line_items: Optional[List[LineItemInfo]] = Field(
         None, description="List of structured line items for the job"
     )
+
+    @validator("price")
+    def validate_price(cls, v):
+        if v is not None and v < 0:
+            raise ValueError("Price cannot be negative")
+        return v
 
 
 class AddLeadTool(BaseModel):
