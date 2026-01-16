@@ -3,7 +3,8 @@ work_package_id: WP04
 subtasks:
   - T011
   - T012
-lane: planned
+lane: "doing"
+agent: "Antigravity"
 ---
 
 # Work Package 04: Manual & Scheduled Triggers
@@ -37,3 +38,7 @@ These are additional triggers beyond the standard job lifecycle.
 
 - Trigger "On My Way" and verify message.
 - Mock the date/time and run the Daily Schedule checker, verify messages sent for jobs on that day.
+
+## Activity Log
+
+- 2026-01-15T20:58:40Z – Antigravity – lane=doing – Started implementation

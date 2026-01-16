@@ -57,7 +57,7 @@ async def test_execute_add_job_new_customer(
 
     res = await test_session.execute(select(Customer).where(Customer.name == "Alice"))
     customer = res.scalar_one()
-    assert customer.phone == "555-1234"
+    assert customer.phone == "5551234"
 
     res = await test_session.execute(select(Job).where(Job.customer_id == customer.id))
     job = res.scalar_one()

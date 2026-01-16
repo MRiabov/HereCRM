@@ -7,6 +7,8 @@ from src.repositories import (
     RequestRepository,
     UserRepository,
 )
+from src.services.event_bus import event_bus
+from src.events import JobBookedEvent, JobScheduledEvent
 from src.services.crm_service import CRMService
 from src.services.template_service import TemplateService
 from src.services.geocoding import GeocodingService
@@ -209,7 +211,18 @@ class ToolExecutor:
             status=tool.status or "pending",
         )
         self.job_repo.add(job)
-        await self.session.flush()
+        await self.session.commit()
+        await self.session.refresh(job)
+
+        # Emit JobBookedEvent
+        await event_bus.emit(
+            JobBookedEvent(
+                job_id=job.id,
+                customer_id=customer.id,
+                business_id=self.business_id,
+                description=job.description,
+            )
+        )
 
         price_info = f" – €{job.value}" if job.value else " – No price"
 
@@ -278,6 +291,20 @@ class ToolExecutor:
                 job.description = f"{job.description} (Scheduled: {tool.time})"
             elif not job.description:
                 job.description = f"(Scheduled: {tool.time})"
+
+            await self.session.commit()
+            await self.session.refresh(job)
+
+            # Emit JobScheduledEvent
+            if job.scheduled_at:
+                await event_bus.emit(
+                    JobScheduledEvent(
+                        job_id=job.id,
+                        customer_id=job.customer_id,
+                        business_id=self.business_id,
+                        scheduled_at=job.scheduled_at,
+                    )
+                )
 
             return self.template_service.render(
                 "job_scheduled", name=job.customer.name, time=tool.time

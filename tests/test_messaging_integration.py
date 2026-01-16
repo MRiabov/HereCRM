@@ -4,7 +4,8 @@ import asyncio
 from src.services.event_bus import event_bus
 from src.services.messaging_service import MessagingService
 from src.events import JobBookedEvent, JobScheduledEvent, OnMyWayEvent
-from src.models import MessageLog, MessageStatus
+from src.models import MessageLog, MessageStatus, Business, Customer
+from src.database import get_db
 
 
 @pytest.mark.asyncio
@@ -21,15 +22,32 @@ async def test_event_bus_integration_job_booked():
     # Start the service
     await service.start()
     
-    # Emit a JobBookedEvent
-    event = JobBookedEvent(
-        job_id=123,
-        customer_id=456,
-        business_id=789,
-        description="Test integration job",
-    )
-    
-    await event_bus.emit(event)
+    # Create necessary DB records
+    async for db in get_db():
+        business = Business(name="Test Business")
+        db.add(business)
+        await db.commit()
+        await db.refresh(business)
+        
+        customer = Customer(
+            business_id=business.id,
+            name="Test Customer",
+            phone="+1234567890"
+        )
+        db.add(customer)
+        await db.commit()
+        await db.refresh(customer)
+        
+        # Emit a JobBookedEvent
+        event = JobBookedEvent(
+            job_id=123,
+            customer_id=customer.id,
+            business_id=business.id,
+            description="Test integration job",
+        )
+        
+        await event_bus.emit(event)
+        break
     
     # Wait for async processing
     await asyncio.sleep(0.5)
@@ -71,15 +89,32 @@ async def test_event_bus_integration_job_scheduled():
     service.register_handlers()
     await service.start()
     
-    # Emit a JobScheduledEvent
-    event = JobScheduledEvent(
-        job_id=123,
-        customer_id=456,
-        business_id=789,
-        scheduled_at=datetime(2026, 1, 15, 14, 30, tzinfo=timezone.utc),
-    )
-    
-    await event_bus.emit(event)
+    # Create necessary DB records
+    async for db in get_db():
+        business = Business(name="Test Business")
+        db.add(business)
+        await db.commit()
+        await db.refresh(business)
+        
+        customer = Customer(
+            business_id=business.id,
+            name="Test Customer",
+            phone="+1234567890"
+        )
+        db.add(customer)
+        await db.commit()
+        await db.refresh(customer)
+        
+        # Emit a JobScheduledEvent
+        event = JobScheduledEvent(
+            job_id=123,
+            customer_id=customer.id,
+            business_id=business.id,
+            scheduled_at=datetime(2026, 1, 15, 14, 30, tzinfo=timezone.utc),
+        )
+        
+        await event_bus.emit(event)
+        break
     
     # Wait for async processing
     await asyncio.sleep(0.5)
@@ -114,14 +149,31 @@ async def test_event_bus_integration_on_my_way():
     service.register_handlers()
     await service.start()
     
-    # Emit an OnMyWayEvent
-    event = OnMyWayEvent(
-        customer_id=456,
-        business_id=789,
-        eta_minutes=20,
-    )
-    
-    await event_bus.emit(event)
+    # Create necessary DB records
+    async for db in get_db():
+        business = Business(name="Test Business")
+        db.add(business)
+        await db.commit()
+        await db.refresh(business)
+        
+        customer = Customer(
+            business_id=business.id,
+            name="Test Customer",
+            phone="+1234567890"
+        )
+        db.add(customer)
+        await db.commit()
+        await db.refresh(customer)
+        
+        # Emit an OnMyWayEvent
+        event = OnMyWayEvent(
+            customer_id=customer.id,
+            business_id=business.id,
+            eta_minutes=20,
+        )
+        
+        await event_bus.emit(event)
+        break
     
     # Wait for async processing
     await asyncio.sleep(0.5)
@@ -159,21 +211,42 @@ async def test_multiple_events_concurrent_processing():
     service.register_handlers()
     await service.start()
     
-    # Emit multiple events concurrently
-    events = [
-        JobBookedEvent(job_id=1, customer_id=1, business_id=1),
-        JobScheduledEvent(
-            job_id=2,
-            customer_id=2,
-            business_id=1,
-            scheduled_at=datetime.now(timezone.utc),
-        ),
-        OnMyWayEvent(customer_id=3, business_id=1, eta_minutes=10),
-    ]
-    
-    # Emit all events
-    for event in events:
-        await event_bus.emit(event)
+    # Create necessary DB records
+    async for db in get_db():
+        business = Business(name="Test Business")
+        db.add(business)
+        await db.commit()
+        await db.refresh(business)
+        
+        customers = []
+        for i in range(3):
+            c = Customer(
+                business_id=business.id,
+                name=f"Customer {i}",
+                phone=f"+123456789{i}"
+            )
+            db.add(c)
+            customers.append(c)
+        await db.commit()
+        for c in customers:
+            await db.refresh(c)
+            
+        # Emit multiple events concurrently
+        events = [
+            JobBookedEvent(job_id=1, customer_id=customers[0].id, business_id=business.id),
+            JobScheduledEvent(
+                job_id=2,
+                customer_id=customers[1].id,
+                business_id=business.id,
+                scheduled_at=datetime.now(timezone.utc),
+            ),
+            OnMyWayEvent(customer_id=customers[2].id, business_id=business.id, eta_minutes=10),
+        ]
+        
+        # Emit all events
+        for event in events:
+            await event_bus.emit(event)
+        break
     
     # Wait for all messages to be processed
     await asyncio.sleep(1.0)
