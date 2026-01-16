@@ -108,6 +108,13 @@ class ServiceRepository(BaseRepository[Service]):
     async def get_all_for_business(self, business_id: int) -> List[Service]:
         return await self.get_all(business_id)
 
+    async def get_by_name(self, name: str, business_id: int) -> Optional[Service]:
+        query = select(Service).where(
+            Service.name.ilike(name), Service.business_id == business_id
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
     async def update(self, service_id: int, business_id: int, **kwargs) -> Optional[Service]:
         service = await self.get_by_id(service_id, business_id)
         if not service:

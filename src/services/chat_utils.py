@@ -42,15 +42,18 @@ def format_line_items(line_items: List[Any]) -> str:
             or getattr(item, "service_name", None) 
             or getattr(item, "name", "Item")
         )
-        qty = getattr(item, "quantity", 1)
-        price = getattr(item, "unit_price", 0)
-        total = getattr(item, "total_price", qty * price)
+        qty = getattr(item, "quantity", 1.0) or 1.0
+        price = getattr(item, "unit_price", None)
+        total = getattr(item, "total_price", None)
+        
+        if total is None and price is not None:
+            total = qty * price
 
         # Truncate name to 10 chars
         name_p = (name[:10] + "..") if len(name) > 10 else name.ljust(12)
-        qty_p = str(qty).center(5)
-        price_p = f"{price:.1f}".center(7)
-        total_p = f"{total:.1f}".center(6)
+        qty_p = f"{qty:.1f}".center(5)
+        price_p = (f"{price:.1f}" if price is not None else "-").center(7)
+        total_p = (f"{total:.1f}" if total is not None else "-").center(6)
 
         lines.append(f"`{name_p}|{qty_p}|{price_p}|{total_p}`")
 

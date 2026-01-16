@@ -7,7 +7,7 @@ from src.repositories import (
     BusinessRepository,
     ServiceRepository,
 )
-from src.models import ConversationState, ConversationStatus, User, Request, Service
+from src.models import ConversationState, ConversationStatus, User, Request
 from src.services.chat_utils import format_service_list, format_line_items
 from src.llm_client import LLMParser
 from src.tool_executor import ToolExecutor
@@ -22,6 +22,8 @@ from src.uimodels import (
     UpdateSettingsTool,
     ConvertRequestTool,
     HelpTool,
+    ListServicesTool,
+    ExitSettingsTool,
 )
 
 
@@ -96,8 +98,17 @@ class WhatsappService:
         # Parse with LLM
         from datetime import datetime, timezone
 
+        # Fetch Service Catalog to helper parser
+        service_repo = ServiceRepository(self.session)
+        services = await service_repo.get_all_for_business(user.business_id)
+        
+        # Simple format for LLM context (lighter than the UI format)
+        service_catalog_str = "\n".join(
+            [f"- ID {s.id}: {s.name} (${s.default_price})" for s in services]
+        ) if services else None
+
         system_time = datetime.now(timezone.utc).isoformat()
-        tool_call = await self.parser.parse(text, system_time=system_time)
+        tool_call = await self.parser.parse(text, system_time=system_time, service_catalog=service_catalog_str)
 
         if tool_call:
             # Handle HelpTool separately (skip confirmation)
@@ -448,62 +459,37 @@ class WhatsappService:
         lower_text = text.lower().strip()
         service_repo = ServiceRepository(self.session)
 
-        # EXIT
-        if lower_text in ["exit", "back", "done", "quit"]:
+        # Fetch Service Catalog for context AND listing
+        services = await service_repo.get_all_for_business(user.business_id)
+        
+        # Simple format for LLM context (names and prices)
+        service_catalog_str = "\n".join(
+            [f"- {s.name} ({s.default_price})" for s in services]
+        ) if services else "No services yet."
+
+        # Parse with specialized settings parser
+        tool_call = await self.parser.parse_settings(text, service_context=service_catalog_str)
+
+        if not tool_call:
+            # Fallback to help menu if unclear
+            return self.template_service.render("settings_menu")
+
+        # Handle Navigation/View tools locally
+        if isinstance(tool_call, ExitSettingsTool):
             state_record.state = ConversationStatus.IDLE
             return self.template_service.render("welcome_back")
 
-        # LIST
-        if lower_text in ["list", "show services", "services"]:
-            services = await service_repo.get_all_for_business(user.business_id)
+        if isinstance(tool_call, ListServicesTool):
             formatted = format_service_list(services)
             return self.template_service.render("service_list", services=formatted)
 
-        # ADD: "Add Service [Name] [Price]"
-        if lower_text.startswith("add service"):
-            # Expected format: "add service Window Clean 50"
-            parts = text.strip().split()
-            # We need at least 4 parts: "Add", "Service", "Name", "Price"
-            # But Name can be multiple words. The last one should be price.
-            if len(parts) < 4:
-                return self.template_service.render("error_invalid_service_format")
-
-            try:
-                price_str = parts[-1]
-                price = float(price_str.replace("$", ""))
-                name = " ".join(parts[2:-1])  # "Window Clean"
-
-                new_service = Service(
-                    business_id=user.business_id,
-                    name=name,
-                    default_price=price,
-                )
-                service_repo.add(new_service)
-                await self.session.commit() # Immediate commit for settings interactions
-
-                return self.template_service.render(
-                    "service_added", name=name, price=f"{price:.2f}"
-                )
-            except ValueError:
-                return self.template_service.render("error_invalid_service_format")
-
-        # DELETE: "Delete Service [ID]"
-        if lower_text.startswith("delete service"):
-            parts = lower_text.split()
-            if len(parts) < 3:
-                return "Usage: Delete Service [ID]"
-            
-            try:
-                svc_id = int(parts[2])
-                success = await service_repo.delete(svc_id, user.business_id)
-                await self.session.commit()
-                
-                if success:
-                    return self.template_service.render("service_deleted", id=svc_id)
-                else:
-                    return self.template_service.render("error_service_not_found", id=svc_id)
-            except ValueError:
-                return "Invalid ID format."
-
-        # UNKNOWN
-        return self.template_service.render("settings_menu")
+        # Execute Modification Tools
+        executor = ToolExecutor(
+            self.session, user.business_id, user.phone_number, self.template_service
+        )
+        try:
+            result, _ = await executor.execute(tool_call)
+            return result
+        except Exception as e:
+            self.logger.exception(f"Settings execution failed: {e}")
+            return f"Error updating settings: {e}"

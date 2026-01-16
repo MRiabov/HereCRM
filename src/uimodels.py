@@ -12,6 +12,8 @@ class LineItemInfo(BaseModel):
     quantity: float = Field(1.0, description="Quantity or amount")
     unit_price: Optional[float] = Field(None, description="Price per unit")
     total_price: Optional[float] = Field(None, description="Total price for this line item")
+    service_id: Optional[int] = Field(None, description="The ID of the matching service from the catalog")
+    service_name: Optional[str] = Field(None, description="The canonical name of the service from the catalog")
 
     @validator("quantity", "unit_price", "total_price")
     def validate_non_negative(cls, v, field):
@@ -212,7 +214,51 @@ class ConvertRequestTool(BaseModel):
     )
 
 
+
 class HelpTool(BaseModel):
     """Get help or information about available commands."""
 
+    pass
+
+
+class AddServiceTool(BaseModel):
+    """Add a new service to the catalog."""
+
+    name: str = Field(..., description="Name of the service (e.g. 'Window Cleaning')")
+    price: float = Field(..., description="Default price for the service")
+
+    @validator("price")
+    def validate_price(cls, v):
+        if v < 0:
+            raise ValueError("Price cannot be negative")
+        return v
+
+
+class EditServiceTool(BaseModel):
+    """Edit an existing service."""
+
+    original_name: str = Field(..., description="The name of the service to edit (to find it)")
+    new_name: Optional[str] = Field(None, description="New name for the service")
+    new_price: Optional[float] = Field(None, description="New default price")
+    
+    @validator("new_price")
+    def validate_price(cls, v):
+        if v is not None and v < 0:
+            raise ValueError("Price cannot be negative")
+        return v
+
+
+class DeleteServiceTool(BaseModel):
+    """Delete a service from the catalog."""
+
+    name: str = Field(..., description="Name of the service to delete")
+
+
+class ListServicesTool(BaseModel):
+    """List all available services."""
+    pass
+
+
+class ExitSettingsTool(BaseModel):
+    """Exit the settings mode."""
     pass

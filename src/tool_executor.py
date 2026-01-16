@@ -6,6 +6,7 @@ from src.repositories import (
     CustomerRepository,
     RequestRepository,
     UserRepository,
+    ServiceRepository,
 )
 from src.services.crm_service import CRMService
 from src.services.template_service import TemplateService
@@ -22,6 +23,11 @@ from src.uimodels import (
     UpdateSettingsTool,
     ConvertRequestTool,
     HelpTool,
+    AddServiceTool,
+    EditServiceTool,
+    DeleteServiceTool,
+    ListServicesTool,
+    ExitSettingsTool,
 )
 
 
@@ -41,6 +47,7 @@ class ToolExecutor:
         self.customer_repo = CustomerRepository(session)
         self.request_repo = RequestRepository(session)
         self.user_repo = UserRepository(session)
+        self.service_repo = ServiceRepository(session)
         self.geocoding_service = GeocodingService()
 
     async def execute(
@@ -54,6 +61,11 @@ class ToolExecutor:
             SearchTool,
             UpdateSettingsTool,
             ConvertRequestTool,
+            AddServiceTool,
+            EditServiceTool,
+            DeleteServiceTool,
+            ListServicesTool,
+            ExitSettingsTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
         if isinstance(tool_call, AddJobTool):
@@ -76,8 +88,17 @@ class ToolExecutor:
             return await self._execute_update_settings(tool_call)
         elif isinstance(tool_call, ConvertRequestTool):
             return await self._execute_convert_request(tool_call)
-        elif isinstance(tool_call, HelpTool):
             return "Help is handled by the service layer directly.", None
+        elif isinstance(tool_call, AddServiceTool):
+            return await self._execute_add_service(tool_call)
+        elif isinstance(tool_call, EditServiceTool):
+            return await self._execute_edit_service(tool_call)
+        elif isinstance(tool_call, DeleteServiceTool):
+            return await self._execute_delete_service(tool_call)
+        elif isinstance(tool_call, ListServicesTool):
+            return "List services is handled by the service layer directly (for formatting).", None
+        elif isinstance(tool_call, ExitSettingsTool):
+            return "Exit settings is handled by the service layer directly.", None
         return "Unknown tool call", None
 
     async def _execute_add_lead(  # Renamed from _execute_add_customer
@@ -547,3 +568,115 @@ class ToolExecutor:
         return await service.convert_request(
             tool.query, tool.action, tool.time, tool.iso_time
         )
+
+    async def _execute_add_service(
+        self, tool: AddServiceTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        from src.models import Service
+
+        service_name = tool.name.strip().title()
+        existing = await self.service_repo.get_by_name(service_name, self.business_id)
+
+        if existing:
+            # Update existing service
+            old_price = existing.default_price
+            existing.default_price = tool.price
+            existing.name = service_name
+            await self.session.flush()
+            
+            return f"✔ Updated existing service *'{service_name}'* – Price: {tool.price:.2f}", {
+                "action": "update",
+                "entity": "service",
+                "id": existing.id,
+                "name": service_name,
+                "old_price": old_price,
+                "new_price": tool.price,
+            }
+
+        new_service = Service(
+            business_id=self.business_id,
+            name=service_name,
+            default_price=tool.price,
+        )
+        self.service_repo.add(new_service)
+        await self.session.flush()
+
+        return self.template_service.render(
+            "service_added", name=service_name, price=f"{tool.price:.2f}"
+        ), {
+            "action": "create",
+            "entity": "service",
+            "id": new_service.id,
+            "name": service_name,
+            "price": tool.price,
+        }
+
+    async def _execute_edit_service(
+        self, tool: EditServiceTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        # Fuzzy find service
+        services = await self.service_repo.get_all_for_business(self.business_id)
+        
+        # Simple fuzzy match: strict case-insensitive first, then substring
+        target = None
+        for s in services:
+            if s.name.lower() == tool.original_name.lower():
+                target = s
+                break
+        
+        if not target:
+            # Substring match
+             for s in services:
+                if tool.original_name.lower() in s.name.lower():
+                    target = s
+                    break
+        
+        if not target:
+             return f"Could not find service matching '{tool.original_name}'", None
+
+        old_data = {"name": target.name, "default_price": target.default_price}
+        
+        if tool.new_name:
+            target.name = tool.new_name
+        if tool.new_price is not None:
+             target.default_price = tool.new_price
+        
+        await self.session.flush()
+
+        return f"Updated service '{target.name}' – Price: {target.default_price:.2f}", {
+            "action": "update",
+            "entity": "service",
+            "id": target.id,
+            "old_data": old_data,
+        }
+
+    async def _execute_delete_service(
+        self, tool: DeleteServiceTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        services = await self.service_repo.get_all_for_business(self.business_id)
+        
+        target = None
+        for s in services:
+            if s.name.lower() == tool.name.lower():
+                target = s
+                break
+        
+        if not target:
+             for s in services:
+                if tool.name.lower() in s.name.lower():
+                    target = s
+                    break
+
+        if not target:
+            return f"Could not find service matching '{tool.name}' to delete.", None
+
+        await self.session.delete(target)
+        await self.session.flush()
+
+        return self.template_service.render("service_deleted", id=target.name), {
+             "action": "delete",
+             "entity": "service",
+             "id": target.id,
+             "name": target.name,
+        }
+

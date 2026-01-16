@@ -122,7 +122,7 @@ description: "Work package task list for Line Items & Service Catalog implementa
 
 ---
 
-## Work Package WP05: Refinement & Polish (Priority: P2)
+## [x] Work Package WP05: Refinement & Polish (Priority: P2)
 
 **Goal**: Handle rounding, snapshotting, and edge cases.
 **Independent Test**: Fractional quantities/prices round correctly to match totals; historical jobs remain stable after catalog changes.
@@ -130,9 +130,9 @@ description: "Work package task list for Line Items & Service Catalog implementa
 
 ### Included Subtasks
 
-- [ ] T016 Handle rounding issues in unit price/quantity calculation
-- [ ] T017 Validate snapshotting (historical jobs retain prices)
-- [ ] T018 Add validation for edge cases (e.g., negative quantities, zero prices)
+- [x] T016 Handle rounding issues in unit price/quantity calculation
+- [x] T017 Validate snapshotting (historical jobs retain prices)
+- [x] T018 Add validation for edge cases (e.g., negative quantities, zero prices)
 
 ### Implementation Notes
 
