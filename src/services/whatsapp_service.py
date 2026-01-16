@@ -328,6 +328,8 @@ class WhatsappService:
             "UpdateSettingsTool": "Settings",
             "ConvertRequestTool": "Convert",
             "HelpTool": "Help",
+            "GetPipelineTool": "Pipeline",
+            "UpdateCustomerStageTool": "Pipeline Stage Update",
         }
         model_name = tool_call.__class__.__name__
         name = friendly_names.get(model_name, model_name.replace("Tool", ""))
@@ -415,6 +417,12 @@ class WhatsappService:
                 time=tool_call.time,
                 content=tool_call.content,
             )
+
+        if isinstance(tool_call, GetPipelineTool):
+            return "display customers by pipeline stage"
+
+        if isinstance(tool_call, UpdateCustomerStageTool):
+            return f"update {tool_call.query}'s stage to {tool_call.stage.replace('_', ' ').title()}"
 
         if hasattr(tool_call, "description") and tool_call.description:
             return f"{name}: {tool_call.description}"

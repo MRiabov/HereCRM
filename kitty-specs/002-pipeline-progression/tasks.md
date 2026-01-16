@@ -62,9 +62,9 @@
 - **Priority**: P2
 - **Success Criteria**: All unit and integration tests pass; pipeline behavior matches Spec 002.
 - **Subtasks**:
-  - [ ] **T016**: Create `tests/test_pipeline_logic.py` for unit testing state transitions. [P]
-  - [ ] **T017**: Create integration tests for end-to-end user stories. [P]
-  - [ ] **T018**: Create tests for search filtering by stage. [P]
+  - [x] **T016**: Create `tests/test_pipeline_logic.py` for unit testing state transitions. [P]
+  - [x] **T017**: Create integration tests for end-to-end user stories. [P]
+  - [x] **T018**: Create tests for search filtering by stage. [P]
 - **Implementation Sketch**: Comprehensive test suite covering both automatic and manual transitions.
 - **Dependencies**: All previous
 - **Prompt**: [tasks/WP05-verification.md](file:///home/maksym/Work/proj/HereCRM/.worktrees/002-pipeline-progression/kitty-specs/002-pipeline-progression/tasks/WP05-verification.md)

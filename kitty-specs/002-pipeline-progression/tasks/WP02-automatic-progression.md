@@ -1,8 +1,8 @@
 ---
 work_package_id: WP02
 slug: automatic-progression
-lane: "for_review"
-review_status: "has_feedback"
+lane: "done"
+review_status: "approved"
 reviewed_by: "antigravity"
 subtasks: [T005, T006, T007, T008]
 agent: "antigravity"
