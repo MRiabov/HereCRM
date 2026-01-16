@@ -1,12 +1,14 @@
 import logging
 from typing import Any, cast
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import ConversationState, ConversationStatus, User, Request
 from src.repositories import (
     ConversationStateRepository,
     UserRepository,
     BusinessRepository,
+    ServiceRepository,
 )
+from src.models import ConversationState, ConversationStatus, User, Request
+from src.services.chat_utils import format_service_list, format_line_items
 from src.llm_client import LLMParser
 from src.tool_executor import ToolExecutor
 from src.services.template_service import TemplateService
@@ -22,6 +24,8 @@ from src.uimodels import (
     HelpTool,
     GetPipelineTool,
     UpdateCustomerStageTool,
+    ListServicesTool,
+    ExitSettingsTool,
 )
 
 
@@ -65,6 +69,9 @@ class WhatsappService:
         if state_record.state == ConversationStatus.WAITING_CONFIRM:
             self.logger.info(f"User {user_phone} in WAITING_CONFIRM mode")
             return await self._handle_waiting_confirm(user, state_record, message_text)
+        elif state_record.state == ConversationStatus.SETTINGS:
+            self.logger.info(f"User {user_phone} in SETTINGS mode")
+            return await self._handle_settings(user, state_record, message_text)
         else:
             return await self._handle_idle(user, state_record, message_text)
 
@@ -85,13 +92,31 @@ class WhatsappService:
         if lower_text == "edit last":
             return await self._handle_edit_last(user, state_record)
 
+        # Handle Settings Entry
+        if lower_text in ["settings", "update settings", "config"]:
+            state_record.state = ConversationStatus.SETTINGS
+            return self.template_service.render("settings_menu")
+
         # Parse with LLM
         from datetime import datetime, timezone
 
-        system_time = datetime.now(timezone.utc).isoformat()
-        tool_call = await self.parser.parse(text, system_time=system_time)
+        # Fetch Service Catalog to helper parser
+        service_repo = ServiceRepository(self.session)
+        services = await service_repo.get_all_for_business(user.business_id)
+        
+        # Simple format for LLM context (lighter than the UI format)
+        service_catalog_str = "\n".join(
+            [f"- ID {s.id}: {s.name} (${s.default_price})" for s in services]
+        ) if services else None
 
+        system_time = datetime.now(timezone.utc).isoformat()
+        tool_call = await self.parser.parse(text, system_time=system_time, service_catalog=service_catalog_str)
+        
         if tool_call:
+            # Handle string response (reasoning/clarification)
+            if isinstance(tool_call, str):
+                return tool_call
+                
             # Handle HelpTool separately (skip confirmation)
             if isinstance(tool_call, HelpTool):
                 return self._generate_help_message()
@@ -353,6 +378,10 @@ class WhatsappService:
                 address=tool_call.location or "Not supplied",
             )
 
+            line_items_detail = ""
+            if hasattr(tool_call, "line_items") and tool_call.line_items:
+                line_items_detail = f"\n{format_line_items(tool_call.line_items)}"
+
             return self.template_service.render(
                 "job_summary",
                 category="Job",  # AddJobTool is now strictly jobs
@@ -362,6 +391,7 @@ class WhatsappService:
                 status=tool_call.status.capitalize()
                 if tool_call.status
                 else "Pending confirmation",
+                line_items=line_items_detail,
             )
 
         if isinstance(tool_call, AddLeadTool):
@@ -438,3 +468,44 @@ class WhatsappService:
 
     def _generate_help_message(self) -> str:
         return self.template_service.render("help_message")
+
+    async def _handle_settings(
+        self, user: User, state_record: ConversationState, text: str
+    ) -> str:
+        lower_text = text.lower().strip()
+        service_repo = ServiceRepository(self.session)
+
+        # Fetch Service Catalog for context AND listing
+        services = await service_repo.get_all_for_business(user.business_id)
+        
+        # Simple format for LLM context (names and prices)
+        service_catalog_str = "\n".join(
+            [f"- {s.name} ({s.default_price})" for s in services]
+        ) if services else "No services yet."
+
+        # Parse with specialized settings parser
+        tool_call = await self.parser.parse_settings(text, service_context=service_catalog_str)
+
+        if not tool_call:
+            # Fallback to help menu if unclear
+            return self.template_service.render("settings_menu")
+
+        # Handle Navigation/View tools locally
+        if isinstance(tool_call, ExitSettingsTool):
+            state_record.state = ConversationStatus.IDLE
+            return self.template_service.render("welcome_back")
+
+        if isinstance(tool_call, ListServicesTool):
+            formatted = format_service_list(services)
+            return self.template_service.render("service_list", services=formatted)
+
+        # Execute Modification Tools
+        executor = ToolExecutor(
+            self.session, user.business_id, user.phone_number, self.template_service
+        )
+        try:
+            result, _ = await executor.execute(tool_call)
+            return result
+        except Exception as e:
+            self.logger.exception(f"Settings execution failed: {e}")
+            return f"Error updating settings: {e}"

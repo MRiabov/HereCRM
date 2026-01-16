@@ -1,0 +1,90 @@
+import pytest
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from src.database import Base
+from src.models import Business, User, ConversationState, ConversationStatus
+from src.services.whatsapp_service import WhatsappService
+from src.services.template_service import TemplateService
+from src.llm_client import LLMParser
+from unittest.mock import MagicMock
+
+TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
+@pytest.fixture
+async def test_session():
+    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    SessionLocal = async_sessionmaker(
+        bind=engine, class_=AsyncSession, expire_on_commit=False
+    )
+    async with SessionLocal() as session:
+        yield session
+
+    await engine.dispose()
+
+@pytest.fixture
+def mock_parser():
+    parser = MagicMock(spec=LLMParser)
+    parser.parse.return_value = None  # Default to no tool call
+    return parser
+
+@pytest.fixture
+def mock_template_service():
+    # Use real template service to verify template strings? 
+    # Or mock it. Real is better to check message keys exist.
+    return TemplateService()
+
+@pytest.mark.asyncio
+async def test_settings_flow(test_session, mock_parser, mock_template_service):
+    # Setup
+    biz = Business(name="TestBiz")
+    test_session.add(biz)
+    await test_session.flush()
+    
+    user = User(phone_number="123", business_id=biz.id)
+    test_session.add(user)
+    await test_session.commit()
+    
+    service = WhatsappService(test_session, mock_parser, mock_template_service)
+    
+    # 1. Enter Settings
+    response = await service.handle_message("123", "settings")
+    assert "Settings Mode" in response
+    
+    state = await service.state_repo.get_by_phone("123")
+    assert state.state == ConversationStatus.SETTINGS
+    
+    # 2. Add Service
+    response = await service.handle_message("123", "Add Service Window Clean 50")
+    assert "Window Clean" in response
+    assert "added" in response
+    assert "50.00" in response
+    
+    # Verify DB
+    from src.repositories import ServiceRepository
+    repo = ServiceRepository(test_session)
+    services = await repo.get_all_for_business(biz.id)
+    assert len(services) == 1
+    assert services[0].name == "Window Clean"
+    assert services[0].default_price == 50.0
+    
+    # 3. List Services
+    response = await service.handle_message("123", "List")
+    assert "Window Clean" in response
+    assert "$50.00" in response
+    
+    # 4. Delete Service
+    svc_id = services[0].id
+    response = await service.handle_message("123", f"Delete Service {svc_id}")
+    assert "deleted" in response
+    
+    services = await repo.get_all_for_business(biz.id)
+    assert len(services) == 0
+    
+    # 5. Exit
+    response = await service.handle_message("123", "Exit")
+    assert "Welcome back" in response
+    
+    state = await service.state_repo.get_by_phone("123")
+    assert state.state == ConversationStatus.IDLE
