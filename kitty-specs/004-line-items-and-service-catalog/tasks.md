@@ -100,16 +100,12 @@ description: "Work package task list for Line Items & Service Catalog implementa
 
 ---
 
-## Work Package WP04: UI & Reporting (Priority: P1)
+## [x] Work Package WP04: UI & Reporting (Priority: P1)
 
-**Goal**: Display line item breakdowns in job summaries and "Show Job" outputs.
-**Independent Test**: "Show Job" output displays a clear table of line items with totals.
-**Prompt**: `tasks/WP04-ui-and-reporting.md`
+...
 
-### Included Subtasks
-
-- [ ] T014 Update "Show Job" output to display line items as a table/list
-- [ ] T015 Update confirmation messages to summarize line items after job creation
+- [x] T014 Update "Show Job" output to display line items as a table/list
+- [x] T015 Update confirmation messages to summarize line items after job creation
 
 ### Implementation Notes
 

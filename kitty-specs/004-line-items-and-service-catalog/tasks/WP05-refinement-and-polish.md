@@ -6,7 +6,7 @@ subtasks:
   - "T018"
 title: "Refinement & Polish"
 phase: "Phase 3 - Polish & Launch"
-lane: "doing"
+lane: "for_review"
 assignee: ""
 agent: "Antigravity"
 shell_pid: ""
@@ -76,3 +76,4 @@ history:
 
 - 2026-01-14T19:10:01Z – antigravity – lane=planned – Prompt generated via /spec-kitty.tasks
 - 2026-01-15T10:40:05Z – Antigravity – lane=doing – Started implementation
+- 2026-01-16T18:10:03Z – Antigravity – lane=for_review – Ready for review
