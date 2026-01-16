@@ -199,7 +199,7 @@ class GetPipelineTool(BaseModel):
     """Get a summary of the sales pipeline (funnel).
     Triggered when the user asks about the health of the business, pipeline status, or funnel."""
 
-    pass
+    ignore_me: str = Field("pipeline", description="Ignored field, default to 'pipeline'")
 
 
 class UpdateCustomerStageTool(BaseModel):

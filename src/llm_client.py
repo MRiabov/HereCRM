@@ -128,7 +128,7 @@ class LLMParser:
             "   - If 'request' is explicitly mentioned with 'add' (e.g., 'add request: ...') -> use AddRequestTool. Extract any mentioned time (e.g., 'tomorrow') into the 'time' field. Default to 'anytime' if not specified.\n"
             "   - If user indicates the job is 'done', 'completed' or 'finished' (even with a past time) -> use AddJobTool with status='done'. Do NOT use ScheduleJobTool for past events.\n"
             "   - If 'schedule' is used or a specific future time is provided -> use ScheduleJobTool.\n"
-            "   - If user asks for a pipeline summary, funnel health, or 'how are we doing' in terms of sales -> use GetPipelineTool."
+            "   - If user asks for a pipeline summary, funnel health, or 'how are we doing' in terms of sales -> use GetPipelineTool. (Do NOT use SearchTool for 'show pipeline')."
         )
 
     async def parse(
