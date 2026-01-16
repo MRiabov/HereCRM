@@ -16,6 +16,8 @@ The project relies on LLMs for text parsing and understanding user intent.
 
 - **Do not** implement brittle, hardcoded text processing rules (regex, keyword matching) for complex inputs.
 - **Do** leverage the semantic capabilities of LLMs to interpret unstructured data.
+- **Do** validate LLM outputs using Pydantic models to ensure data integrity.
+- **Do** validate the outputs and if the LLM failed, retry processing.
 
 ### 2. Mandatory User Confirmation
 
