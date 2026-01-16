@@ -20,6 +20,8 @@ from src.uimodels import (
     UpdateSettingsTool,
     ConvertRequestTool,
     HelpTool,
+    GetPipelineTool,
+    UpdateCustomerStageTool,
 )
 
 
@@ -52,6 +54,9 @@ class ToolExecutor:
             SearchTool,
             UpdateSettingsTool,
             ConvertRequestTool,
+            HelpTool,
+            GetPipelineTool,
+            UpdateCustomerStageTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
         if isinstance(tool_call, AddJobTool):
@@ -76,6 +81,10 @@ class ToolExecutor:
             return await self._execute_convert_request(tool_call)
         elif isinstance(tool_call, HelpTool):
             return "Help is handled by the service layer directly.", None
+        elif isinstance(tool_call, GetPipelineTool):
+            return await self._execute_get_pipeline(tool_call)
+        elif isinstance(tool_call, UpdateCustomerStageTool):
+            return await self._execute_update_customer_stage(tool_call)
         return "Unknown tool call", None
 
     async def _execute_add_lead(  # Renamed from _execute_add_customer
@@ -199,17 +208,15 @@ class ToolExecutor:
             self.customer_repo.add(customer)
             await self.session.flush()
 
-        # 2. Create job
-        job = Job(
-            business_id=self.business_id,
+        # 2. Create job using CRMService to ensure events are fired
+        crm_service = CRMService(self.session, self.business_id)
+        job = await crm_service.create_job(
             customer_id=customer.id,
             description=tool.description,
             value=tool.price,
             location=tool.location,
             status=tool.status or "pending",
         )
-        self.job_repo.add(job)
-        await self.session.flush()
 
         price_info = f" – €{job.value}" if job.value else " – No price"
 
@@ -301,6 +308,21 @@ class ToolExecutor:
         )
         self.request_repo.add(req)
         await self.session.flush()
+        
+        # Check for implicit contact event
+        if tool.customer_name or tool.customer_phone:
+            customer = None
+            if tool.customer_name:
+                customer = await self.customer_repo.get_by_name(tool.customer_name, self.business_id)
+            if not customer and tool.customer_phone:
+                customer = await self.customer_repo.get_by_phone(tool.customer_phone, self.business_id)
+            
+            if customer:
+                from src.events import event_bus
+                await event_bus.emit(
+                    "CONTACT_EVENT",
+                    {"customer_id": customer.id, "business_id": self.business_id}
+                )
         return self.template_service.render(
             "request_stored", content=tool.content[:50]
         ), {
@@ -401,6 +423,7 @@ class ToolExecutor:
                 center_lat=tool.center_lat,
                 center_lon=tool.center_lon,
                 center_address=tool.center_address,
+                pipeline_stage=tool.pipeline_stage,
             )
             if customers:
                 # determine city visibility
@@ -441,6 +464,7 @@ class ToolExecutor:
                 center_lat=tool.center_lat,
                 center_lon=tool.center_lon,
                 center_address=tool.center_address,
+                pipeline_stage=tool.pipeline_stage,
             )
             jobs = await self.job_repo.search(
                 tool.query,
@@ -524,3 +548,39 @@ class ToolExecutor:
         return await service.convert_request(
             tool.query, tool.action, tool.time, tool.iso_time
         )
+
+    async def _execute_get_pipeline(
+        self, tool: GetPipelineTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        crm_service = CRMService(self.session, self.business_id)
+        report = await crm_service.format_pipeline_summary()
+        return report, {"action": "query", "entity": "pipeline"}
+
+    async def _execute_update_customer_stage(
+        self, tool: UpdateCustomerStageTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        customers = await self.customer_repo.search(tool.query, self.business_id)
+        if not customers:
+            return f"Could not find customer matching '{tool.query}'", None
+        if len(customers) > 1:
+            return (
+                f"Multiple customers found matching '{tool.query}'. Please be more specific.",
+                None,
+            )
+
+        customer = customers[0]
+        old_stage = customer.pipeline_stage.value
+        crm_service = CRMService(self.session, self.business_id)
+        try:
+            await crm_service.update_customer_stage(customer.id, tool.stage)
+        except ValueError as e:
+            return str(e), None
+
+        return f"✔ Updated {customer.name}'s stage to {tool.stage.replace('_', ' ').title()}", {
+            "action": "update",
+            "entity": "customer",
+            "id": customer.id,
+            "old_stage": old_stage,
+            "new_stage": tool.stage,
+        }
+

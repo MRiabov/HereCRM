@@ -1,1 +1,1 @@
-/home/maksym/Work/proj/HereCRM/.worktrees/001-whatsapp-ai-crm/.kittify/scripts/tasks/tasks_cli.py
+../../.kittify/scripts/tasks/tasks_cli.py

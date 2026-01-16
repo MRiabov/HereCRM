@@ -3,7 +3,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Generic, TypeVar, Type, Optional, List, Any
 from datetime import datetime
-from src.models import Business, User, Customer, Job, Request, ConversationState
+from src.models import Business, User, Customer, Job, Request, ConversationState, PipelineStage
 import math
 import re
 
@@ -172,6 +172,7 @@ class CustomerRepository(BaseRepository[Customer]):
         center_lat: Optional[float] = None,
         center_lon: Optional[float] = None,
         center_address: Optional[str] = None,
+        pipeline_stage: Optional[str] = None,
     ) -> List[Customer]:
         conditions = [Customer.business_id == business_id]
 
@@ -228,6 +229,10 @@ class CustomerRepository(BaseRepository[Customer]):
         else:
             stmt = select(Customer)
 
+        # Pipeline Stage filter
+        if pipeline_stage:
+            conditions.append(Customer.pipeline_stage == pipeline_stage)
+
         # "Added" query type (Created At filter)
         if query_type == "added":
             if min_date:
@@ -254,6 +259,17 @@ class CustomerRepository(BaseRepository[Customer]):
             return filtered
 
         return customers
+
+    async def get_pipeline_summary(self, business_id: int) -> dict[PipelineStage, List[Customer]]:
+        query = select(Customer).where(Customer.business_id == business_id)
+        result = await self.session.execute(query)
+        customers = list(result.scalars().all())
+
+        summary = {stage: [] for stage in PipelineStage}
+        for customer in customers:
+            summary[customer.pipeline_stage].append(customer)
+        return summary
+
 
     async def get_leads(self, business_id: int) -> List[Customer]:
         return await self.search(
@@ -304,7 +320,21 @@ class JobRepository(BaseRepository[Job]):
 
         stmt = select(Job).options(joinedload(Job.customer)).where(and_(*conditions))
         result = await self.session.execute(stmt)
-        return list(result.scalars().all())
+        jobs = list(result.scalars().all())
+
+        # Spatial Filtering (Python-side)
+        if center_lat is not None and center_lon is not None and radius:
+            filtered = []
+            for j in jobs:
+                if j.latitude is not None and j.longitude is not None:
+                    dist = haversine_distance(
+                        center_lat, center_lon, j.latitude, j.longitude
+                    )
+                    if dist <= radius:
+                        filtered.append(j)
+            return filtered
+
+        return jobs
 
     async def get_most_recent_by_customer(
         self, customer_id: int, business_id: int
@@ -317,6 +347,14 @@ class JobRepository(BaseRepository[Job]):
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_count_by_customer(self, customer_id: int, business_id: int) -> int:
+        from sqlalchemy import func
+        stmt = select(func.count()).where(
+            Job.customer_id == customer_id, Job.business_id == business_id
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
 
 
 class ConversationStateRepository:

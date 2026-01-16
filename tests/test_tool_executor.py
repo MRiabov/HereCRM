@@ -2,9 +2,9 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Job, Customer, Request
+from src.models import Business, Job, Customer, Request, PipelineStage
 from src.tool_executor import ToolExecutor
-from src.uimodels import AddJobTool, AddLeadTool, ConvertRequestTool, SearchTool
+from src.uimodels import AddJobTool, AddLeadTool, ConvertRequestTool, SearchTool, GetPipelineTool
 from src.services.template_service import TemplateService
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -220,3 +220,27 @@ async def test_deduplication(
     )
     customer = customer_res.scalar_one()
     assert customer.name == "John Doe"
+
+
+@pytest.mark.asyncio
+async def test_execute_get_pipeline(
+    test_session: AsyncSession, template_service: TemplateService
+):
+    biz = Business(name="Pipeline Biz")
+    test_session.add(biz)
+    await test_session.flush()
+
+    # Add a customer to have something in the pipeline
+    c1 = Customer(name="Alice", business_id=biz.id, pipeline_stage=PipelineStage.NOT_CONTACTED)
+    test_session.add(c1)
+    await test_session.flush()
+
+    executor = ToolExecutor(test_session, biz.id, "123456789", template_service)
+    tool = GetPipelineTool()
+
+    result, metadata = await executor.execute(tool)
+
+    assert "### Pipeline Breakdown" in result
+    assert "Alice" in result
+    assert metadata["action"] == "query"
+    assert metadata["entity"] == "pipeline"

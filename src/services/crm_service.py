@@ -1,7 +1,11 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import Job, Customer
+from src.models import Job, Customer, PipelineStage
 from src.repositories import JobRepository, CustomerRepository, RequestRepository
+
+
+from datetime import datetime
+from src.events import event_bus
 
 
 class CRMService:
@@ -11,6 +15,34 @@ class CRMService:
         self.job_repo = JobRepository(session)
         self.customer_repo = CustomerRepository(session)
         self.request_repo = RequestRepository(session)
+
+    async def create_job(
+        self,
+        customer_id: int,
+        description: Optional[str] = None,
+        value: Optional[float] = None,
+        location: Optional[str] = None,
+        status: str = "pending",
+        scheduled_at: Optional[datetime] = None,
+    ) -> Job:
+        job = Job(
+            business_id=self.business_id,
+            customer_id=customer_id,
+            description=description,
+            value=value,
+            location=location,
+            status=status,
+            scheduled_at=scheduled_at,
+        )
+        self.job_repo.add(job)
+        await self.session.commit() # Must commit for other sessions (handlers) to see it
+
+        # Emit event
+        await event_bus.emit(
+            "JOB_CREATED",
+            {"job_id": job.id, "customer_id": customer_id, "business_id": self.business_id},
+        )
+        return job
 
     async def convert_request(
         self,
@@ -43,23 +75,21 @@ class CRMService:
             else:
                 customer_id = customers[0].id
 
-            job = Job(
-                business_id=self.business_id,
-                customer_id=customer_id,
-                description=f"Converted from request: {req.content}. Time: {time or 'N/A'}",
-                status="scheduled" if time else "pending",
-            )
+            scheduled_at = None
             if iso_time:
-                from datetime import datetime
-
                 try:
-                    job.scheduled_at = datetime.fromisoformat(
+                    scheduled_at = datetime.fromisoformat(
                         iso_time.replace("Z", "+00:00")
                     )
                 except ValueError:
                     pass
 
-            self.job_repo.add(job)
+            job = await self.create_job(
+                customer_id=customer_id,
+                description=f"Converted from request: {req.content}. Time: {time or 'N/A'}",
+                status="scheduled" if time else "pending",
+                scheduled_at=scheduled_at,
+            )
             await self.session.delete(req)
             await self.session.flush()
 
@@ -92,3 +122,53 @@ class CRMService:
             }
 
         return f"Unknown action: {action}", None
+
+    async def get_pipeline_summary(self) -> dict:
+        summary_data = await self.customer_repo.get_pipeline_summary(self.business_id)
+        return {
+            stage.value: {
+                "count": len(customers),
+                "examples": [c.name for c in customers[:5]],
+            }
+            for stage, customers in summary_data.items()
+        }
+
+    async def format_pipeline_summary(self) -> str:
+        summary = await self.get_pipeline_summary()
+        lines = ["### Pipeline Breakdown"]
+        # Order them logically if possible, or just alphabetical
+        stages = [
+            "not_contacted",
+            "contacted",
+            "converted_once",
+            "converted_recurrent",
+            "not_interested",
+            "lost",
+        ]
+        for stage_key in stages:
+            if stage_key not in summary:
+                continue
+            data = summary[stage_key]
+            count = data["count"]
+            examples = data["examples"]
+            name = stage_key.replace("_", " ").title()
+            line = f"- **{name}**: {count} customer{'s' if count != 1 else ''}"
+            if examples:
+                line += f" ({', '.join(examples)})"
+            lines.append(line)
+        return "\n".join(lines)
+
+    async def update_customer_stage(self, customer_id: int, stage: str) -> Customer:
+        customer = await self.customer_repo.get_by_id(customer_id, self.business_id)
+        if not customer:
+            raise ValueError(f"Customer with ID {customer_id} not found.")
+
+        try:
+            new_stage = PipelineStage(stage)
+        except ValueError:
+            raise ValueError(f"Invalid pipeline stage: {stage}")
+
+        customer.pipeline_stage = new_stage
+        await self.session.flush()
+        return customer
+

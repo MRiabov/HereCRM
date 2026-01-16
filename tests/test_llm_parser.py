@@ -12,6 +12,7 @@ from src.uimodels import (
     UpdateSettingsTool,
     ConvertRequestTool,
     HelpTool,
+    GetPipelineTool,
 )
 
 
@@ -255,6 +256,24 @@ async def test_parse_no_tool_call(mock_parser):
     mock_response = MagicMock(choices=[MagicMock(message=mock_message)])
     mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
     assert await parser.parse("Hello") is None
+
+
+@pytest.mark.asyncio
+async def test_parse_get_pipeline(mock_parser):
+    parser, mock_client = mock_parser
+
+    mock_tool_call = MagicMock()
+    mock_tool_call.function.name = "GetPipelineTool"
+    mock_tool_call.function.arguments = "{}"
+
+    mock_message = MagicMock()
+    mock_message.tool_calls = [mock_tool_call]
+    mock_response = MagicMock(choices=[MagicMock(message=mock_message)])
+
+    mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+
+    result = await parser.parse("how is our pipeline doing?")
+    assert isinstance(result, GetPipelineTool)
 
 
 @pytest.mark.asyncio
