@@ -109,8 +109,12 @@ class WhatsappService:
 
         system_time = datetime.now(timezone.utc).isoformat()
         tool_call = await self.parser.parse(text, system_time=system_time, service_catalog=service_catalog_str)
-
+        
         if tool_call:
+            # Handle string response (reasoning/clarification)
+            if isinstance(tool_call, str):
+                return tool_call
+                
             # Handle HelpTool separately (skip confirmation)
             if isinstance(tool_call, HelpTool):
                 return self._generate_help_message()
