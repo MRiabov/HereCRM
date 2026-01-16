@@ -20,6 +20,8 @@ from src.uimodels import (
     UpdateSettingsTool,
     ConvertRequestTool,
     HelpTool,
+    GetPipelineTool,
+    UpdateCustomerStageTool,
 )
 
 
@@ -162,6 +164,8 @@ class WhatsappService:
             "UpdateSettingsTool": UpdateSettingsTool,
             "ConvertRequestTool": ConvertRequestTool,
             "HelpTool": HelpTool,
+            "GetPipelineTool": GetPipelineTool,
+            "UpdateCustomerStageTool": UpdateCustomerStageTool,
         }
 
         tool_cls = model_map.get(tool_name)
