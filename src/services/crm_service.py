@@ -2,6 +2,8 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import Job, Customer, PipelineStage
 from src.repositories import JobRepository, CustomerRepository, RequestRepository
+from src.services.event_bus import event_bus
+from src.events import JobBookedEvent
 
 
 from datetime import datetime
@@ -95,7 +97,18 @@ class CRMService:
                 scheduled_at=scheduled_at,
             )
             await self.session.delete(req)
-            await self.session.flush()
+            await self.session.commit()
+            await self.session.refresh(job)
+
+            # Emit JobBookedEvent
+            await event_bus.emit(
+                JobBookedEvent(
+                    job_id=job.id,
+                    customer_id=customer_id,
+                    business_id=self.business_id,
+                    description=job.description,
+                )
+            )
 
             return f"✔ Converted Request to Job: {job.description}", {
                 "action": "promote",

@@ -4,7 +4,10 @@ subtasks:
   - T008
   - T009
   - T010
-lane: planned
+lane: "for_review"
+review_status: "approved without changes"
+reviewed_by: "antigravity"
+agent: "codex"
 ---
 
 # Work Package 03: Job Lifecycle Events
@@ -43,3 +46,11 @@ When a job is created or scheduled, the system must emit events so the `Messagin
 - Verify a `MessageLog` is created for that customer.
 - Schedule the job.
 - Verify `JobScheduledEvent` is emitted and message logged.
+
+## Activity Log
+
+- 2026-01-15T20:12:26Z – codex – lane=doing – Started implementation
+- 2026-01-15T20:31:46Z – codex – lane=for_review – Ready for review
+- 2026-01-15T20:45:00Z – antigravity – lane=done – Approved without changes
+- 2026-01-16T17:48:06Z – Antigravity – lane=doing – Started implementation
+- 2026-01-16T18:11:12Z – codex – lane=for_review – Ready for review

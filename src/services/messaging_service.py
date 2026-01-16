@@ -7,6 +7,7 @@ from src.models import MessageLog, MessageType, MessageStatus
 from src.events import JobBookedEvent, JobScheduledEvent, OnMyWayEvent
 from src.services.event_bus import event_bus
 from src.database import get_db
+from src.repositories import CustomerRepository
 
 logger = logging.getLogger(__name__)
 
@@ -164,16 +165,23 @@ class MessagingService:
         """
         logger.info(f"Handling JobBookedEvent for job {event.job_id}")
         
-        # TODO: Fetch customer phone number from database
-        # For now, we'll enqueue a placeholder message
-        content = f"Your job has been booked! Job ID: {event.job_id}"
-        
-        # Enqueue message for async processing
-        await self.enqueue_message(
-            recipient_phone="placeholder",  # TODO: Get from customer
-            content=content,
-            trigger_source="job_booked",
-        )
+        async for db in get_db():
+            customer_repo = CustomerRepository(db)
+            customer = await customer_repo.get_by_id(event.customer_id, event.business_id)
+            
+            if not customer or not customer.phone:
+                logger.warning(f"Could not find phone number for customer {event.customer_id}")
+                return
+
+            content = f"Your job has been booked! Job ID: {event.job_id}"
+            
+            # Enqueue message for async processing
+            await self.enqueue_message(
+                recipient_phone=customer.phone,
+                content=content,
+                trigger_source="job_booked",
+            )
+            break
 
     async def handle_job_scheduled(self, event: JobScheduledEvent):
         """
@@ -184,15 +192,23 @@ class MessagingService:
         """
         logger.info(f"Handling JobScheduledEvent for job {event.job_id}")
         
-        # TODO: Fetch customer phone number from database
-        content = f"Your job has been scheduled for {event.scheduled_at.strftime('%Y-%m-%d %H:%M')}"
-        
-        # Enqueue message for async processing
-        await self.enqueue_message(
-            recipient_phone="placeholder",  # TODO: Get from customer
-            content=content,
-            trigger_source="job_scheduled",
-        )
+        async for db in get_db():
+            customer_repo = CustomerRepository(db)
+            customer = await customer_repo.get_by_id(event.customer_id, event.business_id)
+            
+            if not customer or not customer.phone:
+                logger.warning(f"Could not find phone number for customer {event.customer_id}")
+                return
+
+            content = f"Your job has been scheduled for {event.scheduled_at.strftime('%Y-%m-%d %H:%M')}"
+            
+            # Enqueue message for async processing
+            await self.enqueue_message(
+                recipient_phone=customer.phone,
+                content=content,
+                trigger_source="job_scheduled",
+            )
+            break
 
     async def handle_on_my_way(self, event: OnMyWayEvent):
         """
@@ -203,16 +219,24 @@ class MessagingService:
         """
         logger.info(f"Handling OnMyWayEvent for customer {event.customer_id}")
         
-        # TODO: Fetch customer phone number from database
-        eta_text = f" ETA: {event.eta_minutes} minutes" if event.eta_minutes else ""
-        content = f"We're on our way!{eta_text}"
-        
-        # Enqueue message for async processing
-        await self.enqueue_message(
-            recipient_phone="placeholder",  # TODO: Get from customer
-            content=content,
-            trigger_source="on_my_way",
-        )
+        async for db in get_db():
+            customer_repo = CustomerRepository(db)
+            customer = await customer_repo.get_by_id(event.customer_id, event.business_id)
+            
+            if not customer or not customer.phone:
+                logger.warning(f"Could not find phone number for customer {event.customer_id}")
+                return
+
+            eta_text = f" ETA: {event.eta_minutes} minutes" if event.eta_minutes else ""
+            content = f"We're on our way!{eta_text}"
+            
+            # Enqueue message for async processing
+            await self.enqueue_message(
+                recipient_phone=customer.phone,
+                content=content,
+                trigger_source="on_my_way",
+            )
+            break
 
     def register_handlers(self):
         """
