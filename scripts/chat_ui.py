@@ -23,25 +23,47 @@ st.set_page_config(page_title="WhatsApp AI CRM Simulator", page_icon="💬")
 
 st.title("WhatsApp AI CRM Simulator")
 
-with st.sidebar:
-    st.header("Configuration")
-    api_url = st.text_input("API Base URL", value=os.getenv("API_BASE_URL", "http://localhost:8000"))
-    secret = st.text_input("WhatsApp Secret", value=DEFAULT_SECRET, type="password")
-    phone_number = st.text_input("Phone Number", value="1234567890")
-
-    if st.button("Clear Chat History"):
+# Multi-user session management
+col1, col2 = st.columns([2, 1])
+with col1:
+    phone_number = st.text_input("Current Simulator Phone Number", value="1234567890", help="This simulates which user is sending messages.")
+with col2:
+    if st.button("Reset Session", help="Clears local and remote history for this phone"):
         st.session_state.messages = []
+        # Optional: Add remote clear if needed
         st.rerun()
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+with st.sidebar:
+    st.header("Admin Configuration")
+    api_url = st.text_input("API Base URL", value=os.getenv("API_BASE_URL", "http://localhost:8000"))
+    secret = st.text_input("WhatsApp Secret", value=DEFAULT_SECRET, type="password")
+
+def load_history():
+    try:
+        response = httpx.get(f"{api_url}/history/{phone_number}")
+        if response.status_code == 200:
+            st.session_state.messages = response.json()
+        else:
+            st.error(f"Failed to load history: {response.status_code}")
+    except Exception as e:
+        st.error(f"Error loading history: {e}")
+
+if "messages" not in st.session_state or st.session_state.get("last_phone") != phone_number:
+    st.session_state.last_phone = phone_number
+    load_history()
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
+        
+        # Debug Inspector for Metadata (Tool Calls)
+        if message.get("metadata"):
+            with st.expander("🔍 Debug: Tool Call Info"):
+                st.json(message["metadata"])
 
 if prompt := st.chat_input("Type a message..."):
-    # Add user message to chat history
+    # Clear local session messages to ensure we are in sync or just append
+    # To keep it simple, we append locally first for responsiveness
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
@@ -77,11 +99,12 @@ if prompt := st.chat_input("Type a message..."):
                 if response.status_code == 200:
                     data = response.json()
                     reply = data.get("reply", "No reply received.")
+                    # Refresh history to get the metadata for the response just received
+                    load_history()
+                    st.rerun()
                 else:
                     reply = f"Error {response.status_code}: {response.text}"
             except Exception as e:
                 reply = f"Request failed: {str(e)}"
 
         st.markdown(reply)
-
-    st.session_state.messages.append({"role": "assistant", "content": reply})

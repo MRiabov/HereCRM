@@ -40,10 +40,20 @@ class AddJobTool(BaseModel):
         None, description="Details of the work to be done", max_length=500
     )
     status: Optional[str] = Field(
-        "pending", description="Status: 'pending', 'done', 'scheduled'"
+        None, description="Status: 'pending', 'done', 'scheduled'"
     )
     line_items: Optional[List[LineItemInfo]] = Field(
         None, description="List of structured line items for the job"
+    )
+    time: Optional[str] = Field(
+        None,
+        description="Natural language time (e.g., 'Tuesday 2pm', 'tomorrow')",
+        max_length=100,
+    )
+    iso_time: Optional[str] = Field(
+        None,
+        description="ISO 8601 formatted datetime string (parsed by LLM)",
+        max_length=50,
     )
 
     @validator("price")

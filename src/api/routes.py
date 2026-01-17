@@ -5,9 +5,11 @@ from typing import Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Header, Request, status
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
+from src.models import Message
 from src.services.auth_service import AuthService
 from src.services.whatsapp_service import WhatsappService
 from src.llm_client import parser as llm_parser
@@ -128,3 +130,30 @@ async def webhook(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An internal error occurred. Our team has been notified.",
         )
+
+
+@router.get("/history/{phone_number}")
+async def get_history(
+    phone_number: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Returns the message history for a given phone number.
+    """
+    query = (
+        select(Message)
+        .where((Message.from_number == phone_number) | (Message.to_number == phone_number))
+        .order_by(Message.created_at.asc())
+    )
+    result = await db.execute(query)
+    messages = result.scalars().all()
+
+    return [
+        {
+            "role": msg.role,
+            "content": msg.body,
+            "timestamp": msg.created_at.isoformat(),
+            "metadata": msg.log_metadata
+        }
+        for msg in messages
+    ]

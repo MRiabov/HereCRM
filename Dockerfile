@@ -16,7 +16,6 @@ RUN uv sync --frozen --no-install-project --no-dev
 # Copy the rest of the application
 COPY src ./src
 COPY scripts ./scripts
-COPY assets ./assets
 
 # Place uv on the PATH
 ENV PATH="/app/.venv/bin:$PATH"

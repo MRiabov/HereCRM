@@ -7,7 +7,7 @@ from src.repositories import (
     BusinessRepository,
     ServiceRepository,
 )
-from src.models import ConversationState, ConversationStatus, User, Request
+from src.models import ConversationState, ConversationStatus, User, Request, Message, MessageRole
 from src.services.chat_utils import format_service_list, format_line_items
 from src.llm_client import LLMParser
 from src.tool_executor import ToolExecutor
@@ -43,6 +43,7 @@ class WhatsappService:
         self.state_repo = ConversationStateRepository(session)
         self.user_repo = UserRepository(session)
         self.business_repo = BusinessRepository(session)
+        self._current_metadata = {}
 
     async def handle_message(
         self, user_phone: str, message_text: str, is_new_user: bool = False
@@ -51,6 +52,16 @@ class WhatsappService:
         user = await self.user_repo.get_by_phone(user_phone)
         if not user:
             return self.template_service.render("error_user_required")
+
+        # Log User Message
+        user_msg = Message(
+            business_id=user.business_id,
+            from_number=user_phone,
+            body=message_text,
+            role=MessageRole.USER
+        )
+        self.session.add(user_msg)
+        await self.session.flush()
 
         # 2. Fetch Conversation State
         state_record = await self.state_repo.get_by_phone(user_phone)
@@ -68,12 +79,25 @@ class WhatsappService:
 
         if state_record.state == ConversationStatus.WAITING_CONFIRM:
             self.logger.info(f"User {user_phone} in WAITING_CONFIRM mode")
-            return await self._handle_waiting_confirm(user, state_record, message_text)
+            reply = await self._handle_waiting_confirm(user, state_record, message_text)
         elif state_record.state == ConversationStatus.SETTINGS:
             self.logger.info(f"User {user_phone} in SETTINGS mode")
-            return await self._handle_settings(user, state_record, message_text)
+            reply = await self._handle_settings(user, state_record, message_text)
         else:
-            return await self._handle_idle(user, state_record, message_text)
+            reply = await self._handle_idle(user, state_record, message_text)
+
+        # Log Assistant Reply
+        assistant_msg = Message(
+            business_id=user.business_id,
+            from_number="system",  # Or business phone if available
+            to_number=user_phone,
+            body=reply,
+            role=MessageRole.ASSISTANT,
+            log_metadata=self._current_metadata if self._current_metadata else None
+        )
+        self.session.add(assistant_msg)
+        
+        return reply
 
     async def _handle_idle(
         self, user: User, state_record: ConversationState, text: str
@@ -113,6 +137,13 @@ class WhatsappService:
         tool_call = await self.parser.parse(text, system_time=system_time, service_catalog=service_catalog_str)
         
         if tool_call:
+            # Capture tool call metadata
+            if not isinstance(tool_call, str):
+                self._current_metadata["tool_call"] = {
+                    "name": tool_call.__class__.__name__,
+                    "arguments": tool_call.dict()
+                }
+
             # Handle string response (reasoning/clarification)
             if isinstance(tool_call, str):
                 return tool_call
@@ -472,7 +503,6 @@ class WhatsappService:
     async def _handle_settings(
         self, user: User, state_record: ConversationState, text: str
     ) -> str:
-        lower_text = text.lower().strip()
         service_repo = ServiceRepository(self.session)
 
         # Fetch Service Catalog for context AND listing
@@ -485,6 +515,12 @@ class WhatsappService:
 
         # Parse with specialized settings parser
         tool_call = await self.parser.parse_settings(text, service_context=service_catalog_str)
+
+        if tool_call and not isinstance(tool_call, str):
+            self._current_metadata["tool_call"] = {
+                "name": tool_call.__class__.__name__,
+                "arguments": tool_call.dict()
+            }
 
         if not tool_call:
             # Fallback to help menu if unclear

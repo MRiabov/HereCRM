@@ -190,3 +190,25 @@ class ConversationState(Base):
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
+
+class MessageRole(str, enum.Enum):
+    USER = "user"
+    ASSISTANT = "assistant"
+
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
+    from_number: Mapped[str] = mapped_column(String, index=True)
+    to_number: Mapped[Optional[str]] = mapped_column(String)
+    body: Mapped[str] = mapped_column(Text)
+    role: Mapped[MessageRole] = mapped_column(SAEnum(MessageRole))
+    log_metadata: Mapped[Optional[dict]] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+
+    # Relationships
+    business: Mapped["Business"] = relationship()

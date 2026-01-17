@@ -158,7 +158,7 @@ service_catalog_matching: |
   {service_catalog}
   
   MATCHING RULES:
-  1. If a line item matches a service in the CATALOG (semantically or strictly):
+  1. If a line item matches a service in the CATALOG (semantically or strictly - most of the time there is a match):
      - Set 'service_id' to the integer ID from the catalog.
      - Set 'service_name' to the Name from the catalog.
      - Set 'unit_price' to the catalog price (unless user specifies a custom overriding price).

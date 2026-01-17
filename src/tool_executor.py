@@ -271,14 +271,33 @@ class ToolExecutor:
             # Ensure price consistency: if line items exist, they define the value.
             job_value = round(sum(li.total_price for li in inferred_items), 2)
 
-        # 3. Create job using CRMService to ensure events are fired
+        # 3. Handle scheduling if time provided
+        scheduled_at = None
+        if tool.iso_time:
+            from datetime import datetime
+            try:
+                scheduled_at = datetime.fromisoformat(
+                    tool.iso_time.replace("Z", "+00:00")
+                )
+            except ValueError:
+                pass
+        
+        description = tool.description
+        if tool.time:
+            if description:
+                description = f"{description} (Scheduled: {tool.time})"
+            else:
+                description = f"(Scheduled: {tool.time})"
+
+        # 4. Create job using CRMService to ensure events are fired
         crm_service = CRMService(self.session, self.business_id)
         job = await crm_service.create_job(
             customer_id=customer.id,
-            description=tool.description,
+            description=description,
             value=job_value,
             location=tool.location,
-            status=tool.status or "pending",
+            status=tool.status or ("scheduled" if tool.time else "pending"),
+            scheduled_at=scheduled_at,
             line_items=inferred_items,
         )
         await self.session.flush()
