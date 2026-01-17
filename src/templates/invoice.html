@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Invoice #{{ job.id }}</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px;
+        }
+        .invoice-box {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 32px;
+            text-transform: uppercase;
+        }
+        .metadata {
+            text-align: right;
+        }
+        .metadata p {
+            margin: 0;
+        }
+        .info-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+        }
+        .info-box h3 {
+            margin: 0 0 10px 0;
+            color: #7f8c8d;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        .info-box p {
+            margin: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+        th {
+            background: #f8f9fa;
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid #eee;
+            color: #2c3e50;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        .total-section {
+            text-align: right;
+        }
+        .total-row {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .footer {
+            margin-top: 60px;
+            text-align: center;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            color: #7f8c8d;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-box">
+        <div class="header">
+            <div>
+                <h1>Invoice</h1>
+                <p>#{{ job.id }}</p>
+            </div>
+            <div class="metadata">
+                <p><strong>Date:</strong> {{ invoice_date }}</p>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div class="info-box">
+                <h3>Bill To</h3>
+                <p><strong>{{ job.customer.name }}</strong></p>
+                {% if job.customer.street %}
+                    <p>{{ job.customer.street }}</p>
+                {% endif %}
+                {% if job.customer.city or job.customer.country %}
+                    <p>
+                        {{ job.customer.city }}{% if job.customer.city and job.customer.country %}, {% endif %}
+                        {{ job.customer.country }}
+                    </p>
+                {% endif %}
+                {% if job.customer.phone %}
+                    <p>{{ job.customer.phone }}</p>
+                {% endif %}
+            </div>
+            <div class="info-box" style="text-align: right;">
+                <h3>From</h3>
+                <p><strong>HereCRM Demo Business</strong></p>
+                <p>123 Efficiency Lane</p>
+                <p>Silicon Valley, CA</p>
+                <p>support@herecrm.com</p>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th style="text-align: right;">Quantity</th>
+                    <th style="text-align: right;">Price</th>
+                    <th style="text-align: right;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in job.line_items %}
+                <tr>
+                    <td>{{ item.description }}</td>
+                    <td style="text-align: right;">{{ "%.2f"|format(item.quantity) }}</td>
+                    <td style="text-align: right;">${{ "%.2f"|format(item.unit_price) }}</td>
+                    <td style="text-align: right;">${{ "%.2f"|format(item.total_price) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="total-section">
+            <p class="total-row">Total Amount Due: ${{ "%.2f"|format(job.value or 0) }}</p>
+        </div>
+
+        <div class="footer">
+            <p>Thank you for your business!</p>
+            <p>Please pay within 15 days.</p>
+        </div>
+    </div>
+</body>
+</html>
