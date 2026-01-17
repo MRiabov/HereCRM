@@ -22,6 +22,8 @@ from src.uimodels import (
     DeleteServiceTool,
     ListServicesTool,
     ExitSettingsTool,
+    ExportQueryTool,
+    ExitDataManagementTool,
 )
 from src.services.template_service import TemplateService
 
@@ -170,6 +172,76 @@ class LLMParser:
                 },
             },
         ]
+
+        self.datamgmt_tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "ExportQueryTool",
+                    "description": "Export data based on a natural language query.",
+                    "parameters": ExportQueryTool.schema(),
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "ExitDataManagementTool",
+                    "description": "Exit the data management mode.",
+                    "parameters": ExitDataManagementTool.schema(),
+                },
+            },
+        ]
+
+    async def parse_data_management(
+        self, text: str
+    ) -> Optional[Union[ExportQueryTool, ExitDataManagementTool]]:
+        lower_text = text.lower().strip()
+        if lower_text in ["exit", "quit", "back", "done"]:
+            return ExitDataManagementTool()
+
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant for a CRM data management system. "
+                "The user will ask to export data or perform data operations. "
+                "Map their request to the appropriate tool. "
+                "If they ask to export, use ExportQueryTool. "
+                "If they want to leave, use ExitDataManagementTool.",
+            },
+            {"role": "user", "content": text},
+        ]
+
+        try:
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                tools=self.datamgmt_tools,
+                tool_choice="auto",
+            )
+
+            message = response.choices[0].message
+            if message.tool_calls:
+                tool_call = message.tool_calls[0]
+                function_name = tool_call.function.name
+
+                try:
+                    arguments = json.loads(tool_call.function.arguments)
+                except json.JSONDecodeError:
+                    self.logger.error(
+                        f"Failed to parse JSON arguments: {tool_call.function.arguments}"
+                    )
+                    return None
+
+                if function_name == "ExportQueryTool":
+                    return ExportQueryTool(**arguments)
+                elif function_name == "ExitDataManagementTool":
+                    return ExitDataManagementTool(**arguments)
+
+            return None
+
+        except Exception as e:
+            self.logger.error(f"LLM Parse Error (DataMgmt): {e}", exc_info=True)
+            return None
 
     async def parse_settings(
         self, text: str, service_context: Optional[str] = None
