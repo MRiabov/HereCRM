@@ -4,9 +4,9 @@ from datetime import datetime, timezone
 from unittest.mock import patch
 
 from src.services.messaging_service import MessagingService
-from src.models import MessageStatus, MessageType, Business, Customer
-from src.events import JobBookedEvent, JobScheduledEvent, OnMyWayEvent
-from src.database import get_db
+from src.models import MessageStatus, MessageType, Business, Customer, MessageLog
+from src.database import AsyncSessionLocal
+from src.events import event_bus
 
 
 @pytest.mark.asyncio
@@ -31,9 +31,18 @@ async def test_send_message_creates_message_log():
     assert message_log.trigger_source == "test"
     
     # Verify status was updated to SENT (mock implementation)
-    assert message_log.status == MessageStatus.SENT
-    assert message_log.sent_at is not None
-    assert message_log.external_id is not None
+    # Note: status update happens in a background block, we might need to refresh or check carefully
+    # In the current implementation, it's updated in the same method but different session blocks may exist.
+    # Actually, I changed send_message to use its own session blocks.
+    
+    async with AsyncSessionLocal() as db:
+        from sqlalchemy import select
+        stmt = select(MessageLog).where(MessageLog.id == message_log.id)
+        result = await db.execute(stmt)
+        msg = result.scalar_one()
+        assert msg.status == MessageStatus.SENT
+        assert msg.sent_at is not None
+        assert msg.external_id is not None
 
 
 @pytest.mark.asyncio
@@ -49,9 +58,13 @@ async def test_send_message_sms_channel():
         trigger_source="test",
     )
     
-    # Verify MessageLog was created with SMS type
-    assert message_log.message_type == MessageType.SMS
-    assert message_log.status == MessageStatus.SENT
+    async with AsyncSessionLocal() as db:
+        from sqlalchemy import select
+        stmt = select(MessageLog).where(MessageLog.id == message_log.id)
+        result = await db.execute(stmt)
+        msg = result.scalar_one()
+        assert msg.message_type == MessageType.SMS
+        assert msg.status == MessageStatus.SENT
 
 
 @pytest.mark.asyncio
@@ -68,10 +81,14 @@ async def test_send_message_handles_errors():
             trigger_source="test",
         )
     
-    # Verify MessageLog was created but marked as FAILED
-    assert message_log.status == MessageStatus.FAILED
-    assert message_log.error_message == "API Error"
-    assert message_log.sent_at is None
+    async with AsyncSessionLocal() as db:
+        from sqlalchemy import select
+        stmt = select(MessageLog).where(MessageLog.id == message_log.id)
+        result = await db.execute(stmt)
+        msg = result.scalar_one()
+        assert msg.status == MessageStatus.FAILED
+        assert msg.error_message == "API Error"
+        assert msg.sent_at is None
 
 
 @pytest.mark.asyncio
@@ -125,12 +142,12 @@ async def test_process_queue():
 
 
 @pytest.mark.asyncio
-async def test_handle_job_booked_event():
-    """Test that handle_job_booked enqueues a message."""
+async def test_handle_job_created_event():
+    """Test that handle_job_created enqueues a message."""
     service = MessagingService()
     
     # Create necessary DB records
-    async for db in get_db():
+    async with AsyncSessionLocal() as db:
         business = Business(name="Test Business")
         db.add(business)
         await db.commit()
@@ -145,17 +162,15 @@ async def test_handle_job_booked_event():
         await db.commit()
         await db.refresh(customer)
         
-        # Create a JobBookedEvent
-        event = JobBookedEvent(
-            job_id=1,
-            customer_id=customer.id,
-            business_id=business.id,
-            description="Test job",
-        )
+        # Create a payload for JOB_CREATED
+        data = {
+            "job_id": 1,
+            "customer_id": customer.id,
+            "business_id": business.id,
+        }
         
         # Handle the event
-        await service.handle_job_booked(event)
-        break
+        await service.handle_job_created(data)
     
     # Verify message was enqueued
     assert service._queue.qsize() == 1
@@ -163,7 +178,7 @@ async def test_handle_job_booked_event():
     # Get the message from queue
     message_data = await service._queue.get()
     assert "+1234567890" in message_data["recipient_phone"]
-    assert "job_id" in message_data["content"].lower() or "1" in message_data["content"]
+    assert "1" in message_data["content"]
     assert message_data["trigger_source"] == "job_booked"
 
 
@@ -173,7 +188,7 @@ async def test_handle_job_scheduled_event():
     service = MessagingService()
     
     # Create necessary DB records
-    async for db in get_db():
+    async with AsyncSessionLocal() as db:
         business = Business(name="Test Business")
         db.add(business)
         await db.commit()
@@ -188,17 +203,16 @@ async def test_handle_job_scheduled_event():
         await db.commit()
         await db.refresh(customer)
         
-        # Create a JobScheduledEvent
-        event = JobScheduledEvent(
-            job_id=1,
-            customer_id=customer.id,
-            business_id=business.id,
-            scheduled_at=datetime(2026, 1, 15, 10, 0, tzinfo=timezone.utc),
-        )
+        # Create a payload for JOB_SCHEDULED
+        data = {
+            "job_id": 1,
+            "customer_id": customer.id,
+            "business_id": business.id,
+            "scheduled_at": "2026-01-15T10:00:00Z",
+        }
         
         # Handle the event
-        await service.handle_job_scheduled(event)
-        break
+        await service.handle_job_scheduled(data)
     
     # Verify message was enqueued
     assert service._queue.qsize() == 1
@@ -207,6 +221,7 @@ async def test_handle_job_scheduled_event():
     message_data = await service._queue.get()
     assert "+1234567890" in message_data["recipient_phone"]
     assert "scheduled" in message_data["content"].lower()
+    assert "2026-01-15T10:00:00Z" in message_data["content"]
     assert message_data["trigger_source"] == "job_scheduled"
 
 
@@ -216,7 +231,7 @@ async def test_handle_on_my_way_event():
     service = MessagingService()
     
     # Create necessary DB records
-    async for db in get_db():
+    async with AsyncSessionLocal() as db:
         business = Business(name="Test Business")
         db.add(business)
         await db.commit()
@@ -231,16 +246,15 @@ async def test_handle_on_my_way_event():
         await db.commit()
         await db.refresh(customer)
         
-        # Create an OnMyWayEvent
-        event = OnMyWayEvent(
-            customer_id=customer.id,
-            business_id=business.id,
-            eta_minutes=15,
-        )
+        # Create an ON_MY_WAY payload
+        data = {
+            "customer_id": customer.id,
+            "business_id": business.id,
+            "eta_minutes": 15,
+        }
         
         # Handle the event
-        await service.handle_on_my_way(event)
-        break
+        await service.handle_on_my_way(data)
     
     # Verify message was enqueued
     assert service._queue.qsize() == 1
@@ -248,7 +262,7 @@ async def test_handle_on_my_way_event():
     # Get the message from queue
     message_data = await service._queue.get()
     assert "+1234567890" in message_data["recipient_phone"]
-    assert "on our way" in message_data["content"].lower() or "way" in message_data["content"].lower()
+    assert "on our way" in message_data["content"].lower()
     assert "15" in message_data["content"]
     assert message_data["trigger_source"] == "on_my_way"
 
@@ -256,21 +270,20 @@ async def test_handle_on_my_way_event():
 @pytest.mark.asyncio
 async def test_register_handlers():
     """Test that register_handlers subscribes to events."""
-    from src.services.event_bus import event_bus
-    
     service = MessagingService()
     
-    # Clear any existing handlers
-    event_bus._handlers.clear()
+    # Clear any existing subscribers for testing purposes
+    # Note: in real scenarios we might want a clean event_bus
+    event_bus._subscribers.clear()
     
     # Register handlers
     service.register_handlers()
     
     # Verify handlers were registered
-    assert JobBookedEvent in event_bus._handlers
-    assert JobScheduledEvent in event_bus._handlers
-    assert OnMyWayEvent in event_bus._handlers
+    assert "JOB_CREATED" in event_bus._subscribers
+    assert "JOB_SCHEDULED" in event_bus._subscribers
+    assert "ON_MY_WAY" in event_bus._subscribers
     
-    assert service.handle_job_booked in event_bus._handlers[JobBookedEvent]
-    assert service.handle_job_scheduled in event_bus._handlers[JobScheduledEvent]
-    assert service.handle_on_my_way in event_bus._handlers[OnMyWayEvent]
+    assert service.handle_job_created in event_bus._subscribers["JOB_CREATED"]
+    assert service.handle_job_scheduled in event_bus._subscribers["JOB_SCHEDULED"]
+    assert service.handle_on_my_way in event_bus._subscribers["ON_MY_WAY"]

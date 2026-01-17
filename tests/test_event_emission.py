@@ -5,7 +5,6 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from src.database import Base
 from src.tool_executor import ToolExecutor
 from src.uimodels import AddJobTool, ScheduleJobTool
-from src.events import JobBookedEvent, JobScheduledEvent
 from src.models import Customer, Job, Business
 from src.services.template_service import TemplateService
 
@@ -34,13 +33,13 @@ async def test_add_job_emits_event(test_session):
     
     user_phone = "+1234567890"
     template_service = AsyncMock(spec=TemplateService)
-    # Mock render to return a string
     template_service.render.return_value = "Mocked Template"
     
-    executor = ToolExecutor(test_session, business.id, user_phone, template_service)
+    user_id = 999
+    executor = ToolExecutor(test_session, business.id, user_id, user_phone, template_service)
     
     # Mock event bus
-    with patch("src.tool_executor.event_bus.emit", new_callable=AsyncMock) as mock_emit:
+    with patch("src.events.event_bus.emit", new_callable=AsyncMock) as mock_emit:
         # Execute
         tool = AddJobTool(
             customer_name="Test Customer",
@@ -53,12 +52,16 @@ async def test_add_job_emits_event(test_session):
         
         await executor.execute(tool)
         
-        # Verify
-        mock_emit.assert_called_once()
-        event = mock_emit.call_args[0][0]
-        assert isinstance(event, JobBookedEvent)
-        assert event.business_id == business.id
-        assert event.description == "Test Job"
+        # Verify JOB_CREATED was emitted (from CRMService)
+        # Note: it might be called multiple times if there are other events, but we check for JOB_CREATED
+        found = False
+        for call in mock_emit.call_args_list:
+            if call[0][0] == "JOB_CREATED":
+                found = True
+                data = call[0][1]
+                assert data["business_id"] == business.id
+                break
+        assert found, "JOB_CREATED event not emitted"
 
 @pytest.mark.asyncio
 async def test_schedule_job_emits_event(test_session):
@@ -71,7 +74,8 @@ async def test_schedule_job_emits_event(test_session):
     template_service = AsyncMock(spec=TemplateService)
     template_service.render.return_value = "Mocked Template"
     
-    executor = ToolExecutor(test_session, business.id, user_phone, template_service)
+    user_id = 999
+    executor = ToolExecutor(test_session, business.id, user_id, user_phone, template_service)
     
     # Create existing job and customer
     customer = Customer(
@@ -89,10 +93,10 @@ async def test_schedule_job_emits_event(test_session):
         status="pending"
     )
     test_session.add(job)
-    await test_session.commit() # Commit to ensure ID is available and readable by new transaction if needed
+    await test_session.commit()
     
     # Mock event bus
-    with patch("src.tool_executor.event_bus.emit", new_callable=AsyncMock) as mock_emit:
+    with patch("src.events.event_bus.emit", new_callable=AsyncMock) as mock_emit:
         # Execute
         tool = ScheduleJobTool(
             job_id=job.id,
@@ -102,9 +106,14 @@ async def test_schedule_job_emits_event(test_session):
         
         await executor.execute(tool)
         
-        # Verify
-        mock_emit.assert_called_once()
-        event = mock_emit.call_args[0][0]
-        assert isinstance(event, JobScheduledEvent)
-        assert event.job_id == job.id
-        assert event.business_id == business.id
+        # Verify JOB_SCHEDULED was emitted
+        found = False
+        for call in mock_emit.call_args_list:
+            if call[0][0] == "JOB_SCHEDULED":
+                found = True
+                data = call[0][1]
+                assert data["job_id"] == job.id
+                assert data["business_id"] == business.id
+                assert "2026-01-16T14:00:00" in data["scheduled_at"]
+                break
+        assert found, "JOB_SCHEDULED event not emitted"

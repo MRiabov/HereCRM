@@ -4,9 +4,8 @@ from typing import Optional
 from datetime import datetime, timezone
 
 from src.models import MessageLog, MessageType, MessageStatus
-from src.events import JobBookedEvent, JobScheduledEvent, OnMyWayEvent
-from src.services.event_bus import event_bus
-from src.database import get_db
+from src.events import event_bus
+from src.database import AsyncSessionLocal
 from src.repositories import CustomerRepository
 
 logger = logging.getLogger(__name__)
@@ -46,7 +45,7 @@ class MessagingService:
         message_type = MessageType.WHATSAPP if channel == "whatsapp" else MessageType.SMS
         
         # Create MessageLog entry with PENDING status
-        async for db in get_db():
+        async with AsyncSessionLocal() as db:
             message_log = MessageLog(
                 recipient_phone=recipient_phone,
                 content=content,
@@ -68,22 +67,32 @@ class MessagingService:
                 await asyncio.sleep(0.1)
                 
                 # Update status to SENT
-                message_log.status = MessageStatus.SENT
-                message_log.sent_at = datetime.now(timezone.utc)
-                message_log.external_id = f"mock_{message_log.id}_{int(datetime.now(timezone.utc).timestamp())}"
-                
-                await db.commit()
-                await db.refresh(message_log)
+                async with AsyncSessionLocal() as db:
+                    # Reload message_log in this session
+                    from sqlalchemy import select
+                    stmt = select(MessageLog).where(MessageLog.id == message_log.id)
+                    result = await db.execute(stmt)
+                    msg_log = result.scalar_one()
+                    
+                    msg_log.status = MessageStatus.SENT
+                    msg_log.sent_at = datetime.now(timezone.utc)
+                    msg_log.external_id = f"mock_{msg_log.id}_{int(datetime.now(timezone.utc).timestamp())}"
+                    
+                    await db.commit()
                 
                 logger.info(f"Message {message_log.id} sent successfully")
                 
             except Exception as e:
                 # Update status to FAILED on error
                 logger.error(f"Failed to send message {message_log.id}: {e}")
-                message_log.status = MessageStatus.FAILED
-                message_log.error_message = str(e)
-                await db.commit()
-                await db.refresh(message_log)
+                async with AsyncSessionLocal() as db:
+                    from sqlalchemy import select
+                    stmt = select(MessageLog).where(MessageLog.id == message_log.id)
+                    result = await db.execute(stmt)
+                    msg_log = result.scalar_one()
+                    msg_log.status = MessageStatus.FAILED
+                    msg_log.error_message = str(e)
+                    await db.commit()
             
             return message_log
 
@@ -156,96 +165,106 @@ class MessagingService:
 
     # Event Handlers
 
-    async def handle_job_booked(self, event: JobBookedEvent):
+    async def handle_job_created(self, data: dict):
         """
-        Handle JobBookedEvent by sending a confirmation message to the customer.
-        
-        Args:
-            event: The JobBookedEvent containing job details
+        Handle JOB_CREATED event.
         """
-        logger.info(f"Handling JobBookedEvent for job {event.job_id}")
+        job_id = data.get("job_id")
+        customer_id = data.get("customer_id")
+        business_id = data.get("business_id")
         
-        async for db in get_db():
+        if job_id is None or customer_id is None or business_id is None:
+            logger.error(f"Missing data in JOB_CREATED event: {data}")
+            return
+            
+        logger.info(f"Handling JOB_CREATED for job {job_id}")
+        
+        async with AsyncSessionLocal() as db:
             customer_repo = CustomerRepository(db)
-            customer = await customer_repo.get_by_id(event.customer_id, event.business_id)
+            customer = await customer_repo.get_by_id(customer_id, business_id)
             
             if not customer or not customer.phone:
-                logger.warning(f"Could not find phone number for customer {event.customer_id}")
+                logger.warning(f"Could not find phone number for customer {customer_id}")
                 return
 
-            content = f"Your job has been booked! Job ID: {event.job_id}"
+            content = f"Your job has been booked! Job ID: {job_id}"
             
-            # Enqueue message for async processing
             await self.enqueue_message(
                 recipient_phone=customer.phone,
                 content=content,
                 trigger_source="job_booked",
             )
-            break
 
-    async def handle_job_scheduled(self, event: JobScheduledEvent):
+    async def handle_job_scheduled(self, data: dict):
         """
-        Handle JobScheduledEvent by sending a scheduling confirmation to the customer.
-        
-        Args:
-            event: The JobScheduledEvent containing scheduling details
+        Handle JOB_SCHEDULED event.
         """
-        logger.info(f"Handling JobScheduledEvent for job {event.job_id}")
+        job_id = data.get("job_id")
+        customer_id = data.get("customer_id")
+        business_id = data.get("business_id")
+        scheduled_at_str = data.get("scheduled_at")
         
-        async for db in get_db():
+        if job_id is None or customer_id is None or business_id is None:
+            logger.error(f"Missing data in JOB_SCHEDULED event: {data}")
+            return
+            
+        logger.info(f"Handling JOB_SCHEDULED for job {job_id}")
+        
+        async with AsyncSessionLocal() as db:
             customer_repo = CustomerRepository(db)
-            customer = await customer_repo.get_by_id(event.customer_id, event.business_id)
+            customer = await customer_repo.get_by_id(customer_id, business_id)
             
             if not customer or not customer.phone:
-                logger.warning(f"Could not find phone number for customer {event.customer_id}")
+                logger.warning(f"Could not find phone number for customer {customer_id}")
                 return
 
-            content = f"Your job has been scheduled for {event.scheduled_at.strftime('%Y-%m-%d %H:%M')}"
+            content = f"Your job has been scheduled for {scheduled_at_str}"
             
-            # Enqueue message for async processing
             await self.enqueue_message(
                 recipient_phone=customer.phone,
                 content=content,
                 trigger_source="job_scheduled",
             )
-            break
 
-    async def handle_on_my_way(self, event: OnMyWayEvent):
+    async def handle_on_my_way(self, data: dict):
         """
-        Handle OnMyWayEvent by notifying the customer that the technician is en route.
-        
-        Args:
-            event: The OnMyWayEvent containing ETA details
+        Handle ON_MY_WAY event.
         """
-        logger.info(f"Handling OnMyWayEvent for customer {event.customer_id}")
+        customer_id = data.get("customer_id")
+        business_id = data.get("business_id")
+        eta_minutes = data.get("eta_minutes")
         
-        async for db in get_db():
+        if customer_id is None or business_id is None:
+            logger.error(f"Missing data in ON_MY_WAY event: {data}")
+            return
+            
+        logger.info(f"Handling ON_MY_WAY for customer {customer_id}")
+        
+        async with AsyncSessionLocal() as db:
             customer_repo = CustomerRepository(db)
-            customer = await customer_repo.get_by_id(event.customer_id, event.business_id)
+            customer = await customer_repo.get_by_id(customer_id, business_id)
             
             if not customer or not customer.phone:
-                logger.warning(f"Could not find phone number for customer {event.customer_id}")
+                logger.warning(f"Could not find phone number for customer {customer_id}")
                 return
 
-            eta_text = f" ETA: {event.eta_minutes} minutes" if event.eta_minutes else ""
+            eta_text = f" ETA: {eta_minutes} minutes" if eta_minutes else ""
             content = f"We're on our way!{eta_text}"
             
-            # Enqueue message for async processing
             await self.enqueue_message(
                 recipient_phone=customer.phone,
                 content=content,
                 trigger_source="on_my_way",
             )
-            break
 
     def register_handlers(self):
         """
         Register this service's event handlers with the EventBus.
         Should be called during application startup.
         """
-        event_bus.subscribe(JobBookedEvent, self.handle_job_booked)
-        event_bus.subscribe(JobScheduledEvent, self.handle_job_scheduled)
-        event_bus.subscribe(OnMyWayEvent, self.handle_on_my_way)
+        event_bus.subscribe("JOB_CREATED", self.handle_job_created)
+        event_bus.subscribe("JOB_SCHEDULED", self.handle_job_scheduled)
+        event_bus.subscribe("ON_MY_WAY", self.handle_on_my_way)
         logger.info("MessagingService handlers registered with EventBus")
 
 
