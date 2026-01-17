@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from jinja2 import Environment, FileSystemLoader
 from weasyprint import HTML
 from src.models import Job
@@ -27,13 +27,16 @@ class InvoicePDFGenerator:
         """
         if invoice_date is None:
             invoice_date = datetime.now()
+
+        due_date = invoice_date + timedelta(days=15)
             
         template = self.env.get_template(self.template_name)
         
         # Prepare context
         context = {
             "job": job,
-            "invoice_date": invoice_date.strftime("%Y-%m-%d")
+            "invoice_date": invoice_date.strftime("%Y-%m-%d"),
+            "due_date": due_date.strftime("%Y-%m-%d")
         }
         
         # Render HTML
