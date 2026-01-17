@@ -1,23 +1,36 @@
+version: '3.8'
+
 services:
-  api:
-    build: .
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - crm_data:/app/data
     ports:
       - "8000:8000"
-    volumes:
-      - ./crm.db:/app/crm.db
-    env_file:
-      - .env
-    restart: always
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///data/crm.db
+      - PORT=8000
+      # Create .env file for secrets or pass them via shell
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - WHATSAPP_APP_SECRET=${WHATSAPP_APP_SECRET}
+    restart: unless-stopped
 
-  ui:
-    build: .
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
     ports:
       - "8501:8501"
-    command: ["streamlit", "run", "scripts/chat_ui.py", "--server.address", "0.0.0.0"]
-    env_file:
-      - .env
     environment:
-      - API_BASE_URL=http://api:8000
+      # In Docker Compose, service name is the hostname
+      - API_BASE_URL=http://backend:8000
+      - PORT=8501
+      - WHATSAPP_APP_SECRET=${WHATSAPP_APP_SECRET}
     depends_on:
-      - api
-    restart: always
+      - backend
+    restart: unless-stopped
+
+volumes:
+  crm_data:

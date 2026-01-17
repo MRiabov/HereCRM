@@ -21,6 +21,10 @@ RUN chmod +x scripts/start.sh
 # Place uv on the PATH
 ENV PATH="/app/.venv/bin:$PATH"
 
+# Create data directory for volume mount
+RUN mkdir -p /app/data && chmod 777 /app/data
+VOLUME /app/data
+
 # Expose FastAPI port
 EXPOSE 8000
 
