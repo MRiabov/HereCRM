@@ -42,6 +42,7 @@ class LLMParser:
         
         # We reuse TemplateService as a generic YAML loader for prompts
         self.prompts_service = TemplateService(yaml_path=prompts_path)
+        tool_desc = self.prompts_service.templates.get("tool_descriptions", {})
 
         # Define tools using OpenAI schema
         self.tools = [
@@ -49,7 +50,7 @@ class LLMParser:
                 "type": "function",
                 "function": {
                     "name": "AddJobTool",
-                    "description": "Add a new job with price or task details.",
+                    "description": tool_desc.get("AddJobTool", ""),
                     "parameters": AddJobTool.schema(),
                 },
             },
@@ -57,7 +58,7 @@ class LLMParser:
                 "type": "function",
                 "function": {
                     "name": "AddLeadTool",
-                    "description": "Add a new lead or customer without a job.",
+                    "description": tool_desc.get("AddLeadTool", ""),
                     "parameters": AddLeadTool.schema(),
                 },
             },
@@ -65,7 +66,7 @@ class LLMParser:
                 "type": "function",
                 "function": {
                     "name": "EditCustomerTool",
-                    "description": "Update customer details like phone, address, or notes.",
+                    "description": tool_desc.get("EditCustomerTool", ""),
                     "parameters": EditCustomerTool.schema(),
                 },
             },
@@ -73,7 +74,7 @@ class LLMParser:
                 "type": "function",
                 "function": {
                     "name": "ScheduleJobTool",
-                    "description": "Schedule an existing or new job for a specific time.",
+                    "description": tool_desc.get("ScheduleJobTool", ""),
                     "parameters": ScheduleJobTool.schema(),
                 },
             },
@@ -81,7 +82,7 @@ class LLMParser:
                 "type": "function",
                 "function": {
                     "name": "AddRequestTool",
-                    "description": "Store a general request or note.",
+                    "description": tool_desc.get("AddRequestTool", ""),
                     "parameters": AddRequestTool.schema(),
                 },
             },
@@ -89,7 +90,7 @@ class LLMParser:
                 "type": "function",
                 "function": {
                     "name": "SearchTool",
-                    "description": "Search for jobs, customers, or requests.",
+                    "description": tool_desc.get("SearchTool", ""),
                     "parameters": SearchTool.schema(),
                 },
             },
@@ -97,7 +98,7 @@ class LLMParser:
                 "type": "function",
                 "function": {
                     "name": "UpdateSettingsTool",
-                    "description": "Update user preferences or business settings.",
+                    "description": tool_desc.get("UpdateSettingsTool", ""),
                     "parameters": UpdateSettingsTool.schema(),
                 },
             },
@@ -105,7 +106,7 @@ class LLMParser:
                 "type": "function",
                 "function": {
                     "name": "ConvertRequestTool",
-                    "description": "Convert a general request or a query into a specific action.",
+                    "description": tool_desc.get("ConvertRequestTool", ""),
                     "parameters": ConvertRequestTool.schema(),
                 },
             },
@@ -113,7 +114,7 @@ class LLMParser:
                 "type": "function",
                 "function": {
                     "name": "HelpTool",
-                    "description": "Get help or information about available commands.",
+                    "description": tool_desc.get("HelpTool", ""),
                     "parameters": HelpTool.schema(),
                 },
             },
@@ -121,7 +122,7 @@ class LLMParser:
                 "type": "function",
                 "function": {
                     "name": "GetPipelineTool",
-                    "description": "Get a summary of the sales pipeline (funnel counts).",
+                    "description": tool_desc.get("GetPipelineTool", ""),
                     "parameters": GetPipelineTool.schema(),
                 },
             },
@@ -132,7 +133,7 @@ class LLMParser:
                 "type": "function",
                 "function": {
                     "name": "AddServiceTool",
-                    "description": "Add a new service to the catalog.",
+                    "description": tool_desc.get("AddServiceTool", ""),
                     "parameters": AddServiceTool.schema(),
                 },
             },
@@ -140,7 +141,7 @@ class LLMParser:
                 "type": "function",
                 "function": {
                     "name": "EditServiceTool",
-                    "description": "Edit an existing service.",
+                    "description": tool_desc.get("EditServiceTool", ""),
                     "parameters": EditServiceTool.schema(),
                 },
             },
@@ -148,7 +149,7 @@ class LLMParser:
                 "type": "function",
                 "function": {
                     "name": "DeleteServiceTool",
-                    "description": "Delete a service from the catalog.",
+                    "description": tool_desc.get("DeleteServiceTool", ""),
                     "parameters": DeleteServiceTool.schema(),
                 },
             },
@@ -156,7 +157,7 @@ class LLMParser:
                 "type": "function",
                 "function": {
                     "name": "ListServicesTool",
-                    "description": "List all available services.",
+                    "description": tool_desc.get("ListServicesTool", ""),
                     "parameters": ListServicesTool.schema(),
                 },
             },
@@ -164,7 +165,7 @@ class LLMParser:
                 "type": "function",
                 "function": {
                     "name": "ExitSettingsTool",
-                    "description": "Exit the settings mode.",
+                    "description": tool_desc.get("ExitSettingsTool", ""),
                     "parameters": ExitSettingsTool.schema(),
                 },
             },
@@ -188,9 +189,8 @@ class LLMParser:
 
         system_instruction = self.prompts_service.render("settings_system_instruction")
         if service_context:
-            system_instruction += (
-                f"\n\nCURRENT SERVICES:\n{service_context}\n"
-                "Use these names to help identify which service the user is referring to."
+            system_instruction += self.prompts_service.render(
+                "settings_current_services", service_context=service_context
             )
 
         messages = [
@@ -281,24 +281,17 @@ class LLMParser:
         # 2. Construct Prompt
         system_instruction = self.prompts_service.render("system_instruction")
         if service_catalog:
-            system_instruction += (
-                f"\n\nSERVICE CATALOG MATCHING:\n"
-                f"The following services are available (ID: Name - Price):\n"
-                f"{service_catalog}\n\n"
-                "MATCHING RULES:\n"
-                "1. If a line item matches a service in the CATALOG (semantically or strictly):\n"
-                "   - Set 'service_id' to the integer ID from the catalog.\n"
-                "   - Set 'service_name' to the Name from the catalog.\n"
-                "   - Set 'unit_price' to the catalog price (unless user specifies a custom overriding price).\n"
-                "   - ALWAYS leave 'total_price' as NULL; the backend will calculate it from quantity and unit price.\n"
-                "2. If NO match is found in the catalog, leave 'service_id' and 'service_name' as null and extract details from text."
+            system_instruction += self.prompts_service.render(
+                "service_catalog_matching", service_catalog=service_catalog
             )
 
         messages = [{"role": "system", "content": system_instruction}]
 
         user_prompt = text
         if system_time:
-            user_prompt = f"Current system time: {system_time}\n\nUser input: {text}\n\nIf the user specifies a time, please resolve it to an ISO format string and put it in the 'iso_time' field of the tool call."
+            user_prompt = self.prompts_service.render(
+                "user_time_prompt", system_time=system_time, text=text
+            )
 
         messages.append({"role": "user", "content": user_prompt})
 
