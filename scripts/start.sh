@@ -1,22 +1,11 @@
 #!/bin/bash
-set -e
 
-# Load environment variables if .env exists
-if [ -f .env ]; then
-    export $(grep -v '^#' .env | xargs)
-fi
+# Start FastAPI in the background
+echo "Starting FastAPI on port 8000..."
+uvicorn src.main:app --host 0.0.0.0 --port 8000 &
 
-# Determine which service to start
-SERVICE=${1:-api}
-
-if [ "$SERVICE" = "api" ]; then
-    echo "Starting FastAPI API..."
-    exec uvicorn src.main:app --host 0.0.0.0 --port 8000
-elif [ "$SERVICE" = "ui" ]; then
-    echo "Starting Streamlit UI..."
-    exec streamlit run scripts/chat_ui.py --server.address 0.0.0.0
-else
-    echo "Unknown service: $SERVICE"
-    echo "Usage: $0 [api|ui]"
-    exit 1
-fi
+# Start Streamlit in the foreground
+# Streamlit will use the PORT environment variable if provided, or default to 8501
+export PORT=${PORT:-8501}
+echo "Starting Streamlit on port $PORT..."
+streamlit run scripts/chat_ui.py --server.port $PORT --server.address 0.0.0.0

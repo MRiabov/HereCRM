@@ -48,6 +48,10 @@ retry_instruction: |
   Please try again. If the user's intent is clear, map it to one of the available tools. 
   If it's still unclear, you may provide a brief clarifying response, but prioritize tool calls if possible.
 
+retry_error_instruction: |
+  The previous attempt resulting in an error: {error}.
+  Please try again, correcting the error. Ensure the output is a valid tool call matching the schema.
+
 tool_descriptions:
   AddJobTool: |
     Add a new job with price or task details.

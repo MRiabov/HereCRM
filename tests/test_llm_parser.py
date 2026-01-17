@@ -18,6 +18,7 @@ from src.uimodels import (
     DeleteServiceTool,
     ListServicesTool,
     ExitSettingsTool,
+    ExportQueryTool,
 )
 
 
@@ -309,7 +310,7 @@ async def test_parse_retry_success(mock_parser):
 
 
 @pytest.mark.asyncio
-async def test_parse_retry_failure_returns_text(mock_parser):
+async def test_parse_retry_failure_returns_none(mock_parser):
     parser, mock_client = mock_parser
 
     # Both calls return no tool calls
@@ -324,7 +325,7 @@ async def test_parse_retry_failure_returns_text(mock_parser):
     result = await parser.parse("something vague")
     
     assert mock_client.chat.completions.create.call_count == 2
-    assert result == "Still no idea."
+    assert result is None
 
 
 @pytest.mark.asyncio
@@ -351,3 +352,95 @@ async def test_parse_settings_retry_success(mock_parser):
     assert mock_client.chat.completions.create.call_count == 2
     assert isinstance(result, AddServiceTool)
     assert result.name == "New Service"
+
+
+@pytest.mark.asyncio
+async def test_parse_retry_json_error(mock_parser):
+    parser, mock_client = mock_parser
+
+    # First call returns invalid JSON
+    mock_tool_call_bad = MagicMock()
+    mock_tool_call_bad.function.name = "AddJobTool"
+    mock_tool_call_bad.function.arguments = "{ invalid json }"
+    
+    mock_message_1 = MagicMock()
+    mock_message_1.tool_calls = [mock_tool_call_bad]
+    mock_message_1.content = "Some content"
+    mock_response_1 = MagicMock(choices=[MagicMock(message=mock_message_1)])
+
+    # Second call returns valid tool call
+    mock_tool_call_good = MagicMock()
+    mock_tool_call_good.function.name = "AddJobTool"
+    mock_tool_call_good.function.arguments = json.dumps(
+        {"customer_name": "Retry John", "description": "Fix faucet", "price": 50.0}
+    )
+    mock_message_2 = MagicMock(tool_calls=[mock_tool_call_good])
+    mock_response_2 = MagicMock(choices=[MagicMock(message=mock_message_2)])
+
+    mock_client.chat.completions.create = AsyncMock(side_effect=[mock_response_1, mock_response_2])
+
+    result = await parser.parse("fix faucet for John $50")
+    
+    assert mock_client.chat.completions.create.call_count == 2
+    assert isinstance(result, AddJobTool)
+    assert result.customer_name == "Retry John"
+
+
+@pytest.mark.asyncio
+async def test_parse_retry_validation_error(mock_parser):
+    parser, mock_client = mock_parser
+
+    # First call returns invalid Pydantic model
+    mock_tool_call_bad = MagicMock()
+    mock_tool_call_bad.function.name = "AddJobTool"
+    mock_tool_call_bad.function.arguments = json.dumps(
+        {"customer_name": "John", "price": "not a number"} # price expects float
+    )
+    
+    mock_message_1 = MagicMock()
+    mock_message_1.tool_calls = [mock_tool_call_bad]
+    mock_message_1.content = None
+    mock_response_1 = MagicMock(choices=[MagicMock(message=mock_message_1)])
+
+    # Second call returns valid tool call
+    mock_tool_call_good = MagicMock()
+    mock_tool_call_good.function.name = "AddJobTool"
+    mock_tool_call_good.function.arguments = json.dumps(
+        {"customer_name": "John", "price": 50.0}
+    )
+    mock_message_2 = MagicMock(tool_calls=[mock_tool_call_good])
+    mock_response_2 = MagicMock(choices=[MagicMock(message=mock_message_2)])
+
+    mock_client.chat.completions.create = AsyncMock(side_effect=[mock_response_1, mock_response_2])
+
+    result = await parser.parse("fix faucet for John $50")
+    
+    assert mock_client.chat.completions.create.call_count == 2
+    assert isinstance(result, AddJobTool)
+    assert result.price == 50.0
+
+
+@pytest.mark.asyncio
+async def test_parse_data_management_retry(mock_parser):
+    parser, mock_client = mock_parser
+
+    # First call returns no tool calls
+    mock_message_1 = MagicMock(tool_calls=None, content="I'm not sure.")
+    mock_response_1 = MagicMock(choices=[MagicMock(message=mock_message_1)])
+
+    # Second call returns valid export tool
+    mock_tool_call = MagicMock()
+    mock_tool_call.function.name = "ExportQueryTool"
+    mock_tool_call.function.arguments = json.dumps(
+        {"query": "all customers"}
+    )
+    mock_message_2 = MagicMock(tool_calls=[mock_tool_call])
+    mock_response_2 = MagicMock(choices=[MagicMock(message=mock_message_2)])
+
+    mock_client.chat.completions.create = AsyncMock(side_effect=[mock_response_1, mock_response_2])
+
+    result = await parser.parse_data_management("export everything")
+    
+    assert mock_client.chat.completions.create.call_count == 2
+    assert isinstance(result, ExportQueryTool)
+    assert result.query == "all customers"

@@ -50,6 +50,7 @@ def load_history():
 
 if "messages" not in st.session_state or st.session_state.get("last_phone") != phone_number:
     st.session_state.last_phone = phone_number
+    st.session_state.messages = []  # Initialize with empty list before loading
     load_history()
 
 for message in st.session_state.messages:
