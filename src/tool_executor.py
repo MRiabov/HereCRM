@@ -6,12 +6,15 @@ from src.repositories import (
     CustomerRepository,
     RequestRepository,
     UserRepository,
+    ServiceRepository,
 )
 from src.services.event_bus import event_bus
 from src.events import JobBookedEvent, JobScheduledEvent
 from src.services.crm_service import CRMService
 from src.services.template_service import TemplateService
 from src.services.geocoding import GeocodingService
+from src.services.inference_service import InferenceService
+from src.services.chat_utils import format_line_items
 from src.uimodels import (
     AddJobTool,
     AddLeadTool,
@@ -22,6 +25,13 @@ from src.uimodels import (
     UpdateSettingsTool,
     ConvertRequestTool,
     HelpTool,
+    GetPipelineTool,
+    UpdateCustomerStageTool,
+    AddServiceTool,
+    EditServiceTool,
+    DeleteServiceTool,
+    ListServicesTool,
+    ExitSettingsTool,
 )
 
 
@@ -41,6 +51,7 @@ class ToolExecutor:
         self.customer_repo = CustomerRepository(session)
         self.request_repo = RequestRepository(session)
         self.user_repo = UserRepository(session)
+        self.service_repo = ServiceRepository(session)
         self.geocoding_service = GeocodingService()
 
     async def execute(
@@ -54,6 +65,14 @@ class ToolExecutor:
             SearchTool,
             UpdateSettingsTool,
             ConvertRequestTool,
+            HelpTool,
+            GetPipelineTool,
+            UpdateCustomerStageTool,
+            AddServiceTool,
+            EditServiceTool,
+            DeleteServiceTool,
+            ListServicesTool,
+            ExitSettingsTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
         if isinstance(tool_call, AddJobTool):
@@ -76,6 +95,20 @@ class ToolExecutor:
             return await self._execute_update_settings(tool_call)
         elif isinstance(tool_call, ConvertRequestTool):
             return await self._execute_convert_request(tool_call)
+        elif isinstance(tool_call, GetPipelineTool):
+            return await self._execute_get_pipeline(tool_call)
+        elif isinstance(tool_call, UpdateCustomerStageTool):
+            return await self._execute_update_customer_stage(tool_call)
+        elif isinstance(tool_call, AddServiceTool):
+            return await self._execute_add_service(tool_call)
+        elif isinstance(tool_call, EditServiceTool):
+            return await self._execute_edit_service(tool_call)
+        elif isinstance(tool_call, DeleteServiceTool):
+            return await self._execute_delete_service(tool_call)
+        elif isinstance(tool_call, ListServicesTool):
+            return "List services is handled by the service layer directly (for formatting).", None
+        elif isinstance(tool_call, ExitSettingsTool):
+            return "Exit settings is handled by the service layer directly.", None
         elif isinstance(tool_call, HelpTool):
             return "Help is handled by the service layer directly.", None
         return "Unknown tool call", None
@@ -201,15 +234,24 @@ class ToolExecutor:
             self.customer_repo.add(customer)
             await self.session.flush()
 
-        # 2. Create job
-        job = Job(
-            business_id=self.business_id,
+        # 2. Create job using CRMService to ensure events are fired
+        crm_service = CRMService(self.session, self.business_id)
+        job = await crm_service.create_job(
             customer_id=customer.id,
             description=tool.description,
             value=tool.price,
             location=tool.location,
             status=tool.status or "pending",
         )
+        if tool.line_items:
+            inference_service = InferenceService(self.session)
+            job.line_items = await inference_service.infer_line_items(
+                self.business_id, tool.line_items
+            )
+            # Ensure price consistency: if line items exist, they define the value.
+            # This also avoids the stale state during the initial flush.
+            job.value = round(sum(li.total_price for li in job.line_items), 2)
+
         self.job_repo.add(job)
         await self.session.commit()
         await self.session.refresh(job)
@@ -225,6 +267,9 @@ class ToolExecutor:
         )
 
         price_info = f" – €{job.value}" if job.value else " – No price"
+        line_items_summary = ""
+        if tool.line_items and job.line_items:
+            line_items_summary = f"\n{format_line_items(job.line_items)}"
 
         return (
             self.template_service.render(
@@ -233,7 +278,8 @@ class ToolExecutor:
                 name=customer.name,
                 location=job.location or "No location",
                 price_info=price_info,
-            ),
+            )
+            + line_items_summary,
             {
                 "action": "create",
                 "entity": "job",
@@ -328,6 +374,21 @@ class ToolExecutor:
         )
         self.request_repo.add(req)
         await self.session.flush()
+        
+        # Check for implicit contact event
+        if tool.customer_name or tool.customer_phone:
+            customer = None
+            if tool.customer_name:
+                customer = await self.customer_repo.get_by_name(tool.customer_name, self.business_id)
+            if not customer and tool.customer_phone:
+                customer = await self.customer_repo.get_by_phone(tool.customer_phone, self.business_id)
+            
+            if customer:
+                from src.events import event_bus
+                await event_bus.emit(
+                    "CONTACT_EVENT",
+                    {"customer_id": customer.id, "business_id": self.business_id}
+                )
         return self.template_service.render(
             "request_stored", content=tool.content[:50]
         ), {
@@ -412,9 +473,16 @@ class ToolExecutor:
                 for j in jobs:
                     cust_str = format_customer_str(j.customer, show_city)
                     desc = j.description or "No description"
-                    lines.append(
-                        f"- {cust_str}: {desc} (Status: {j.status}) - {j.scheduled_at or 'No schedule'}"
-                    )
+                    line_str = f"- {cust_str}: {desc} (Status: {j.status})"
+                    if j.scheduled_at:
+                        line_str += f" - {j.scheduled_at.strftime('%Y-%m-%d %H:%M')}"
+                    else:
+                        line_str += " - No schedule"
+                    lines.append(line_str)
+                    
+                    if j.line_items:
+                        lines.append(format_line_items(j.line_items))
+                        lines.append(f"`Total: €{j.value}`")
 
         elif tool.entity_type in ["customer", "lead"]:
             customers = await self.customer_repo.search(
@@ -428,6 +496,7 @@ class ToolExecutor:
                 center_lat=tool.center_lat,
                 center_lon=tool.center_lon,
                 center_address=tool.center_address,
+                pipeline_stage=tool.pipeline_stage,
             )
             if customers:
                 # determine city visibility
@@ -468,6 +537,7 @@ class ToolExecutor:
                 center_lat=tool.center_lat,
                 center_lon=tool.center_lon,
                 center_address=tool.center_address,
+                pipeline_stage=tool.pipeline_stage,
             )
             jobs = await self.job_repo.search(
                 tool.query,
@@ -551,3 +621,149 @@ class ToolExecutor:
         return await service.convert_request(
             tool.query, tool.action, tool.time, tool.iso_time
         )
+
+    async def _execute_get_pipeline(
+        self, tool: GetPipelineTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        crm_service = CRMService(self.session, self.business_id)
+        report = await crm_service.format_pipeline_summary()
+        return report, {"action": "query", "entity": "pipeline"}
+
+    async def _execute_update_customer_stage(
+        self, tool: UpdateCustomerStageTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        customers = await self.customer_repo.search(tool.query, self.business_id)
+        if not customers:
+            return f"Could not find customer matching '{tool.query}'", None
+        if len(customers) > 1:
+            return (
+                f"Multiple customers found matching '{tool.query}'. Please be more specific.",
+                None,
+            )
+
+        customer = customers[0]
+        old_stage = customer.pipeline_stage.value
+        crm_service = CRMService(self.session, self.business_id)
+        try:
+            await crm_service.update_customer_stage(customer.id, tool.stage)
+        except ValueError as e:
+            return str(e), None
+
+        return f"✔ Updated {customer.name}'s stage to {tool.stage.replace('_', ' ').title()}", {
+            "action": "update",
+            "entity": "customer",
+            "id": customer.id,
+            "old_stage": old_stage,
+            "new_stage": tool.stage,
+        }
+
+    async def _execute_add_service(
+        self, tool: AddServiceTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        from src.models import Service
+
+        service_name = tool.name.strip().title()
+        existing = await self.service_repo.get_by_name(service_name, self.business_id)
+
+        if existing:
+            # Update existing service
+            old_price = existing.default_price
+            existing.default_price = tool.price
+            existing.name = service_name
+            await self.session.flush()
+            
+            return f"✔ Updated existing service *'{service_name}'* – Price: {tool.price:.2f}", {
+                "action": "update",
+                "entity": "service",
+                "id": existing.id,
+                "name": service_name,
+                "old_price": old_price,
+                "new_price": tool.price,
+            }
+
+        new_service = Service(
+            business_id=self.business_id,
+            name=service_name,
+            default_price=tool.price,
+        )
+        self.service_repo.add(new_service)
+        await self.session.flush()
+
+        return self.template_service.render(
+            "service_added", name=service_name, price=f"{tool.price:.2f}"
+        ), {
+            "action": "create",
+            "entity": "service",
+            "id": new_service.id,
+            "name": service_name,
+            "price": tool.price,
+        }
+
+    async def _execute_edit_service(
+        self, tool: EditServiceTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        # Fuzzy find service
+        services = await self.service_repo.get_all_for_business(self.business_id)
+        
+        # Simple fuzzy match: strict case-insensitive first, then substring
+        target = None
+        for s in services:
+            if s.name.lower() == tool.original_name.lower():
+                target = s
+                break
+        
+        if not target:
+            # Substring match
+             for s in services:
+                if tool.original_name.lower() in s.name.lower():
+                    target = s
+                    break
+        
+        if not target:
+             return f"Could not find service matching '{tool.original_name}'", None
+
+        old_data = {"name": target.name, "default_price": target.default_price}
+        
+        if tool.new_name:
+            target.name = tool.new_name
+        if tool.new_price is not None:
+             target.default_price = tool.new_price
+        
+        await self.session.flush()
+
+        return f"Updated service '{target.name}' – Price: {target.default_price:.2f}", {
+            "action": "update",
+            "entity": "service",
+            "id": target.id,
+            "old_data": old_data,
+        }
+
+    async def _execute_delete_service(
+        self, tool: DeleteServiceTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        services = await self.service_repo.get_all_for_business(self.business_id)
+        
+        target = None
+        for s in services:
+            if s.name.lower() == tool.name.lower():
+                target = s
+                break
+        
+        if not target:
+             for s in services:
+                if tool.name.lower() in s.name.lower():
+                    target = s
+                    break
+
+        if not target:
+            return f"Could not find service matching '{tool.name}' to delete.", None
+
+        await self.session.delete(target)
+        await self.session.flush()
+
+        return self.template_service.render("service_deleted", id=target.name), {
+             "action": "delete",
+             "entity": "service",
+             "id": target.id,
+             "name": target.name,
+        }

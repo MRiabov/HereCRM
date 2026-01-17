@@ -1,9 +1,19 @@
-from sqlalchemy import select, or_, and_
+from sqlalchemy import select, or_, and_, event, func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Generic, TypeVar, Type, Optional, List, Any
 from datetime import datetime
-from src.models import Business, User, Customer, Job, Request, ConversationState
+from src.models import (
+    Business,
+    User,
+    Customer,
+    Job,
+    Request,
+    ConversationState,
+    PipelineStage,
+    Service,
+    LineItem,
+)
 import math
 import re
 
@@ -101,6 +111,39 @@ class BusinessRepository(BaseRepository[Business]):
         self.session.add(business)
 
 
+class ServiceRepository(BaseRepository[Service]):
+    def __init__(self, session: AsyncSession):
+        super().__init__(session, Service)
+
+    async def get_all_for_business(self, business_id: int) -> List[Service]:
+        return await self.get_all(business_id)
+
+    async def get_by_name(self, name: str, business_id: int) -> Optional[Service]:
+        query = select(Service).where(
+            Service.name.ilike(name), Service.business_id == business_id
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def update(self, service_id: int, business_id: int, **kwargs) -> Optional[Service]:
+        service = await self.get_by_id(service_id, business_id)
+        if not service:
+            return None
+
+        allowed_fields = {"name", "description", "default_price"}
+        for key, value in kwargs.items():
+            if key in allowed_fields and hasattr(service, key):
+                setattr(service, key, value)
+        return service
+
+    async def delete(self, service_id: int, business_id: int) -> bool:
+        service = await self.get_by_id(service_id, business_id)
+        if not service:
+            return False
+        await self.session.delete(service)
+        return True
+
+
 class RequestRepository(BaseRepository[Request]):
     def __init__(self, session: AsyncSession):
         super().__init__(session, Request)
@@ -172,6 +215,7 @@ class CustomerRepository(BaseRepository[Customer]):
         center_lat: Optional[float] = None,
         center_lon: Optional[float] = None,
         center_address: Optional[str] = None,
+        pipeline_stage: Optional[str] = None,
     ) -> List[Customer]:
         conditions = [Customer.business_id == business_id]
 
@@ -228,6 +272,10 @@ class CustomerRepository(BaseRepository[Customer]):
         else:
             stmt = select(Customer)
 
+        # Pipeline Stage filter
+        if pipeline_stage:
+            conditions.append(Customer.pipeline_stage == pipeline_stage)
+
         # "Added" query type (Created At filter)
         if query_type == "added":
             if min_date:
@@ -254,6 +302,17 @@ class CustomerRepository(BaseRepository[Customer]):
             return filtered
 
         return customers
+
+    async def get_pipeline_summary(self, business_id: int) -> dict[PipelineStage, List[Customer]]:
+        query = select(Customer).where(Customer.business_id == business_id)
+        result = await self.session.execute(query)
+        customers = list(result.scalars().all())
+
+        summary = {stage: [] for stage in PipelineStage}
+        for customer in customers:
+            summary[customer.pipeline_stage].append(customer)
+        return summary
+
 
     async def get_leads(self, business_id: int) -> List[Customer]:
         return await self.search(
@@ -304,7 +363,22 @@ class JobRepository(BaseRepository[Job]):
 
         stmt = select(Job).options(joinedload(Job.customer)).where(and_(*conditions))
         result = await self.session.execute(stmt)
-        return list(result.scalars().all())
+        jobs = list(result.scalars().all())
+
+        # Spatial Filtering (Python-side)
+        if center_lat is not None and center_lon is not None and radius:
+            filtered = []
+            for j in jobs:
+                # Job has latitude/longitude fields directly
+                if j.latitude is not None and j.longitude is not None:
+                    dist = haversine_distance(
+                        center_lat, center_lon, j.latitude, j.longitude
+                    )
+                    if dist <= radius:
+                        filtered.append(j)
+            return filtered
+
+        return jobs
 
     async def get_most_recent_by_customer(
         self, customer_id: int, business_id: int
@@ -316,7 +390,28 @@ class JobRepository(BaseRepository[Job]):
             .limit(1)
         )
         result = await self.session.execute(stmt)
+
         return result.scalar_one_or_none()
+
+    async def get_count_by_customer(self, customer_id: int, business_id: int) -> int:
+        from sqlalchemy import func
+        stmt = select(func.count()).where(
+            Job.customer_id == customer_id, Job.business_id == business_id
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
+
+    async def get_with_line_items(self, job_id: int, business_id: int) -> Optional[Job]:
+        stmt = (
+            select(Job)
+            .options(joinedload(Job.line_items), joinedload(Job.customer))
+            .where(Job.id == job_id, Job.business_id == business_id)
+        )
+        result = await self.session.execute(stmt)
+        return result.unique().scalar_one_or_none()
+
+    def add(self, item: Job):
+        super().add(item)
 
 
 class ConversationStateRepository:
@@ -333,3 +428,48 @@ class ConversationStateRepository:
         if state.phone_number:
             state.phone_number = normalize_phone(state.phone_number)
         self.session.add(state)
+
+
+# Event Listeners for Job Value Synchronization
+def update_job_value(mapper, connection, target):
+    # Recalculate and sync job value
+    job_id = target.job_id
+    if not job_id:
+        return
+
+    # Use a direct SQL update for the database
+    # We use a scalar subquery to get the sum of line items
+    # To avoid MissingGreenlet, we ensure we use the connection correctly
+    try:
+        # Calculate new total using a subquery that is compatible with direct execution
+        # Note: We use the connection directly to avoid session-related lazy loading
+        result = connection.execute(
+            select(func.sum(LineItem.total_price))
+            .where(LineItem.job_id == job_id)
+        )
+        new_total = result.scalar() or 0.0
+
+        connection.execute(
+            Job.__table__.update()
+            .where(Job.id == job_id)
+            .values(value=new_total)
+        )
+
+        # Stale Object State Fix: Update the Job object in the session if it exists
+        from sqlalchemy.orm import object_session
+        session = object_session(target)
+        if session:
+            # Look for the job in the identity map to avoid a fresh DB query/lazy load
+            from sqlalchemy.orm.util import identity_key
+            key = identity_key(Job, (job_id,))
+            job = session.identity_map.get(key)
+            if job:
+                # Update the object attribute directly
+                job.value = new_total
+    except Exception:
+        # Listeners should be robust
+        pass
+
+# event.listen(LineItem, "after_insert", update_job_value)
+# event.listen(LineItem, "after_update", update_job_value)
+# event.listen(LineItem, "after_delete", update_job_value)

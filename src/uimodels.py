@@ -1,8 +1,27 @@
 from pydantic.v1 import BaseModel, Field, validator
-from typing import Optional
+from typing import Optional, List
 
 # Allowlist for settings that can be updated via LLM
 ALLOWED_SETTING_KEYS = ["confirm_by_default", "language", "timezone", "notifications"]
+
+
+class LineItemInfo(BaseModel):
+    """Information about a single line item."""
+
+    description: str = Field(..., description="Description of the service or item")
+    quantity: float = Field(1.0, description="Quantity or amount")
+    unit_price: Optional[float] = Field(None, description="Price per unit")
+    total_price: Optional[float] = Field(None, description="Total price for this line item")
+    service_id: Optional[int] = Field(None, description="The ID of the matching service from the catalog")
+    service_name: Optional[str] = Field(None, description="The canonical name of the service from the catalog")
+
+    @validator("quantity", "unit_price", "total_price")
+    def validate_non_negative(cls, v, field):
+        if v is not None and v < 0:
+            raise ValueError(f"{field.name} cannot be negative")
+        if field.name == "quantity" and v is not None and v > 1_000_000:
+            raise ValueError("Quantity is nonsensically high (> 1 million)")
+        return v
 
 
 class AddJobTool(BaseModel):
@@ -16,13 +35,22 @@ class AddJobTool(BaseModel):
     location: Optional[str] = Field(
         None, description="Address or location of the job", max_length=200
     )
-    price: Optional[float] = Field(None, description="Price or value of the job")
+    price: Optional[float] = Field(None, description="Total price or value of the job")
     description: Optional[str] = Field(
         None, description="Details of the work to be done", max_length=500
     )
     status: Optional[str] = Field(
         "pending", description="Status: 'pending', 'done', 'scheduled'"
     )
+    line_items: Optional[List[LineItemInfo]] = Field(
+        None, description="List of structured line items for the job"
+    )
+
+    @validator("price")
+    def validate_price(cls, v):
+        if v is not None and v < 0:
+            raise ValueError("Price cannot be negative")
+        return v
 
 
 class AddLeadTool(BaseModel):
@@ -148,6 +176,9 @@ class SearchTool(BaseModel):
     center_address: Optional[str] = Field(
         None, description="Address for proximity search (e.g., 'High Street 34')"
     )
+    pipeline_stage: Optional[str] = Field(
+        None, description="Filter by pipeline stage (e.g., 'not_contacted', 'lost')"
+    )
 
 
 class UpdateSettingsTool(BaseModel):
@@ -186,7 +217,71 @@ class ConvertRequestTool(BaseModel):
     )
 
 
+
 class HelpTool(BaseModel):
     """Get help or information about available commands."""
 
+    pass
+
+
+class GetPipelineTool(BaseModel):
+    """Get a summary of the sales pipeline (funnel).
+    Triggered when the user asks about the health of the business, pipeline status, or funnel."""
+
+    ignore_me: str = Field("pipeline", description="Ignored field, default to 'pipeline'")
+
+
+class UpdateCustomerStageTool(BaseModel):
+    """Update a customer's pipeline stage manually.
+    Triggered when user says 'Mark John as Lost', 'Customer is not interested', or similar."""
+
+    query: str = Field(
+        ..., description="Name or phone to find the customer", max_length=100
+    )
+    stage: str = Field(
+        ...,
+        description="The new pipeline stage: 'not_contacted', 'contacted', 'converted_once', 'converted_recurrent', 'not_interested', 'lost'",
+    )
+
+
+class AddServiceTool(BaseModel):
+    """Add a new service to the catalog."""
+
+    name: str = Field(..., description="Name of the service (e.g. 'Window Cleaning')")
+    price: float = Field(..., description="Default price for the service")
+
+    @validator("price")
+    def validate_price(cls, v):
+        if v < 0:
+            raise ValueError("Price cannot be negative")
+        return v
+
+
+class EditServiceTool(BaseModel):
+    """Edit an existing service."""
+
+    original_name: str = Field(..., description="The name of the service to edit (to find it)")
+    new_name: Optional[str] = Field(None, description="New name for the service")
+    new_price: Optional[float] = Field(None, description="New default price")
+    
+    @validator("new_price")
+    def validate_price(cls, v):
+        if v is not None and v < 0:
+            raise ValueError("Price cannot be negative")
+        return v
+
+
+class DeleteServiceTool(BaseModel):
+    """Delete a service from the catalog."""
+
+    name: str = Field(..., description="Name of the service to delete")
+
+
+class ListServicesTool(BaseModel):
+    """List all available services."""
+    pass
+
+
+class ExitSettingsTool(BaseModel):
+    """Exit the settings mode."""
     pass

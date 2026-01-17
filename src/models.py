@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import List, Optional, Any
 from sqlalchemy import String, ForeignKey, DateTime, Text, JSON, Float, Enum as SAEnum
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 import enum
 from src.database import Base
 
@@ -14,6 +14,16 @@ class UserRole(str, enum.Enum):
 class ConversationStatus(str, enum.Enum):
     IDLE = "idle"
     WAITING_CONFIRM = "waiting_confirm"
+    SETTINGS = "settings"
+
+
+class PipelineStage(str, enum.Enum):
+    NOT_CONTACTED = "not_contacted"
+    CONTACTED = "contacted"
+    CONVERTED_ONCE = "converted_once"
+    CONVERTED_RECURRENT = "converted_recurrent"
+    NOT_INTERESTED = "not_interested"
+    LOST = "lost"
 
 
 class Business(Base):
@@ -30,6 +40,7 @@ class Business(Base):
     customers: Mapped[List["Customer"]] = relationship(back_populates="business")
     jobs: Mapped[List["Job"]] = relationship(back_populates="business")
     requests: Mapped[List["Request"]] = relationship(back_populates="business")
+    services: Mapped[List["Service"]] = relationship(back_populates="business")
 
 
 class User(Base):
@@ -50,6 +61,51 @@ class User(Base):
     business: Mapped["Business"] = relationship(back_populates="users")
 
 
+class Service(Base):
+    __tablename__ = "services"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
+    name: Mapped[str] = mapped_column(String, index=True)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    default_price: Mapped[float] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+
+    # Relationships
+    business: Mapped["Business"] = relationship(back_populates="services")
+    line_items: Mapped[List["LineItem"]] = relationship(back_populates="service")
+
+    @validates("default_price")
+    def validate_price(self, key, value):
+        if value is not None and value < 0:
+            raise ValueError(f"Service price cannot be negative: {value}")
+        return value
+
+
+class LineItem(Base):
+    __tablename__ = "line_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id"), index=True)
+    service_id: Mapped[Optional[int]] = mapped_column(ForeignKey("services.id"), nullable=True)
+    description: Mapped[str] = mapped_column(String)
+    quantity: Mapped[float] = mapped_column(Float, default=1.0)
+    unit_price: Mapped[float] = mapped_column(Float)
+    total_price: Mapped[float] = mapped_column(Float)
+
+    # Relationships
+    job: Mapped["Job"] = relationship(back_populates="line_items")
+    service: Mapped[Optional["Service"]] = relationship(back_populates="line_items")
+
+    @validates("quantity", "unit_price", "total_price")
+    def validate_non_negative(self, key, value):
+        if value is not None and value < 0:
+            raise ValueError(f"{key.capitalize()} cannot be negative: {value}")
+        return value
+
+
 class Customer(Base):
     __tablename__ = "customers"
 
@@ -64,6 +120,9 @@ class Customer(Base):
     original_address_input: Mapped[Optional[str]] = mapped_column(String)
     latitude: Mapped[Optional[float]] = mapped_column(Float)
     longitude: Mapped[Optional[float]] = mapped_column(Float)
+    pipeline_stage: Mapped[PipelineStage] = mapped_column(
+        SAEnum(PipelineStage), default=PipelineStage.NOT_CONTACTED
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
@@ -93,6 +152,13 @@ class Job(Base):
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="jobs")
     customer: Mapped["Customer"] = relationship(back_populates="jobs")
+    line_items: Mapped[List["LineItem"]] = relationship(back_populates="job", cascade="all, delete-orphan")
+
+    @validates("value")
+    def validate_value(self, key, value):
+        if value is not None and value < 0:
+            raise ValueError(f"Job value cannot be negative: {value}")
+        return value
 
 
 class Request(Base):

@@ -53,4 +53,4 @@ async def test_webhook_internal_error_returns_500():
 
             # Assert that the status code is 500, not 200
             assert response.status_code == 500
-            assert response.json() == {"detail": "Internal Server Error"}
+            assert response.json() == {"detail": "An internal error occurred. Our team has been notified."}
