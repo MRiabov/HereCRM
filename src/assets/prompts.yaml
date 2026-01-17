@@ -49,16 +49,100 @@ retry_instruction: |
   If it's still unclear, you may provide a brief clarifying response, but prioritize tool calls if possible.
 
 tool_descriptions:
-  AddJobTool: "Add a new job with price or task details."
-  AddLeadTool: "Add a new lead or customer without a job."
-  EditCustomerTool: "Update customer details like phone, address, or notes."
-  ScheduleJobTool: "Schedule an existing or new job for a specific time."
-  AddRequestTool: "Store a general request or note."
-  SearchTool: "Search for jobs, customers, or requests."
-  UpdateSettingsTool: "Update user preferences or business settings."
-  ConvertRequestTool: "Convert a general request or a query into a specific action."
+  AddJobTool: |
+    Add a new job with price or task details.
+    Examples of when to call:
+    - User: "Add job for John at 123 Main St, cleaned windows for $50."
+      -> AddJobTool(customer_name="John", location="123 Main St", price=50.0, description="cleaned windows")
+    - User: "John Doe, 086123123, gutter cleaning $100 done"
+      -> AddJobTool(customer_name="John Doe", customer_phone="086123123", price=100.0, description="gutter cleaning", status="done")
+    - User: "Add window cleaning for Mary tomorrow at 2pm"
+      (Current System time: 2025-06-04T10:00:00)
+      -> AddJobTool(customer_name="Mary", description="window cleaning", time="tomorrow at 2pm", iso_time="2025-06-05T14:00:00", status="scheduled")
+    - User: "Add job for Tom: 5 windows and 1 door"
+      (Catalog contains: ID 1: window ($10), ID 2: door ($50))
+      -> AddJobTool(customer_name="Tom", line_items=[{"service_id": 1, "service_name": "window", "quantity": 5.0, "unit_price": 10.0, "description": "windows"}, {"service_id": 2, "service_name": "door", "quantity": 1.0, "unit_price": 50.0, "description": "door"}])
+  
+  AddLeadTool: |
+    Add a new lead or customer without a job.
+    Examples of when to call:
+    - User: "Add new lead: Mike, 089999999"
+      -> AddLeadTool(name="Mike", phone="089999999")
+    - User: "New customer Sarah needs a quote, lives in Cork"
+      -> AddLeadTool(name="Sarah", city="Cork", details="needs a quote")
+    - User: "Register client: TechCorp, Dublin"
+      -> AddLeadTool(name="TechCorp", location="Dublin")
+  
+  EditCustomerTool: |
+    Update customer details like phone, address, or notes.
+    Examples of when to call:
+    - User: "Update John's phone to 087111111"
+      -> EditCustomerTool(query="John", phone="087111111")
+    - User: "Change stats for Mike: new address is 44 High St"
+      -> EditCustomerTool(query="Mike", location="44 High St")
+
+  ScheduleJobTool: |
+    Schedule an existing or new job for a specific time.
+    Examples of when to call:
+    - User: "Schedule John for next Tuesday at 2pm"
+      (Current System time: 2025-06-04T10:00:00)
+      -> ScheduleJobTool(customer_query="John", time="next Tuesday at 2pm", iso_time="2025-06-10T14:00:00")
+    - User: "Book appointment for 123 Main St tomorrow morning"
+      (Current System time: 2025-06-04T10:00:00)
+      -> ScheduleJobTool(customer_query="123 Main St", time="tomorrow morning", iso_time="2025-06-05T09:00:00")
+  
+  AddRequestTool: |
+    Store a general request or note.
+    Examples of when to call:
+    - User: "Remind me to call Dave tomorrow"
+      -> AddRequestTool(content="call Dave", customer_name="Dave", time="tomorrow")
+    - User: "Note: order more supplies"
+      -> AddRequestTool(content="order more supplies")
+    - User: "Customer Alice requested a callback"
+      -> AddRequestTool(content="requested a callback", customer_name="Alice")
+
+  SearchTool: |
+    Search for jobs, customers, or requests.
+    Examples of when to call:
+    - User: "Find jobs in Dublin"
+      -> SearchTool(query="Dublin", entity_type="job")
+    - User: "Search for Mary"
+      -> SearchTool(query="Mary")
+    - User: "Show me pending jobs"
+      -> SearchTool(query="pending", status="pending", entity_type="job")
+    - User: "Who is at 123 Main St?"
+      -> SearchTool(query="123 Main St")
+
+  UpdateSettingsTool: |
+    Update user preferences or business settings.
+    Examples of when to call:
+    - User: "Turn off confirmations"
+      -> UpdateSettingsTool(setting_key="confirm_by_default", setting_value="false")
+    - User: "Change language to French"
+      -> UpdateSettingsTool(setting_key="language", setting_value="French")
+    - User: "Set timezone to GMT"
+      -> UpdateSettingsTool(setting_key="timezone", setting_value="GMT")
+
+  ConvertRequestTool: |
+    Convert a general request or a query into a specific action.
+    Examples of when to call:
+    - User: "Schedule that request for John for Monday"
+      -> ConvertRequestTool(query="John", action="schedule", time="Monday", iso_time="2025-06-09T09:00:00")
+    - User: "Log that callback for Mary as complete"
+      -> ConvertRequestTool(query="Mary", action="log")
+  
+  GetPipelineTool: |
+    Get a summary of the sales pipeline (funnel counts).
+    Examples of when to call:
+    - User: "How is the pipeline looking?"
+      -> GetPipelineTool()
+    - User: "Show me funnel status"
+      -> GetPipelineTool()
+    - User: "Sales health check"
+      -> GetPipelineTool()
+
   HelpTool: "Get help or information about available commands."
-  GetPipelineTool: "Get a summary of the sales pipeline (funnel counts)."
+  
   # Settings tools
   AddServiceTool: "Add a new service to the catalog."
   EditServiceTool: "Edit an existing service."
