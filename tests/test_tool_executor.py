@@ -163,7 +163,7 @@ async def test_execute_add_lead_implicit(
     assert res.scalar_one_or_none() is None
 
     # 2. Search Leads
-    search_tool = SearchTool(query="leads")
+    search_tool = SearchTool(query="leads", detailed=True)
     result, _ = await executor.execute(search_tool)
     assert "Bob The Lead" in result
     assert "Just inquiring" in result

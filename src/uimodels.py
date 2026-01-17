@@ -145,6 +145,7 @@ class SearchTool(BaseModel):
         description="The search term (name, phone, job description, or 'all')",
         max_length=100,
     )
+    detailed: bool = False
     entity_type: Optional[str] = Field(
         None,
         description="Filter by entity type: 'job', 'customer', 'request', 'lead'. If not specified, searches all.",
