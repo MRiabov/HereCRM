@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, User, Customer, Job, UserRole
+from src.models import Business, Customer, Job, Invoice
 from src.repositories import JobRepository
 
 # Use in-memory SQLite for tests
@@ -61,3 +61,44 @@ async def test_tenant_isolation(test_session: AsyncSession):
     # Verify we cannot see Job B
     job_lookup = await repo.get_by_id(id=job_b.id, business_id=biz_a.id)
     assert job_lookup is None
+
+
+
+
+@pytest.mark.asyncio
+async def test_invoice_relationship(test_session: AsyncSession):
+    # Setup
+    biz = Business(name="Biz")
+    test_session.add(biz)
+    await test_session.flush()
+
+    customer = Customer(business_id=biz.id, name="John")
+    test_session.add(customer)
+    await test_session.flush()
+
+    job = Job(business_id=biz.id, customer_id=customer.id, description="Job", status="pending")
+    test_session.add(job)
+    await test_session.flush()
+
+    # Create Invoice
+    invoice = Invoice(
+        job_id=job.id,
+        s3_key="key123.pdf",
+        public_url="http://s3.com/key123.pdf",
+        status="SENT"
+    )
+    test_session.add(invoice)
+    await test_session.commit()
+
+    # Verify relationship
+    await test_session.refresh(job)
+    # Re-fetch because of async session relationship behavior
+    from sqlalchemy import select
+    res = await test_session.execute(select(Job).where(Job.id == job.id))
+    job_refetched = res.scalar_one()
+    assert job_refetched.description == "Job"
+    
+    res_inv = await test_session.execute(select(Invoice).where(Invoice.job_id == job.id))
+    inv_found = res_inv.scalar_one()
+    assert inv_found.s3_key == "key123.pdf"
+    assert inv_found.job_id == job.id
