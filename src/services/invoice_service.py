@@ -7,6 +7,7 @@ from datetime import datetime
 from src.models import Job, Invoice
 from src.services.storage import S3Service
 from src.services.pdf_generator import InvoicePDFGenerator
+from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class InvoiceService:
             pdf_bytes = self.pdf_generator.generate(job)
         except Exception as e:
             logger.error(f"Failed to generate PDF for job {job.id}: {e}")
-            raise
+            raise RuntimeError(f"PDF generation failed: {e}") from e
 
         # 2. Upload to S3
         filename = f"invoices/invoice_{job.id}_{int(datetime.now().timestamp())}.pdf"
@@ -52,8 +53,11 @@ class InvoiceService:
                 key=filename,
                 content_type="application/pdf"
             )
+        except ClientError as e:
+            logger.error(f"S3 upload failed for job {job.id}: {e}")
+            raise RuntimeError(f"S3 upload failed: {e}") from e
         except Exception as e:
-            logger.error(f"Failed to upload invoice to S3 for job {job.id}: {e}")
+            logger.error(f"Unexpected error during S3 upload for job {job.id}: {e}")
             raise
 
         # 3. Save to Database

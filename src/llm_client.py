@@ -22,8 +22,8 @@ from src.uimodels import (
     DeleteServiceTool,
     ListServicesTool,
     ExitSettingsTool,
-    SendInvoiceTool,
 )
+from src.tools.invoice_tools import SendInvoiceTool
 from src.services.template_service import TemplateService
 
 
