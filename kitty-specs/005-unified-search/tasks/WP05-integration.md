@@ -8,6 +8,8 @@ subtasks:
   - T022
 lane: "done"
 agent: "Antigravity"
+assignee: "Antigravity"
+shell_pid: "N/A"
 ---
 # Work Package: Integration & Cleanup
 

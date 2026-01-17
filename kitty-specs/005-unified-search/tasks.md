@@ -10,12 +10,12 @@
 
 ### WP01: Foundation & Service Skeleton
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Goal**: Establish the `SearchService` and update data models to support the new search definition.
 - **Priority**: High (Blocker)
 - **Subtasks**:
-  - [ ] T001: Create `SearchService` class with dependency injection
-  - [ ] T002: Update `SearchTool` model with `detailed` flag and `pipeline_stage`
+  - [x] T001: Create `SearchService` class with dependency injection
+  - [x] T002: Update `SearchTool` model with `detailed` flag and `pipeline_stage`
 
     # For SearchTool model (likely in src/uimodels.py)
 
@@ -27,7 +27,7 @@
 
     # ... existing fields
 
-  - [ ] T003: Create basic unit tests for Service instantiation
+  - [x] T003: Create basic unit tests for Service instantiation
 - **Implementation Sketch**: Scaffold `src/services/search_service.py`. Update `src/uimodels.py`. Create `tests/test_search_service.py`.
 - **Dependencies**: None
 
@@ -37,13 +37,13 @@
 - **Goal**: Enable core text search and attribute filtering for Customers, Requests, and Jobs (non-spatial).
 - **Priority**: High
 - **Subtasks**:
-  - [ ] T004: Implement `_search_customers` in `SearchService` (including stage filtering)
-  - [ ] T005: Implement `_search_requests` in `SearchService`
-  - [ ] T006: Implement `_search_jobs` (text/attribute only) in `SearchService`
-  - [ ] T007: Implement `_search_services` (Search Catalog) in `SearchService`
-  - [ ] T008: Implement service-based entity filtering (Find Customers/Jobs by service performed)
-  - [ ] T009: Implement unified aggregation logic in `SearchService.search`
-  - [ ] T010: Add unit tests for aggregation and repo delegation
+  - [x] T004: Implement `_search_customers` in `SearchService` (including stage filtering)
+  - [x] T005: Implement `_search_requests` in `SearchService`
+  - [x] T006: Implement `_search_jobs` (text/attribute only) in `SearchService`
+  - [x] T007: Implement `_search_services` (Search Catalog) in `SearchService`
+  - [x] T008: Implement service-based entity filtering (Find Customers/Jobs by service performed)
+  - [x] T009: Implement unified aggregation logic in `SearchService.search`
+  - [x] T010: Add unit tests for aggregation and repo delegation
 - **Implementation Sketch**: focusing on wiring the `SearchService` to existing repository `search` methods. Logic to combine results if `entity_type` is missing.
 - **Dependencies**: WP01
 
@@ -53,11 +53,11 @@
 - **Goal**: Implement spatial search capability for Jobs (and Customers) using Geocoding and Python-side filtering.
 - **Priority**: High
 - **Subtasks**:
-  - [ ] T010: Implement `GeocodingService` integration in `SearchService`
-  - [ ] T011: Implement spatial filtering logic in `JobRepository.search`
-  - [ ] T012: Update `SearchService` to handle location parameters and pass to Repos
-  - [ ] T013: Add Generic Proximity handling (search all entities near location)
-  - [ ] T014: Add integration tests for Proximity Search
+  - [x] T010: Implement `GeocodingService` integration in `SearchService`
+  - [x] T011: Implement spatial filtering logic in `JobRepository.search`
+  - [x] T012: Update `SearchService` to handle location parameters and pass to Repos
+  - [x] T013: Add Generic Proximity handling (search all entities near location)
+  - [x] T014: Add integration tests for Proximity Search
 - **Implementation Sketch**: Use `geocoding.py` to get lat/long. Add Haversine distance check in `JobRepository` (since it's SQLite) to filter results post-query or during query if possible (likely post-query for simplicity/compatibility).
 - **Dependencies**: WP02
 
@@ -67,10 +67,10 @@
 - **Goal**: Ensure search results are presented correctly (Detailed vs Concise) and adhere to platform limits.
 - **Priority**: Medium
 - **Subtasks**:
-  - [ ] T015: Implement `_format_detailed` and `_format_concise` methods
-  - [ ] T016: Implement Pagination/Truncation logic (Hard limit 10)
-  - [ ] T017: Verify Detailed/Concise toggling in tests
-  - [ ] T018: Verify Result Truncation in tests
+  - [x] T015: Implement `_format_detailed` and `_format_concise` methods
+  - [x] T016: Implement Pagination/Truncation logic (Hard limit 10)
+  - [x] T017: Verify Detailed/Concise toggling in tests
+  - [x] T018: Verify Result Truncation in tests
 - **Implementation Sketch**: Add formatting helpers in `SearchService`. Enforce list slicing `[:10]` at the end of `search`.
 - **Dependencies**: WP02
 
@@ -80,10 +80,10 @@
 - **Goal**: Wire up the new service to the Tool Executor and verify end-to-end functionality.
 - **Priority**: Medium
 - **Subtasks**:
-  - [ ] T019: Inject `SearchService` into `ToolExecutor`
-  - [ ] T020: Replace `ToolExecutor._execute_search` with `SearchService` call
-  - [ ] T021: Update `LLMClient` prompts/instructions for new search params
-  - [ ] T022: Run full E2E/Integration tests
-  - [ ] T023: Remove legacy search code from `ToolExecutor`
+  - [x] T019: Inject `SearchService` into `ToolExecutor`
+  - [x] T020: Replace `ToolExecutor._execute_search` with `SearchService` call
+  - [x] T021: Update `LLMClient` prompts/instructions for new search params
+  - [x] T022: Run full E2E/Integration tests
+  - [x] T023: Remove legacy search code from `ToolExecutor`
 - **Implementation Sketch**: Final wiring. Ensure the agent actually calls the new service.
 - **Dependencies**: WP04, WP03

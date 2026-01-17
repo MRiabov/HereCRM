@@ -6,6 +6,8 @@ subtasks:
   - T003
 lane: "done"
 agent: "antigravity"
+assignee: "antigravity"
+shell_pid: "N/A"
 review_status: "approved without changes"
 reviewed_by: "antigravity"
 ---

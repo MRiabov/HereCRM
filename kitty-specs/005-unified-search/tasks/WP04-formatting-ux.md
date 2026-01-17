@@ -7,6 +7,8 @@ subtasks:
   - T017
 lane: "done"
 agent: "Antigravity"
+assignee: "Antigravity"
+shell_pid: "N/A"
 ---
 # Work Package: Formatting, UX & Pagination
 

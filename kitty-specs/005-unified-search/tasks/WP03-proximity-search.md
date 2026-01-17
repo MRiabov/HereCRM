@@ -8,6 +8,8 @@ subtasks:
   - T013
 lane: "done"
 agent: "Antigravity"
+assignee: "Antigravity"
+shell_pid: "N/A"
 ---
 # Work Package: Proximity Search
 
