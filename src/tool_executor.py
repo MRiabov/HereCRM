@@ -10,6 +10,7 @@ from src.repositories import (
 from src.services.crm_service import CRMService
 from src.services.template_service import TemplateService
 from src.services.geocoding import GeocodingService
+from src.services.search_service import SearchService
 from src.uimodels import (
     AddJobTool,
     AddLeadTool,
@@ -40,6 +41,7 @@ class ToolExecutor:
         self.request_repo = RequestRepository(session)
         self.user_repo = UserRepository(session)
         self.geocoding_service = GeocodingService()
+        self.search_service = SearchService(session, self.geocoding_service)
 
     async def execute(
         self,
@@ -166,6 +168,20 @@ class ToolExecutor:
             customer.phone = tool.phone
         if tool.location:
             customer.original_address_input = tool.location
+            # Re-geocode
+            lat, lon, street, city, country = await self.geocoding_service.geocode(
+                tool.location
+            )
+            if lat and lon:
+                customer.latitude = lat
+                customer.longitude = lon
+            # We also update structured fields if geocoding returns them (currently mocking might return None, but implementation supports it)
+            if street:
+                customer.street = street
+            if city:
+                customer.city = city
+            if country:
+                customer.country = country
         if tool.details:
             customer.details = tool.details
 
@@ -311,189 +327,8 @@ class ToolExecutor:
         }
 
     async def _execute_search(self, tool: SearchTool) -> tuple[str, Optional[dict]]:
-        lines = []
-
-        # Parse dates if present
-        min_date = None
-        max_date = None
-        if tool.min_date:
-            try:
-                from datetime import datetime
-
-                min_date = datetime.fromisoformat(tool.min_date.replace("Z", "+00:00"))
-            except ValueError:
-                pass
-        if tool.max_date:
-            try:
-                from datetime import datetime
-
-                max_date = datetime.fromisoformat(tool.max_date.replace("Z", "+00:00"))
-            except ValueError:
-                pass
-
-        # Resolve Geolocation if address provided but coords missing
-        if tool.center_address and not (tool.center_lat and tool.center_lon):
-            lat, lon = await self.geocoding_service.get_coordinates(tool.center_address)
-            if lat and lon:
-                tool.center_lat = lat
-                tool.center_lon = lon
-
-        # Helper to format customer string with smart address
-        def format_customer_str(c: Customer, show_city: bool) -> str:
-            parts = [c.name]
-            if c.phone:
-                parts.append(f"({c.phone})")
-            
-            # Address logic
-            addr_parts = []
-            if c.street:
-                addr_parts.append(c.street)
-            elif c.original_address_input:
-                addr_parts.append(c.original_address_input)
-            
-            if show_city and c.city:
-                addr_parts.append(c.city)
-            
-            if addr_parts:
-                parts.append(f"- {', '.join(addr_parts)}")
-            
-            if c.details:
-                parts.append(f"- {c.details}")
-            
-            return " ".join(parts)
-
-        # Dispatch based on entity_type
-        if tool.entity_type == "job":
-            jobs = await self.job_repo.search(
-                tool.query,
-                self.business_id,
-                query_type=tool.query_type,
-                min_date=min_date,
-                max_date=max_date,
-                status=tool.status,
-                radius=tool.radius,
-                center_lat=tool.center_lat,
-                center_lon=tool.center_lon,
-                center_address=tool.center_address,
-            )
-            if jobs:
-                # determine city visibility
-                cities = {j.customer.city for j in jobs if j.customer and j.customer.city}
-                show_city = len(cities) > 1
-
-                lines.append("Jobs:")
-                for j in jobs:
-                    cust_str = format_customer_str(j.customer, show_city)
-                    desc = j.description or "No description"
-                    lines.append(
-                        f"- {cust_str}: {desc} (Status: {j.status}) - {j.scheduled_at or 'No schedule'}"
-                    )
-
-        elif tool.entity_type in ["customer", "lead"]:
-            customers = await self.customer_repo.search(
-                tool.query,
-                self.business_id,
-                entity_type=tool.entity_type,
-                query_type=tool.query_type,
-                min_date=min_date,
-                max_date=max_date,
-                radius=tool.radius,
-                center_lat=tool.center_lat,
-                center_lon=tool.center_lon,
-                center_address=tool.center_address,
-            )
-            if customers:
-                # determine city visibility
-                cities = {c.city for c in customers if c.city}
-                show_city = len(cities) > 1
-
-                header = "Leads:" if tool.entity_type == "lead" else "Customers:"
-                lines.append(header)
-                for c in customers:
-                    lines.append(f"- {format_customer_str(c, show_city)}")
-
-        elif tool.entity_type == "request":
-            requests = await self.request_repo.search(
-                tool.query,
-                self.business_id,
-                min_date=min_date,
-                max_date=max_date,
-                status=tool.status,
-            )
-            if requests:
-                lines.append("Requests:")
-                for r in requests:
-                    lines.append(f"- {r.content} (Status: {r.status})")
-
-        else:
-            # General Search
-            pass_query_type = tool.query_type
-
-            customers = await self.customer_repo.search(
-                tool.query,
-                self.business_id,
-                query_type=pass_query_type
-                if pass_query_type == "added"
-                else None,
-                min_date=min_date,
-                max_date=max_date,
-                radius=tool.radius,
-                center_lat=tool.center_lat,
-                center_lon=tool.center_lon,
-                center_address=tool.center_address,
-            )
-            jobs = await self.job_repo.search(
-                tool.query,
-                self.business_id,
-                query_type=pass_query_type,
-                min_date=min_date,
-                max_date=max_date,
-                status=tool.status,
-                radius=tool.radius,
-                center_lat=tool.center_lat,
-                center_lon=tool.center_lon,
-                center_address=tool.center_address,
-            )
-            requests = await self.request_repo.search(
-                tool.query,
-                self.business_id,
-                min_date=min_date,
-                max_date=max_date,
-                status=tool.status,
-            )
-
-            # We need to calculate city visibility across BOTH lists if we want perfect consistency?
-            # Or per-section? The user request implies "client/job search output".
-            # If I have a list of Customers and a list of Jobs, they are separate sections.
-            # I will calculate visibility per section for cleaner reading.
-            
-            if customers:
-                cities = {c.city for c in customers if c.city}
-                show_city = len(cities) > 1
-                lines.append("Customers:")
-                for c in customers:
-                    lines.append(f"- {format_customer_str(c, show_city)}")
-            
-            if jobs:
-                cities = {j.customer.city for j in jobs if j.customer and j.customer.city}
-                show_city = len(cities) > 1
-                lines.append("Jobs:")
-                for j in jobs:
-                    cust_str = format_customer_str(j.customer, show_city)
-                    desc = j.description or "No description"
-                    lines.append(f"- {cust_str}: {desc} (Status: {j.status})")
-
-            if requests:
-                lines.append("Requests:")
-                for r in requests:
-                    lines.append(f"- {r.content} (Status: {r.status})")
-
-        if not lines:
-            return self.template_service.render(
-                "search_no_results", query=tool.query
-            ), None
-
-        return "\n".join(lines), None
+        result_text = await self.search_service.search(tool, self.business_id)
+        return result_text, None
 
     async def _execute_update_settings(
         self, tool: UpdateSettingsTool

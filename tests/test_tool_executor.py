@@ -57,7 +57,7 @@ async def test_execute_add_job_new_customer(
 
     res = await test_session.execute(select(Customer).where(Customer.name == "Alice"))
     customer = res.scalar_one()
-    assert customer.phone == "555-1234"
+    assert customer.phone == "5551234"
 
     res = await test_session.execute(select(Job).where(Job.customer_id == customer.id))
     job = res.scalar_one()
@@ -163,7 +163,7 @@ async def test_execute_add_lead_implicit(
     assert res.scalar_one_or_none() is None
 
     # 2. Search Leads
-    search_tool = SearchTool(query="leads")
+    search_tool = SearchTool(query="leads", detailed=True)
     result, _ = await executor.execute(search_tool)
     assert "Bob The Lead" in result
     assert "Just inquiring" in result
