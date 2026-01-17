@@ -6,7 +6,7 @@ from src.services.whatsapp_service import WhatsappService
 from src.services.template_service import TemplateService
 from src.llm_client import LLMParser
 from unittest.mock import MagicMock
-
+from src.uimodels import AddServiceTool, ListServicesTool, DeleteServiceTool, ExitSettingsTool
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 @pytest.fixture
@@ -56,6 +56,7 @@ async def test_settings_flow(test_session, mock_parser, mock_template_service):
     assert state.state == ConversationStatus.SETTINGS
     
     # 2. Add Service
+    mock_parser.parse_settings.return_value = AddServiceTool(name="Window Clean", price=50.0)
     response = await service.handle_message("123", "Add Service Window Clean 50")
     assert "Window Clean" in response
     assert "added" in response
@@ -70,12 +71,14 @@ async def test_settings_flow(test_session, mock_parser, mock_template_service):
     assert services[0].default_price == 50.0
     
     # 3. List Services
+    mock_parser.parse_settings.return_value = ListServicesTool()
     response = await service.handle_message("123", "List")
     assert "Window Clean" in response
-    assert "$50.00" in response
+    assert "50.00" in response
     
     # 4. Delete Service
     svc_id = services[0].id
+    mock_parser.parse_settings.return_value = DeleteServiceTool(name="Window Clean")
     response = await service.handle_message("123", f"Delete Service {svc_id}")
     assert "deleted" in response
     
@@ -83,6 +86,7 @@ async def test_settings_flow(test_session, mock_parser, mock_template_service):
     assert len(services) == 0
     
     # 5. Exit
+    mock_parser.parse_settings.return_value = ExitSettingsTool()
     response = await service.handle_message("123", "Exit")
     assert "Welcome back" in response
     

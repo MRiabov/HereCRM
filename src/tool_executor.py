@@ -13,6 +13,7 @@ from src.services.template_service import TemplateService
 from src.services.geocoding import GeocodingService
 from src.services.inference_service import InferenceService
 from src.services.chat_utils import format_line_items
+from src.services.search_service import SearchService
 from src.uimodels import (
     AddJobTool,
     AddLeadTool,
@@ -32,7 +33,6 @@ from src.uimodels import (
     ExitSettingsTool,
 )
 
-
 class ToolExecutor:
     def __init__(
         self,
@@ -51,6 +51,7 @@ class ToolExecutor:
         self.user_repo = UserRepository(session)
         self.service_repo = ServiceRepository(session)
         self.geocoding_service = GeocodingService()
+        self.search_service = SearchService(session, self.geocoding_service)
 
     async def execute(
         self,
@@ -111,6 +112,19 @@ class ToolExecutor:
             return "Help is handled by the service layer directly.", None
         return "Unknown tool call", None
 
+    # ... (other methods unchanged)
+
+    async def _execute_search(self, tool: SearchTool) -> tuple[str, Optional[dict]]:
+        """
+        Execute search using the unified SearchService.
+        """
+        output = await self.search_service.search(tool, self.business_id)
+        
+        # ToolExecutor protocol expects (str, metadata_dict)
+        # SearchService returns just the formatted string.
+        # Metadata is optional, returning None is fine for search results.
+        return output, None
+
     async def _execute_add_lead(  # Renamed from _execute_add_customer
         self,
         tool: AddLeadTool,  # Changed type hint from AddCustomerTool to AddLeadTool
@@ -128,7 +142,7 @@ class ToolExecutor:
 
         # 2. Extract address
         lat, lon, street, city, country = await self.geocoding_service.geocode(
-            tool.location
+            tool.location or ""
         )
 
         # 3. Create customer
@@ -232,25 +246,27 @@ class ToolExecutor:
             self.customer_repo.add(customer)
             await self.session.flush()
 
-        # 2. Create job using CRMService to ensure events are fired
+        # 2. Pre-process line items and value
+        job_value = tool.price
+        inferred_items = []
+        if tool.line_items:
+            inference_service = InferenceService(self.session)
+            inferred_items = await inference_service.infer_line_items(
+                self.business_id, tool.line_items
+            )
+            # Ensure price consistency: if line items exist, they define the value.
+            job_value = round(sum(li.total_price for li in inferred_items), 2)
+
+        # 3. Create job using CRMService to ensure events are fired
         crm_service = CRMService(self.session, self.business_id)
         job = await crm_service.create_job(
             customer_id=customer.id,
             description=tool.description,
-            value=tool.price,
+            value=job_value,
             location=tool.location,
             status=tool.status or "pending",
+            line_items=inferred_items,
         )
-        if tool.line_items:
-            inference_service = InferenceService(self.session)
-            job.line_items = await inference_service.infer_line_items(
-                self.business_id, tool.line_items
-            )
-            # Ensure price consistency: if line items exist, they define the value.
-            # This also avoids the stale state during the initial flush.
-            job.value = round(sum(li.total_price for li in job.line_items), 2)
-
-        self.job_repo.add(job)
         await self.session.flush()
 
         price_info = f" – €{job.value}" if job.value else " – No price"

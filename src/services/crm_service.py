@@ -24,6 +24,7 @@ class CRMService:
         location: Optional[str] = None,
         status: str = "pending",
         scheduled_at: Optional[datetime] = None,
+        line_items: Optional[list] = None,
     ) -> Job:
         job = Job(
             business_id=self.business_id,
@@ -33,6 +34,7 @@ class CRMService:
             location=location,
             status=status,
             scheduled_at=scheduled_at,
+            line_items=line_items or [],
         )
         self.job_repo.add(job)
         await self.session.commit() # Must commit for other sessions (handlers) to see it
