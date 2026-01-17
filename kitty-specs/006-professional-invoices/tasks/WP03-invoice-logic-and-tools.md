@@ -1,14 +1,14 @@
 ---
 type: work-package
 id: WP03
-lane: "doing"
+lane: "for_review"
 subtasks:
   - T010
   - T011
   - T012
   - T013
   - T014
-agent: "codex"
+agent: "antigravity"
 ---
 
 # Work Package 03: Logic, Tools & Integration
@@ -84,3 +84,5 @@ This is the final assembly. We need a service layer to coordinate checks (duplic
 ## Activity Log
 
 - 2026-01-17T10:27:36Z – codex – lane=doing – Started implementation
+- 2026-01-17T16:22:10Z – antigravity – lane=doing – Started implementation
+- 2026-01-17T16:27:32Z – antigravity – lane=for_review – Implemented logic and tools

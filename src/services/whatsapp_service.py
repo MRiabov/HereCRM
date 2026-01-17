@@ -26,6 +26,7 @@ from src.uimodels import (
     UpdateCustomerStageTool,
     ListServicesTool,
     ExitSettingsTool,
+    SendInvoiceTool,
 )
 
 
@@ -191,6 +192,7 @@ class WhatsappService:
             "HelpTool": HelpTool,
             "GetPipelineTool": GetPipelineTool,
             "UpdateCustomerStageTool": UpdateCustomerStageTool,
+            "SendInvoiceTool": SendInvoiceTool,
         }
 
         tool_cls = model_map.get(tool_name)
@@ -355,6 +357,7 @@ class WhatsappService:
             "HelpTool": "Help",
             "GetPipelineTool": "Pipeline",
             "UpdateCustomerStageTool": "Pipeline Stage Update",
+            "SendInvoiceTool": "Send Invoice",
         }
         model_name = tool_call.__class__.__name__
         name = friendly_names.get(model_name, model_name.replace("Tool", ""))
@@ -453,6 +456,9 @@ class WhatsappService:
 
         if isinstance(tool_call, UpdateCustomerStageTool):
             return f"update {tool_call.query}'s stage to {tool_call.stage.replace('_', ' ').title()}"
+
+        if isinstance(tool_call, SendInvoiceTool):
+            return f"generate and send invoice to {tool_call.query}"
 
         if hasattr(tool_call, "description") and tool_call.description:
             return f"{name}: {tool_call.description}"

@@ -352,6 +352,7 @@ class LLMParser:
                         "ConvertRequestTool": ConvertRequestTool,
                         "HelpTool": HelpTool,
                         "GetPipelineTool": GetPipelineTool,
+                        "SendInvoiceTool": SendInvoiceTool,
                     }
 
                     model_cls = model_map.get(function_name)
