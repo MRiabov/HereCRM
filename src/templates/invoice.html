@@ -13,11 +13,11 @@
             color: #111;
             line-height: 1.5;
             margin: 0;
-            padding: 60px;
+            padding: 50px;
             font-size: 14px;
         }
         .header {
-            margin-bottom: 50px;
+            margin-bottom: 30px;
         }
         .brand-name {
             font-size: 24px;
@@ -41,7 +41,7 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
 
         .invoice-heading {
@@ -73,7 +73,7 @@
         }
 
         .bill-to {
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
         .section-label {
             font-size: 12px;
@@ -87,18 +87,18 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
         th {
             text-align: left;
             color: #9ca3af;
             font-weight: 500;
             font-size: 13px;
-            padding: 10px 0;
+            padding: 8px 0;
             border-bottom: 1px solid #f3f4f6; /* Very light gray */
         }
         td {
-            padding: 16px 0;
+            padding: 10px 0;
             border-bottom: 1px solid #f3f4f6;
             vertical-align: top;
             color: #111;
@@ -106,7 +106,7 @@
         .text-right { text-align: right; }
 
         .scope-section {
-            margin-bottom: 60px;
+            margin-bottom: 40px;
         }
         .scope-content {
             font-size: 14px;
@@ -117,7 +117,7 @@
 
         .total-section {
             text-align: right;
-            margin-bottom: 80px;
+            margin-bottom: 50px;
         }
         .total-amount {
             font-size: 20px;
@@ -209,16 +209,7 @@
     </div>
 
     <div class="footer">
-        <!-- SVG QR Code Placeholder -->
-        <svg class="qr-placeholder" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-             <path fill="#000" d="M0,0h21v21h-21z M3,3v15h15v-15z M6,6h9v9h-9z"/>
-             <path fill="#000" d="M27,0h21v21h-21z M30,3v15h15v-15z M33,6h9v9h-9z"/>
-             <path fill="#000" d="M0,27h21v21h-21z M3,30v15h15v-15z M6,33h9v9h-9z"/>
-             <rect x="27" y="27" width="9" height="9" fill="#000"/>
-             <rect x="39" y="39" width="9" height="9" fill="#000"/>
-             <rect x="27" y="39" width="6" height="6" fill="#000"/>
-             <rect x="39" y="27" width="6" height="6" fill="#000"/>
-        </svg>
+        <img class="qr-placeholder" src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code">
         <div class="footer-text">
             <div style="font-weight: 600;">Thank you for your business!</div>
             <div style="color: #666;">Please pay within 15 days.</div>

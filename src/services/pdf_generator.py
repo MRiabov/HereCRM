@@ -1,4 +1,7 @@
 import os
+import io
+import base64
+import qrcode
 from datetime import datetime, timedelta
 from jinja2 import Environment, FileSystemLoader
 from weasyprint import HTML
@@ -29,6 +32,17 @@ class InvoicePDFGenerator:
             invoice_date = datetime.now()
 
         due_date = invoice_date + timedelta(days=15)
+
+        # Generate QR Code
+        qr = qrcode.QRCode(box_size=10, border=0)
+        # In a real app, this would be a payment URL or invoice URL
+        qr.add_data(f"https://herecrm.com/invoices/{job.id}")
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+
+        buffered = io.BytesIO()
+        img.save(buffered, format="PNG")
+        qr_code_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
             
         template = self.env.get_template(self.template_name)
         
@@ -36,7 +50,8 @@ class InvoicePDFGenerator:
         context = {
             "job": job,
             "invoice_date": invoice_date.strftime("%Y-%m-%d"),
-            "due_date": due_date.strftime("%Y-%m-%d")
+            "due_date": due_date.strftime("%Y-%m-%d"),
+            "qr_code_base64": qr_code_base64
         }
         
         # Render HTML

@@ -17,6 +17,8 @@ dependencies = [
     "pytest",
     "pytest-asyncio",
     "PyYAML",
+    "qrcode",
+    "pdfminer.six",
 ]
 
 [build-system]
