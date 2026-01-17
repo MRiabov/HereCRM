@@ -9,6 +9,7 @@ from src.repositories import (
     ServiceRepository,
 )
 from src.services.crm_service import CRMService
+from src.services.invoice_service import InvoiceService
 from src.services.template_service import TemplateService
 from src.services.geocoding import GeocodingService
 from src.services.inference_service import InferenceService
@@ -30,6 +31,7 @@ from src.uimodels import (
     DeleteServiceTool,
     ListServicesTool,
     ExitSettingsTool,
+    SendInvoiceTool,
 )
 
 class ToolExecutor:
@@ -50,6 +52,7 @@ class ToolExecutor:
         self.user_repo = UserRepository(session)
         self.service_repo = ServiceRepository(session)
         self.geocoding_service = GeocodingService()
+        self.invoice_service = InvoiceService(session)
 
     async def execute(
         self,
@@ -69,7 +72,9 @@ class ToolExecutor:
             EditServiceTool,
             DeleteServiceTool,
             ListServicesTool,
+            ListServicesTool,
             ExitSettingsTool,
+            SendInvoiceTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
         if isinstance(tool_call, AddJobTool):
@@ -108,6 +113,8 @@ class ToolExecutor:
             return "Exit settings is handled by the service layer directly.", None
         elif isinstance(tool_call, HelpTool):
             return "Help is handled by the service layer directly.", None
+        elif isinstance(tool_call, SendInvoiceTool):
+            return await self._execute_send_invoice(tool_call)
         return "Unknown tool call", None
 
     # ... (other methods unchanged)
@@ -743,3 +750,45 @@ class ToolExecutor:
              "id": target.id,
              "name": target.name,
         }
+
+    async def _execute_send_invoice(
+        self, tool: SendInvoiceTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        # 1. Find Customer
+        customers = await self.customer_repo.search(tool.query, self.business_id)
+        if not customers:
+            return f"Could not find customer matching '{tool.query}'", None
+        if len(customers) > 1:
+            return (
+                f"Multiple customers found matching '{tool.query}'. Please be more specific.",
+                None,
+            )
+        customer = customers[0]
+
+        # 2. Find most recent job for customer
+        job = await self.job_repo.get_most_recent_by_customer(customer.id, self.business_id)
+        
+        if not job:
+            return f"No jobs found for customer {customer.name}. Cannot generate invoice.", None
+
+        # 3. Create or Get Invoice
+        try:
+            invoice = await self.invoice_service.create_invoice(
+                job, force_regenerate=tool.force_regenerate
+            )
+        except Exception as e:
+             return f"Failed to generate invoice: {str(e)}", None
+
+        # 4. Return result
+        return (
+            f"Here is the invoice for {customer.name} (Job #{job.id}): {invoice.public_url}",
+            {
+                "action": "invoice_generated",
+                "entity": "invoice",
+                "id": invoice.id,
+                "job_id": job.id,
+                "url": invoice.public_url,
+                "customer": customer.name
+            },
+        )
+

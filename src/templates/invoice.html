@@ -4,152 +4,224 @@
     <meta charset="utf-8">
     <title>Invoice #{{ job.id }}</title>
     <style>
+        @page {
+            margin: 0;
+            size: letter;
+        }
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            color: #333;
-            line-height: 1.6;
+            color: #111;
+            line-height: 1.5;
             margin: 0;
-            padding: 40px;
-        }
-        .invoice-box {
-            max-width: 800px;
-            margin: auto;
-            background: #fff;
+            padding: 60px;
+            font-size: 14px;
         }
         .header {
+            margin-bottom: 50px;
+        }
+        .brand-name {
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #111;
+        }
+        .business-name {
+            font-weight: bold;
+            font-size: 14px;
+            color: #111;
+        }
+        .business-details {
+            color: #666;
+            font-size: 13px;
+            margin-top: 2px;
+            line-height: 1.4;
+        }
+        
+        .invoice-title-section {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 20px;
             margin-bottom: 40px;
         }
-        .header h1 {
-            margin: 0;
-            color: #2c3e50;
+        
+        .invoice-heading {
             font-size: 32px;
-            text-transform: uppercase;
-        }
-        .metadata {
-            text-align: right;
-        }
-        .metadata p {
-            margin: 0;
-        }
-        .info-section {
+            font-weight: 800;
             display: flex;
-            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            color: #000;
+        }
+        .status-badge {
+            font-size: 12px;
+            background-color: #e3e8f0;
+            color: #475569;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            vertical-align: middle;
+            text-transform: capitalize;
+            position: relative;
+            top: -2px;
+        }
+        
+        .dates {
+            text-align: right;
+            font-size: 13px;
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .bill-to {
             margin-bottom: 40px;
         }
-        .info-box h3 {
-            margin: 0 0 10px 0;
-            color: #7f8c8d;
-            font-size: 14px;
+        .section-label {
+            font-size: 12px;
             text-transform: uppercase;
+            color: #9ca3af;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            font-weight: 500;
         }
-        .info-box p {
-            margin: 0;
-        }
+        
         table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 40px;
         }
         th {
-            background: #f8f9fa;
             text-align: left;
-            padding: 12px;
-            border-bottom: 2px solid #eee;
-            color: #2c3e50;
+            color: #9ca3af;
+            font-weight: 500;
+            font-size: 13px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f3f4f6; /* Very light gray */
         }
         td {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
+            padding: 16px 0;
+            border-bottom: 1px solid #f3f4f6;
+            vertical-align: top;
+            color: #111;
         }
+        .text-right { text-align: right; }
+        
+        .scope-section {
+            margin-bottom: 60px;
+        }
+        .scope-content {
+            font-size: 14px;
+            color: #111;
+            max-width: 90%;
+            line-height: 1.5;
+        }
+        
         .total-section {
             text-align: right;
+            margin-bottom: 80px;
         }
-        .total-row {
-            font-size: 18px;
-            font-weight: bold;
-            color: #2c3e50;
+        .total-amount {
+            font-size: 20px;
+            font-weight: 800;
+            color: #000;
         }
+        
         .footer {
-            margin-top: 60px;
-            text-align: center;
-            border-top: 1px solid #eee;
-            padding-top: 20px;
-            color: #7f8c8d;
-            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 13px;
+        }
+        .qr-placeholder {
+            width: 48px;
+            height: 48px;
+        }
+        .footer-text {
+            line-height: 1.4;
         }
     </style>
 </head>
 <body>
-    <div class="invoice-box">
-        <div class="header">
-            <div>
-                <h1>Invoice</h1>
-                <p>#{{ job.id }}</p>
-            </div>
-            <div class="metadata">
-                <p><strong>Date:</strong> {{ invoice_date }}</p>
-            </div>
+    <div class="header">
+        <div class="brand-name">HereCRM</div>
+        <div class="business-name">{{ job.business.name }}</div>
+        <div class="business-details">
+            123 Efficiency Lane<br>
+            Silicon Valley, CA<br>
+            support@herecrm.com
         </div>
+    </div>
 
-        <div class="info-section">
-            <div class="info-box">
-                <h3>Bill To</h3>
-                <p><strong>{{ job.customer.name }}</strong></p>
-                {% if job.customer.street %}
-                    <p>{{ job.customer.street }}</p>
-                {% endif %}
-                {% if job.customer.city or job.customer.country %}
-                    <p>
-                        {{ job.customer.city }}{% if job.customer.city and job.customer.country %}, {% endif %}
-                        {{ job.customer.country }}
-                    </p>
-                {% endif %}
-                {% if job.customer.phone %}
-                    <p>{{ job.customer.phone }}</p>
-                {% endif %}
-            </div>
-            <div class="info-box" style="text-align: right;">
-                <h3>From</h3>
-                <p><strong>HereCRM Demo Business</strong></p>
-                <p>123 Efficiency Lane</p>
-                <p>Silicon Valley, CA</p>
-                <p>support@herecrm.com</p>
-            </div>
+    <div class="invoice-title-section">
+        <div class="invoice-heading">
+            INVOICE #{{ job.id }} 
+            {% if job.status %}
+            <span class="status-badge">{{ job.status }}</span>
+            {% endif %}
         </div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Description</th>
-                    <th style="text-align: right;">Quantity</th>
-                    <th style="text-align: right;">Price</th>
-                    <th style="text-align: right;">Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in job.line_items %}
-                <tr>
-                    <td>{{ item.description }}</td>
-                    <td style="text-align: right;">{{ "%.2f"|format(item.quantity) }}</td>
-                    <td style="text-align: right;">${{ "%.2f"|format(item.unit_price) }}</td>
-                    <td style="text-align: right;">${{ "%.2f"|format(item.total_price) }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <div class="total-section">
-            <p class="total-row">Total Amount Due: ${{ "%.2f"|format(job.value or 0) }}</p>
+        <div class="dates">
+            <div>Date: <span style="color: #000; font-weight: 500;">{{ invoice_date }}</span></div>
+            <div>Due Date: <span style="color: #000; font-weight: 500;">{{ due_date }}</span></div>
         </div>
+    </div>
 
-        <div class="footer">
-            <p>Thank you for your business!</p>
-            <p>Please pay within 15 days.</p>
+    <div class="bill-to">
+        <div class="section-label">BILL TO</div>
+        <div style="font-weight: 500; font-size: 14px; margin-bottom: 2px;">{{ job.customer.name }}</div>
+        <div style="color: #111; font-size: 14px;">
+            {% if job.customer.street %}{{ job.customer.street }}<br>{% endif %}
+            {% if job.customer.city or job.customer.country %}
+                {{ job.customer.city }}{% if job.customer.city and job.customer.country %}, {% endif %}{{ job.customer.country }}<br>
+            {% endif %}
+            {% if job.customer.phone %}{{ job.customer.phone }}{% endif %}
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 50%;">Description</th>
+                <th class="text-right">Quantity</th>
+                <th class="text-right">Price</th>
+                <th class="text-right">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in job.line_items %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td class="text-right">{{ "%.2f"|format(item.quantity) }}</td>
+                <td class="text-right">${{ "%.2f"|format(item.unit_price) }}</td>
+                <td class="text-right">${{ "%.2f"|format(item.total_price) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div class="scope-section">
+        <div class="section-label">SCOPE OF WORK & NOTES</div>
+        <div class="scope-content">
+            {{ job.description or "" }}
+        </div>
+    </div>
+
+    <div class="total-section">
+        <div class="total-amount">Total Amount Due: ${{ "%.2f"|format(job.value or 0) }}</div>
+    </div>
+
+    <div class="footer">
+        <!-- SVG QR Code Placeholder -->
+        <svg class="qr-placeholder" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+             <path fill="#000" d="M0,0h21v21h-21z M3,3v15h15v-15z M6,6h9v9h-9z"/>
+             <path fill="#000" d="M27,0h21v21h-21z M30,3v15h15v-15z M33,6h9v9h-9z"/>
+             <path fill="#000" d="M0,27h21v21h-21z M3,30v15h15v-15z M6,33h9v9h-9z"/>
+             <rect x="27" y="27" width="9" height="9" fill="#000"/>
+             <rect x="39" y="39" width="9" height="9" fill="#000"/>
+             <rect x="27" y="39" width="6" height="6" fill="#000"/>
+             <rect x="39" y="27" width="6" height="6" fill="#000"/>
+        </svg>
+        <div class="footer-text">
+            <div style="font-weight: 600;">Thank you for your business!</div>
+            <div style="color: #666;">Please pay within 15 days.</div>
         </div>
     </div>
 </body>

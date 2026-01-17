@@ -22,6 +22,7 @@ from src.uimodels import (
     DeleteServiceTool,
     ListServicesTool,
     ExitSettingsTool,
+    SendInvoiceTool,
 )
 from src.services.template_service import TemplateService
 
@@ -126,6 +127,15 @@ class LLMParser:
                 },
             },
         ]
+
+        self.tools.append({
+            "type": "function",
+            "function": {
+                "name": "SendInvoiceTool",
+                "description": "Send a professional PDF invoice to a customer for their last job.",
+                "parameters": SendInvoiceTool.schema(),
+            },
+        })
 
         self.settings_tools = [
             {
