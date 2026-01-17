@@ -1,7 +1,7 @@
 import logging
 import json
 import os
-from typing import Union, Optional
+from typing import Union, Optional, Any
 from openai import AsyncOpenAI
 from pydantic import ValidationError
 
@@ -192,6 +192,99 @@ class LLMParser:
             },
         ]
 
+    async def _chat_with_retry(
+        self, messages: list[dict], tools: list[dict], model_map: dict[str, Any]
+    ) -> Optional[Any]:
+        """
+        Executes a chat completion with retry logic for missing tool calls, 
+        JSON parsing errors, and Pydantic validation errors.
+        """
+        for attempt in range(2):
+            try:
+                response = await self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    tools=tools,
+                    tool_choice="auto",
+                    extra_body={
+                        "provider": {
+                            "sort": "throughput",
+                        }
+                    },
+                )
+
+                message = response.choices[0].message
+                
+                # Case 1: No tool calls produced
+                if not message.tool_calls:
+                    if attempt == 0:
+                        self.logger.info("LLM failed to produce tool call, retrying...")
+                        # Append the assistant's content (if any) and the retry instruction
+                        messages.append({"role": "assistant", "content": message.content or "[no tool call produced]"})
+                        messages.append({"role": "user", "content": self.prompts_service.render("retry_instruction")})
+                        continue
+                    else:
+                        # Return None if final attempt failed, so the caller can handle it as an error/help message
+                        return None
+
+                # Process the first tool call
+                tool_call = message.tool_calls[0]
+                function_name = tool_call.function.name
+                
+                # Check for JSON errors
+                try:
+                    arguments = json.loads(tool_call.function.arguments)
+                except json.JSONDecodeError as e:
+                    if attempt == 0:
+                        self.logger.warning(f"JSON Decode Error: {e}")
+                        # We must append the message properly so the API accepts the history
+                        messages.append(message)
+                        error_msg = f"JSON Decode Error: {str(e)}"
+                        messages.append({
+                            "role": "user", 
+                            "content": self.prompts_service.render("retry_error_instruction", error=error_msg)
+                        })
+                        continue
+                    else:
+                        self.logger.error(f"JSON Decode Error on retry: {e}")
+                        return None
+
+                # Check for Validation errors
+                model_cls = model_map.get(function_name)
+                if model_cls:
+                    try:
+                        return model_cls(**arguments)
+                    except ValidationError as e:
+                        if attempt == 0:
+                            self.logger.warning(f"Validation Error: {e}")
+                            messages.append(message)
+                            error_msg = f"Validation Error: {str(e)}"
+                            messages.append({
+                                "role": "user", 
+                                "content": self.prompts_service.render("retry_error_instruction", error=error_msg)
+                            })
+                            continue
+                        else:
+                            self.logger.error(f"Validation Error on retry: {e}")
+                            return None
+                else:
+                    self.logger.warning(f"Unknown tool called: {function_name}")
+                    if attempt == 0:
+                         messages.append(message)
+                         messages.append({
+                             "role": "user",
+                             "content": self.prompts_service.render("retry_error_instruction", error=f"Unknown tool '{function_name}'. Please use one of the provided tools.")
+                         })
+                         continue
+                    return None
+
+            except Exception as e:
+                self.logger.error(f"LLM Parse Error (attempt {attempt+1}): {e}", exc_info=True)
+                if attempt == 1:
+                    return None
+        
+        return None
+
     async def parse_data_management(
         self, text: str
     ) -> Optional[Union[ExportQueryTool, ExitDataManagementTool]]:
@@ -211,37 +304,12 @@ class LLMParser:
             {"role": "user", "content": text},
         ]
 
-        try:
-            response = await self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                tools=self.datamgmt_tools,
-                tool_choice="auto",
-            )
+        model_map = {
+            "ExportQueryTool": ExportQueryTool,
+            "ExitDataManagementTool": ExitDataManagementTool,
+        }
 
-            message = response.choices[0].message
-            if message.tool_calls:
-                tool_call = message.tool_calls[0]
-                function_name = tool_call.function.name
-
-                try:
-                    arguments = json.loads(tool_call.function.arguments)
-                except json.JSONDecodeError:
-                    self.logger.error(
-                        f"Failed to parse JSON arguments: {tool_call.function.arguments}"
-                    )
-                    return None
-
-                if function_name == "ExportQueryTool":
-                    return ExportQueryTool(**arguments)
-                elif function_name == "ExitDataManagementTool":
-                    return ExitDataManagementTool(**arguments)
-
-            return None
-
-        except Exception as e:
-            self.logger.error(f"LLM Parse Error (DataMgmt): {e}", exc_info=True)
-            return None
+        return await self._chat_with_retry(messages, self.datamgmt_tools, model_map)
 
     async def parse_settings(
         self, text: str, service_context: Optional[str] = None
@@ -270,60 +338,15 @@ class LLMParser:
             {"role": "user", "content": text},
         ]
 
-        # Retry logic: Try twice if first attempt doesn't result in a tool call
-        for attempt in range(2):
-            try:
-                response = await self.client.chat.completions.create(
-                    model=self.model,
-                    messages=messages,
-                    tools=self.settings_tools,
-                    tool_choice="auto",
-                )
-                
-                message = response.choices[0].message
-                if message.tool_calls:
-                    tool_call = message.tool_calls[0]
-                    function_name = tool_call.function.name
-                    
-                    try:
-                        arguments = json.loads(tool_call.function.arguments)
-                    except json.JSONDecodeError:
-                        self.logger.error(
-                            f"Failed to parse JSON arguments: {tool_call.function.arguments}"
-                        )
-                        return None
-                    
-                    model_map = {
-                        "AddServiceTool": AddServiceTool,
-                        "EditServiceTool": EditServiceTool,
-                        "DeleteServiceTool": DeleteServiceTool,
-                        "ListServicesTool": ListServicesTool,
-                        "ExitSettingsTool": ExitSettingsTool,
-                    }
-                    
-                    model_cls = model_map.get(function_name)
-                    if model_cls:
-                        try:
-                            return model_cls(**arguments)
-                        except ValidationError as e:
-                            self.logger.error(f"Validation error for {function_name}: {e}")
-                            return None
-                
-                # If no tool calls and it's our first attempt, try once more with a nudge
-                if attempt == 0:
-                    messages.append({"role": "assistant", "content": message.content or "[no tool call produced]"})
-                    messages.append({"role": "user", "content": self.prompts_service.render("retry_instruction")})
-                    self.logger.info(f"LLM failed to produce tool call for settings, retrying...")
-                else:
-                    return None
-                            
-            except Exception as e:
-                self.logger.error(f"LLM Parse Error (Settings - attempt {attempt+1}): {e}", exc_info=True)
-                if attempt == 1:
-                    return None
+        model_map = {
+            "AddServiceTool": AddServiceTool,
+            "EditServiceTool": EditServiceTool,
+            "DeleteServiceTool": DeleteServiceTool,
+            "ListServicesTool": ListServicesTool,
+            "ExitSettingsTool": ExitSettingsTool,
+        }
         
-        return None
-
+        return await self._chat_with_retry(messages, self.settings_tools, model_map)
 
     async def parse(
         self, text: str, system_time: Optional[str] = None, service_catalog: Optional[str] = None
@@ -367,71 +390,20 @@ class LLMParser:
 
         messages.append({"role": "user", "content": user_prompt})
 
-        # Retry logic: Try twice if first attempt doesn't result in a tool call
-        for attempt in range(2):
-            try:
-                response = await self.client.chat.completions.create(
-                    model=self.model,
-                    messages=messages,
-                    tools=self.tools,
-                    tool_choice="auto",
-                    extra_body={
-                        "provider": {
-                            "sort": "throughput",
-                        }
-                    },
-                )
+        model_map = {
+            "AddJobTool": AddJobTool,
+            "AddLeadTool": AddLeadTool,
+            "EditCustomerTool": EditCustomerTool,
+            "ScheduleJobTool": ScheduleJobTool,
+            "AddRequestTool": AddRequestTool,
+            "SearchTool": SearchTool,
+            "UpdateSettingsTool": UpdateSettingsTool,
+            "ConvertRequestTool": ConvertRequestTool,
+            "HelpTool": HelpTool,
+            "GetPipelineTool": GetPipelineTool,
+        }
 
-                message = response.choices[0].message
-                if message.tool_calls:
-                    tool_call = message.tool_calls[0]
-                    function_name = tool_call.function.name
-
-                    # Parse arguments
-                    try:
-                        arguments = json.loads(tool_call.function.arguments)
-                    except json.JSONDecodeError:
-                        self.logger.error(
-                            f"Failed to parse JSON arguments: {tool_call.function.arguments}"
-                        )
-                        return None
-
-                    model_map = {
-                        "AddJobTool": AddJobTool,
-                        "AddLeadTool": AddLeadTool,
-                        "EditCustomerTool": EditCustomerTool,
-                        "ScheduleJobTool": ScheduleJobTool,
-                        "AddRequestTool": AddRequestTool,
-                        "SearchTool": SearchTool,
-                        "UpdateSettingsTool": UpdateSettingsTool,
-                        "ConvertRequestTool": ConvertRequestTool,
-                        "HelpTool": HelpTool,
-                        "GetPipelineTool": GetPipelineTool,
-                    }
-
-                    model_cls = model_map.get(function_name)
-                    if model_cls:
-                        try:
-                            return model_cls(**arguments)
-                        except ValidationError as e:
-                            self.logger.error(f"Validation error for {function_name}: {e}")
-                            return None
-
-                # If no tool calls and it's our first attempt, try once more with a nudge
-                if attempt == 0:
-                    messages.append({"role": "assistant", "content": message.content or "[no tool call produced]"})
-                    messages.append({"role": "user", "content": self.prompts_service.render("retry_instruction")})
-                    self.logger.info(f"LLM failed to produce tool call, retrying...")
-                else:
-                    # If second attempt still no tool call, return the text response (for reasoning/clarification)
-                    return message.content or None
-
-            except Exception as e:
-                self.logger.error(f"LLM Parse Error (attempt {attempt+1}): {e}", exc_info=True)
-                if attempt == 1:
-                    return None
-        
-        return None
+        return await self._chat_with_retry(messages, self.tools, model_map)
 
 
 # Singleton instance
