@@ -1,0 +1,23 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./crm.db:/app/crm.db
+    env_file:
+      - .env
+    restart: always
+
+  ui:
+    build: .
+    ports:
+      - "8501:8501"
+    command: ["streamlit", "run", "scripts/chat_ui.py", "--server.address", "0.0.0.0"]
+    env_file:
+      - .env
+    environment:
+      - API_BASE_URL=http://api:8000
+    depends_on:
+      - api
+    restart: always

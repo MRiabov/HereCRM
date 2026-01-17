@@ -1,0 +1,13 @@
+.venv
+__pycache__
+.git
+.pytest_cache
+.ruff_cache
+*.db
+.env
+.worktrees
+kitty-specs
+.agent
+.kittify
+*.egg-info
+tests
