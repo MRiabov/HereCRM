@@ -112,7 +112,8 @@ async def test_webhook_e2e():
             assert response.status_code == 200
             data = response.json()
             assert "reply" in data
-            assert "welcome_message" in data["reply"]
+            # Now user is registered, it should show confirmation prompt, not welcome message again
+            assert "Please confirm" in data["reply"]
 
             # Onboarding is done, now process the message again
             # In a real scenario, the user would need to send the message again or we would auto-reprocess.

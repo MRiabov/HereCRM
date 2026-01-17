@@ -361,9 +361,9 @@ class JobRepository(BaseRepository[Job]):
         if max_date:
             conditions.append(date_column <= max_date)
 
-        stmt = select(Job).options(joinedload(Job.customer)).where(and_(*conditions))
+        stmt = select(Job).options(joinedload(Job.customer), joinedload(Job.line_items)).where(and_(*conditions))
         result = await self.session.execute(stmt)
-        jobs = list(result.scalars().all())
+        jobs = list(result.scalars().unique().all())
 
         # Spatial Filtering (Python-side)
         if center_lat is not None and center_lon is not None and radius:
@@ -461,15 +461,16 @@ def update_job_value(mapper, connection, target):
         if session:
             # Look for the job in the identity map to avoid a fresh DB query/lazy load
             from sqlalchemy.orm.util import identity_key
+            from sqlalchemy.orm.attributes import set_committed_value
             key = identity_key(Job, (job_id,))
             job = session.identity_map.get(key)
             if job:
-                # Update the object attribute directly
-                job.value = new_total
+                # Update the object attribute directly without marking as dirty
+                set_committed_value(job, "value", new_total)
     except Exception:
         # Listeners should be robust
         pass
 
-# event.listen(LineItem, "after_insert", update_job_value)
-# event.listen(LineItem, "after_update", update_job_value)
-# event.listen(LineItem, "after_delete", update_job_value)
+event.listen(LineItem, "after_insert", update_job_value)
+event.listen(LineItem, "after_update", update_job_value)
+event.listen(LineItem, "after_delete", update_job_value)

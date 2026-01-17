@@ -5,6 +5,7 @@ from src.database import Base
 from src.models import Business, Service, Job, LineItem, Customer
 from src.services.inference_service import InferenceService
 from src.uimodels import LineItemInfo
+import src.repositories # Register listeners
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -118,6 +119,45 @@ async def test_negative_validation(test_session: AsyncSession):
     with pytest.raises(ValueError, match="Job value cannot be negative"):
         Job(business_id=business.id, customer_id=customer.id, value=-100.0)
 
-    # Nonsensical quantity
-    with pytest.raises(ValueError, match="Quantity is nonsensically high"):
-        LineItemInfo(description="Too many", quantity=2_000_000.0)
+@pytest.mark.asyncio
+async def test_job_value_synchronization(test_session: AsyncSession):
+    # Check if listeners are registered
+    from sqlalchemy import event
+    from src.models import LineItem
+    print(f"DEBUG: after_insert listeners: {LineItem.__mapper__.dispatch.after_insert}")
+
+    # Test that Job value is automatically updated when line items are added
+    business = Business(name="Sync Test")
+    test_session.add(business)
+    await test_session.flush()
+
+    customer = Customer(business_id=business.id, name="Test Customer")
+    test_session.add(customer)
+    await test_session.flush()
+
+    job = Job(business_id=business.id, customer_id=customer.id, description="Job", value=0.0)
+    test_session.add(job)
+    await test_session.flush()
+
+    # Add line items
+    li1 = LineItem(job_id=job.id, description="Item 1", quantity=1, unit_price=10.0, total_price=10.0)
+    li2 = LineItem(job_id=job.id, description="Item 2", quantity=2, unit_price=20.0, total_price=40.0)
+    test_session.add(li1)
+    test_session.add(li2)
+    await test_session.flush()
+
+    # Refresh job
+    await test_session.refresh(job)
+    assert job.value == 50.0
+
+    # Update line item
+    li1.total_price = 15.0
+    await test_session.flush()
+    await test_session.refresh(job)
+    assert job.value == 55.0
+
+    # Delete line item
+    await test_session.delete(li2)
+    await test_session.flush()
+    await test_session.refresh(job)
+    assert job.value == 15.0

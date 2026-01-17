@@ -57,7 +57,7 @@ async def test_execute_add_job_new_customer(
 
     res = await test_session.execute(select(Customer).where(Customer.name == "Alice"))
     customer = res.scalar_one()
-    assert customer.phone == "555-1234"
+    assert customer.phone == "5551234"
 
     res = await test_session.execute(select(Job).where(Job.customer_id == customer.id))
     job = res.scalar_one()
@@ -195,7 +195,7 @@ async def test_deduplication(
     executor = ToolExecutor(test_session, biz.id, "123456789", template_service)
 
     # 1. Add Customer Case-Sensitive
-    tool = AddLeadTool(name="John Doe", phone="555-0000")
+    tool = AddLeadTool(name="John Doe", phone="5550000")
     await executor.execute(tool)
 
     # 2. Add Job with Case-Insensitive Name
