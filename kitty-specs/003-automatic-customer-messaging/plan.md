@@ -17,10 +17,10 @@ Enable automated customer messaging via WhatsApp/SMS triggered by business event
 
 ### Approach
 
-- **Architecture**: Event-driven architecture using an internal Event Bus to decoupled subscribers.
+- **Architecture**: Event-driven architecture using the shared internal `EventBus` (`src/events.py`).
 - **Queue**: Python `asyncio.Queue` for non-persistent message dispatching.
 - **Provider**: Meta Cloud API for WhatsApp messaging.
-- **Scope**: "On My Way", "Job Booked", "Job Scheduled", "Daily Schedule".
+- **Scope**: "On My Way", "Job Booked" (via `JOB_CREATED`), "Job Scheduled" (via new `JOB_SCHEDULED` event), "Daily Schedule".
 
 ## Technical Context
 
@@ -58,13 +58,14 @@ kitty-specs/[###-feature]/
 
 ```
 src/
-├── services/            # MessagingService, EventBus (updates)
+├── services/            # MessagingService (updates), CRMService (add JOB_SCHEDULED)
 ├── models/              # (Updates if needed, though likely minimal for this phase)
 ├── cli/                 # (Updates if needed)
+├── events.py            # SHARED: User existing EventBus from main
 └── lib/                 # WhatsAppClient (via requests/httpx)
 
 tests/
-├── unit/                # Unit tests for MessagingService and EventBus
+├── unit/                # Unit tests for MessagingService integration with EventBus
 └── integration/         # Integration tests with mocked WhatsApp API
 ```
 
