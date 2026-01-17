@@ -19,36 +19,37 @@ Tracks the history of automated messages sent to customers.
   - `sent_at`: DateTime (Nullable, UTC)
   - `error_message`: String (Nullable)
 
-## Events (Internal Event Bus)
+## Events (Shared Event Bus)
 
-### `JobBookedEvent`
+The messaging system listens for strings emitted via `src.events.event_bus`.
 
-Triggered when a job is created/booked.
+### `JOB_CREATED`
+
+Common event from `CRMService.create_job`.
 
 - **Payload**:
   - `job_id`: Integer
   - `customer_id`: Integer
-  - `customer_name`: String
-  - `customer_phone`: String
-  - `job_description`: String
+  - `business_id`: Integer
 
-### `JobScheduledEvent`
+### `JOB_SCHEDULED`
 
-Triggered when a job is scheduled.
+New event to be emitted when a job's `scheduled_at` is set or changed.
 
 - **Payload**:
   - `job_id`: Integer
-  - `schedule_time`: DateTime
-  - `customer_phone`: String
+  - `scheduled_at`: ISO String
+  - `customer_id`: Integer
+  - `business_id`: Integer
 
-### `OnMyWayEvent`
+### `ON_MY_WAY` (Proposed)
 
-Triggered by pro user.
+Ad-hoc event triggered by user.
 
 - **Payload**:
   - `customer_id`: Integer
-  - `customer_phone`: String
   - `eta_minutes`: Integer (Optional)
+  - `business_id`: Integer
 
 ## API Contracts (Internal)
 

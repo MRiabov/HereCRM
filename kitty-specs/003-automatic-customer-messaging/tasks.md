@@ -19,10 +19,11 @@
   - [x] T006: Implement async queue consumer <!-- id: 8 -->
   - [x] T007: Register MessagingService as listener <!-- id: 9 -->
 
-- [x] WP03: Job Lifecycle Events @[WP03-job-lifecycle] <!-- id: 10 -->
-  - [x] T008: Emit JobBookedEvent from Job creation <!-- id: 11 -->
-  - [x] T009: Emit JobScheduledEvent from Job scheduling <!-- id: 12 -->
-  - [x] T010: Implement handlers in MessagingService <!-- id: 13 -->
+- [ ] WP03: Job Lifecycle Events @[WP03-job-lifecycle] <!-- id: 10 -->
+  - [ ] T008: Subscribe MessagingService to JOB_CREATED event <!-- id: 11 -->
+  - [ ] T009: Implement JOB_SCHEDULED emission in CRMService <!-- id: 12 -->
+  - [ ] T010: Refactor MessagingService to use shared EventBus and handlers <!-- id: 13 -->
+  - [ ] T013: Remove local src/services/event_bus.py and src/events.py from worktree <!-- id: 17 -->
 
 - [ ] WP04: Manual & Scheduled Triggers @[WP04-triggers] <!-- id: 14 -->
   - [ ] T011: Implement "On My Way" trigger <!-- id: 15 -->
