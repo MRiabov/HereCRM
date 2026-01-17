@@ -24,8 +24,8 @@ from src.uimodels import (
     ExitSettingsTool,
     ExportQueryTool,
     ExitDataManagementTool,
-    SendInvoiceTool,
 )
+from src.tools.invoice_tools import SendInvoiceTool
 from src.services.template_service import TemplateService
 
 

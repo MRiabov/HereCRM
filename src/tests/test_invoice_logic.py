@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import Customer, Job, Invoice
 from src.services.invoice_service import InvoiceService
 from src.tool_executor import ToolExecutor
-from src.uimodels import SendInvoiceTool
+from src.tools.invoice_tools import SendInvoiceTool
 
 # Mock dependencies
 @pytest.fixture

@@ -29,8 +29,9 @@ from src.uimodels import (
     ExitSettingsTool,
     ExportQueryTool,
     ExitDataManagementTool,
-    SendInvoiceTool,
 )
+from src.tools.invoice_tools import SendInvoiceTool
+
 
 
 class WhatsappService:

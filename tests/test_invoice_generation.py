@@ -3,7 +3,6 @@ from datetime import datetime
 from unittest.mock import MagicMock, patch
 from src.services.pdf_generator import InvoicePDFGenerator
 from src.models import Job, Customer, LineItem
-from jinja2 import TemplateNotFound
 
 def test_invoice_pdf_generation():
     # Setup mocks

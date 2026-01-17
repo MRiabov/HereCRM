@@ -32,8 +32,8 @@ from src.uimodels import (
     DeleteServiceTool,
     ListServicesTool,
     ExitSettingsTool,
-    SendInvoiceTool,
 )
+from src.tools.invoice_tools import SendInvoiceTool
 
 class ToolExecutor:
     def __init__(
