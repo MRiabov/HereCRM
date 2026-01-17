@@ -5,7 +5,8 @@ subtasks:
   - T015
   - T016
   - T017
-lane: planned
+lane: "done"
+agent: "Antigravity"
 ---
 # Work Package: Formatting, UX & Pagination
 
@@ -36,3 +37,8 @@ WhatsApp limits require concise and short lists.
 ## Verification
 
 - Run `pytest tests/test_search_service.py`
+
+## Activity Log
+
+- 2026-01-17T10:44:08Z – Antigravity – lane=doing – Starting implementation
+- 2026-01-17T10:45:39Z – Antigravity – lane=done – Passed unit tests

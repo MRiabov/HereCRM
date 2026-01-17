@@ -59,8 +59,8 @@ src/
 │   └── geocoding.py       # [KEEP] Existing Geocoding logic
 ├── uimodels.py            # [MODIFY] Update SearchTool with 'detailed' flag
 ├── tool_executor.py       # [MODIFY] Remove search logic, delegate to SearchService
-├── repositories.py        # [KEEP] Reuse existing search methods (Customer/Job/Request)
-└── llm_client.py          # [MODIFY] Update prompts if needed
+├── repositories.py        # [KEEP] Support for PipelineStage and LineItems already merged
+└── llm_client.py          # [MODIFY] Update prompts for better entity detection (inc. Services)
 ```
 
 ## Proposed Changes
@@ -68,13 +68,17 @@ src/
 ### 1. New Service: `SearchService` (`src/services/search_service.py`)
 
 - **Move Logic**: Extract all search orchestration from `ToolExecutor._execute_search`.
-- **Dependencies**: Inject `CustomerRepository`, `JobRepository`, `RequestRepository`, `GeocodingService`.
+- **Dependencies**: Inject `CustomerRepository`, `JobRepository`, `RequestRepository`, `ServiceRepository`, `GeocodingService`.
 - **Responsibilities**:
   - Handle date parsing (string -> datetime).
   - Resolve addresses to coordinates (using `GeocodingService`).
   - Dispatch queries to appropriate repositories.
-  - **Pagination/Truncation**: Implement a robust strategy (e.g., hard limit of 10 items) to satisfy FR-007 and WhatsApp constraints.
-  - **Formatting**: Implement `_format_customer`, `_format_job` methods to handle "Detailed" vs "Concise" views.
+  - **Pipeline Support**: Filter Customers by `pipeline_stage`.
+  - **Service Catalog**: Support searching for Services.
+  - **Service-based Filtering**: Find Customers or Jobs based on services performed (join via Line Items).
+  - **Pagination/Truncation**: Implement a robust strategy (e.g., hard limit of 10 items).
+  - **Formatting**: Implement `_format_customer`, `_format_job`, `_format_service` methods to handle "Detailed" vs "Concise" views.
+  - **Detailed View**: For Jobs, include full Line Item breakdown (from Feature 004). For Customers, include full details/notes and pipeline stage history (if applicable).
 
 ### 2. Refactor: `ToolExecutor` (`src/tool_executor.py`)
 
@@ -87,11 +91,13 @@ src/
 
 ### 4. Refactor: Repositories (`src/repositories.py`)
 
-- **`CustomerRepository`**: Existing `search()` supports flexible filtering.
+- **`CustomerRepository`**: Existing `search()` supports flexible filtering including `pipeline_stage`. Needs update to support joining `Job` + `LineItem` for service-based filtering.
 - **`JobRepository`**:
-  - **[MODIFY]** Update `search()` to **actually implement** spatial filtering logic (currently accepts arguments but ignores them). Use Python-side haversine calculation similar to `CustomerRepository`.
+  - **[KEEP]** Already implements basic search and `line_items` loading. Needs update to support filtering by `service_id` or line item description.
 - **`RequestRepository`**:
-  - **[NOTE]** Proximity search cannot be supported as `Request` entity lacks location data or customer association. Search will be text/date based only.
+  - **[NOTE]** Proximity search cannot be supported as `Request` entity lacks location data.
+- **`ServiceRepository`**:
+  - **[NEW SEARCH]** Implement `search()` method to support text matching on service names for Unified Search.
 
 ## Complexity Tracking
 

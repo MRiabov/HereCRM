@@ -6,7 +6,8 @@ subtasks:
   - T011
   - T012
   - T013
-lane: planned
+lane: "done"
+agent: "Antigravity"
 ---
 # Work Package: Proximity Search
 
@@ -40,3 +41,8 @@ Users need to find things "near X".
 ## Verification
 
 - Run `pytest tests/test_search_service.py`
+
+## Activity Log
+
+- 2026-01-17T10:39:56Z – Antigravity – lane=doing – Started implementation
+- 2026-01-17T10:44:08Z – Antigravity – lane=done – Passed integration tests

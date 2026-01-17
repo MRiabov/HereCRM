@@ -6,7 +6,8 @@ subtasks:
   - T020
   - T021
   - T022
-lane: planned
+lane: "done"
+agent: "Antigravity"
 ---
 # Work Package: Integration & Cleanup
 
@@ -39,3 +40,8 @@ Final step to make the feature live.
 ## Verification
 
 - Run `pytest`
+
+## Activity Log
+
+- 2026-01-17T10:45:40Z – Antigravity – lane=doing – Injecting Service
+- 2026-01-17T10:48:23Z – Antigravity – lane=done – Integration verified with tests

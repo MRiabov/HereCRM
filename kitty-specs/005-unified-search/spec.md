@@ -2,6 +2,7 @@
 
 **Feature Branch**: `005-unified-search`  
 **Created**: 2026-01-15  
+**Updated**: 2026-01-17 (Post-merge of 002, 004)  
 **Status**: Draft  
 **Input**: User description: "Implement a central Search functionality in the application. It should use an LLM to automatically identify what is being searched for (job, request, customer) and the fields effectively. support 'detailed' keyword. maintain existing formatting. Handle edge cases. Support Proximity search using OpenStreetMap. It should be a unified SearchService."
 
@@ -69,12 +70,12 @@ Users need to filter by specific attributes like phone number, date, or status.
 3. **Given** jobs created on different dates, **When** user asks "Show jobs created last week", **Then** system returns jobs with `created_at` within the last 7 days.
 4. **Given** jobs with and without schedules, **When** user asks "Show unscheduled jobs", **Then** system returns jobs where `scheduled_time` is null.
 5. **Given** jobs scheduled for various dates, **When** user asks "Show jobs for next month" or "Show jobs on Jan 25th", **Then** system returns jobs with `scheduled_time` matching the parsed date range.
+6. **Given** customers in various pipeline stages (from Feature 002), **When** user asks "Show lost customers", **Then** system returns customers with `pipeline_stage == 'lost'`.
+7. **Given** a service catalog (from Feature 004), **When** user asks "Search for customers for whom we performed Window Cleaning", **Then** system returns customers for whom we performed those services.
+8. **Given** a service catalog (from Feature 004), **When** user asks "Search for jobs for where we performed Window Cleaning", **Then** system returns jobs for those services.
 
 ## Edge Cases
 
-- **Ambiguous Queries**: If "John" matches a Customer and a Job description, system should distinctively show both or ask for clarification? (Constraint: System should likely show grouped results or best guess).
-- **No Results**: "Search for X" returns nothing. System should reply "No matches found for 'X'".
-- **Geocoding Failures**: If OpenStreetMap cannot find the reference address, system should fallback to text search or inform user.
 - **Large Result Sets**: If "Show all jobs" returns 100 items, system should truncate or paginate to avoid WhatsApp message limits.
 
 ## Requirements *(mandatory)*
@@ -82,12 +83,14 @@ Users need to filter by specific attributes like phone number, date, or status.
 ### Functional Requirements
 
 - **FR-001**: System MUST implement a unified `SearchService` that accepts a natural language query string.
-- **FR-002**: System MUST use an LLM (via `LLMClient`) to interpret the query intent (Target Entity: Customer/Job/Request/All) and extract filter parameters (Name, Phone, Location, Status, CreatedAt, ScheduledTime, "Detailed" flag).
+- **FR-002**: System MUST use an LLM (via `LLMClient`) to interpret the query intent (Target Entity: Customer/Job/Request/Service/All) and extract filter parameters (Name, Phone, Location, Status, PipelineStage, CreatedAt, ScheduledTime, "Detailed" flag).
 - **FR-003**: System MUST support "Proximity Search" by geocoding a reference address (using OpenStreetMap/Nominatim) and filtering entities validation logic (within X km/meters).
-- **FR-004**: System MUST support a boolean `detailed` flag in the search context; if true, the output formatter renders all available fields.
-- **FR-005**: System MUST maintain existing "concise" formatting (summary view) by default.
+- **FR-004**: System MUST support an explicit boolean `detailed` flag in the search context; if true, the output formatter renders extended data (e.g., job line items, full customer notes).
+- **FR-005**: System MUST maintain current "concise" formatting (summary view) by default, preserving changes introduced by Feature 002 (stages) and 004 (line items).
 - **FR-006**: System MUST return grouped results if multiple entity types match (e.g., "Results for 'John': 1 Customer, 2 Jobs").
 - **FR-007**: System MUST handle pagination or truncation for > 10 results to fit WhatsApp constraints.
+- **FR-008**: System MUST support searching the Service Catalog specifically (Entity: Service).
+- **FR-009**: System SHOULD support searching Message Logs (from Feature 003) if available in the database.
 
 ### Key Entities
 

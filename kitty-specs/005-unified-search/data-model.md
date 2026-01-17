@@ -32,8 +32,10 @@ Updated definition in `src/uimodels.py`:
 ```python
 class SearchTool(BaseModel):
     query: str
-    entity_type: Optional[str] # 'job', 'customer', 'request', 'lead'
+    entity_type: Optional[str] # 'job', 'customer', 'request', 'lead', 'service'
     detailed: bool = False # [NEW]
+    pipeline_stage: Optional[str] # [ALREADY MERGED FROM 002]
+    service_query: Optional[str] # [NEW] Filter entities by service performed
     # ... existing fields ...
     # Support for date ranges:
     min_date: Optional[str] 
