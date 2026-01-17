@@ -1,0 +1,16 @@
+{
+  "accept_commit": null,
+  "acceptance_history": [
+    {
+      "accepted_at": "2026-01-17T14:03:00Z",
+      "accepted_by": "maksym",
+      "accepted_from_commit": "606dd598cff090be9ec8709f577cd028b315974e",
+      "branch": "005-unified-search",
+      "mode": "local"
+    }
+  ],
+  "acceptance_mode": "local",
+  "accepted_at": "2026-01-17T14:03:00Z",
+  "accepted_by": "maksym",
+  "accepted_from_commit": "606dd598cff090be9ec8709f577cd028b315974e"
+}
