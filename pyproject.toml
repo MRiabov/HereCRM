@@ -17,6 +17,10 @@ dependencies = [
     "pytest",
     "pytest-asyncio",
     "PyYAML",
+    "boto3",
+    "weasyprint",
+    "jinja2",
+    "alembic>=1.18.1",
 ]
 
 [build-system]

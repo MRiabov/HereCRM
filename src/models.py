@@ -153,6 +153,7 @@ class Job(Base):
     business: Mapped["Business"] = relationship(back_populates="jobs")
     customer: Mapped["Customer"] = relationship(back_populates="jobs")
     line_items: Mapped[List["LineItem"]] = relationship(back_populates="job", cascade="all, delete-orphan")
+    invoices: Mapped[List["Invoice"]] = relationship(back_populates="job", cascade="all, delete-orphan")
 
     @validates("value")
     def validate_value(self, key, value):
@@ -190,3 +191,19 @@ class ConversationState(Base):
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
+
+
+class Invoice(Base):
+    __tablename__ = "invoices"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id"), index=True)
+    s3_key: Mapped[str] = mapped_column(String)
+    public_url: Mapped[str] = mapped_column(String)
+    status: Mapped[str] = mapped_column(String, default="SENT")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+
+    # Relationships
+    job: Mapped["Job"] = relationship(back_populates="invoices")
