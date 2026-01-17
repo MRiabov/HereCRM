@@ -16,9 +16,10 @@ RUN uv sync --frozen --no-install-project --no-dev
 # Copy the rest of the application
 COPY src ./src
 COPY scripts ./scripts
+RUN chmod +x scripts/start.sh
 
 # Place uv on the PATH
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Default command (can be overridden in docker-compose)
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Default command to run both FastAPI and Streamlit
+CMD ["/app/scripts/start.sh"]
