@@ -6,12 +6,40 @@ subtasks:
   - T003
   - T004
   - T005
-lane: planned
+lane: "doing"
+review_status: has_feedback
+reviewed_by: Antigravity
+agent: "antigravity"
 history:
   - date: 2026-01-17
     action: created
     agent: Antigravity
+  - date: 2026-01-17
+    action: review_rejected
+    agent: Antigravity
+    note: "Migration file was empty; tables not created."
 ---
+
+## Review Feedback
+
+**Status**: ❌ **Needs Changes**
+
+**Key Issues**:
+
+1. **Empty Migration File**: The migration script `migrations/versions/29221d00596e_add_import_export_models.py` contains `pass` in the `upgrade()` function. `alembic revision --autogenerate` likely failed to detect the new models, possibly because `src/models.py` wasn't imported in `env.py` or the models weren't registered with `Base` at the time of generation. **The database tables do not exist.**
+2. **Security Verification**: `DataManagementService.import_data` allows opening local files via `open(file_url, "rb")` if the URL does not start with "http". This poses a **Local File Inclusion (LFI)** risk if `file_url` can be influenced by user input. Ensure this path is strictly controlled or remove local file support for production.
+
+**What Was Done Well**:
+
+- Dependencies (`pandas`, `openpyxl`, `python-multipart`) correctly added to `pyproject.toml`.
+- `ImportJob` and `ExportRequest` models defined with correct fields and relationships.
+- `DataManagementService` implementation is robust and handles file parsing logic well.
+
+**Action Items**:
+
+- [ ] **Fix Migration**: Regenerate the migration file to ensure it actually includes `create_table` commands for `import_jobs` and `export_requests`.
+- [ ] **Verify**: Apply the migration and use `sqlite3` or `psql` to prove tables exist.
+- [ ] **Security**: Validate logic for `file_url` or restrict to `http/s3` schemes only.
 
 # Work Package 01: Infrastructure & Data Models
 
@@ -80,3 +108,7 @@ This is the foundational work package for Feature 007 - Customer Import/Export. 
 
 - Existing model conflicts: Ensure no naming collisions.
 - Dependency conflicts: Check for version compatibility with existing libs.
+
+## Activity Log
+
+- 2026-01-17T21:01:21Z – antigravity – shell_pid= – lane=doing – Started implementation
