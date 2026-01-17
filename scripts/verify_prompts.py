@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import sys
+import yaml
 
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -35,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 DATA_FILE = "tests/data/llm_verification_set.json"
 
-async def generate_prompts(count: int):
+async def generate_prompts(count: int, append: bool = False):
     logger.info(f"Generating {count} prompts using LLM...")
     
     client = AsyncOpenAI(
@@ -66,20 +67,52 @@ async def generate_prompts(count: int):
         ExitSettingsTool.schema(),
     ]
 
+    # Load prompts.yaml for context
+    try:
+        with open("src/assets/prompts.yaml", "r") as f:
+            prompts_config = yaml.safe_load(f)
+
+        intent_guidelines = prompts_config.get("system_instruction", "")
+        tool_descriptions_dict = prompts_config.get("tool_descriptions", {})
+        tool_descriptions_str = json.dumps(tool_descriptions_dict, indent=2)
+    except Exception as e:
+        logger.error(f"Failed to load prompts.yaml: {e}")
+        return
+
     system_prompt = f"""
 You are a QA Engineer generating test cases for a CRM LLM Agent.
+The agent is used by a **Business User** (e.g., a tradesperson, service provider) to manage their jobs, customers, and settings via WhatsApp.
+The user talks to the bot to record work, schedule jobs, update settings, etc.
+
+**CRITICAL: The user is the BUSINESS OWNER, NOT the end customer.**
+- CORRECT: "Add job for John at 123 Main St", "Schedule Alice for Tuesday", "Add lead Bob", "Update settings to English".
+- INCORRECT: "I need a plumber", "Can you come fix my sink?", "How much for a window cleaning?", "I want to book an appointment".
+
 Your task is to generate realistic user prompts and the expected tool call that the agent should make.
+
+Reference Guidelines (from system prompt):
+{intent_guidelines}
+
+Tool Descriptions and Examples:
+{tool_descriptions_str}
 
 The agent has access to the following tools (Pydantic schemas):
 {json.dumps(tools_schema, indent=2)}
 
 Generate {prompts_per_batch} diverse test cases.
-Include a mix of:
-1. Clear, professional commands.
-2. Short, casual, slang-filled messages.
-3. Messages with typos or grammatical errors.
-4. Complex requests with multiple parameters.
-5. Edge cases (e.g., weird formatting, extra whitespace).
+Include:
+1. Standard requests (mostly this).
+2. Requests with minor typos, slang, or short-hand (e.g. "schedul job tmrw").
+3. Complex requests with multiple parameters.
+4. Ensure you cover ALL the tools listed above across the batches.
+
+**Constraints:**
+- **Phone numbers**: Must be realistic and under 20 characters (e.g. "0871234567").
+- **Line Items**: When testing `AddJobTool` with line items, ensure the user input explicitly mentions quantity and price so extraction is easy.
+- **Settings**: For settings tools (AddService, etc.), assume the user is already in the settings menu.
+- **Clarity**: Ensure prompts are unambiguous.
+
+IMPORTANT: For `AddJobTool`, if `line_items` are included in `expected_args`, they MUST be a list of dictionaries with `description`, `quantity`, `unit_price`.
 
 Format the output as a valid JSON object with a single key "test_cases" which is a list of objects.
 Each object in "test_cases" must have:
@@ -99,12 +132,12 @@ Example output format:
       }}
   ]
 }}
-DO NOT wrap in markdown code blocks.
+DO NOT wrap in markdown code blocks. Only raw JSON.
 """
 
-    # Clear existing dump file
+    # Clear existing dump file if not appending
     JSONL_FILE = DATA_FILE.replace(".json", ".jsonl")
-    if os.path.exists(JSONL_FILE):
+    if not append and os.path.exists(JSONL_FILE):
         os.remove(JSONL_FILE)
         
     # Create batches
@@ -167,15 +200,13 @@ DO NOT wrap in markdown code blocks.
     
     logger.info(f"Saved {len(final_cases)} test cases to {DATA_FILE}")
 
-async def verify_prompts():
+async def verify_prompts(cleanup: bool = False):
     test_cases = []
     JSONL_FILE = DATA_FILE.replace(".json", ".jsonl")
     
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r") as f:
-            test_cases = json.load(f)
-    elif os.path.exists(JSONL_FILE):
-        logger.info(f"JSON file missing, reading from {JSONL_FILE}")
+    # Prefer JSONL for reading if cleanup/append logic is used, but fallback to JSON
+    if os.path.exists(JSONL_FILE):
+        logger.info(f"Reading from {JSONL_FILE}")
         with open(JSONL_FILE, "r") as f:
             for line in f:
                 if line.strip():
@@ -298,18 +329,35 @@ async def verify_prompts():
         f.write("\n".join(report))
     logger.info("Report saved to verification_report.txt")
 
+    if cleanup:
+        passed_cases = [r["case"] for r in results if r["passed"]]
+        logger.info(f"Cleaning up: Keeping {len(passed_cases)} passing cases.")
+
+        # Save to JSONL
+        with open(JSONL_FILE, "w") as f:
+            for case in passed_cases:
+                f.write(json.dumps(case) + "\n")
+
+        # Save to JSON
+        with open(DATA_FILE, "w") as f:
+            json.dump(passed_cases, f, indent=2)
+
+        logger.info(f"Cleanup complete. Saved {len(passed_cases)} cases.")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--generate", action="store_true", help="Generate prompts")
     parser.add_argument("--count", type=int, default=50, help="Number of prompts to generate")
+    parser.add_argument("--append", action="store_true", help="Append to existing dataset")
     parser.add_argument("--verify", action="store_true", help="Verify prompts")
+    parser.add_argument("--cleanup", action="store_true", help="Remove failing test cases")
     
     args = parser.parse_args()
     
     if args.generate:
-        asyncio.run(generate_prompts(args.count))
+        asyncio.run(generate_prompts(args.count, args.append))
     if args.verify:
-        asyncio.run(verify_prompts())
+        asyncio.run(verify_prompts(args.cleanup))
     if not args.generate and not args.verify:
         parser.print_help()
