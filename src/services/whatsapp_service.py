@@ -54,8 +54,8 @@ class WhatsappService:
         user_phone: str,
         message_text: str,
         is_new_user: bool = False,
-        media_url: str = None,
-        media_type: str = None,
+        media_url: Optional[str] = None,
+        media_type: Optional[str] = None,
     ) -> str:
         # 1. Identify User/Business (Placeholder for WP04 logic)
         user = await self.user_repo.get_by_phone(user_phone)
@@ -82,28 +82,33 @@ class WhatsappService:
             await self.session.flush()
 
         # 3. State Machine Logic
+        reply = ""
+
+        # 3. State Machine Logic
         if is_new_user:
             self.logger.info(f"New user onboarding for {user_phone}")
-            return self.template_service.render("welcome_message")
+            reply = self.template_service.render("welcome_message")
+        
+        # If reply is already set (e.g. welcome message), skip state check
+        if not reply:
+            if state_record.state == ConversationStatus.WAITING_CONFIRM:
+                self.logger.info(f"User {user_phone} in WAITING_CONFIRM mode")
+                reply = await self._handle_waiting_confirm(user, state_record, message_text)
+            elif state_record.state == ConversationStatus.SETTINGS:
+                self.logger.info(f"User {user_phone} in SETTINGS mode")
+                reply = await self._handle_settings(user, state_record, message_text)
+            elif state_record.state == ConversationStatus.DATA_MANAGEMENT:
+                self.logger.info(f"User {user_phone} in DATA_MANAGEMENT mode")
+                reply = await self._handle_data_management(
+                    user, state_record, message_text, media_url, media_type
+                )
+            else:
+                reply = await self._handle_idle(user, state_record, message_text)
 
-        if state_record.state == ConversationStatus.WAITING_CONFIRM:
-            self.logger.info(f"User {user_phone} in WAITING_CONFIRM mode")
-            reply = await self._handle_waiting_confirm(user, state_record, message_text)
-        elif state_record.state == ConversationStatus.SETTINGS:
-            self.logger.info(f"User {user_phone} in SETTINGS mode")
-            reply = await self._handle_settings(user, state_record, message_text)
-        elif state_record.state == ConversationStatus.DATA_MANAGEMENT:
-            self.logger.info(f"User {user_phone} in DATA_MANAGEMENT mode")
-            return await self._handle_data_management(
-                user, state_record, message_text, media_url, media_type
-            )
-        else:
-            reply = await self._handle_idle(user, state_record, message_text)
-
-        # Log Assistant Reply
+        # Log Assistant Reply (Crucial Step: Must happen for ALL replies)
         assistant_msg = Message(
             business_id=user.business_id,
-            from_number="system",  # Or business phone if available
+            from_number="system",
             to_number=user_phone,
             body=reply,
             role=MessageRole.ASSISTANT,
