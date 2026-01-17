@@ -127,3 +127,50 @@ async def test_date_parsing(search_service):
     call_args = search_service.request_repo.search.await_args.kwargs
     assert call_args['min_date'].year == 2023
     assert call_args['max_date'].year == 2023
+
+@pytest.mark.asyncio
+async def test_search_formatting_detailed(search_service):
+    # Setup Customer with full details
+    c = Customer(
+        name="John Doe", 
+        phone="123", 
+        street="Main St", 
+        city="Dublin", 
+        details="VIP"
+    )
+    search_service.customer_repo.search.return_value = [c]
+    
+    # Test Detailed
+    params = SearchTool(query="John", entity_type="customer", detailed=True)
+    result = await search_service.search(params, business_id=1)
+    
+    assert "John Doe (123)" in result
+    assert "Main St" in result
+    assert "Dublin" in result
+    assert "VIP" in result
+
+    # Test Concise (Default)
+    params.detailed = False
+    result_concise = await search_service.search(params, business_id=1)
+    
+    assert "John Doe (123)" in result_concise
+    assert "Main St" not in result_concise
+    assert "VIP" not in result_concise
+
+@pytest.mark.asyncio
+async def test_search_truncation(search_service):
+    # Setup 15 results
+    results = [Customer(name=f"C{i}") for i in range(15)]
+    search_service.customer_repo.search.return_value = results
+    
+    params = SearchTool(query="all", entity_type="customer")
+    result = await search_service.search(params, business_id=1)
+    
+    # Check that we only see 10 items formatted + truncation message
+    # We can count newlines or check for specific names.
+    # C0 to C9 should be present. C10 to C14 absent.
+    assert "Customer: C0" in result
+    assert "Customer: C9" in result
+    assert "Customer: C10" not in result
+    
+    assert "...and 5 more results" in result

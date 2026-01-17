@@ -304,7 +304,35 @@ class JobRepository(BaseRepository[Job]):
 
         stmt = select(Job).options(joinedload(Job.customer)).where(and_(*conditions))
         result = await self.session.execute(stmt)
-        return list(result.scalars().all())
+        jobs = list(result.scalars().all())
+
+        # Spatial Filtering (Python-side)
+        if center_lat is not None and center_lon is not None and radius:
+            filtered = []
+            for j in jobs:
+                # Prioritize job location if available, else fallback to customer location?
+                # The model has Job.latitude/longitude.
+                # If job has no specific location, should we use customer? 
+                # Plan says "JobRepository Spatial Filter". Let's stick to Job lat/lon for now.
+                j_lat, j_lon = j.latitude, j.longitude
+                
+                # Fallback to customer location if job location is missing? 
+                # "Users need to find things 'near X'". Often a job is at the customer's home.
+                # But Job model has its own lat/lon. If null, it might mean it wasn't geocoded or it's remote?
+                # Let's check if the Job model has customer relation loaded. Yes joinedload(Job.customer).
+                if j_lat is None or j_lon is None:
+                    if j.customer and j.customer.latitude is not None and j.customer.longitude is not None:
+                        j_lat, j_lon = j.customer.latitude, j.customer.longitude
+
+                if j_lat is not None and j_lon is not None:
+                    dist = haversine_distance(
+                        center_lat, center_lon, j_lat, j_lon
+                    )
+                    if dist <= radius:
+                        filtered.append(j)
+            return filtered
+
+        return jobs
 
     async def get_most_recent_by_customer(
         self, customer_id: int, business_id: int
