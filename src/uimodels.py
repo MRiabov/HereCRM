@@ -285,3 +285,19 @@ class ListServicesTool(BaseModel):
 class ExitSettingsTool(BaseModel):
     """Exit the settings mode."""
     pass
+
+class ExportQueryTool(BaseModel):
+    """Export data based on a natural language query."""
+
+    query: str = Field(..., description="The specific keywords to search for (e.g., 'Dublin' if the user says 'customers in Dublin', or 'all' for everything).")
+    format: str = Field("csv", description="The desired output format: 'csv', 'excel', or 'json'.")
+
+    @validator("format")
+    def validate_format(cls, v):
+        if v.lower() not in ["csv", "excel", "json"]:
+            return "csv" # Default to csv if invalid
+        return v.lower()
+
+class ExitDataManagementTool(BaseModel):
+    """Exit the data management mode."""
+    pass
