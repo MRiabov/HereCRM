@@ -1,4 +1,6 @@
 #!/bin/bash
+# Local Development Startup Script
+# Starts both Backend and Frontend for local testing.
 
 # Start FastAPI in the background
 echo "Starting FastAPI on port 8000..."

@@ -9,20 +9,21 @@ ENV UV_COMPILE_BYTECODE=1
 # Copy from the cache instead of linking since it's a single image
 ENV UV_LINK_MODE=copy
 
-# Install dependencies first for better caching
+# Install dependencies
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-install-project --no-dev
 
-# Copy the rest of the application
+# Copy the application code
 COPY src ./src
 COPY scripts ./scripts
-RUN chmod +x scripts/start.sh
 
 # Place uv on the PATH
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Expose FastAPI port
-EXPOSE 8000
+# Expose Streamlit port
+EXPOSE 8501
 
-# Command to run FastAPI
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Command to run Streamlit
+# We use the shell form to allow variable expansion if needed, but array form is safer.
+# Streamlit handles PORT env var automatically or we can pass it explicitly.
+CMD ["streamlit", "run", "scripts/chat_ui.py", "--server.address", "0.0.0.0"]

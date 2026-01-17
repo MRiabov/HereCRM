@@ -33,10 +33,17 @@ with col2:
         # Optional: Add remote clear if needed
         st.rerun()
 
-# Hardcoded for single-container deployment (Sidecar pattern)
-api_url = "http://127.0.0.1:8000"
+# Load configuration from environment variables
+api_url = os.getenv("API_BASE_URL", "http://localhost:8000")
 secret = DEFAULT_SECRET
-# Removed Admin Configuration sidebar for security
+
+with st.sidebar:
+    st.header("Configuration (Read-only)")
+    st.text_input("API Base URL", value=api_url, disabled=True, help="Set via API_BASE_URL environment variable")
+    if secret:
+        st.text_input("WhatsApp Secret", value="******", disabled=True, help="Set via WHATSAPP_APP_SECRET environment variable")
+    else:
+        st.error("WhatsApp Secret Not Set")
 
 def load_history():
     try:
