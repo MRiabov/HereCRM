@@ -2,12 +2,8 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import Job, Customer, PipelineStage
 from src.repositories import JobRepository, CustomerRepository, RequestRepository
-from src.services.event_bus import event_bus
-from src.events import JobBookedEvent
-
-
-from datetime import datetime
 from src.events import event_bus
+from datetime import datetime
 
 
 class CRMService:
@@ -96,16 +92,6 @@ class CRMService:
             await self.session.commit()
             await self.session.refresh(job)
 
-            # Emit JobBookedEvent
-            await event_bus.emit(
-                JobBookedEvent(
-                    job_id=job.id,
-                    customer_id=customer_id,
-                    business_id=self.business_id,
-                    description=job.description,
-                )
-            )
-
             return f"✔ Converted Request to Job: {job.description}", {
                 "action": "promote",
                 "entity": "job",
@@ -184,4 +170,41 @@ class CRMService:
         customer.pipeline_stage = new_stage
         await self.session.flush()
         return customer
+
+    async def update_job(
+        self,
+        job_id: int,
+        description: Optional[str] = None,
+        status: Optional[str] = None,
+        scheduled_at: Optional[datetime] = None,
+    ) -> Job:
+        job = await self.job_repo.get_by_id(job_id, self.business_id)
+        if not job:
+            raise ValueError(f"Job with ID {job_id} not found.")
+
+        old_scheduled_at = job.scheduled_at
+
+        if description is not None:
+            job.description = description
+        if status is not None:
+            job.status = status
+        if scheduled_at is not None:
+            job.scheduled_at = scheduled_at
+
+        await self.session.commit()
+        await self.session.refresh(job)
+
+        # Emit JOB_SCHEDULED if scheduled_at changed and is now set
+        if scheduled_at and scheduled_at != old_scheduled_at:
+            await event_bus.emit(
+                "JOB_SCHEDULED",
+                {
+                    "job_id": job.id,
+                    "customer_id": job.customer_id,
+                    "business_id": self.business_id,
+                    "scheduled_at": scheduled_at.isoformat(),
+                },
+            )
+
+        return job
 
