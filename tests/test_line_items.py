@@ -121,11 +121,6 @@ async def test_negative_validation(test_session: AsyncSession):
 
 @pytest.mark.asyncio
 async def test_job_value_synchronization(test_session: AsyncSession):
-    # Check if listeners are registered
-    from sqlalchemy import event
-    from src.models import LineItem
-    print(f"DEBUG: after_insert listeners: {LineItem.__mapper__.dispatch.after_insert}")
-
     # Test that Job value is automatically updated when line items are added
     business = Business(name="Sync Test")
     test_session.add(business)
