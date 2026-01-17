@@ -1,5 +1,5 @@
 import logging
-from typing import Any, cast
+from typing import Any, cast, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.repositories import (
     ConversationStateRepository,
@@ -12,6 +12,7 @@ from src.services.chat_utils import format_service_list, format_line_items
 from src.llm_client import LLMParser
 from src.tool_executor import ToolExecutor
 from src.services.template_service import TemplateService
+from src.services.data_management import DataManagementService
 from src.uimodels import (
     AddJobTool,
     AddLeadTool,
@@ -26,6 +27,8 @@ from src.uimodels import (
     UpdateCustomerStageTool,
     ListServicesTool,
     ExitSettingsTool,
+    ExportQueryTool,
+    ExitDataManagementTool,
 )
 
 
@@ -43,9 +46,15 @@ class WhatsappService:
         self.state_repo = ConversationStateRepository(session)
         self.user_repo = UserRepository(session)
         self.business_repo = BusinessRepository(session)
+        self.data_service = DataManagementService(session)
 
     async def handle_message(
-        self, user_phone: str, message_text: str, is_new_user: bool = False
+        self,
+        user_phone: str,
+        message_text: str,
+        is_new_user: bool = False,
+        media_url: str = None,
+        media_type: str = None,
     ) -> str:
         # 1. Identify User/Business (Placeholder for WP04 logic)
         user = await self.user_repo.get_by_phone(user_phone)
@@ -72,6 +81,11 @@ class WhatsappService:
         elif state_record.state == ConversationStatus.SETTINGS:
             self.logger.info(f"User {user_phone} in SETTINGS mode")
             return await self._handle_settings(user, state_record, message_text)
+        elif state_record.state == ConversationStatus.DATA_MANAGEMENT:
+            self.logger.info(f"User {user_phone} in DATA_MANAGEMENT mode")
+            return await self._handle_data_management(
+                user, state_record, message_text, media_url, media_type
+            )
         else:
             return await self._handle_idle(user, state_record, message_text)
 
@@ -96,6 +110,11 @@ class WhatsappService:
         if lower_text in ["settings", "update settings", "config"]:
             state_record.state = ConversationStatus.SETTINGS
             return self.template_service.render("settings_menu")
+
+        # Handle Data Management Entry
+        if lower_text in ["manage data", "import", "export", "import export", "data"]:
+            state_record.state = ConversationStatus.DATA_MANAGEMENT
+            return "You are now in Data Management mode. You can upload files (CSV, Excel) to import data, or describe what you want to export. Type 'exit' to return to the main menu."
 
         # Parse with LLM
         from datetime import datetime, timezone
@@ -509,3 +528,51 @@ class WhatsappService:
         except Exception as e:
             self.logger.exception(f"Settings execution failed: {e}")
             return f"Error updating settings: {e}"
+
+    async def _handle_data_management(
+        self,
+        user: User,
+        state_record: ConversationState,
+        text: str,
+        media_url: Optional[str] = None,
+        media_type: Optional[str] = None,
+    ) -> str:
+        # Handle file upload for import
+        if media_url:
+            if not media_type:
+                 # Infer from text if it looks like a filename, or default?
+                 # Assuming webhook provides it, but if not we might check extension in url
+                 pass
+
+            # Trigger Import
+            try:
+                import_job = await self.data_service.import_data(
+                    user.business_id, media_url, media_type or "unknown"
+                )
+                return f"Import started. Status: {import_job.status}. {import_job.record_count} records processed. Errors: {len(import_job.error_log) if import_job.error_log else 0}"
+            except Exception as e:
+                self.logger.exception(f"Import error: {e}")
+                return f"Import failed: {e}"
+
+        # Handle text commands (Export or Exit)
+        tool_call = await self.parser.parse_data_management(text)
+
+        if isinstance(tool_call, ExitDataManagementTool):
+            state_record.state = ConversationStatus.IDLE
+            return self.template_service.render("welcome_back")
+
+        if isinstance(tool_call, ExportQueryTool):
+            try:
+                export_req = await self.data_service.export_data(
+                    user.business_id, tool_call.query, tool_call.format
+                )
+                if export_req.status == "completed":
+                    # In a real app, public_url would be a downloadable link.
+                    # Since we are local, we return the path.
+                    return f"Export completed! You can download it here: {export_req.public_url}"
+                else:
+                    return "Export processing..."
+            except Exception as e:
+                return f"Export failed: {e}"
+
+        return "I didn't understand that command. You can upload a file to import, or say 'Export customers in Dublin' to export data. Type 'exit' to leave."

@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from typing import List, Optional, Any
-from sqlalchemy import String, ForeignKey, DateTime, Text, JSON, Float, Enum as SAEnum
+from sqlalchemy import String, ForeignKey, DateTime, Text, JSON, Float, Enum as SAEnum, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 import enum
 from src.database import Base
@@ -15,6 +15,7 @@ class ConversationStatus(str, enum.Enum):
     IDLE = "idle"
     WAITING_CONFIRM = "waiting_confirm"
     SETTINGS = "settings"
+    DATA_MANAGEMENT = "data_management"
 
 
 class PipelineStage(str, enum.Enum):
@@ -41,6 +42,8 @@ class Business(Base):
     jobs: Mapped[List["Job"]] = relationship(back_populates="business")
     requests: Mapped[List["Request"]] = relationship(back_populates="business")
     services: Mapped[List["Service"]] = relationship(back_populates="business")
+    import_jobs: Mapped[List["ImportJob"]] = relationship(back_populates="business")
+    export_requests: Mapped[List["ExportRequest"]] = relationship(back_populates="business")
 
 
 class User(Base):
@@ -190,3 +193,40 @@ class ConversationState(Base):
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
+
+
+class ImportJob(Base):
+    __tablename__ = "import_jobs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"))
+    status: Mapped[str] = mapped_column(String, default="pending")  # 'pending', 'processing', 'completed', 'failed'
+    file_url: Mapped[str] = mapped_column(String)
+    filename: Mapped[Optional[str]] = mapped_column(String)
+    record_count: Mapped[int] = mapped_column(Integer, default=0)
+    error_log: Mapped[Optional[List[dict]]] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+
+    # Relationships
+    business: Mapped["Business"] = relationship(back_populates="import_jobs")
+
+
+class ExportRequest(Base):
+    __tablename__ = "export_requests"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"))
+    status: Mapped[str] = mapped_column(String, default="pending")  # 'pending', 'processing', 'completed', 'failed'
+    query: Mapped[str] = mapped_column(Text)
+    format: Mapped[str] = mapped_column(String)  # 'csv', 'excel', 'json'
+    s3_key: Mapped[Optional[str]] = mapped_column(String)
+    public_url: Mapped[Optional[str]] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+
+    # Relationships
+    business: Mapped["Business"] = relationship(back_populates="export_requests")

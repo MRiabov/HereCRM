@@ -13,7 +13,6 @@ from src.services.template_service import TemplateService
 from src.services.geocoding import GeocodingService
 from src.services.inference_service import InferenceService
 from src.services.chat_utils import format_line_items
-from src.services.search_service import SearchService
 from src.uimodels import (
     AddJobTool,
     AddLeadTool,
@@ -51,7 +50,6 @@ class ToolExecutor:
         self.user_repo = UserRepository(session)
         self.service_repo = ServiceRepository(session)
         self.geocoding_service = GeocodingService()
-        self.search_service = SearchService(session, self.geocoding_service)
 
     async def execute(
         self,
@@ -113,17 +111,6 @@ class ToolExecutor:
         return "Unknown tool call", None
 
     # ... (other methods unchanged)
-
-    async def _execute_search(self, tool: SearchTool) -> tuple[str, Optional[dict]]:
-        """
-        Execute search using the unified SearchService.
-        """
-        output = await self.search_service.search(tool, self.business_id)
-        
-        # ToolExecutor protocol expects (str, metadata_dict)
-        # SearchService returns just the formatted string.
-        # Metadata is optional, returning None is fine for search results.
-        return output, None
 
     async def _execute_add_lead(  # Renamed from _execute_add_customer
         self,

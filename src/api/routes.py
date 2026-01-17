@@ -26,6 +26,8 @@ logger = logging.getLogger(__name__)
 class WebhookPayload(BaseModel):
     from_number: str = Field(..., max_length=20, pattern=r"^\+?[1-9]\d{1,14}$")
     body: str = Field(..., max_length=1000)
+    media_url: str = Field(None, max_length=500)
+    media_type: str = Field(None, max_length=50)
 
 
 async def verify_signature(request: Request, x_hub_signature_256: str = Header(None)):
@@ -104,7 +106,11 @@ async def webhook(
 
         # 2. Process Message
         response_text = await whatsapp_service.handle_message(
-            user_phone=user.phone_number, message_text=payload.body, is_new_user=is_new
+            user_phone=user.phone_number,
+            message_text=payload.body,
+            is_new_user=is_new,
+            media_url=payload.media_url,
+            media_type=payload.media_type,
         )
 
         # 3. Commit Transaction
