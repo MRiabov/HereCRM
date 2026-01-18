@@ -363,29 +363,17 @@ class JobRepository(BaseRepository[Job]):
 
         # Spatial Filtering Optimization
         if center_lat is not None and center_lon is not None and radius:
-            # Calculate bounding box
-            R = 6371000
-            lat_delta = (radius / R) * (180 / math.pi)
+            deg_rad = math.degrees(radius / 6371000)
+            lat_min, lat_max = center_lat - deg_rad, center_lat + deg_rad
+            lon_delta = deg_rad / math.cos(math.radians(center_lat)) if abs(center_lat) < 89 else 180
+            lon_min, lon_max = center_lon - lon_delta, center_lon + lon_delta
 
-            cos_lat = math.cos(math.radians(center_lat))
-            if abs(cos_lat) < 1e-6:
-                lon_delta = 180
-            else:
-                lon_delta = (radius / R) * (180 / math.pi) / cos_lat
-
-            min_lat, max_lat = center_lat - lat_delta, center_lat + lat_delta
-            min_lon, max_lon = center_lon - lon_delta, center_lon + lon_delta
-
-            # Effective coordinates
-            eff_lat = func.coalesce(Job.latitude, Customer.latitude)
-            eff_lon = func.coalesce(Job.longitude, Customer.longitude)
-
-            conditions.append(eff_lat.between(min_lat, max_lat))
-            conditions.append(eff_lon.between(min_lon, max_lon))
+            eff_lat, eff_lon = func.coalesce(Job.latitude, Customer.latitude), func.coalesce(Job.longitude, Customer.longitude)
+            conditions.append(eff_lat.between(lat_min, lat_max))
+            conditions.append(eff_lon.between(lon_min, lon_max))
 
             stmt = select(Job).outerjoin(Job.customer).options(
-                contains_eager(Job.customer),
-                joinedload(Job.line_items)
+                contains_eager(Job.customer), joinedload(Job.line_items)
             ).where(and_(*conditions))
         else:
             stmt = select(Job).options(joinedload(Job.customer), joinedload(Job.line_items)).where(and_(*conditions))
