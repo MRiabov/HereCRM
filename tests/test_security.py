@@ -6,7 +6,7 @@ from src.security_utils import _rate_limit_data
 from src.uimodels import ALLOWED_SETTING_KEYS
 from src.models import Business, Customer
 from src.repositories import CustomerRepository
-from src.database import engine, Base
+from src.database import Base
 from src.api.routes import verify_signature
 
 client = TestClient(app)
@@ -22,15 +22,6 @@ def setup_dependency_overrides():
     app.dependency_overrides[verify_signature] = bypass_verify_signature
     yield
     app.dependency_overrides.clear()
-
-
-@pytest.fixture(autouse=True)
-async def setup_database():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
 
 
 @pytest.fixture(autouse=True)
@@ -159,7 +150,7 @@ def test_llm_instruction_hardening():
 
     with patch("src.llm_client.AsyncOpenAI"):
         parser = LLMParser()
-        instr = parser.system_instruction.lower()
+        instr = parser.prompts_service.render("system_instruction").lower()
         assert "ignore" in instr
         assert "override" in instr
         assert "security" in instr or "critical" in instr

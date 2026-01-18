@@ -150,7 +150,8 @@ class SearchService:
             radius=params.radius,
             center_lat=params.center_lat,
             center_lon=params.center_lon,
-            center_address=params.center_address
+            center_address=params.center_address,
+            pipeline_stage=params.pipeline_stage,
         )
 
     async def _search_jobs(self, params: SearchTool, business_id: int, min_date, max_date) -> list:

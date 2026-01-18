@@ -29,7 +29,7 @@ async def db_session():
 def mock_geocoding_service():
     service = MagicMock(spec=GeocodingService)
     # Default to returning None
-    service.geocode = AsyncMock(return_value=(None, None, None, None, None))
+    service.geocode = AsyncMock(return_value=(None, None, None, None, None, None))
     return service
 
 @pytest_asyncio.fixture
@@ -162,7 +162,7 @@ async def test_search_with_geocoding_trigger(search_service, setup_data, mock_ge
     business_id = setup_data
     
     # Mock Geocoding response for "London"
-    mock_geocoding_service.geocode.return_value = (51.5074, -0.1278, "Street", "City", "Country")
+    mock_geocoding_service.geocode.return_value = (51.5074, -0.1278, "Street", "City", "Country", "Postcode")
     
     params = SearchTool(
         query="all",

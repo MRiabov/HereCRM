@@ -292,7 +292,7 @@ async def test_search_geo_proximity(
     executor = ToolExecutor(db_session, business_id, user_phone, mock_template_service)
     # Mock GeocodingService
     mock_geo = AsyncMock()
-    mock_geo.geocode.return_value = (None, None, None, None, None)
+    mock_geo.geocode.return_value = (None, None, None, None, None, None)
     executor.search_service.geocoding_service = mock_geo
 
     # Search within 1000m of London coordinates (should find Jane Smith)
@@ -309,6 +309,6 @@ async def test_search_geo_proximity(
         center_address="High Street",
         radius=5000.0,  # 5km
     )
-    mock_geo.geocode.return_value = (51.5074, -0.1278, None, None, None)
+    mock_geo.geocode.return_value = (51.5074, -0.1278, None, None, None, None)
     result_addr, _ = await executor.execute(tool_addr)
     assert "Jane Smith" in result_addr

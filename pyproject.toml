@@ -30,3 +30,5 @@ build-backend = "setuptools.build_meta"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests", "src/tests"]
+addopts = "--ignore=tests/reproduce_spatial_filtering_behavior.py --ignore=tests/reproduce_issue.py"
