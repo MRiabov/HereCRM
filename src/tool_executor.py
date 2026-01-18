@@ -51,7 +51,7 @@ class ToolExecutor:
         self.user_repo = UserRepository(session)
         self.service_repo = ServiceRepository(session)
         self.geocoding_service = GeocodingService()
-        self.search_service = SearchService(session, self.geocoding_service)
+        self.search_service = SearchService(session)
 
     async def _get_user_defaults(self) -> Tuple[Optional[str], Optional[str]]:
         user = await self.user_repo.get_by_phone(self.user_phone)

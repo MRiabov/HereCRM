@@ -12,6 +12,8 @@ from src.repositories import BusinessRepository, CustomerRepository, JobReposito
 
 logger = logging.getLogger(__name__)
 
+from src.services.storage import storage_service
+
 class DataManagementService:
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -22,13 +24,12 @@ class DataManagementService:
     async def import_data(self, business_id: int, file_url: str, media_type: str) -> ImportJob:
         """
         Orchestrates the data import process.
-        1. Creates ImportJob record.
-        2. Downloads file.
-        3. Parses file into DataFrame.
-        4. Maps columns (TODO: LLM integration).
-        5. Validates and writes to DB (Atomic).
-        6. Updates ImportJob status.
+        1. Creates ImportJob record (committed immediately).
+        2. Downloads and parses file.
+        3. Validates and writes to DB in a nested transaction (Atomic).
+        4. Updates ImportJob status.
         """
+        # 1. Create ImportJob (committed first so we can update it even if import fails)
         import_job = ImportJob(
             business_id=business_id,
             status="processing",
@@ -36,40 +37,59 @@ class DataManagementService:
             created_at=datetime.now(timezone.utc)
         )
         self.session.add(import_job)
-        await self.session.flush()
+        await self.session.commit()
+        # Refresh to get ID and stay attached to session
+        await self.session.refresh(import_job)
 
         try:
             # Download file
-            if file_url.startswith("http"):
+            import os
+            allow_local = os.environ.get("ALLOW_LOCAL_IMPORT", "false").lower() == "true"
+
+            if file_url.startswith(("http://", "https://")):
                 async with httpx.AsyncClient() as client:
                     response = await client.get(file_url)
                     response.raise_for_status()
                     content = response.content
-            else:
-                # Assume local path for testing
+            elif allow_local:
+                # Local file access restricted by environment variable
+                logger.warning(f"Local file import attempted and allowed for: {file_url}")
                 with open(file_url, "rb") as f:
                     content = f.read()
+            else:
+                raise ValueError("Local file import is disabled or scheme is unsupported. Use a valid http/https URL.")
 
             # Parse file
             df = self._parse_file(content, media_type, file_url)
+            
+            # Update record count (requires a commit/flush, but we do it at end or before processing)
             import_job.record_count = len(df)
             import_job.filename = file_url.split("/")[-1]
-
+            
             # Normalize headers
             df.columns = [c.lower().strip().replace(" ", "_") for c in df.columns]
 
-            # Validation & Import
-            await self._process_dataframe(business_id, df)
-
+            # Atomic Import Block
+            async with self.session.begin_nested():
+                await self._process_dataframe(business_id, df)
+            
+            # If we get here, nested transaction succeeded.
             import_job.status = "completed"
             import_job.completed_at = datetime.now(timezone.utc)
 
         except Exception as e:
             logger.exception("Import failed")
+            # The nested transaction is rolled back automatically by begin_nested() on exception,
+            # or we are outside it.
+            # We explicitly update the job status now.
             import_job.status = "failed"
             import_job.error_log = [{"error": str(e)}]
-
+            # Important: we don't re-raise if we want to return the failed job info.
+            # But the caller might expect wait().
+        
+        # Final commit to save the job status (and the data if successful)
         await self.session.commit()
+        await self.session.refresh(import_job)
         return import_job
 
     def _parse_file(self, content: bytes, media_type: str, filename: str) -> pd.DataFrame:
@@ -138,10 +158,11 @@ class DataManagementService:
                 )
                 self.session.add(job)
 
-    async def export_data(self, business_id: int, query: str, format: str) -> ExportRequest:
+    async def export_data(self, business_id: int, query: str, format: str, filters: Dict[str, Any] = None) -> ExportRequest:
         """
-        Process an export request.
+        Process an export request with structured filters and S3 upload.
         """
+        filters = filters or {}
         export_req = ExportRequest(
             business_id=business_id,
             query=query,
@@ -153,58 +174,113 @@ class DataManagementService:
         await self.session.flush()
 
         try:
-            # 1. Fetch data using Repository Search
-            # This leverages the existing search logic (name, phone, address, etc.)
-            customers = await self.customer_repo.search(query=query, business_id=business_id)
+            entity_type = filters.get("entity_type")
+            min_date = None
+            max_date = None
+            
+            if filters.get("min_date"):
+                try:
+                    min_date = datetime.fromisoformat(filters["min_date"].replace("Z", "+00:00"))
+                except ValueError:
+                    pass
+            if filters.get("max_date"):
+                try:
+                    max_date = datetime.fromisoformat(filters["max_date"].replace("Z", "+00:00"))
+                except ValueError:
+                    pass
 
             data = []
-            for c in customers:
-                row = {
-                    "id": c.id,
-                    "name": c.name,
-                    "phone": c.phone,
-                    "email": "",
-                    "address": f"{c.street or ''} {c.city or ''}".strip(),
-                    "notes": c.details,
-                    "stage": c.pipeline_stage.value,
-                    "created_at": c.created_at
-                }
-                data.append(row)
+            
+            # Dispatch to appropriate repository
+            if entity_type == "job" or (query and "job" in query.lower()):
+                jobs = await self.job_repo.search(
+                    query=query,
+                    business_id=business_id,
+                    status=filters.get("status"),
+                    min_date=min_date,
+                    max_date=max_date,
+                    query_type="added" # Default to added date? Or scheduled? Let's assume general search.
+                )
+                for j in jobs:
+                    row = {
+                        "id": j.id,
+                        "customer": j.customer.name if j.customer else "",
+                        "description": j.description,
+                        "status": j.status,
+                        "value": j.value,
+                        "scheduled_at": j.scheduled_at,
+                        "location": j.location or j.customer.street, # Fallback
+                        "created_at": j.created_at
+                    }
+                    data.append(row)
+            
+            else:
+                # Default to Customer/Lead
+                customers = await self.customer_repo.search(
+                    query=query, 
+                    business_id=business_id,
+                    entity_type=entity_type,
+                    pipeline_stage=filters.get("status"), # Map status to pipeline_stage for customers
+                    min_date=min_date,
+                    max_date=max_date,
+                    query_type="added" 
+                )
+                
+                for c in customers:
+                    row = {
+                        "id": c.id,
+                        "name": c.name,
+                        "phone": c.phone,
+                        "address": f"{c.street or ''} {c.city or ''}".strip(),
+                        "notes": c.details,
+                        "stage": c.pipeline_stage.value,
+                        "created_at": c.created_at
+                    }
+                    data.append(row)
 
             df = pd.DataFrame(data)
 
             # 3. Format
             output = io.BytesIO()
-            filename = f"export_{business_id}_{int(datetime.now().timestamp())}.{format}"
-
+            # filename for metadata/key
+            ext = "xlsx" if format == "excel" else format
+            filename = f"export_{business_id}_{int(datetime.now().timestamp())}.{ext}"
+            
+            content_type = "text/csv"
             if format == "csv":
                 df.to_csv(output, index=False)
-                media_type = "text/csv"
-            elif format == "excel" or format == "xlsx":
+                content_type = "text/csv"
+            elif format in ["excel", "xlsx"]:
+                # Remove timezones for Excel compatibility
+                for col in df.columns:
+                    if pd.api.types.is_datetime64_any_dtype(df[col]):
+                        df[col] = df[col].dt.tz_localize(None)
                 df.to_excel(output, index=False)
-                media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             elif format == "json":
                 df.to_json(output, orient="records")
-                media_type = "application/json"
+                content_type = "application/json"
             else:
                 raise ValueError(f"Unsupported format: {format}")
 
             output.seek(0)
+            file_bytes = output.read()
 
-            # 4. Upload / Save
-            import os
-            os.makedirs("exports", exist_ok=True)
-            filepath = f"exports/{filename}"
-            with open(filepath, "wb") as f:
-                f.write(output.read())
+            # 4. Upload to S3
+            
+            # Key structure: exports/{business_id}/{filename}
+            s3_key = f"exports/{business_id}/{filename}"
+            public_url = storage_service.upload_file(file_bytes, s3_key, content_type)
 
-            export_req.s3_key = filepath
-            export_req.public_url = filepath
+            export_req.s3_key = s3_key
+            export_req.public_url = public_url
             export_req.status = "completed"
 
         except Exception as e:
             logger.exception("Export failed")
             export_req.status = "failed"
-
+            # Log error somewhere? ExportRequest doesn't have error_log field in model currently, 
+            # maybe add it or just log to system log.
+            
         await self.session.commit()
         return export_req

@@ -302,6 +302,10 @@ class ExportQueryTool(BaseModel):
 
     query: str = Field(..., description="The specific keywords to search for (e.g., 'Dublin' if the user says 'customers in Dublin', or 'all' for everything).")
     format: str = Field("csv", description="The desired output format: 'csv', 'excel', or 'json'.")
+    entity_type: Optional[str] = Field(None, description="Type of entity to export: 'customer', 'job', 'lead'. If unspecified, infer from query or default to customer.")
+    status: Optional[str] = Field(None, description="Filter by status or pipeline stage (e.g., 'pending', 'lost', 'completed').")
+    min_date: Optional[str] = Field(None, description="Start date for filtering in ISO 8601 format.")
+    max_date: Optional[str] = Field(None, description="End date for filtering in ISO 8601 format.")
 
     @validator("format")
     def validate_format(cls, v):

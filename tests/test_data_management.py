@@ -3,6 +3,7 @@ import pytest_asyncio
 import pandas as pd
 import io
 import os
+from unittest.mock import patch, MagicMock
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
@@ -100,18 +101,30 @@ async def test_export_data_csv(test_session, setup_business):
     service = DataManagementService(test_session)
 
     # 2. Run Export
-    export_req = await service.export_data(
-        business_id=setup_business.id,
-        query="Dublin",
-        format="csv"
-    )
+    with patch("src.services.data_management.storage_service") as mock_storage:
+        # Mock storage to return a local path so os.path.exists works in this test
+        # (Though in reality it would be a URL)
+        export_file = "test_export_output.csv"
+        mock_storage.upload_file.return_value = export_file
+        
+        export_req = await service.export_data(
+            business_id=setup_business.id,
+            query="Dublin",
+            format="csv"
+        )
 
-    assert export_req.status == "completed"
-    assert export_req.public_url is not None
-    assert os.path.exists(export_req.public_url)
+        assert export_req.status == "completed"
+        assert export_req.public_url == export_file
+        
+        # Capture the content written to mock storage
+        args, _ = mock_storage.upload_file.call_args
+        file_bytes, _, _ = args
+        with open(export_file, "wb") as f:
+            f.write(file_bytes)
 
     # 3. Verify Content
-    df = pd.read_csv(export_req.public_url)
+    assert os.path.exists(export_file)
+    df = pd.read_csv(export_file)
     assert len(df) == 1
     assert df.iloc[0]["name"] == "Export Test"
     assert str(df.iloc[0]["phone"]) == "5555555555"

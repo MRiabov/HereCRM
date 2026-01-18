@@ -604,16 +604,25 @@ class WhatsappService:
 
         if isinstance(tool_call, ExportQueryTool):
             try:
+                filters = {
+                    "entity_type": tool_call.entity_type,
+                    "status": tool_call.status,
+                    "min_date": tool_call.min_date,
+                    "max_date": tool_call.max_date
+                }
+                filters = {k: v for k, v in filters.items() if v is not None}
+                
                 export_req = await self.data_service.export_data(
-                    user.business_id, tool_call.query, tool_call.format
+                    user.business_id, tool_call.query, tool_call.format, filters=filters
                 )
                 if export_req.status == "completed":
                     # In a real app, public_url would be a downloadable link.
                     # Since we are local, we return the path.
                     return f"Export completed! You can download it here: {export_req.public_url}"
                 else:
-                    return "Export processing..."
+                    return f"Export processing... (Status: {export_req.status})"
             except Exception as e:
-                return f"Export failed: {e}"
+                self.logger.exception("Export failed")
+                return f"Export failed: {str(e)}"
 
         return "I didn't understand that command. You can upload a file to import, or say 'Export customers in Dublin' to export data. Type 'exit' to leave."
