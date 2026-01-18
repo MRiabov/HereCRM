@@ -2,7 +2,7 @@ from pydantic.v1 import BaseModel, Field, validator
 from typing import Optional, List
 
 # Allowlist for settings that can be updated via LLM
-ALLOWED_SETTING_KEYS = ["confirm_by_default", "language", "timezone", "notifications"]
+ALLOWED_SETTING_KEYS = ["confirm_by_default", "language", "timezone", "notifications", "default_city", "default_country"]
 
 
 class LineItemInfo(BaseModel):

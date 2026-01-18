@@ -1,0 +1,278 @@
+{
+  "id": "d2908d9a-634e-4953-96d6-cab4c261ebe9",
+  "name": "easygoing-optimism",
+  "deletedAt": null,
+  "workspace": {
+    "name": "Maksym Riabov's Projects"
+  },
+  "environments": {
+    "edges": [
+      {
+        "node": {
+          "id": "df3fa6f2-d083-4c0b-abff-e8dc29b0e6d8",
+          "name": "production",
+          "deletedAt": null
+        }
+      }
+    ]
+  },
+  "services": {
+    "edges": [
+      {
+        "node": {
+          "id": "5038abd2-3fa8-41cc-917e-04564f0c17ea",
+          "name": "backend",
+          "serviceInstances": {
+            "edges": [
+              {
+                "node": {
+                  "id": "b51f39dd-7838-43f5-b1f2-972cdfdf4d75",
+                  "serviceId": "5038abd2-3fa8-41cc-917e-04564f0c17ea",
+                  "serviceName": "backend",
+                  "environmentId": "df3fa6f2-d083-4c0b-abff-e8dc29b0e6d8",
+                  "latestDeployment": {
+                    "canRedeploy": true,
+                    "id": "af409c50-866e-4a80-a9c4-66c0b8f13b1a",
+                    "meta": {
+                      "branch": "main",
+                      "buildOnly": false,
+                      "commitAuthor": "MRiabov",
+                      "commitHash": "361694357060254375a52881ec1c520753be6d00",
+                      "commitMessage": "Docker-compose to railway",
+                      "fileServiceManifest": {},
+                      "ignoreWatchPatterns": true,
+                      "isPublicRepoDeploy": false,
+                      "logsV2": true,
+                      "nixpacksProviders": [
+                        "python"
+                      ],
+                      "patchId": "9f740cb1-b99f-4f06-a0f7-d98e941c7ec5",
+                      "plan": "hobby",
+                      "propertyFileMapping": {},
+                      "reason": "deploy",
+                      "repo": "MRiabov/HereCRM",
+                      "rootDirectory": null,
+                      "runtime": "V2",
+                      "serviceManifest": {
+                        "build": {
+                          "buildCommand": null,
+                          "buildEnvironment": null,
+                          "builder": "DOCKERFILE",
+                          "dockerfilePath": "Dockerfile",
+                          "nixpacksConfigPath": null,
+                          "nixpacksPlan": null,
+                          "watchPatterns": []
+                        },
+                        "deploy": {
+                          "cronSchedule": null,
+                          "drainingSeconds": null,
+                          "healthcheckPath": null,
+                          "healthcheckTimeout": null,
+                          "limitOverride": {
+                            "containers": {
+                              "cpu": 3,
+                              "memoryBytes": 4000000000
+                            }
+                          },
+                          "multiRegionConfig": {
+                            "asia-southeast1-eqsg3a": {
+                              "numReplicas": 1
+                            }
+                          },
+                          "numReplicas": 1,
+                          "overlapSeconds": null,
+                          "preDeployCommand": null,
+                          "region": null,
+                          "registryCredentials": null,
+                          "requiredMountPath": null,
+                          "restartPolicyMaxRetries": 10,
+                          "restartPolicyType": "ON_FAILURE",
+                          "runtime": "V2",
+                          "sleepApplication": false,
+                          "startCommand": null,
+                          "useLegacyStacker": false
+                        }
+                      },
+                      "volumeMounts": [
+                        "/app/data"
+                      ]
+                    },
+                    "status": "BUILDING",
+                    "deploymentStopped": true
+                  },
+                  "source": {
+                    "repo": "MRiabov/HereCRM",
+                    "image": null
+                  },
+                  "domains": {
+                    "serviceDomains": [
+                      {
+                        "id": "7be56604-ca8b-4a18-a4e8-3ff2fbc08777",
+                        "domain": "backend-production-4f57.up.railway.app",
+                        "targetPort": null
+                      }
+                    ],
+                    "customDomains": []
+                  },
+                  "cronSchedule": null,
+                  "nextCronRunAt": null,
+                  "startCommand": null
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "node": {
+          "id": "7edffd6b-7f32-427c-9a8f-7a7819722c2f",
+          "name": "frontend",
+          "serviceInstances": {
+            "edges": [
+              {
+                "node": {
+                  "id": "ceeca19e-da34-4772-ae31-3e0221723631",
+                  "serviceId": "7edffd6b-7f32-427c-9a8f-7a7819722c2f",
+                  "serviceName": "frontend",
+                  "environmentId": "df3fa6f2-d083-4c0b-abff-e8dc29b0e6d8",
+                  "latestDeployment": {
+                    "canRedeploy": true,
+                    "id": "3d95f3b1-4811-4c69-92da-bf9a441dc7d3",
+                    "meta": {
+                      "branch": "main",
+                      "buildOnly": false,
+                      "commitAuthor": "MRiabov",
+                      "commitHash": "361694357060254375a52881ec1c520753be6d00",
+                      "commitMessage": "Docker-compose to railway",
+                      "fileServiceManifest": {},
+                      "ignoreWatchPatterns": true,
+                      "imageDigest": "sha256:e963b79fa09e050c38606395926b56e65cb0165c1792b57a644f7837474c9bf4",
+                      "isPublicRepoDeploy": false,
+                      "logsV2": true,
+                      "nixpacksProviders": [
+                        "python"
+                      ],
+                      "patchId": "15e73af8-77ff-4e84-8138-be493b1b8df3",
+                      "plan": "hobby",
+                      "propertyFileMapping": {},
+                      "reason": "deploy",
+                      "repo": "MRiabov/HereCRM",
+                      "rootDirectory": null,
+                      "runtime": "V2",
+                      "serviceManifest": {
+                        "build": {
+                          "buildCommand": null,
+                          "buildEnvironment": null,
+                          "builder": "DOCKERFILE",
+                          "dockerfilePath": "/Dockerfile.frontend",
+                          "nixpacksConfigPath": null,
+                          "nixpacksPlan": null,
+                          "watchPatterns": []
+                        },
+                        "deploy": {
+                          "cronSchedule": null,
+                          "drainingSeconds": null,
+                          "healthcheckPath": null,
+                          "healthcheckTimeout": null,
+                          "limitOverride": {
+                            "containers": {
+                              "cpu": 2,
+                              "memoryBytes": 4000000000
+                            }
+                          },
+                          "multiRegionConfig": {
+                            "asia-southeast1-eqsg3a": {
+                              "numReplicas": 1
+                            }
+                          },
+                          "numReplicas": 1,
+                          "overlapSeconds": null,
+                          "preDeployCommand": null,
+                          "region": null,
+                          "registryCredentials": null,
+                          "requiredMountPath": null,
+                          "restartPolicyMaxRetries": 10,
+                          "restartPolicyType": "ON_FAILURE",
+                          "runtime": "V2",
+                          "sleepApplication": false,
+                          "startCommand": null,
+                          "useLegacyStacker": false
+                        }
+                      },
+                      "volumeMounts": []
+                    },
+                    "status": "SUCCESS",
+                    "deploymentStopped": false
+                  },
+                  "source": {
+                    "repo": "MRiabov/HereCRM",
+                    "image": null
+                  },
+                  "domains": {
+                    "serviceDomains": [],
+                    "customDomains": [
+                      {
+                        "id": "db3ccaf3-1b0a-4365-b579-dd4ed5312f84",
+                        "domain": "chat.herecrm.io",
+                        "targetPort": 8501
+                      }
+                    ]
+                  },
+                  "cronSchedule": null,
+                  "nextCronRunAt": null,
+                  "startCommand": null
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "volumes": {
+    "edges": [
+      {
+        "node": {
+          "volumeInstances": {
+            "edges": [
+              {
+                "node": {
+                  "serviceId": null,
+                  "mountPath": "/app/data",
+                  "environmentId": "df3fa6f2-d083-4c0b-abff-e8dc29b0e6d8",
+                  "currentSizeMB": 0.0,
+                  "sizeMB": 5000,
+                  "volume": {
+                    "name": "herecrm-volume",
+                    "id": "92d733e9-dd6c-45de-893e-9b4b40af848f"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "node": {
+          "volumeInstances": {
+            "edges": [
+              {
+                "node": {
+                  "serviceId": "5038abd2-3fa8-41cc-917e-04564f0c17ea",
+                  "mountPath": "/app/data",
+                  "environmentId": "df3fa6f2-d083-4c0b-abff-e8dc29b0e6d8",
+                  "currentSizeMB": 0.0,
+                  "sizeMB": 5000,
+                  "volume": {
+                    "name": "crm_data",
+                    "id": "eabe42a9-9386-4288-813f-1c04c69b99ba"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

@@ -12,6 +12,7 @@ from src.services.crm_service import CRMService
 from src.services.template_service import TemplateService
 from src.services.geocoding import GeocodingService
 from src.services.inference_service import InferenceService
+from src.services.search_service import SearchService
 from src.services.chat_utils import format_line_items
 from src.uimodels import (
     AddJobTool,
@@ -50,6 +51,13 @@ class ToolExecutor:
         self.user_repo = UserRepository(session)
         self.service_repo = ServiceRepository(session)
         self.geocoding_service = GeocodingService()
+        self.search_service = SearchService(session, self.geocoding_service)
+
+    async def _get_user_defaults(self) -> Tuple[Optional[str], Optional[str]]:
+        user = await self.user_repo.get_by_phone(self.user_phone)
+        if user and user.preferences:
+            return user.preferences.get("default_city"), user.preferences.get("default_country")
+        return None, None
 
     async def execute(
         self,
@@ -128,9 +136,27 @@ class ToolExecutor:
             return f"Note: Customer '{customer_name}' already exists.", None
 
         # 2. Extract address
-        lat, lon, street, city, country = await self.geocoding_service.geocode(
-            tool.location or ""
+        # Check for user defaults first
+        default_city, default_country = await self._get_user_defaults()
+        
+        # Use provided city/country if available, otherwise defaults for geocoding
+        # Note: AddLeadTool has specific city/country fields, but also 'location' string.
+        # If 'location' string is provided, we geocode it.
+        # If specific city/country provided in tool, they override defaults for geocoding context?
+        # Actually geocode method takes defaults to append to address string if missing.
+        
+        target_city = tool.city or default_city
+        target_country = tool.country or default_country
+
+        lat, lon, street, city, country, postal_code = await self.geocoding_service.geocode(
+            tool.location or "",
+            default_city=default_city,
+            default_country=default_country
         )
+        
+        # If geocoding didn't return city/country (e.g. not found or not parsed), use the ones we have
+        final_city = city or target_city
+        final_country = country or target_country
 
         # 3. Create customer
         customer = Customer(
@@ -141,9 +167,10 @@ class ToolExecutor:
             original_address_input=tool.location,
             latitude=lat,
             longitude=lon,
-            street=street,
-            city=city,
-            country=country,
+            street=street or tool.street,
+            city=final_city,
+            country=final_country,
+            postal_code=postal_code,
         )
         self.customer_repo.add(customer)
         await self.session.flush()
@@ -201,19 +228,24 @@ class ToolExecutor:
         if tool.location:
             customer.original_address_input = tool.location
             # Re-geocode
-            lat, lon, street, city, country = await self.geocoding_service.geocode(
-                tool.location
+            default_city, default_country = await self._get_user_defaults()
+            lat, lon, street, city, country, postal_code = await self.geocoding_service.geocode(
+                tool.location,
+                default_city=default_city,
+                default_country=default_country
             )
             if lat and lon:
                 customer.latitude = lat
                 customer.longitude = lon
-            # We also update structured fields if geocoding returns them (currently mocking might return None, but implementation supports it)
+            # We also update structured fields if geocoding returns them
             if street:
                 customer.street = street
             if city:
                 customer.city = city
             if country:
                 customer.country = country
+            if postal_code:
+                customer.postal_code = postal_code
         if tool.details:
             customer.details = tool.details
 
@@ -238,11 +270,33 @@ class ToolExecutor:
             )
 
         if not customer:
+            # Create new customer
+            default_city, default_country = await self._get_user_defaults()
+            
+            # Try to geocode the location if provided
+            lat, lon, street, city, country, postal_code = None, None, None, None, None, None
+            if tool.location:
+                lat, lon, street, city, country, postal_code = await self.geocoding_service.geocode(
+                    tool.location, 
+                    default_city=default_city, 
+                    default_country=default_country
+                )
+            
+            # Use defaults if geocoding didn't fill them
+            final_city = city or default_city
+            final_country = country or default_country
+            
             customer = Customer(
                 business_id=self.business_id,
                 name=customer_name,
                 phone=tool.customer_phone,
                 original_address_input=tool.location,
+                latitude=lat,
+                longitude=lon,
+                street=street,
+                city=final_city,
+                country=final_country,
+                postal_code=postal_code,
             )
             self.customer_repo.add(customer)
             await self.session.flush()
@@ -286,6 +340,7 @@ class ToolExecutor:
             status=tool.status or ("scheduled" if tool.time else "pending"),
             scheduled_at=scheduled_at,
             line_items=inferred_items,
+            postal_code=postal_code if 'postal_code' in locals() else None,
         )
         await self.session.flush()
 
@@ -407,6 +462,9 @@ class ToolExecutor:
             "content": tool.content,
         }
 
+    async def _execute_search(
+        self, tool: SearchTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
         result_text = await self.search_service.search(tool, self.business_id)
         return result_text, None
 

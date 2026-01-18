@@ -16,14 +16,12 @@ RUN uv sync --frozen --no-install-project --no-dev
 # Copy the rest of the application
 COPY src ./src
 COPY scripts ./scripts
-RUN chmod +x scripts/start.sh
 
 # Place uv on the PATH
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Create data directory for volume mount
 RUN mkdir -p /app/data && chmod 777 /app/data
-VOLUME /app/data
 
 # Expose FastAPI port
 EXPOSE 8000
