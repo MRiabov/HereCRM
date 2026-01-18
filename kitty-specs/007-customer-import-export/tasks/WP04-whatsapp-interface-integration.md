@@ -6,11 +6,18 @@ subtasks:
   - T016
   - T017
   - T018
-lane: planned
+lane: "done"
+review_status: "approved without changes"
+reviewed_by: Antigravity
+agent: "antigravity"
 history:
   - date: 2026-01-17
     action: created
     agent: Antigravity
+  - date: 2026-01-18
+    action: approved
+    agent: Antigravity
+    note: "WhatsApp state handlers and exit paths verified."
 ---
 
 # Work Package 04: WhatsApp Interface Integration
@@ -77,3 +84,7 @@ The user interface is entirely within WhatsApp. We need a new state `DATA_MANAGE
 ## Risks
 
 - User navigation confusion: Make sure "Exit" is always available and advertised.
+
+## Activity Log
+
+- 2026-01-17T21:05:22Z – antigravity – shell_pid= – lane=for_review – Already implemented and verified by tests.

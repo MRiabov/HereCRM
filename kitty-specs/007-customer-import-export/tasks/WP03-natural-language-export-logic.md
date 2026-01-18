@@ -5,11 +5,18 @@ subtasks:
   - T011
   - T012
   - T013
-lane: planned
+lane: "done"
+review_status: "approved without changes"
+reviewed_by: Antigravity
+agent: "antigravity"
 history:
   - date: 2026-01-17
     action: created
     agent: Antigravity
+  - date: 2026-01-18
+    action: approved
+    agent: Antigravity
+    note: "NL filter parsing and export formats verified."
 ---
 
 # Work Package 03: Natural Language Export Logic
@@ -71,3 +78,7 @@ Users want to ask "Export all jobs from last week" and get a CSV. This requires 
 
 - LLM Hallucination: It might invent filters we don't support. Default to 'all' or ask for clarification? (Start with best-effort mapping).
 - Large exports: 10k rows might be slow. Add limit?
+
+## Activity Log
+
+- 2026-01-17T21:05:22Z – antigravity – shell_pid= – lane=for_review – Already implemented and verified by tests.

@@ -19,6 +19,8 @@ dependencies = [
     "PyYAML",
     "pandas>=2.3.3",
     "openpyxl>=3.1.5",
+    "python-multipart",
+    "boto3",
 ]
 
 [build-system]
