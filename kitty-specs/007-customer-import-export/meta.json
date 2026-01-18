@@ -1,0 +1,19 @@
+{
+  "accept_commit": null,
+  "acceptance_history": [
+    {
+      "accepted_at": "2026-01-18T07:12:29Z",
+      "accepted_by": "claude",
+      "accepted_from_commit": "f09e492edb577427796265db3022d4400a4ca0af",
+      "branch": "007-customer-import-export",
+      "mode": "local",
+      "validation_commands": [
+        "pytest"
+      ]
+    }
+  ],
+  "acceptance_mode": "local",
+  "accepted_at": "2026-01-18T07:12:29Z",
+  "accepted_by": "claude",
+  "accepted_from_commit": "f09e492edb577427796265db3022d4400a4ca0af"
+}
