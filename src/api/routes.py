@@ -183,3 +183,245 @@ async def get_history(
         }
         for msg in messages
     ]
+
+
+async def verify_twilio_signature(request: Request):
+    """
+    Verifies the Twilio request signature.
+    This protects against spoofed requests.
+    """
+    if not settings.twilio_auth_token:
+        logger.error("TWILIO_AUTH_TOKEN is not configured.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Configuration Error",
+        )
+    
+    # Get the signature from headers
+    signature = request.headers.get("X-Twilio-Signature", "")
+    if not signature:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing Twilio Signature"
+        )
+    
+    # Get the full URL (Twilio uses this in signature calculation)
+    url = str(request.url)
+    
+    # Get form data (Twilio sends form-encoded data)
+    form_data = await request.form()
+    
+    # Twilio sorts params alphabetically and concatenates them
+    # Format: url + sorted params as key=value pairs
+    params_string = url
+    for key in sorted(form_data.keys()):
+        params_string += f"{key}{form_data[key]}"
+    
+    # Calculate expected signature
+    expected_signature = hmac.new(
+        settings.twilio_auth_token.encode("utf-8"),
+        params_string.encode("utf-8"),
+        hashlib.sha256
+    ).digest()
+    
+    # Twilio sends base64-encoded signature
+    import base64
+    expected_signature_b64 = base64.b64encode(expected_signature).decode()
+    
+    if not hmac.compare_digest(signature, expected_signature_b64):
+        logger.warning("Invalid Twilio webhook signature attempt.")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid Signature"
+        )
+    
+    return form_data
+
+
+@router.post("/webhooks/twilio")
+async def twilio_webhook(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Handles inbound SMS messages from Twilio.
+    """
+    try:
+        # Verify signature and get form data
+        form_data = await verify_twilio_signature(request)
+        
+        # Extract Twilio parameters (ensure they are strings)
+        from_number = str(form_data.get("From", ""))
+        body = str(form_data.get("Body", ""))
+        
+        if not from_number or not body:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Missing required fields: From or Body"
+            )
+        
+        # Rate limiting
+        if check_rate_limit(from_number):
+            logger.warning(f"Rate limit exceeded for {from_number}")
+            return {"status": "rate_limited"}
+        
+        # Get or create user
+        auth_service = AuthService(db)
+        user, is_new = await auth_service.get_or_create_user(from_number)
+        
+        # Process message using WhatsappService (unified message handling)
+        whatsapp_service = WhatsappService(db, llm_parser, template_service)
+        response_text = await whatsapp_service.handle_message(
+            user_phone=from_number,
+            message_text=body,
+            is_new_user=is_new,
+        )
+
+        
+        # Commit transaction
+        await db.commit()
+        
+        # Send response via Twilio
+        from src.services.twilio_service import TwilioService
+        twilio_service = TwilioService()
+        await twilio_service.send_sms(from_number, response_text)
+        
+        # Return TwiML response (Twilio expects this format)
+        return {
+            "status": "success",
+            "message": "SMS processed"
+        }
+        
+    except HTTPException:
+        raise
+    
+    except Exception:
+        logger.exception("Twilio webhook processing failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An internal error occurred."
+        )
+
+
+@router.post("/webhooks/postmark/inbound")
+async def postmark_inbound_webhook(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Handles inbound email messages from Postmark.
+    Postmark sends JSON payload with email details.
+    """
+    try:
+        # Parse JSON payload from Postmark
+        payload = await request.json()
+        
+        # Extract email fields
+        from_email = payload.get("From", "")
+        subject = payload.get("Subject", "")
+        text_body = payload.get("TextBody", "")
+        
+        # Extract threading headers for conversation continuity
+        message_id = payload.get("MessageID", "")
+        in_reply_to = payload.get("Headers", [])
+        references = None
+        in_reply_to_value = None
+        
+        # Parse headers array to extract In-Reply-To and References
+        for header in in_reply_to if isinstance(in_reply_to, list) else []:
+            if header.get("Name") == "In-Reply-To":
+                in_reply_to_value = header.get("Value")
+            elif header.get("Name") == "References":
+                references = header.get("Value")
+        
+        if not from_email or not text_body:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Missing required fields: From or TextBody"
+            )
+        
+        # Rate limiting
+        if check_rate_limit(from_email):
+            logger.warning(f"Rate limit exceeded for {from_email}")
+            return {"status": "rate_limited"}
+        
+        # Get or create user by email
+        from src.repositories import UserRepository
+        user_repo = UserRepository(db)
+        user = await user_repo.get_by_email(from_email)
+        
+        is_new = False
+        if not user:
+            # Create new user with email
+            # Note: We need to check if this is allowed per spec (T013)
+            # The spec says "Create user if new (optional? verify spec)"
+            # For now, we'll create the user
+            auth_service = AuthService(db)
+            user = await auth_service.create_user_by_email(from_email)
+            is_new = True
+        
+        # Ensure user has an email (it should always have one at this point)
+        user_identifier = user.email or from_email
+        
+        # Process message using WhatsappService (unified message handling)
+        whatsapp_service = WhatsappService(db, llm_parser, template_service)
+        response_text = await whatsapp_service.handle_message(
+            user_phone=user_identifier,  # Using email as identifier
+            message_text=text_body,
+            is_new_user=is_new,
+        )
+        
+        # Store threading metadata in the most recent message
+        # Query the last message for this user directly
+        from sqlalchemy import desc
+        query = (
+            select(Message)
+            .where(Message.user_id == user.id)
+            .order_by(desc(Message.created_at))
+            .limit(1)
+        )
+        result = await db.execute(query)
+        last_message = result.scalar_one_or_none()
+        
+        if last_message:
+            if not last_message.log_metadata:
+                last_message.log_metadata = {}
+            last_message.log_metadata["email_message_id"] = message_id
+            if in_reply_to_value:
+                last_message.log_metadata["in_reply_to"] = in_reply_to_value
+            if references:
+                last_message.log_metadata["references"] = references
+        
+        # Commit transaction
+        await db.commit()
+        
+        # Send response via Postmark
+        from src.services.postmark_service import PostmarkService
+        postmark_service = PostmarkService()
+        
+        # Prepare reply subject
+        reply_subject = subject if subject.startswith("Re:") else f"Re: {subject}"
+        
+        await postmark_service.send_email(
+            to_email=from_email,
+            subject=reply_subject,
+            body=response_text,
+            in_reply_to=message_id,  # Reply to the incoming message
+            references=f"{references} {message_id}" if references else message_id
+        )
+
+        
+        return {
+            "status": "success",
+            "message": "Email processed"
+        }
+        
+    except HTTPException:
+        raise
+    
+    except Exception:
+        logger.exception("Postmark webhook processing failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An internal error occurred."
+        )

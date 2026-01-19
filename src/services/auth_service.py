@@ -32,3 +32,21 @@ class AuthService:
         await self.session.flush()
 
         return user, True
+
+    async def create_user_by_email(self, email: str) -> User:
+        """
+        Creates a new Business and User with the given email address.
+        Returns the created User.
+        """
+        # Create new Business and User
+        business = Business(name=f"Business of {email}")
+        self.session.add(business)
+        # Flush to generate ID for the business
+        await self.session.flush()
+
+        user = User(email=email, business_id=business.id, role="owner")
+        self.user_repo.add(user)
+        # Flush to make the user available in the session identity map
+        await self.session.flush()
+
+        return user

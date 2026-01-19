@@ -18,6 +18,15 @@ class Settings(BaseSettings):
     s3_secret_access_key: Optional[str] = None
     s3_region_name: str = "us-east-1"
 
+    # Twilio Settings
+    twilio_account_sid: Optional[str] = None
+    twilio_auth_token: Optional[str] = None
+    twilio_phone_number: Optional[str] = None
+
+    # Postmark Settings
+    postmark_server_token: Optional[str] = None
+    from_email_address: Optional[str] = None
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
