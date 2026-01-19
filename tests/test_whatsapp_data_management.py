@@ -36,7 +36,7 @@ def service(mock_session, mock_parser, mock_template_service):
 @pytest.mark.asyncio
 async def test_enter_data_management_mode(service):
     user = User(phone_number="123", business_id=1)
-    state = ConversationState(phone_number="123", state=ConversationStatus.IDLE)
+    state = ConversationState(user_id="123", state=ConversationStatus.IDLE)
 
     response = await service._handle_idle(user, state, "manage data")
 
@@ -46,7 +46,7 @@ async def test_enter_data_management_mode(service):
 @pytest.mark.asyncio
 async def test_data_management_export(service, mock_parser):
     user = User(phone_number="123", business_id=1)
-    state = ConversationState(phone_number="123", state=ConversationStatus.DATA_MANAGEMENT)
+    state = ConversationState(user_id="123", state=ConversationStatus.DATA_MANAGEMENT)
 
     # Mock LLM to return ExportQueryTool
     mock_parser.parse_data_management.return_value = ExportQueryTool(query="all customers", format="csv")
@@ -66,7 +66,7 @@ async def test_data_management_export(service, mock_parser):
 @pytest.mark.asyncio
 async def test_data_management_export_filtered(service, mock_parser):
     user = User(phone_number="123", business_id=1)
-    state = ConversationState(phone_number="123", state=ConversationStatus.DATA_MANAGEMENT)
+    state = ConversationState(user_id="123", state=ConversationStatus.DATA_MANAGEMENT)
 
     # Mock tool to return filters
     tool = ExportQueryTool(query="jobs", format="excel", entity_type="job", status="pending")
@@ -87,7 +87,7 @@ async def test_data_management_export_filtered(service, mock_parser):
 @pytest.mark.asyncio
 async def test_data_management_import(service):
     user = User(phone_number="123", business_id=1)
-    state = ConversationState(phone_number="123", state=ConversationStatus.DATA_MANAGEMENT)
+    state = ConversationState(user_id="123", state=ConversationStatus.DATA_MANAGEMENT)
 
     # Mock Data Service return
     mock_import_job = MagicMock()
@@ -108,7 +108,7 @@ async def test_data_management_import(service):
 @pytest.mark.asyncio
 async def test_exit_data_management(service, mock_parser):
     user = User(phone_number="123", business_id=1)
-    state = ConversationState(phone_number="123", state=ConversationStatus.DATA_MANAGEMENT)
+    state = ConversationState(user_id="123", state=ConversationStatus.DATA_MANAGEMENT)
 
     # Mock LLM to return ExitDataManagementTool
     mock_parser.parse_data_management.return_value = ExitDataManagementTool()

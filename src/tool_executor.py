@@ -38,11 +38,13 @@ class ToolExecutor:
         self,
         session: AsyncSession,
         business_id: int,
+        user_id: int,
         user_phone: str,
         template_service: TemplateService,
     ):
         self.session = session
         self.business_id = business_id
+        self.user_id = user_id
         self.user_phone = user_phone
         self.template_service = template_service
         self.job_repo = JobRepository(session)
@@ -54,7 +56,7 @@ class ToolExecutor:
         self.search_service = SearchService(session, self.geocoding_service)
 
     async def _get_user_defaults(self) -> Tuple[Optional[str], Optional[str]]:
-        user = await self.user_repo.get_by_phone(self.user_phone)
+        user = await self.user_repo.get_by_id(self.user_id)
         if user and user.preferences:
             return user.preferences.get("default_city"), user.preferences.get("default_country")
         return None, None
@@ -472,9 +474,9 @@ class ToolExecutor:
         self, tool: UpdateSettingsTool
     ) -> tuple[str, Optional[dict]]:
         old_value = await self.user_repo.update_preferences(
-            self.user_phone, tool.setting_key, tool.setting_value
+            self.user_id, tool.setting_key, tool.setting_value
         )
-        if old_value is None and not await self.user_repo.get_by_phone(self.user_phone):
+        if old_value is None and not await self.user_repo.get_by_id(self.user_id):
             return "User not found.", None
 
         return (
@@ -484,7 +486,7 @@ class ToolExecutor:
             {
                 "action": "update_settings",
                 "entity": "user",
-                "phone": self.user_phone,
+                "user_id": self.user_id,
                 "setting_key": tool.setting_key,
                 "old_value": old_value,
             },

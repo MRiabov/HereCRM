@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Job, Customer, Request, PipelineStage
+from src.models import Business, Job, Customer, User, Request, PipelineStage
 from src.tool_executor import ToolExecutor
 from src.uimodels import AddJobTool, AddLeadTool, ConvertRequestTool, SearchTool, GetPipelineTool
 from src.services.template_service import TemplateService
@@ -38,7 +38,11 @@ async def test_execute_add_job_new_customer(
     test_session.add(biz)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id, "123456789", template_service)
+    user = User(phone_number="123456789", business_id=biz.id, role="owner")
+    test_session.add(user)
+    await test_session.flush()
+
+    executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
     tool = AddJobTool(
         customer_name="Alice",
         customer_phone="555-1234",
@@ -73,12 +77,16 @@ async def test_execute_convert_request(
     test_session.add(biz)
     await test_session.flush()
 
+    user = User(phone_number="123456789", business_id=biz.id, role="owner")
+    test_session.add(user)
+    await test_session.flush()
+
     # Pre-existing request
     req = Request(business_id=biz.id, content="I want to fix my roof", status="pending")
     test_session.add(req)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id, "123456789", template_service)
+    executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
     tool = ConvertRequestTool(query="roof", action="schedule", time="tomorrow")
 
     result, metadata = await executor.execute(tool)
@@ -106,12 +114,16 @@ async def test_execute_log_request(
     test_session.add(biz)
     await test_session.flush()
 
+    user = User(phone_number="123456789", business_id=biz.id, role="owner")
+    test_session.add(user)
+    await test_session.flush()
+
     # Pre-existing request
     req = Request(business_id=biz.id, content="Info only request", status="pending")
     test_session.add(req)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id, "123456789", template_service)
+    executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
     tool = ConvertRequestTool(query="Info", action="log")
 
     result, metadata = await executor.execute(tool)
@@ -135,7 +147,11 @@ async def test_execute_add_lead_implicit(
     test_session.add(biz)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id, "123456789", template_service)
+    user = User(phone_number="123456789", business_id=biz.id, role="owner")
+    test_session.add(user)
+    await test_session.flush()
+
+    executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
 
     # 1. Add Lead
     tool = AddLeadTool(
@@ -145,7 +161,7 @@ async def test_execute_add_lead_implicit(
     )
     result, metadata = await executor.execute(tool)
 
-    assert "Lead details:" in result  # Check for lead summary template usage
+    assert "Lead details:" in result
     assert "Bob The Lead" in result
     assert metadata["action"] == "create"
     assert metadata["entity"] == "lead"
@@ -177,9 +193,7 @@ async def test_execute_add_lead_implicit(
     await executor.execute(job_tool)
 
     # 4. Search Leads again - should be empty (or at least not contain Bob)
-    # Re-executing search
     result, _ = await executor.execute(search_tool)
-    # The result could be "No results found" or a list not containing Bob
     if result and "No results found" not in result:
         assert "Bob The Lead" not in result
 
@@ -192,7 +206,11 @@ async def test_deduplication(
     test_session.add(biz)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id, "123456789", template_service)
+    user = User(phone_number="123456789", business_id=biz.id, role="owner")
+    test_session.add(user)
+    await test_session.flush()
+
+    executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
 
     # 1. Add Customer Case-Sensitive
     tool = AddLeadTool(name="John Doe", phone="5550000")
@@ -203,7 +221,7 @@ async def test_deduplication(
         customer_name="john doe", description="Fix window", price=50.0
     )
     result, metadata = await executor.execute(job_tool)
-    assert "John Doe" in result  # Should refer to original name
+    assert "John Doe" in result
 
     # 3. Verify only one customer exists
     from sqlalchemy import select, func
@@ -230,12 +248,16 @@ async def test_execute_get_pipeline(
     test_session.add(biz)
     await test_session.flush()
 
+    user = User(phone_number="123456789", business_id=biz.id, role="owner")
+    test_session.add(user)
+    await test_session.flush()
+
     # Add a customer to have something in the pipeline
     c1 = Customer(name="Alice", business_id=biz.id, pipeline_stage=PipelineStage.NOT_CONTACTED)
     test_session.add(c1)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id, "123456789", template_service)
+    executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
     tool = GetPipelineTool()
 
     result, metadata = await executor.execute(tool)

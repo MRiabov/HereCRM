@@ -55,7 +55,7 @@ async def test_add_lead_uses_defaults(db_session, setup_user):
             
         mock_geo_instance.geocode = AsyncMock(side_effect=side_effect)
         
-        executor = ToolExecutor(db_session, business_id, user.phone_number, MagicMock())
+        executor = ToolExecutor(db_session, business_id, user.id, user.phone_number, MagicMock())
 
         # Test AddLeadTool with no specific location
         tool = AddLeadTool(name="Test Lead", location="Some Address")
@@ -84,7 +84,7 @@ async def test_add_job_creates_customer_with_defaults(db_session, setup_user):
         # Simulate geocoding returning defaults (or geocoded values matching defaults)
         mock_geo_instance.geocode = AsyncMock(return_value=(1.0, 2.0, "Street", "DefaultCity", "DefaultCountry", "54321"))
 
-        executor = ToolExecutor(db_session, business_id, user.phone_number, MagicMock())
+        executor = ToolExecutor(db_session, business_id, user.id, user.phone_number, MagicMock())
 
         # Test AddJobTool for new customer
         tool = AddJobTool(customer_name="New Customer", customer_phone="111", location="Test Loc")

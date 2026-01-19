@@ -154,11 +154,23 @@ async def get_history(
     """
     Returns the message history for a given phone number.
     """
-    query = (
-        select(Message)
-        .where((Message.from_number == phone_number) | (Message.to_number == phone_number))
-        .order_by(Message.created_at.asc())
-    )
+    # Try to find user to get more accurate history
+    from src.repositories import UserRepository
+    user_repo = UserRepository(db)
+    user = await user_repo.get_by_phone(phone_number)
+    
+    if user:
+        query = (
+            select(Message)
+            .where((Message.user_id == user.id) | (Message.from_number == phone_number) | (Message.to_number == phone_number))
+            .order_by(Message.created_at.asc())
+        )
+    else:
+        query = (
+            select(Message)
+            .where((Message.from_number == phone_number) | (Message.to_number == phone_number))
+            .order_by(Message.created_at.asc())
+        )
     result = await db.execute(query)
     messages = result.scalars().all()
 

@@ -49,7 +49,9 @@ class Business(Base):
 class User(Base):
     __tablename__ = "users"
 
-    phone_number: Mapped[str] = mapped_column(String, primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    phone_number: Mapped[Optional[str]] = mapped_column(String, unique=True, nullable=True)
+    email: Mapped[Optional[str]] = mapped_column(String, unique=True, nullable=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"))
     role: Mapped[UserRole] = mapped_column(SAEnum(UserRole), default=UserRole.MEMBER)
     created_at: Mapped[datetime] = mapped_column(
@@ -62,6 +64,8 @@ class User(Base):
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="users")
+    conversation_state: Mapped[Optional["ConversationState"]] = relationship(back_populates="user")
+    messages: Mapped[List["Message"]] = relationship(back_populates="user")
 
 
 class Service(Base):
@@ -184,7 +188,7 @@ class Request(Base):
 class ConversationState(Base):
     __tablename__ = "conversation_states"
 
-    phone_number: Mapped[str] = mapped_column(String, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
     state: Mapped[ConversationStatus] = mapped_column(
         SAEnum(ConversationStatus), default=ConversationStatus.IDLE
     )
@@ -196,6 +200,9 @@ class ConversationState(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
+    # Relationships
+    user: Mapped["User"] = relationship(back_populates="conversation_state")
+
 class MessageRole(str, enum.Enum):
     USER = "user"
     ASSISTANT = "assistant"
@@ -206,6 +213,7 @@ class Message(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
+    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), index=True)
     from_number: Mapped[str] = mapped_column(String, index=True)
     to_number: Mapped[Optional[str]] = mapped_column(String)
     body: Mapped[str] = mapped_column(Text)
@@ -217,6 +225,7 @@ class Message(Base):
 
     # Relationships
     business: Mapped["Business"] = relationship()
+    user: Mapped[Optional["User"]] = relationship(back_populates="messages")
 
 
 class ImportJob(Base):

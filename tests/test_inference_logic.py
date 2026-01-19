@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Job, Service
+from src.models import Business, Job, Service, User
 from src.tool_executor import ToolExecutor
 from src.uimodels import AddJobTool, LineItemInfo
 from src.services.template_service import TemplateService
@@ -78,6 +78,10 @@ async def test_tool_executor_with_line_items(
     test_session.add(biz)
     await test_session.flush()
 
+    user = User(phone_number="123456789", business_id=biz.id)
+    test_session.add(user)
+    await test_session.flush()
+
     svc = Service(
         business_id=biz.id,
         name="Gutter Clean",
@@ -86,7 +90,7 @@ async def test_tool_executor_with_line_items(
     test_session.add(svc)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id, "123456789", template_service)
+    executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
     
     tool = AddJobTool(
         customer_name="Alice",
@@ -121,5 +125,4 @@ async def test_tool_executor_with_line_items(
     assert repair_item.total_price == 30.0
 
     # Check Job total value (updated by event listener)
-    # Wait, in SQLite memory with flush, the listener should have run.
     assert job.value == 110.0

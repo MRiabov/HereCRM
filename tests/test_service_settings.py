@@ -1,4 +1,5 @@
 import pytest
+import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
 from src.models import Business, User, ConversationState, ConversationStatus
@@ -9,7 +10,7 @@ from unittest.mock import MagicMock
 from src.uimodels import AddServiceTool, ListServicesTool, DeleteServiceTool, ExitSettingsTool
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_session():
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
     async with engine.begin() as conn:
@@ -31,8 +32,6 @@ def mock_parser():
 
 @pytest.fixture
 def mock_template_service():
-    # Use real template service to verify template strings? 
-    # Or mock it. Real is better to check message keys exist.
     return TemplateService()
 
 @pytest.mark.asyncio
@@ -52,7 +51,7 @@ async def test_settings_flow(test_session, mock_parser, mock_template_service):
     response = await service.handle_message("123", "settings")
     assert "Settings Mode" in response
     
-    state = await service.state_repo.get_by_phone("123")
+    state = await service.state_repo.get_by_user_id(user.id)
     assert state.state == ConversationStatus.SETTINGS
     
     # 2. Add Service
@@ -77,9 +76,8 @@ async def test_settings_flow(test_session, mock_parser, mock_template_service):
     assert "50.00" in response
     
     # 4. Delete Service
-    svc_id = services[0].id
     mock_parser.parse_settings.return_value = DeleteServiceTool(name="Window Clean")
-    response = await service.handle_message("123", f"Delete Service {svc_id}")
+    response = await service.handle_message("123", "Delete Service")
     assert "deleted" in response
     
     services = await repo.get_all_for_business(biz.id)
@@ -90,5 +88,5 @@ async def test_settings_flow(test_session, mock_parser, mock_template_service):
     response = await service.handle_message("123", "Exit")
     assert "Welcome back" in response
     
-    state = await service.state_repo.get_by_phone("123")
+    state = await service.state_repo.get_by_user_id(user.id)
     assert state.state == ConversationStatus.IDLE

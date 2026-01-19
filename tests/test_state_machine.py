@@ -77,7 +77,7 @@ async def test_state_idle_to_confirm(
     from sqlalchemy import select
 
     res = await test_session.execute(
-        select(ConversationState).where(ConversationState.phone_number == user_phone)
+        select(ConversationState).where(ConversationState.user_id == user.id)
     )
     state = res.scalar_one()
     assert state.state == ConversationStatus.WAITING_CONFIRM
@@ -94,8 +94,10 @@ async def test_state_confirm_yes(
     await test_session.flush()
 
     user = User(phone_number="123456789", business_id=biz.id)
+    test_session.add(user)
+    await test_session.flush()
     state = ConversationState(
-        phone_number="123456789",
+        user_id=user.id,
         state=ConversationStatus.WAITING_CONFIRM,
         draft_data={
             "tool_name": "AddJobTool",
@@ -131,7 +133,7 @@ async def test_state_confirm_yes(
 
     # Verify state reset
     res = await test_session.execute(
-        select(ConversationState).where(ConversationState.phone_number == "123456789")
+        select(ConversationState).where(ConversationState.user_id == user.id)
     )
     state = res.scalar_one()
     assert state.state == ConversationStatus.IDLE
@@ -157,7 +159,7 @@ async def test_undo_functionality(
     await test_session.flush()
 
     state = ConversationState(
-        phone_number="123456789",
+        user_id=user.id,
         state=ConversationStatus.IDLE,
         last_action_metadata={"action": "create", "entity": "job", "id": job.id},
     )
@@ -201,7 +203,7 @@ async def test_undo_promotion(
     await test_session.flush()
 
     state = ConversationState(
-        phone_number="123456789",
+        user_id=user.id,
         state=ConversationStatus.IDLE,
         last_action_metadata={
             "action": "promote",
@@ -251,12 +253,12 @@ async def test_undo_settings_update(
     await test_session.flush()
 
     state = ConversationState(
-        phone_number="123456789",
+        user_id=user.id,
         state=ConversationStatus.IDLE,
         last_action_metadata={
             "action": "update_settings",
             "entity": "user",
-            "phone": "123456789",
+            "user_id": user.id,
             "setting_key": "confirm_by_default",
             "old_value": False,
         },
@@ -276,7 +278,7 @@ async def test_undo_settings_update(
     from sqlalchemy import select
 
     res = await test_session.execute(
-        select(User).where(User.phone_number == "123456789")
+        select(User).where(User.id == user.id)
     )
     user = res.scalar_one()
     assert user.preferences["confirm_by_default"] is False

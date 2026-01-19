@@ -65,6 +65,7 @@ class WhatsappService:
         # Log User Message
         user_msg = Message(
             business_id=user.business_id,
+            user_id=user.id,
             from_number=user_phone,
             body=message_text,
             role=MessageRole.USER
@@ -73,10 +74,10 @@ class WhatsappService:
         await self.session.flush()
 
         # 2. Fetch Conversation State
-        state_record = await self.state_repo.get_by_phone(user_phone)
+        state_record = await self.state_repo.get_by_user_id(user.id)
         if not state_record:
             state_record = ConversationState(
-                phone_number=user_phone, state=ConversationStatus.IDLE
+                user_id=user.id, state=ConversationStatus.IDLE
             )
             self.state_repo.add(state_record)
             await self.session.flush()
@@ -108,6 +109,7 @@ class WhatsappService:
         # Log Assistant Reply (Crucial Step: Must happen for ALL replies)
         assistant_msg = Message(
             business_id=user.business_id,
+            user_id=user.id,
             from_number="system",
             to_number=user_phone,
             body=reply,
@@ -258,7 +260,7 @@ class WhatsappService:
 
         # Execute
         executor = ToolExecutor(
-            self.session, user.business_id, user.phone_number, self.template_service
+            self.session, user.business_id, user.id, user.phone_number, self.template_service
         )
         try:
             result, metadata = await executor.execute(tool_call)
@@ -353,11 +355,11 @@ class WhatsappService:
             repo = UserRepository(self.session)
             old_value = metadata.get("old_value")
             key = cast(str, metadata.get("setting_key", ""))
-            phone = cast(str, metadata.get("phone", ""))
+            user_id = cast(Optional[int], metadata.get("user_id"))
 
-            if key and phone:
+            if user_id and key:
                 # Revert to old value
-                await repo.update_preferences(phone, key, old_value)
+                await repo.update_preferences(user_id, key, old_value)
                 state_record.last_action_metadata = None
                 return self.template_service.render("undo_setting_reverted", key=key)
 
@@ -561,7 +563,7 @@ class WhatsappService:
 
         # Execute Modification Tools
         executor = ToolExecutor(
-            self.session, user.business_id, user.phone_number, self.template_service
+            self.session, user.business_id, user.id, user.phone_number, self.template_service
         )
         try:
             result, _ = await executor.execute(tool_call)

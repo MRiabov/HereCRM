@@ -6,7 +6,7 @@ from src.uimodels import EditCustomerTool, AddLeadTool, SearchTool
 from src.services.template_service import TemplateService
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Customer
+from src.models import Business, Customer, User
 from sqlalchemy import select
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -29,19 +29,23 @@ async def test_edit_customer_regeocodes(mock_template_service):
         session.add(biz)
         await session.flush()
         
-        executor = ToolExecutor(session, biz.id, "1234567890", mock_template_service)
+        user = User(phone_number="1234567890", business_id=biz.id)
+        session.add(user)
+        await session.flush()
+        
+        executor = ToolExecutor(session, biz.id, user.id, user.phone_number, mock_template_service)
         
         # Mock Geocoding
         # Initial: "Bad Address" -> None
         # Updated: "Dublin" -> Coords
         mock_geo = AsyncMock()
         
-        async def side_effect(address):
+        async def side_effect(address, **kwargs):
             if address == "Bad Address":
-                return None, None, None, None, None
+                return None, None, None, None, None, None
             if address == "Dublin":
-                return 53.3498, -6.2603, "Street", "Dublin", "Ireland"
-            return None, None, None, None, None
+                return 53.3498, -6.2603, "Street", "Dublin", "Ireland", "D01"
+            return None, None, None, None, None, None
             
         mock_geo.geocode.side_effect = side_effect
         executor.geocoding_service = mock_geo
@@ -81,4 +85,3 @@ async def test_edit_customer_regeocodes(mock_template_service):
         )
         result, _ = await executor.execute(search_tool)
         assert "Margaret" in result
-

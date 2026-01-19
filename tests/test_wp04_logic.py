@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Customer, PipelineStage
+from src.models import Business, Customer, User, PipelineStage
 from src.services.crm_service import CRMService
 from src.tool_executor import ToolExecutor
 from src.services.template_service import TemplateService
@@ -73,22 +73,24 @@ async def test_tool_executor_search_with_stage(test_session: AsyncSession):
     test_session.add(biz)
     await test_session.flush()
 
+    user = User(phone_number="123456", business_id=biz.id)
+    test_session.add(user)
+    await test_session.flush()
+
     c1 = Customer(name="Alice", business_id=biz.id, pipeline_stage=PipelineStage.LOST)
     test_session.add(c1)
     await test_session.flush()
 
     template_service = TemplateService()
-    executor = ToolExecutor(test_session, biz.id, "123456", template_service)
+    executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
     
     search_tool = SearchTool(query="Alice", pipeline_stage="lost", entity_type="customer")
     response, metadata = await executor.execute(search_tool)
     
     assert "Alice" in response
-    assert "Not results Found" not in response # check for failure message typos if any
 
     search_tool_mismatch = SearchTool(query="Alice", pipeline_stage="contacted", entity_type="customer")
     response, metadata = await executor.execute(search_tool_mismatch)
-    # The response for no results includes the query string, so we check for the lack of customer listing format
     assert "Alice (" not in response 
     assert "No results found" in response or "search_no_results" in response
 
@@ -98,12 +100,16 @@ async def test_tool_executor_update_stage(test_session: AsyncSession):
     test_session.add(biz)
     await test_session.flush()
 
+    user = User(phone_number="123456", business_id=biz.id)
+    test_session.add(user)
+    await test_session.flush()
+
     c1 = Customer(name="Alice", business_id=biz.id, pipeline_stage=PipelineStage.NOT_CONTACTED)
     test_session.add(c1)
     await test_session.flush()
 
     template_service = TemplateService()
-    executor = ToolExecutor(test_session, biz.id, "123456", template_service)
+    executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
     
     update_tool = UpdateCustomerStageTool(query="Alice", stage="lost")
     response, metadata = await executor.execute(update_tool)

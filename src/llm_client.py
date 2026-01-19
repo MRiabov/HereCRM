@@ -45,6 +45,7 @@ class LLMParser:
         # We reuse TemplateService as a generic YAML loader for prompts
         self.prompts_service = TemplateService(yaml_path=prompts_path)
         tool_desc = self.prompts_service.templates.get("tool_descriptions", {})
+        self.system_instruction = self.prompts_service.render("system_instruction")
 
         # Define tools using OpenAI schema
         self.tools = [

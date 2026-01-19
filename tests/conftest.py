@@ -6,6 +6,7 @@ os.environ["GOOGLE_API_KEY"] = "dummy_test_key"
 os.environ["WHATSAPP_APP_SECRET"] = "dummy_secret"
 os.environ["WA_TOKEN"] = "dummy_token"
 os.environ["WA_PHONE_ID"] = "dummy_phone_id"
+os.environ["ALLOW_LOCAL_IMPORT"] = "true"
 
 
 @pytest.fixture(scope="session", autouse=True)

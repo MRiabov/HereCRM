@@ -71,7 +71,7 @@ async def setup_search_data(db_session: AsyncSession):
         city="London",
         latitude=51.5074,
         longitude=-0.1278,
-    )  # Created yesterday
+    )
     c3 = Customer(
         name="Bob Lead",
         phone="087111444",
@@ -79,12 +79,11 @@ async def setup_search_data(db_session: AsyncSession):
         created_at=datetime.now(timezone.utc),
         street="789 Low Road",
         city="Cork",
-    )  # Lead (no jobs)
+    )
     db_session.add_all([c1, c2, c3])
     await db_session.flush()
 
     # Create Jobs
-    # Job 1: Scheduled today
     j1 = Job(
         customer_id=c1.id,
         business_id=business.id,
@@ -98,7 +97,6 @@ async def setup_search_data(db_session: AsyncSession):
         latitude=53.3498,
         longitude=-6.2603,
     )
-    # Job 2: Scheduled tomorrow
     j2 = Job(
         customer_id=c2.id,
         business_id=business.id,
@@ -124,17 +122,16 @@ async def setup_search_data(db_session: AsyncSession):
     db_session.add(r1)
 
     await db_session.commit()
-    return business.id, "1234567890"
+    return business.id, user.id, "1234567890"
 
 
 @pytest.mark.asyncio
 async def test_search_jobs_today(
     db_session: AsyncSession, setup_search_data, mock_template_service
 ):
-    business_id, user_phone = setup_search_data
-    executor = ToolExecutor(db_session, business_id, user_phone, mock_template_service)
+    business_id, user_id, user_phone = setup_search_data
+    executor = ToolExecutor(db_session, business_id, user_id, user_phone, mock_template_service)
 
-    # "Show jobs for today"
     today_start = (
         datetime.now(timezone.utc).replace(hour=0, minute=0, second=0).isoformat()
     )
@@ -159,8 +156,8 @@ async def test_search_jobs_today(
 async def test_search_jobs_tomorrow(
     db_session: AsyncSession, setup_search_data, mock_template_service
 ):
-    business_id, user_phone = setup_search_data
-    executor = ToolExecutor(db_session, business_id, user_phone, mock_template_service)
+    business_id, user_id, user_phone = setup_search_data
+    executor = ToolExecutor(db_session, business_id, user_id, user_phone, mock_template_service)
 
     tomorrow_start = (
         (datetime.now(timezone.utc) + timedelta(days=1))
@@ -190,8 +187,8 @@ async def test_search_jobs_tomorrow(
 async def test_search_customers_with_jobs_today(
     db_session: AsyncSession, setup_search_data, mock_template_service
 ):
-    business_id, user_phone = setup_search_data
-    executor = ToolExecutor(db_session, business_id, user_phone, mock_template_service)
+    business_id, user_id, user_phone = setup_search_data
+    executor = ToolExecutor(db_session, business_id, user_id, user_phone, mock_template_service)
 
     today_start = (
         datetime.now(timezone.utc).replace(hour=0, minute=0, second=0).isoformat()
@@ -200,7 +197,6 @@ async def test_search_customers_with_jobs_today(
         datetime.now(timezone.utc).replace(hour=23, minute=59, second=59).isoformat()
     )
 
-    # "Customers with jobs today"
     tool = SearchTool(
         query="all",
         entity_type="customer",
@@ -211,15 +207,15 @@ async def test_search_customers_with_jobs_today(
 
     result, _ = await executor.execute(tool)
     assert "John Doe" in result
-    assert "Jane Smith" not in result  # Job is tomorrow
+    assert "Jane Smith" not in result
 
 
 @pytest.mark.asyncio
 async def test_search_leads_added_today(
     db_session: AsyncSession, setup_search_data, mock_template_service
 ):
-    business_id, user_phone = setup_search_data
-    executor = ToolExecutor(db_session, business_id, user_phone, mock_template_service)
+    business_id, user_id, user_phone = setup_search_data
+    executor = ToolExecutor(db_session, business_id, user_id, user_phone, mock_template_service)
 
     today_start = (
         datetime.now(timezone.utc).replace(hour=0, minute=0, second=0).isoformat()
@@ -228,7 +224,6 @@ async def test_search_leads_added_today(
         datetime.now(timezone.utc).replace(hour=23, minute=59, second=59).isoformat()
     )
 
-    # "Leads added today" (Created today, No jobs)
     tool = SearchTool(
         query="all",
         entity_type="lead",
@@ -239,18 +234,17 @@ async def test_search_leads_added_today(
 
     result, _ = await executor.execute(tool)
     assert "Bob Lead" in result
-    assert "John Doe" not in result  # Has job
-    assert "Jane Smith" not in result  # Added yesterday
+    assert "John Doe" not in result
+    assert "Jane Smith" not in result
 
 
 @pytest.mark.asyncio
 async def test_search_text_fallback(
     db_session: AsyncSession, setup_search_data, mock_template_service
 ):
-    business_id, user_phone = setup_search_data
-    executor = ToolExecutor(db_session, business_id, user_phone, mock_template_service)
+    business_id, user_id, user_phone = setup_search_data
+    executor = ToolExecutor(db_session, business_id, user_id, user_phone, mock_template_service)
 
-    # "Search for John"
     tool = SearchTool(query="John")
     result, _ = await executor.execute(tool)
     assert "John Doe" in result
@@ -260,8 +254,8 @@ async def test_search_text_fallback(
 async def test_search_empty_results(
     db_session: AsyncSession, setup_search_data, mock_template_service
 ):
-    business_id, user_phone = setup_search_data
-    executor = ToolExecutor(db_session, business_id, user_phone, mock_template_service)
+    business_id, user_id, user_phone = setup_search_data
+    executor = ToolExecutor(db_session, business_id, user_id, user_phone, mock_template_service)
 
     tool = SearchTool(query="NonExistent")
     result, _ = await executor.execute(tool)
@@ -272,43 +266,40 @@ async def test_search_empty_results(
 async def test_search_geo(
     db_session: AsyncSession, setup_search_data, mock_template_service
 ):
-    business_id, user_phone = setup_search_data
-    executor = ToolExecutor(db_session, business_id, user_phone, mock_template_service)
+    business_id, user_id, user_phone = setup_search_data
+    executor = ToolExecutor(db_session, business_id, user_id, user_phone, mock_template_service)
 
-    # "Search for High Street" -> Should find Jane Smith (Customer address) and Gutter cleaning (Job location)
     tool = SearchTool(query="High Street")
     result, _ = await executor.execute(tool)
 
     assert "Jane Smith" in result
     assert "Gutter cleaning" in result
-    assert "John Doe" not in result  # 123 Main St
+    assert "John Doe" not in result
 
 
 @pytest.mark.asyncio
 async def test_search_geo_proximity(
     db_session: AsyncSession, setup_search_data, mock_template_service
 ):
-    business_id, user_phone = setup_search_data
-    executor = ToolExecutor(db_session, business_id, user_phone, mock_template_service)
+    business_id, user_id, user_phone = setup_search_data
+    executor = ToolExecutor(db_session, business_id, user_id, user_phone, mock_template_service)
     # Mock GeocodingService
     mock_geo = AsyncMock()
-    mock_geo.geocode.return_value = (None, None, None, None, None)
+    mock_geo.geocode.return_value = (None, None, None, None, None, None)
     executor.search_service.geocoding_service = mock_geo
 
-    # Search within 1000m of London coordinates (should find Jane Smith)
     tool = SearchTool(
         query="all", center_lat=51.5074, center_lon=-0.1278, radius=1000.0
     )
     result, _ = await executor.execute(tool)
     assert "Jane Smith" in result
-    assert "John Doe" not in result  # Dublin is far
+    assert "John Doe" not in result
 
-    # Search by address "High Street" -> Mock geocode resolves to London -> finds Jane
     tool_addr = SearchTool(
         query="all",
         center_address="High Street",
-        radius=5000.0,  # 5km
+        radius=5000.0,
     )
-    mock_geo.geocode.return_value = (51.5074, -0.1278, None, None, None)
+    mock_geo.geocode.return_value = (51.5074, -0.1278, None, None, None, None)
     result_addr, _ = await executor.execute(tool_addr)
     assert "Jane Smith" in result_addr

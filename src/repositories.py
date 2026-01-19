@@ -68,10 +68,20 @@ class UserRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    async def get_by_id(self, user_id: int) -> Optional[User]:
+        query = select(User).where(User.id == user_id)
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
     async def get_by_phone(self, phone: str) -> Optional[User]:
         # This is GLOBAL lookup to identify the user
         phone = normalize_phone(phone)
         query = select(User).where(User.phone_number == phone)
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def get_by_email(self, email: str) -> Optional[User]:
+        query = select(User).where(User.email.ilike(email))
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -81,9 +91,9 @@ class UserRepository:
         self.session.add(user)
 
     async def update_preferences(
-        self, phone: str, key: str, value: Any
+        self, user_id: int, key: str, value: Any
     ) -> Optional[Any]:
-        user = await self.get_by_phone(phone)
+        user = await self.get_by_id(user_id)
         if not user:
             return None
 
@@ -431,15 +441,12 @@ class ConversationStateRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_phone(self, phone: str) -> Optional[ConversationState]:
-        phone = normalize_phone(phone)
-        query = select(ConversationState).where(ConversationState.phone_number == phone)
+    async def get_by_user_id(self, user_id: int) -> Optional[ConversationState]:
+        query = select(ConversationState).where(ConversationState.user_id == user_id)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     def add(self, state: ConversationState):
-        if state.phone_number:
-            state.phone_number = normalize_phone(state.phone_number)
         self.session.add(state)
 
 
