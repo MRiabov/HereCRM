@@ -50,16 +50,26 @@ async def test_generic_webhook_email_onboarding():
         mock_template_service.render.side_effect = lambda key, **kwargs: key
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-            # 1. New User via Email (Generic Webhook)
-            email = "zapier_test@example.com"
-            payload = {
-                "identity": email,
-                "message": "Hello from Zapier",
-                "source": "Zapier"
-            }
+            with patch("src.api.routes.settings.generic_webhook_secret", "test-secret"):
+                # 1. New User via Email (Generic Webhook)
+                email = "zapier_test@example.com"
+                payload = {
+                    "identity": email,
+                    "message": "Hello from Zapier",
+                    "source": "Zapier"
+                }
 
-            response = await ac.post("/webhooks/generic", json=payload)
-            assert response.status_code == 200
+                # Fail without header
+                response = await ac.post("/webhooks/generic", json=payload)
+                assert response.status_code == 401
+
+                # Succeed with header
+                response = await ac.post(
+                    "/webhooks/generic", 
+                    json=payload, 
+                    headers={"X-API-Key": "test-secret"}
+                )
+                assert response.status_code == 200
             data = response.json()
             assert data["reply"] == "welcome_message"
             assert data["source"] == "Zapier"
@@ -105,18 +115,53 @@ async def test_generic_webhook_existing_user_phone():
         mock_template_service.render.side_effect = lambda key, **kwargs: key
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-            payload = {
-                "identity": phone,
-                "message": "Status update",
-                "source": "Cron"
-            }
+            with patch("src.api.routes.settings.generic_webhook_secret", "test-secret"):
+                payload = {
+                    "identity": phone,
+                    "message": "Status update",
+                    "source": "Cron"
+                }
 
-            response = await ac.post("/webhooks/generic", json=payload)
-            assert response.status_code == 200
-            data = response.json()
+                response = await ac.post(
+                    "/webhooks/generic", 
+                    json=payload,
+                    headers={"X-API-Key": "test-secret"}
+                )
+                assert response.status_code == 200
+                data = response.json()
             # User exists, so no welcome message, should return mock_parse value
             # Since handle_message returns reply which is 'welcome_back' or from parser
             # Actually _handle_idle returns 'welcome_back' if greeting, or parser response.
             # "Status update" is not a greeting, so it should be "Processing command"
             assert data["reply"] == "Processing command"
             assert data["source"] == "Cron"
+
+@pytest.mark.asyncio
+async def test_generic_webhook_rate_limit():
+    async def override_get_db():
+        async with TestingSessionLocal() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_get_db
+    
+    with (
+        patch("src.api.routes.settings.generic_webhook_secret", "test-secret"),
+        patch("src.api.routes.check_rate_limit") as mock_check,
+    ):
+        mock_check.return_value = True # Limit exceeded
+        
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+            payload = {
+                "identity": "limited@example.com",
+                "message": "Hello",
+                "source": "Zapier"
+            }
+
+            response = await ac.post(
+                "/webhooks/generic", 
+                json=payload,
+                headers={"X-API-Key": "test-secret"}
+            )
+            assert response.status_code == 200
+            data = response.json()
+            assert "Too many requests" in data["reply"]

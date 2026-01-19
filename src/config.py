@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     s3_access_key_id: Optional[str] = None
     s3_secret_access_key: Optional[str] = None
     s3_region_name: str = "us-east-1"
+    
+    # Generic Webhook Settings
+    generic_webhook_secret: Optional[str] = None
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

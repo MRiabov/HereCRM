@@ -242,6 +242,26 @@ async def verify_twilio_signature(request: Request):
         )
 
 
+async def verify_generic_api_key(x_api_key: str = Header(None)):
+    """
+    Verifies the API key for generic webhook requests.
+    """
+    if not settings.generic_webhook_secret:
+        # If secret is not set, we default to block for safety in production,
+        # but maybe we should allow in dev? The feedback says 'should implement'.
+        logger.warning("GENERIC_WEBHOOK_SECRET is not configured. Blocking generic webhook.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Webhook configuration missing"
+        )
+
+    if not x_api_key or not hmac.compare_digest(x_api_key, settings.generic_webhook_secret):
+        logger.warning("Unauthorized access attempt to generic webhook")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API Key"
+        )
+
+
 @router.post("/webhooks/twilio", dependencies=[Depends(verify_twilio_signature)])
 async def twilio_webhook(
     request: Request,
@@ -291,7 +311,7 @@ async def twilio_webhook(
         )
 
 
-@router.post("/webhooks/generic")
+@router.post("/webhooks/generic", dependencies=[Depends(verify_generic_api_key)])
 async def generic_webhook(
     payload: GenericWebhookPayload,
     services: Tuple[AuthService, WhatsappService] = Depends(get_services),
@@ -302,6 +322,11 @@ async def generic_webhook(
     try:
         auth_service, whatsapp_service = services
 
+        # Rate Limiting
+        if check_rate_limit(payload.identity):
+            logger.warning(f"Rate limit exceeded for {payload.identity} (Generic)")
+            return {"reply": "Too many requests. Please try again later."}
+
         # Identify or Onboard User
         user, is_new = await auth_service.get_or_create_user_by_identity(payload.identity)
 
@@ -311,7 +336,7 @@ async def generic_webhook(
             user_phone=user.phone_number,
             message_text=payload.message,
             is_new_user=is_new,
-            channel="generic"
+            channel=payload.source
         )
 
         # Commit Transaction
