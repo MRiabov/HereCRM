@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, and_
 from src.models import Message, MessageRole
 from src.config import channels_config
+from src.llm_client import parser
 
 class HelpService:
     def __init__(self, db_session: AsyncSession):
@@ -84,3 +85,18 @@ class HelpService:
             messages.append({"role": role, "content": content})
             
         return messages
+
+    async def generate_help_response(
+        self, 
+        business_id: int, 
+        phone_number: str, 
+        channel: str = "whatsapp"
+    ) -> str:
+        """
+        Orchestrates the help response generation: fetches history, builds prompt, and calls LLM.
+        """
+        history = await self.get_chat_history(business_id, phone_number)
+        messages = self.construct_help_prompt(history, channel)
+        
+        response_text = await parser.chat_completion(messages)
+        return response_text
