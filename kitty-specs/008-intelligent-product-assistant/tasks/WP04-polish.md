@@ -2,6 +2,8 @@
 work_package_id: WP04
 title: Channel Adaptation & Polish
 lane: "done"
+assignee: Antigravity
+shell_pid: 0
 subtasks:
   - T011
   - T012

@@ -2,6 +2,8 @@
 work_package_id: WP02
 title: Help Service Logic
 lane: "done"
+assignee: Antigravity
+shell_pid: 0
 subtasks:
   - T005
   - T006

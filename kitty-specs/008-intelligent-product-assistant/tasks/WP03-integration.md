@@ -2,6 +2,8 @@
 work_package_id: WP03
 title: Integration & Execution
 lane: "done"
+assignee: Antigravity
+shell_pid: 0
 subtasks:
   - T008
   - T009

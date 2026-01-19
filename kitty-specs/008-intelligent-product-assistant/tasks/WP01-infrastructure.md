@@ -2,6 +2,8 @@
 work_package_id: WP01
 title: Infrastructure & Configuration
 lane: "done"
+assignee: Antigravity
+shell_pid: 0
 review_status: "approved without changes"
 reviewed_by: "Antigravity"
 subtasks:
