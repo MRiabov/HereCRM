@@ -332,13 +332,14 @@ async def generic_webhook(
 @router.post("/webhooks/postmark/inbound")
 async def postmark_inbound_webhook(
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    services: Tuple[AuthService, WhatsappService] = Depends(get_services),
 ):
     """
     Handles inbound email messages from Postmark.
     Postmark sends JSON payload with email details.
     """
     try:
+        auth_service, whatsapp_service = services
         # Parse JSON payload from Postmark
         payload = await request.json()
         
@@ -372,14 +373,12 @@ async def postmark_inbound_webhook(
             return {"status": "rate_limited"}
         
         # Get or create user by email
-        auth_service = AuthService(db)
         user, is_new = await auth_service.get_or_create_user_by_identity(from_email)
         
         # Ensure user has an email (it should always have one at this point)
         user_identifier = user.email or from_email
         
         # Process message using WhatsappService (unified message handling)
-        whatsapp_service = WhatsappService(db, llm_parser, template_service)
         response_text = await whatsapp_service.handle_message(
             user_id=user.id,
             user_phone=user_identifier,  # Using email as identifier
@@ -389,7 +388,7 @@ async def postmark_inbound_webhook(
         )
         
         # Store threading metadata in the most recent message
-        # Query the last message for this user directly
+        # Query the last message for this user directly via session
         from sqlalchemy import desc
         query = (
             select(Message)
@@ -397,7 +396,7 @@ async def postmark_inbound_webhook(
             .order_by(desc(Message.created_at))
             .limit(1)
         )
-        result = await db.execute(query)
+        result = await auth_service.session.execute(query)
         last_message = result.scalar_one_or_none()
         
         if last_message:
@@ -410,7 +409,7 @@ async def postmark_inbound_webhook(
                 last_message.log_metadata["references"] = references
         
         # Commit transaction
-        await db.commit()
+        await auth_service.session.commit()
         
         # Send response via Postmark
         from src.services.postmark_service import PostmarkService

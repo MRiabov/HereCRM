@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     twilio_auth_token: Optional[str] = None
     twilio_phone_number: Optional[str] = None
 
+    # Postmark Settings
+    postmark_server_token: Optional[str] = None
+    from_email_address: Optional[str] = None
+
     # S3 / Storage Settings
     s3_bucket_name: str = "here-crm-exports"
     s3_endpoint_url: Optional[str] = None
