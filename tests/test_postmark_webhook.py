@@ -3,7 +3,7 @@ Integration tests for Postmark webhook endpoint (WP03)
 """
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import patch, AsyncMock, Mock
+from unittest.mock import patch
 from src.main import app
 
 

@@ -76,8 +76,12 @@ async def test_conversation_state_linkage(test_session: AsyncSession):
     state_repo = ConversationStateRepository(test_session)
     
     # 1. Create state
-    state = await state_repo.get_or_create(user.id)
-    assert state.user_id == user.id
+    state = ConversationState(user_id=user.id)
+    state_repo.add(state)
+    await test_session.flush()
+
+    found_state = await state_repo.get_by_user_id(user.id)
+    assert found_state.user_id == user.id
     
     # 2. Verify link
     res = await test_session.execute(select(User).where(User.id == user.id))
