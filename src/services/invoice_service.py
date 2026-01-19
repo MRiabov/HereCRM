@@ -41,7 +41,7 @@ class InvoiceService:
         # 1. Generate PDF
         try:
             pdf_bytes = self.pdf_generator.generate(job)
-        except Exception as e:
+        except (ValueError, RuntimeError) as e:
             logger.error(f"Failed to generate PDF for job {job.id}: {e}")
             raise RuntimeError(f"PDF generation failed: {e}") from e
 
@@ -59,6 +59,7 @@ class InvoiceService:
         except Exception as e:
             logger.error(f"Unexpected error during S3 upload for job {job.id}: {e}")
             raise
+
 
         # 3. Save to Database
         invoice = Invoice(

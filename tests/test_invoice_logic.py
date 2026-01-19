@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
 from src.services.invoice_service import InvoiceService
 from src.models import Job, Invoice, Customer
-from src.uimodels import SendInvoiceTool
+from src.tools.invoice_tools import SendInvoiceTool
 from src.tool_executor import ToolExecutor
 
 @pytest.fixture
