@@ -60,3 +60,5 @@ The `HelpService` is the brain of the assistant. It needs to gather context (man
 
 - 2026-01-19T17:09:55Z – Antigravity – lane=doing – Starting core logic implementation
 - 2026-01-19T17:10:47Z – Antigravity – lane=for_review – Implementation complete and verified
+- 2026-01-19T19:40:44Z – Antigravity – lane=doing – Started implementation
+- 2026-01-19T19:46:06Z – Antigravity – lane=for_review – Implementation complete with unit tests for HelpService.
