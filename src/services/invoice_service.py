@@ -5,9 +5,8 @@ from sqlalchemy import select, desc
 from datetime import datetime
 
 from src.models import Job, Invoice
-from src.services.storage import S3Service
+from src.services.storage import S3Service, StorageError
 from src.services.pdf_generator import InvoicePDFGenerator
-from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
 
@@ -53,12 +52,9 @@ class InvoiceService:
                 key=filename,
                 content_type="application/pdf"
             )
-        except ClientError as e:
+        except StorageError as e:
             logger.error(f"S3 upload failed for job {job.id}: {e}")
             raise RuntimeError(f"S3 upload failed: {e}") from e
-        except Exception as e:
-            logger.error(f"Unexpected error during S3 upload for job {job.id}: {e}")
-            raise
 
 
         # 3. Save to Database

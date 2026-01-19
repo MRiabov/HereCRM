@@ -7,7 +7,11 @@ from src.tool_executor import ToolExecutor
 
 @pytest.fixture
 def mock_session():
-    return AsyncMock()
+    session = AsyncMock()
+    # add and delete are synchronous in SQLAlchemy AsyncSession
+    session.add = MagicMock()
+    session.delete = MagicMock()
+    return session
 
 @pytest.fixture
 def mock_s3_service():
@@ -90,7 +94,8 @@ async def test_invoice_service_force_regenerate(mock_session, mock_s3_service, m
 async def test_tool_executor_send_invoice(mock_session, mock_s3_service):
     # Setup Executor dependencies
     mock_template_service = MagicMock()
-    executor = ToolExecutor(mock_session, 1, "123", mock_template_service)
+    # ToolExecutor(session, business_id, user_id, user_phone, template_service)
+    executor = ToolExecutor(mock_session, 1, 1, "555555", mock_template_service)
     
     # Mock repositories (via direct attribute access/patch on instance would be better, but executor creates them in __init__)
     # So we need to patch the classes used in ToolExecutor __init__ OR set them after init.
