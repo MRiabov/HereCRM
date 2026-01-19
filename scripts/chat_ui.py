@@ -20,7 +20,7 @@ try:
 except Exception:
     DEFAULT_SECRET = os.getenv("WHATSAPP_APP_SECRET", "dummy_secret")
 
-st.set_page_config(page_title="HereCRM - Text-based CRM", page_icon="💬")
+st.set_page_config(page_title="HereCRM - Text-based CRM", page_icon="src/assets/favicon.webp")
 
 def is_valid_phone(phone: str) -> bool:
     # Basic international format validation: + followed by 1-15 digits
