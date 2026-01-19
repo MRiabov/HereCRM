@@ -1,0 +1,16 @@
+{
+  "accept_commit": null,
+  "acceptance_history": [
+    {
+      "accepted_at": "2026-01-19T21:24:02Z",
+      "accepted_by": "maksym",
+      "accepted_from_commit": "a06d95c91d27c29788f81bf1c2090385fcf0e8f9",
+      "branch": "008-intelligent-product-assistant",
+      "mode": "local"
+    }
+  ],
+  "acceptance_mode": "local",
+  "accepted_at": "2026-01-19T21:24:02Z",
+  "accepted_by": "maksym",
+  "accepted_from_commit": "a06d95c91d27c29788f81bf1c2090385fcf0e8f9"
+}
