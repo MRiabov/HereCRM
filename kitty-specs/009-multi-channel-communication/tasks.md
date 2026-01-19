@@ -11,12 +11,12 @@
 **Priority**: P0 (Foundational)
 **Dependencies**: None
 
-- [ ] T001: Create migration to add `id` (PK) and `email` to `users` table. <!-- id: 0 -->
-- [ ] T002: Migrate existing `users` to have valid IDs and preserve `phone_number`. <!-- id: 1 -->
-- [ ] T003: Update `ConversationState` table to reference `user_id` instead of `phone_number`. <!-- id: 2 -->
-- [ ] T004: Update `Messages` table to reference `user_id` (sender/receiver). <!-- id: 3 -->
-- [ ] T005: Update codebase references to `user.phone_number` primary key usage to `user.id`. <!-- id: 4 -->
-- [ ] T006: Verify data integrity for existing WhatsApp users. <!-- id: 5 -->
+- [X] T001: Create migration to add `id` (PK) and `email` to `users` table. <!-- id: 0 -->
+- [X] T002: Migrate existing `users` to have valid IDs and preserve `phone_number`. <!-- id: 1 -->
+- [X] T003: Update `ConversationState` table to reference `user_id` instead of `phone_number`. <!-- id: 2 -->
+- [X] T004: Update `Messages` table to reference `user_id` (sender/receiver). <!-- id: 3 -->
+- [X] T005: Update codebase references to `user.phone_number` primary key usage to `user.id`. <!-- id: 4 -->
+- [X] T006: Verify data integrity for existing WhatsApp users. <!-- id: 5 -->
 
 **Prompt**: [WP01-data-model-refactor.md](tasks/WP01-data-model-refactor.md)
 
@@ -28,10 +28,10 @@
 **Priority**: P1
 **Dependencies**: WP01
 
-- [ ] T007: Implement `TwilioService` for sending SMS. <!-- id: 6 -->
-- [ ] T008: Implement inbound Webhook handler for Twilio SMS. <!-- id: 7 -->
-- [ ] T009: Link inbound SMS to `User` by `phone_number`. <!-- id: 8 -->
-- [ ] T010: Update basic message routing to support SMS replies. <!-- id: 9 -->
+- [X] T007: Implement `TwilioService` for sending SMS. <!-- id: 6 -->
+- [X] T008: Implement inbound Webhook handler for Twilio SMS. <!-- id: 7 -->
+- [X] T009: Link inbound SMS to `User` by `phone_number`. <!-- id: 8 -->
+- [X] T010: Update basic message routing to support SMS replies. <!-- id: 9 -->
 
 **Prompt**: [WP02-sms-channel-twilio.md](tasks/WP02-sms-channel-twilio.md)
 

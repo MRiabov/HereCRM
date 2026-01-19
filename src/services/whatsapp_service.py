@@ -290,7 +290,7 @@ class WhatsappService:
 
         # Execute
         executor = ToolExecutor(
-            self.session, user.business_id, user.phone_number, self.template_service, user_id=user.id
+            self.session, user.business_id, user.id, user.phone_number or "", self.template_service
         )
         try:
             result, metadata = await executor.execute(tool_call)
@@ -593,7 +593,7 @@ class WhatsappService:
 
         # Execute Modification Tools
         executor = ToolExecutor(
-            self.session, user.business_id, user.phone_number, self.template_service, user_id=user.id
+            self.session, user.business_id, user.id, user.phone_number or "", self.template_service
         )
         try:
             result, _ = await executor.execute(tool_call)
