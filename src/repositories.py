@@ -454,6 +454,14 @@ class ConversationStateRepository:
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
+    async def get_or_create(self, user_id: int) -> ConversationState:
+        state = await self.get_by_user_id(user_id)
+        if not state:
+            state = ConversationState(user_id=user_id)
+            self.add(state)
+            await self.session.flush()
+        return state
+
     def add(self, state: ConversationState):
         self.session.add(state)
 

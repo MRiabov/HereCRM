@@ -4,7 +4,7 @@ import logging
 from typing import Tuple
 from twilio.request_validator import RequestValidator
 
-from fastapi import APIRouter, Depends, HTTPException, Header, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Header, Request, status, Response
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -219,22 +219,24 @@ async def verify_twilio_signature(request: Request):
     
     # Get the URL and params
     # Note: request.url might be http if behind auth-proxy, while Twilio sees https.
-    # This often causes validation failures.
-    # We will try validating against the request URL, and if that fails, try https version.
-    
+    # We try both upfront to handle various proxy/SSL termination setups.
     url = str(request.url)
     form = await request.form()
-    # Twilio Validator expects a dictionary for params
     params = dict(form)
     
-    if not validator.validate(url, params, signature):
-        # Try https if http
-        if url.startswith("http://"):
-             secure_url = url.replace("http://", "https://", 1)
-             if validator.validate(secure_url, params, signature):
-                 return
-
-        logger.warning(f"Invalid Twilio signature. URL: {url}")
+    urls_to_try = [url]
+    if url.startswith("http://"):
+        urls_to_try.append(url.replace("http://", "https://", 1))
+    
+    validated = False
+    for try_url in urls_to_try:
+        if validator.validate(try_url, params, signature):
+            logger.info(f"Twilio signature validated successfully using URL: {try_url}")
+            validated = True
+            break
+            
+    if not validated:
+        logger.warning(f"Invalid Twilio signature. Tried URLs: {urls_to_try}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Twilio Signature"
         )
@@ -253,22 +255,21 @@ async def twilio_webhook(
         body = str(form.get("Body"))
         
         if not from_number or from_number == "None":
-            return {"status": "ignored"}
+            return Response(content='<?xml version="1.0" encoding="UTF-8"?><Response></Response>', media_type="application/xml")
             
         if body is None or body == "None":
-            return {"status": "ignored"}
+            return Response(content='<?xml version="1.0" encoding="UTF-8"?><Response></Response>', media_type="application/xml")
 
         # Rate Limit
         if check_rate_limit(from_number):
-             # For SMS, sending a reply "Too many requests" costs money.
-             # Just ignore or log.
              logger.warning(f"Rate limit exceeded for {from_number} (SMS)")
-             return {"status": "rate_limited"}
+             return Response(content='<?xml version="1.0" encoding="UTF-8"?><Response></Response>', media_type="application/xml")
 
         # Get/Create User
         user, is_new = await auth_service.get_or_create_user(from_number)
         
         # Handle Message
+        # The reply text is sent via TwilioService inside handle_message for SMS channel
         await whatsapp_service.handle_message(
             user_id=user.id,
             user_phone=user.phone_number,
@@ -278,7 +279,9 @@ async def twilio_webhook(
         )
         
         await auth_service.session.commit()
-        return {"status": "ok"}
+        
+        # Return empty TwiML response as we use the Twilio REST API for replies
+        return Response(content='<?xml version="1.0" encoding="UTF-8"?><Response></Response>', media_type="application/xml")
         
     except Exception:
         logger.exception("Twilio webhook processing failed")

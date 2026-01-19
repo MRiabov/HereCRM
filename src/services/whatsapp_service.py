@@ -136,14 +136,16 @@ class WhatsappService:
         )
         self.session.add(assistant_msg)
         
-        # Dispatch SMS immediately if channel is SMS
-        if channel == "sms" and user.phone_number:
+        # Dispatch SMS if channel is SMS or user identity suggests SMS
+        # In multi-channel mode, we should respect the active_channel if it's set
+        effective_channel = state_record.active_channel or channel
+        
+        if effective_channel == "sms" and user.phone_number:
             try:
-                # Note: This might need to be inject via DI in a real app
                 from src.services.twilio_service import TwilioService
-                TwilioService().send_sms(user.phone_number, reply)
+                await TwilioService().send_sms(user.phone_number, reply)
             except Exception as e:
-                self.logger.error(f"Failed to send SMS reply: {e}")
+                self.logger.error(f"Failed to send SMS reply to {user.id}: {e}")
 
         return reply
 

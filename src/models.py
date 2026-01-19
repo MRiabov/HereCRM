@@ -57,6 +57,7 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
+    preferred_channel: Mapped[str] = mapped_column(String, default="whatsapp")
     preferences: Mapped[dict] = mapped_column(
         JSON, default=lambda: {"confirm_by_default": False}
     )
@@ -194,6 +195,8 @@ class ConversationState(Base):
     )
     draft_data: Mapped[Optional[Any]] = mapped_column(JSON)
     last_action_metadata: Mapped[Optional[dict]] = mapped_column(JSON)
+    pending_action_timestamp: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    pending_action_payload: Mapped[Optional[dict]] = mapped_column(JSON)
     active_channel: Mapped[str] = mapped_column(String, default="whatsapp")
     last_updated: Mapped[datetime] = mapped_column(
         DateTime,
