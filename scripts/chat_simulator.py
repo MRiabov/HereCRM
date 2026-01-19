@@ -40,26 +40,25 @@ async def send_message(phone: str, body: str, client: httpx.AsyncClient):
         "Content-Type": "application/json",
     }
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        try:
-            response = await client.post(
-                f"{BASE_URL}/webhook", content=payload_bytes, headers=headers
-            )
-            if response.status_code == 200:
-                data = response.json()
-                return data.get("reply", "No reply received.")
-            else:
-                return f"Error {response.status_code}: {response.text}"
-        except httpx.ReadTimeout:
-            return "Request failed: Timeout (Server took too long to respond - LLM might be slow)"
-        except Exception as e:
-            return f"Request failed: {type(e).__name__}: {e}"
+    try:
+        response = await client.post(
+            f"{BASE_URL}/webhook", content=payload_bytes, headers=headers
+        )
+        if response.status_code == 200:
+            data = response.json()
+            return data.get("reply", "No response.")
+        else:
+            return f"Error {response.status_code}: {response.text}"
+    except httpx.ReadTimeout:
+        return "Request failed: Timeout (Server took too long to respond)"
+    except Exception as e:
+        return f"Request failed: {type(e).__name__}: {e}"
 
 
 async def main():
-    print("=== WhatsApp AI CRM Full-Stack Simulator ===")
+    print("=== HereCRM - Text-based CRM CLI ===")
     print(f"Targeting: {BASE_URL}")
-    print(f"Using Secret: {'***' if SECRET else 'MISSING'}")
+    print(f"Auth: {'Enabled' if SECRET else 'Disabled'}")
     print("Type 'exit' to quit, 'switch' to change phone number.\n")
 
     current_phone = DEFAULT_PHONE
@@ -77,7 +76,7 @@ async def main():
             if user_input.lower() == "switch":
                 new_phone = input("Enter new phone number: ").strip()
                 if new_phone:
-                    current_phone = new_phone
+                    current_phone = "".join(c for c in new_phone if c.isdigit() or c == "+")
                 continue
 
             if not user_input:
@@ -92,3 +91,4 @@ if __name__ == "__main__":
         asyncio.run(main())
     except KeyboardInterrupt:
         print("\nExiting...")
+

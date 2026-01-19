@@ -4,7 +4,7 @@ import logging
 from typing import Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Header, Request, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,8 +28,16 @@ logger = logging.getLogger(__name__)
 class WebhookPayload(BaseModel):
     from_number: str = Field(..., max_length=20, pattern=r"^\+?[1-9]\d{1,14}$")
     body: str = Field(..., max_length=1000)
-    media_url: str = Field(None, max_length=500)
-    media_type: str = Field(None, max_length=50)
+    media_url: str = Field("", max_length=500)
+    media_type: str = Field("", max_length=50)
+
+    @field_validator("from_number", mode="before")
+    @classmethod
+    def normalize_phone(cls, v: str) -> str:
+        if isinstance(v, str):
+            # Strip spaces, dashes, and parentheses
+            return "".join(c for c in v if c.isdigit() or c == "+")
+        return v
 
 
 async def verify_signature(request: Request, x_hub_signature_256: str = Header(None)):
