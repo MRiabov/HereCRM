@@ -1,11 +1,12 @@
 ---
 work_package_id: WP02
 title: Help Service Logic
-lane: planned
+lane: "for_review"
 subtasks:
   - T005
   - T006
   - T007
+agent: "Antigravity"
 ---
 
 # WP02: Help Service Logic
@@ -54,3 +55,8 @@ The `HelpService` is the brain of the assistant. It needs to gather context (man
 - `HelpService` can load the manual.
 - `get_chat_history` returns the correct list of recent messages.
 - `construct_help_prompt` produces a prompt containing the manual and the conversation history.
+
+## Activity Log
+
+- 2026-01-19T17:09:55Z – Antigravity – lane=doing – Starting core logic implementation
+- 2026-01-19T17:10:47Z – Antigravity – lane=for_review – Implementation complete and verified
