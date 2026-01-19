@@ -1,0 +1,29 @@
+openapi: 3.0.0
+info:
+  title: Intelligent Product Assistant
+  version: 1.0.0
+paths:
+  /help:
+    post:
+      summary: Get help response from the assistant
+      description: Orchestrates RAG over product manual and user history.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_phone:
+                  type: string
+                query:
+                  type: string
+                channel:
+                  type: string
+                  enum: [whatsapp, email, sms]
+      responses:
+        '200':
+          description: A text response from the assistant
+          content:
+            text/plain:
+              schema:
+                type: string

@@ -178,7 +178,14 @@ class WhatsappService:
                 
             # Handle HelpTool separately (skip confirmation)
             if isinstance(tool_call, HelpTool):
-                return self._generate_help_message()
+                from src.services.help_service import HelpService
+                help_service = HelpService(self.session, self.parser)
+                return await help_service.generate_help_response(
+                    user_query=text,
+                    business_id=user.business_id,
+                    phone_number=user.phone_number,
+                    channel="whatsapp"
+                )
 
             # Store draft and transition to WAITING_CONFIRM
             state_record.draft_data = {

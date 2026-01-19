@@ -1,6 +1,9 @@
-from typing import Optional
+from typing import Optional, Dict
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import BaseModel
+import yaml
+import os
 
 # Load .env file explicitly
 load_dotenv()
@@ -30,4 +33,31 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
+
+class ChannelSettings(BaseModel):
+    max_length: int
+    style: str
+
+class ChannelsConfig(BaseModel):
+    channels: Dict[str, ChannelSettings]
+
+def load_channels_config() -> ChannelsConfig:
+    # Get the directory of the current file
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(current_dir, "assets", "channels.yaml")
+    
+    if not os.path.exists(config_path):
+        # Default configuration if file is missing
+        return ChannelsConfig(channels={
+            "whatsapp": ChannelSettings(max_length=150, style="concise"),
+            "email": ChannelSettings(max_length=1000, style="detailed")
+        })
+        
+    with open(config_path, "r") as f:
+        data = yaml.safe_load(f)
+        return ChannelsConfig(channels={
+            k: ChannelSettings(**v) for k, v in data.items()
+        })
+
 settings = Settings()
+channels_config = load_channels_config()

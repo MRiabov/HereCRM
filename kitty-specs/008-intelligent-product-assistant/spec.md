@@ -65,7 +65,7 @@ As a user, I want to ask "What can I do?" or "Show me what you can do" so that I
 - **FR-002**: Assistant MUST use RAG or prompt-injection over a markdown documentation file (`manual.md`).
 - **FR-003**: System MUST fetch the last 5 messages (user and assistant) and their associated metadata (tool calls, error logs) from the database to provide context.
 - **FR-004**: Assistant MUST be able to explain failed parsing attempts (when `LLMParser` returns `error_unclear_input` or a clarification request).
-- **FR-005**: Assistant MUST provide concise responses suitable for WhatsApp (limit length, avoid complex formatting).
+- **FR-005**: Assistant MUST adapt response length and formatting to the active channel (SMS, Email, WhatsApp, etc.), respecting a configurable integer max/desired length for each channel (e.g., brief for SMS, detailed for Email).
 - **FR-006**: Assistant MUST prioritize information from the product manual for "how-to" queries.
 - **FR-007**: System MUST provide a `HelpTool` that triggers this assistant flow.
 
@@ -80,5 +80,5 @@ As a user, I want to ask "What can I do?" or "Show me what you can do" so that I
 
 - **SC-001**: Assistant correctly identifies the cause of 4 out of 5 common parsing failures in test sets.
 - **SC-002**: Answers to "How-To" questions are strictly derived from the manual (no hallucination of unsupported features).
-- **SC-003**: Help responses are delivered within 5 seconds of the user's request.
+- **SC-003**: Help responses are delivered within 2 seconds of the user's request.
 - **SC-004**: User "re-try" success rate increases (users successfully format requests after being told why they failed).

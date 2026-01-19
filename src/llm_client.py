@@ -304,6 +304,23 @@ class LLMParser:
         
         return None
 
+    async def chat_completion(
+        self, messages: list[dict], model: Optional[str] = None
+    ) -> str:
+        """
+        Generates a direct text response from the LLM without tool calling.
+        """
+        response = await self.client.chat.completions.create(
+            model=model or self.model,
+            messages=messages,
+            extra_body={
+                "provider": {
+                    "sort": "throughput",
+                }
+            },
+        )
+        return response.choices[0].message.content or ""
+
     async def parse_data_management(
         self, text: str
     ) -> Optional[Union[ExportQueryTool, ExitDataManagementTool]]:
