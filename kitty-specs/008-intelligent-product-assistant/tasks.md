@@ -24,9 +24,9 @@ Total Subtasks: 14
 **Goal**: Implement the core RAG logic to fetch history, load manual, and construct the context-aware prompt.
 **Priority**: P1 (Core Logic)
 
-- [ ] **T005**: Create `src/services/help_service.py` and implement `load_manual` and `load_channel_config`. [P]
-- [ ] **T006**: Implement `get_chat_history` method in `HelpService` to retrieve last 5 `Message` records for a given user/business using SQLAlchemy.
-- [ ] **T007**: Implement `construct_help_prompt` method to combine system instructions, manual content, and chat history into a prompt string. [P]
+- [x] **T005**: Create `src/services/help_service.py` and implement `load_manual` and `load_channel_config`. [P] (See: [WP02-help-service.md](tasks/WP02-help-service.md))
+- [x] **T006**: Implement `get_chat_history` method in `HelpService` to retrieve last 5 `Message` records for a given user/business using SQLAlchemy.
+- [x] **T007**: Implement `construct_help_prompt` method to combine system instructions, manual content, and chat history into a prompt string. [P]
 
 ### WP03: Integration & Execution (Feature)
 

@@ -4,12 +4,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, desc
 from src.models import Message, MessageRole
 from src.config import channels_config
-from src.llm_client import parser
+from src.llm_client import LLMParser
 import logging
 
 class HelpService:
-    def __init__(self, db_session: AsyncSession):
+    def __init__(self, db_session: AsyncSession, llm_client: LLMParser):
         self.db_session = db_session
+        self.llm_client = llm_client
         self.logger = logging.getLogger(__name__)
         self._manual_cache: Optional[str] = None
 
@@ -101,7 +102,7 @@ class HelpService:
             
         return messages
 
-    async def generate_help_response(self, business_id: int, phone_number: str, channel: str) -> str:
+    async def generate_help_response(self, user_query: str, business_id: int, phone_number: str, channel: str = "whatsapp") -> str:
         """
         Main entry point for generating a help response:
         1. Fetch history
@@ -109,6 +110,17 @@ class HelpService:
         3. Call LLM
         """
         history = await self.get_chat_history(business_id, phone_number)
+        
+        # Ensure the current user_query is the last message if not already in history
+        # (Compare by body to avoid redundancy)
+        if not history or history[-1].body != user_query:
+            # We don't want to mutate the history from DB, so we'll just handle it in prompt construction
+            pass
+
         prompt_messages = self.construct_help_prompt(history, channel)
         
-        return await parser.chat_completion(prompt_messages)
+        # If the last message in prompt_messages is not the user_query, append it
+        if prompt_messages[-1]["role"] != "user" or prompt_messages[-1]["content"] != user_query:
+             prompt_messages.append({"role": "user", "content": user_query})
+
+        return await self.llm_client.chat_completion(prompt_messages)
