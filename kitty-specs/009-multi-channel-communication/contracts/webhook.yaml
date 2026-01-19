@@ -1,0 +1,37 @@
+openapi: 3.0.0
+info:
+  title: Generic Webhook API
+  version: 1.0.0
+paths:
+  /api/webhooks/generic:
+    post:
+      summary: Ingest a message from an external system
+      operationId: receiveWebhookMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - identity
+                - content
+              properties:
+                channel_type:
+                  type: string
+                  default: webhook
+                  description: Source of the message
+                identity:
+                  type: string
+                  description: Email or Phone number to identify the user
+                content:
+                  type: string
+                  description: The message text
+                metadata:
+                  type: object
+                  description: Arbitrary metadata to store with the message
+      responses:
+        '200':
+          description: Message received
+        '400':
+          description: Invalid payload

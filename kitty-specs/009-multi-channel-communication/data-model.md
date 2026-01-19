@@ -1,32 +1,45 @@
-# Data Model Changes
+# Data Model: Multi-channel Communication
 
 ## User Model Refactor
 
-- **PK**: Change from `phone_number` (String) to `id` (Integer/Auto-increment).
-- **New Fields**:
-  - `email` (String, nullable, unique)
-  - `phone_number` (String, nullable, unique) - *Existing, but effectively changing semantic usage.*
-  - `channel_preferences` (JSON) - To store preferred channel if multiple exist? (Maybe YAGNI for now).
+- **PK**: `id` (Integer, Auto-increment/Serial).
+- **Identity Fields**:
+  - `phone_number` (String, nullable, unique, indexed)
+  - `email` (String, nullable, unique, indexed)
+  - *Constraint*: At least one of `phone_number` or `email` must be present.
+- **Preferences**:
+  - `preferred_channel` (Enum: 'whatsapp', 'sms', 'email') - Defaults to the channel of first contact.
 
 ## Schema Updates
 
 ### Users Table
 
 ```sql
-ALTER TABLE users ADD COLUMN id INTEGER PRIMARY KEY AUTOINCREMENT;
--- Migration will need to handle migrating existing PKs to the new ID structure
--- and keeping phone_number as a standard unique column.
+ALTER TABLE users ADD COLUMN id SERIAL PRIMARY KEY;
 ALTER TABLE users ADD COLUMN email VARCHAR(255) UNIQUE;
+ALTER TABLE users ADD COLUMN preferred_channel VARCHAR(50) DEFAULT 'whatsapp';
+-- Migration Note: Ensure existing users get IDs and preserve phone_number.
 ```
 
 ### Conversation State
 
-- Needs to link to `user_id` instead of `phone_number`.
+- **New Columns**:
+  - `active_channel` (VARCHAR) - Tracks which channel the current conversation flow is using.
+  - `pending_action_timestamp` (TIMESTAMP) - For auto-confirmation logic.
+  - `pending_action_payload` (JSON) - Stores the tool call to be executed.
 
 ### Messages
 
-- Needs migration to refer to `user_id` or link via polymorphic association (or just keep string `from_identity` / `to_identity` and type? No, better to link to User ID).
+- **FK Update**: `user_id` (Integer) replacing `phone_number` as the foreign key to `Users`.
+- **New Columns**:
+  - `channel_type` (VARCHAR) - 'whatsapp', 'sms', 'email', 'webhook'.
+  - `external_id` (VARCHAR) - Twilio SID / Postmark MessageID.
 
-## New Config/Entities
+## Configuration (File-based / Env)
 
-- No new database tables explicitly planned for Channel Config (YAML based), but `ConversationState` might need to track the `active_channel`.
+Defined in YAML/Env, not DB, per spec.
+
+- `CHANNELS_CONFIG`:
+  - `sms`: { provider: 'twilio', auto_confirm: true, timeout: 45, max_len: 160 }
+  - `email`: { provider: 'postmark', auto_confirm: true, timeout: 45, max_len: 2000 }
+  - `whatsapp`: { provider: 'meta', auto_confirm: false }
