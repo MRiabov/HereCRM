@@ -14,10 +14,10 @@ Total Subtasks: 14
 **Goal**: Establish the configuration headers and base classes required for channel-specific behavior and raw LLM text generation.
 **Priority**: P0 (Blocker)
 
-- [ ] **T001**: Create `src/assets/channels.yaml` with default response length configurations for `whatsapp` and `email`. [P]
-- [ ] **T002**: Implement `ChannelConfig` loader in `src/config.py` to parse `channels.yaml`. [P]
-- [ ] **T003**: Update `LLMClient` in `src/llm_client.py` to add `chat_completion` method for non-tool-calling text generation.
-- [ ] **T004**: Provision `src/assets/manual.md` by copying content from `kitty-specs/008-intelligent-product-assistant/manual.md`.
+- [x] **T001**: Create `src/assets/channels.yaml` with default response length configurations for `whatsapp` and `email`. [P]
+- [x] **T002**: Implement `ChannelConfig` loader in `src/config.py` to parse `channels.yaml`. [P]
+- [x] **T003**: Update `LLMClient` in `src/llm_client.py` to add `chat_completion` method for non-tool-calling text generation.
+- [x] **T004**: Provision `src/assets/manual.md` by copying content from `kitty-specs/008-intelligent-product-assistant/manual.md`.
 
 ### WP02: Help Service Logic (Foundation)
 
