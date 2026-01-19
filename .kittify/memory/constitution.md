@@ -19,10 +19,11 @@ The project relies on LLMs for text parsing and understanding user intent.
 - **Do** validate LLM outputs using Pydantic models to ensure data integrity.
 - **Do** validate the outputs and if the LLM failed, retry processing.
 
-### 2. Mandatory User Confirmation
+### 2. Intent Transparency and Control
 
-For all significant operations, the system must explicitly verify user intent before execution.
+The system must prioritize transparency and user control while balancing communication efficiency.
 
-- **Scope**: All write operations (create, update, delete) and complex read operations (e.g., broad semantic searches).
-- **Mechanism**: The user must be asked "Is this what you want?" (or equivalent) before the action is finalized.
-- **Goal**: Prevent unintended side effects and ensure alignment with user expectations.
+- **Notification**: The user must be notified (explicitly or implicitly) about what the LLM interpreted from their message.
+- **Cancelability**: Users must always have a clear path to cancel or rectify an action if the interpretation was incorrect.
+- **Channel Optimization**: Explicit "Is this what you want?" confirmations are optional and configurable per channel. High-cost channels (e.g., SMS) should favor implicit notification with "Edit/Cancel" options to minimize message overhead.
+- **Goal**: Prevent unintended side effects without imposing unnecessary friction or cost on the user.
