@@ -3,12 +3,19 @@
 # DO NOT EDIT MANUALLY
 
 spec_kitty:
-  version: 0.10.13
+  version: 0.11.1
   initialized_at: '2026-01-13T09:12:34.606624'
-  last_upgraded_at: null
+  last_upgraded_at: '2026-01-19T16:25:08.312826'
 environment:
   python_version: 3.12.3
   platform: linux
   platform_version: Linux-6.14.0-37-generic-x86_64-with-glibc2.39
 migrations:
-  applied: []
+  applied:
+  - id: 0.11.0_workspace_per_wp
+    applied_at: '2026-01-19T16:25:08.312808'
+    result: success
+    notes: Updated /home/maksym/Work/proj/HereCRM/.worktrees/008-intelligent-product-assistant/.kittify/missions/software-dev/command-templates/specify.md;
+      Updated /home/maksym/Work/proj/HereCRM/.worktrees/008-intelligent-product-assistant/.kittify/missions/software-dev/command-templates/plan.md;
+      Updated /home/maksym/Work/proj/HereCRM/.worktrees/008-intelligent-product-assistant/.kittify/missions/software-dev/command-templates/tasks.md;
+      Updated /home/maksym/Work/proj/HereCRM/.worktrees/008-intelligent-product-assistant/.kittify/missions/software-dev/command-templates/implement.md
