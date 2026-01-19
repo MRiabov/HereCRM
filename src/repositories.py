@@ -1,5 +1,5 @@
 from sqlalchemy import select, or_, and_, event, func
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, contains_eager
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Generic, TypeVar, Type, Optional, List, Any
 from datetime import datetime
@@ -371,24 +371,32 @@ class JobRepository(BaseRepository[Job]):
         if max_date:
             conditions.append(date_column <= max_date)
 
-        stmt = select(Job).options(joinedload(Job.customer), joinedload(Job.line_items)).where(and_(*conditions))
+        # Spatial Filtering Optimization
+        if center_lat is not None and center_lon is not None and radius:
+            deg_rad = math.degrees(radius / 6371000)
+            lat_min, lat_max = center_lat - deg_rad, center_lat + deg_rad
+            lon_delta = deg_rad / math.cos(math.radians(center_lat)) if abs(center_lat) < 89 else 180
+            lon_min, lon_max = center_lon - lon_delta, center_lon + lon_delta
+
+            eff_lat, eff_lon = func.coalesce(Job.latitude, Customer.latitude), func.coalesce(Job.longitude, Customer.longitude)
+            conditions.append(eff_lat.between(lat_min, lat_max))
+            conditions.append(eff_lon.between(lon_min, lon_max))
+
+            stmt = select(Job).outerjoin(Job.customer).options(
+                contains_eager(Job.customer), joinedload(Job.line_items)
+            ).where(and_(*conditions))
+        else:
+            stmt = select(Job).options(joinedload(Job.customer), joinedload(Job.line_items)).where(and_(*conditions))
+
         result = await self.session.execute(stmt)
         jobs = list(result.scalars().unique().all())
 
-        # Spatial Filtering (Python-side)
+        # Fine-grained Spatial Filtering (Python-side)
         if center_lat is not None and center_lon is not None and radius:
             filtered = []
             for j in jobs:
-                # Prioritize job location if available, else fallback to customer location?
-                # The model has Job.latitude/longitude.
-                # If job has no specific location, should we use customer? 
-                # Plan says "JobRepository Spatial Filter". Let's stick to Job lat/lon for now.
                 j_lat, j_lon = j.latitude, j.longitude
                 
-                # Fallback to customer location if job location is missing? 
-                # "Users need to find things 'near X'". Often a job is at the customer's home.
-                # But Job model has its own lat/lon. If null, it might mean it wasn't geocoded or it's remote?
-                # Let's check if the Job model has customer relation loaded. Yes joinedload(Job.customer).
                 if j_lat is None or j_lon is None:
                     if j.customer and j.customer.latitude is not None and j.customer.longitude is not None:
                         j_lat, j_lon = j.customer.latitude, j.customer.longitude
