@@ -8,6 +8,7 @@ from src.repositories import (
     UserRepository,
     ServiceRepository,
 )
+from src.events import event_bus
 from src.services.crm_service import CRMService
 from src.services.invoice_service import InvoiceService
 from src.services.template_service import TemplateService
@@ -351,8 +352,6 @@ class ToolExecutor:
             line_items=inferred_items,
             postal_code=postal_code if 'postal_code' in locals() else None,
         )
-        await self.session.flush()
-
         price_info = f" – €{job.value}" if job.value else " – No price"
         line_items_summary = ""
         if tool.line_items and job.line_items:
@@ -405,25 +404,24 @@ class ToolExecutor:
                 )
 
         if job:
-            # Update scheduled_at if iso_time is provided
+            # Use CRMService to update and emit event
+            crm_service = CRMService(self.session, self.business_id)
+            scheduled_at = None
             if tool.iso_time:
                 from datetime import datetime
-
                 try:
-                    job.scheduled_at = datetime.fromisoformat(
+                    scheduled_at = datetime.fromisoformat(
                         tool.iso_time.replace("Z", "+00:00")
                     )
                 except ValueError:
-                    pass  # Fallback to NL description if parsing fails
+                    pass
 
-            # For now, we store natural language in description if parsing fails
-            # In a real app we'd use a dedicated library like dateparser
-            job.status = "scheduled"
-            # We still keep it in description for the user to see exactly what was parsed
-            if job.description and "(Scheduled:" not in job.description:
-                job.description = f"{job.description} (Scheduled: {tool.time})"
-            elif not job.description:
-                job.description = f"(Scheduled: {tool.time})"
+            job = await crm_service.update_job(
+                job_id=job.id,
+                scheduled_at=scheduled_at,
+                description=f"{job.description} (Scheduled: {tool.time})" if job.description and "(Scheduled:" not in job.description else job.description or f"(Scheduled: {tool.time})",
+                status="scheduled"
+            )
 
             return self.template_service.render(
                 "job_scheduled", name=job.customer.name, time=tool.time

@@ -220,7 +220,6 @@ class Invoice(Base):
     # Relationships
     job: Mapped["Job"] = relationship(back_populates="invoices")
 
-
 class MessageRole(str, enum.Enum):
     USER = "user"
     ASSISTANT = "assistant"
@@ -281,4 +280,35 @@ class ExportRequest(Base):
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="export_requests")
+
+
+
+class MessageType(str, enum.Enum):
+    WHATSAPP = "whatsapp"
+    SMS = "sms"
+
+
+class MessageStatus(str, enum.Enum):
+    PENDING = "pending"
+    SENT = "sent"
+    FAILED = "failed"
+
+
+class MessageLog(Base):
+    __tablename__ = "message_logs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    recipient_phone: Mapped[str] = mapped_column(String, index=True)
+    content: Mapped[str] = mapped_column(Text)
+    message_type: Mapped[MessageType] = mapped_column(SAEnum(MessageType))
+    status: Mapped[MessageStatus] = mapped_column(
+        SAEnum(MessageStatus), default=MessageStatus.PENDING
+    )
+    trigger_source: Mapped[str] = mapped_column(String)
+    external_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+    sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
