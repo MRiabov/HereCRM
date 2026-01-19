@@ -1,17 +1,17 @@
 import pytest
 import asyncio
 
-from src.services.event_bus import event_bus
+from src.events import event_bus
 from src.services.messaging_service import MessagingService
-from src.events import JobBookedEvent, JobScheduledEvent, OnMyWayEvent
 from src.models import MessageLog, MessageStatus, Business, Customer
 from src.database import get_db
+from datetime import datetime, timezone
 
 
 @pytest.mark.asyncio
-async def test_event_bus_integration_job_booked():
+async def test_event_bus_integration_job_created():
     """
-    Integration test: Emit JobBookedEvent and verify MessagingService picks it up.
+    Integration test: Emit JOB_CREATED and verify MessagingService picks it up.
     """
     # Create a new MessagingService instance for this test
     service = MessagingService()
@@ -38,15 +38,15 @@ async def test_event_bus_integration_job_booked():
         await db.commit()
         await db.refresh(customer)
         
-        # Emit a JobBookedEvent
-        event = JobBookedEvent(
-            job_id=123,
-            customer_id=customer.id,
-            business_id=business.id,
-            description="Test integration job",
-        )
+        # Emit a JOB_CREATED event
+        event_name = "JOB_CREATED"
+        data = {
+            "job_id": 123,
+            "customer_id": customer.id,
+            "business_id": business.id,
+        }
         
-        await event_bus.emit(event)
+        await event_bus.emit(event_name, data)
         break
     
     # Wait for async processing
@@ -61,8 +61,9 @@ async def test_event_bus_integration_job_booked():
     
     # Query database to verify MessageLog was created
     async for db in __import__("src.database", fromlist=["get_db"]).get_db():
+        from sqlalchemy import select
         result = await db.execute(
-            __import__("sqlalchemy", fromlist=["select"]).select(MessageLog).where(
+            select(MessageLog).where(
                 MessageLog.trigger_source == "job_booked"
             )
         )
@@ -73,7 +74,7 @@ async def test_event_bus_integration_job_booked():
         
         # Verify the message content
         latest_log = message_logs[-1]
-        assert "123" in latest_log.content or "job" in latest_log.content.lower()
+        assert "123" in latest_log.content
         assert latest_log.status == MessageStatus.SENT
         break
 
@@ -81,10 +82,8 @@ async def test_event_bus_integration_job_booked():
 @pytest.mark.asyncio
 async def test_event_bus_integration_job_scheduled():
     """
-    Integration test: Emit JobScheduledEvent and verify MessagingService picks it up.
+    Integration test: Emit JOB_SCHEDULED and verify MessagingService picks it up.
     """
-    from datetime import datetime, timezone
-    
     service = MessagingService()
     service.register_handlers()
     await service.start()
@@ -105,15 +104,16 @@ async def test_event_bus_integration_job_scheduled():
         await db.commit()
         await db.refresh(customer)
         
-        # Emit a JobScheduledEvent
-        event = JobScheduledEvent(
-            job_id=123,
-            customer_id=customer.id,
-            business_id=business.id,
-            scheduled_at=datetime(2026, 1, 15, 14, 30, tzinfo=timezone.utc),
-        )
+        # Emit a JOB_SCHEDULED event
+        event_name = "JOB_SCHEDULED"
+        data = {
+            "job_id": 123,
+            "customer_id": customer.id,
+            "business_id": business.id,
+            "scheduled_at": datetime(2026, 1, 15, 14, 30, tzinfo=timezone.utc).isoformat(),
+        }
         
-        await event_bus.emit(event)
+        await event_bus.emit(event_name, data)
         break
     
     # Wait for async processing
@@ -126,8 +126,9 @@ async def test_event_bus_integration_job_scheduled():
     
     # Query database to verify MessageLog was created
     async for db in __import__("src.database", fromlist=["get_db"]).get_db():
+        from sqlalchemy import select
         result = await db.execute(
-            __import__("sqlalchemy", fromlist=["select"]).select(MessageLog).where(
+            select(MessageLog).where(
                 MessageLog.trigger_source == "job_scheduled"
             )
         )
@@ -143,7 +144,7 @@ async def test_event_bus_integration_job_scheduled():
 @pytest.mark.asyncio
 async def test_event_bus_integration_on_my_way():
     """
-    Integration test: Emit OnMyWayEvent and verify MessagingService picks it up.
+    Integration test: Emit ON_MY_WAY and verify MessagingService picks it up.
     """
     service = MessagingService()
     service.register_handlers()
@@ -165,14 +166,15 @@ async def test_event_bus_integration_on_my_way():
         await db.commit()
         await db.refresh(customer)
         
-        # Emit an OnMyWayEvent
-        event = OnMyWayEvent(
-            customer_id=customer.id,
-            business_id=business.id,
-            eta_minutes=20,
-        )
+        # Emit an ON_MY_WAY event
+        event_name = "ON_MY_WAY"
+        data = {
+            "customer_id": customer.id,
+            "business_id": business.id,
+            "eta_minutes": 20,
+        }
         
-        await event_bus.emit(event)
+        await event_bus.emit(event_name, data)
         break
     
     # Wait for async processing
@@ -185,8 +187,9 @@ async def test_event_bus_integration_on_my_way():
     
     # Query database to verify MessageLog was created
     async for db in __import__("src.database", fromlist=["get_db"]).get_db():
+        from sqlalchemy import select
         result = await db.execute(
-            __import__("sqlalchemy", fromlist=["select"]).select(MessageLog).where(
+            select(MessageLog).where(
                 MessageLog.trigger_source == "on_my_way"
             )
         )
@@ -205,8 +208,6 @@ async def test_multiple_events_concurrent_processing():
     """
     Integration test: Emit multiple events and verify all are processed.
     """
-    from datetime import datetime, timezone
-    
     service = MessagingService()
     service.register_handlers()
     await service.start()
@@ -231,21 +232,15 @@ async def test_multiple_events_concurrent_processing():
         for c in customers:
             await db.refresh(c)
             
-        # Emit multiple events concurrently
-        events = [
-            JobBookedEvent(job_id=1, customer_id=customers[0].id, business_id=business.id),
-            JobScheduledEvent(
-                job_id=2,
-                customer_id=customers[1].id,
-                business_id=business.id,
-                scheduled_at=datetime.now(timezone.utc),
-            ),
-            OnMyWayEvent(customer_id=customers[2].id, business_id=business.id, eta_minutes=10),
-        ]
-        
-        # Emit all events
-        for event in events:
-            await event_bus.emit(event)
+        # Emit multiple events
+        await event_bus.emit("JOB_CREATED", {"job_id": 1, "customer_id": customers[0].id, "business_id": business.id})
+        await event_bus.emit("JOB_SCHEDULED", {
+                "job_id": 2,
+                "customer_id": customers[1].id,
+                "business_id": business.id,
+                "scheduled_at": datetime.now(timezone.utc).isoformat(),
+            })
+        await event_bus.emit("ON_MY_WAY", {"customer_id": customers[2].id, "business_id": business.id, "eta_minutes": 10})
         break
     
     # Wait for all messages to be processed
@@ -258,7 +253,8 @@ async def test_multiple_events_concurrent_processing():
     
     # Query database to verify all MessageLogs were created
     async for db in __import__("src.database", fromlist=["get_db"]).get_db():
-        result = await db.execute(__import__("sqlalchemy", fromlist=["select"]).select(MessageLog))
+        from sqlalchemy import select
+        result = await db.execute(select(MessageLog))
         message_logs = result.scalars().all()
         
         # Should have at least 3 message logs

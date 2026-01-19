@@ -56,8 +56,8 @@ async def async_session():
     # Dispose engine
     await engine_sqlite.dispose()
 
-# Global engine disposal at the end
-@pytest.fixture(scope="session", autouse=True)
+# Global engine disposal after each test
+@pytest.fixture(scope="function", autouse=True)
 async def dispose_engine():
     yield
     await engine.dispose()
