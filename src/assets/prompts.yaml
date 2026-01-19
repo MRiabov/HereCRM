@@ -117,6 +117,8 @@ tool_descriptions:
       -> SearchTool(query="pending", status="pending", entity_type="job")
     - User: "Who is at 123 Main St?"
       -> SearchTool(query="123 Main St")
+    - User: "Show details for John's last job"
+      -> SearchTool(query="John", detailed=True, entity_type="job")
 
   UpdateSettingsTool: |
     Update user preferences or business settings.

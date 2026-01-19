@@ -131,6 +131,10 @@ class SearchService:
 
         if extras:
             base += " - " + "; ".join(extras)
+        
+        if hasattr(j, 'line_items') and j.line_items:
+            from src.services.chat_utils import format_line_items
+            base += f"\n{format_line_items(j.line_items)}"
             
         return base
 
