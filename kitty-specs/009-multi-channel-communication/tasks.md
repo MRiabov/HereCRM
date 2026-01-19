@@ -43,10 +43,10 @@
 **Priority**: P1
 **Dependencies**: WP01
 
-- [ ] T011: Implement `PostmarkService` for sending Emails. <!-- id: 10 -->
-- [ ] T012: Implement inbound Webhook handler for Postmark (parse JSON). <!-- id: 11 -->
-- [ ] T013: Link inbound Email to `User` by `email` address. Create user if new (optional? verify spec). <!-- id: 12 -->
-- [ ] T014: Handle email threading headers (In-Reply-To, References). <!-- id: 13 -->
+- [X] T011: Implement `PostmarkService` for sending Emails. <!-- id: 10 -->
+- [X] T012: Implement inbound Webhook handler for Postmark (parse JSON). <!-- id: 11 -->
+- [X] T013: Link inbound Email to `User` by `email` address. Create user if new (optional? verify spec). <!-- id: 12 -->
+- [X] T014: Handle email threading headers (In-Reply-To, References). <!-- id: 13 -->
 
 **Prompt**: [WP03-email-channel-postmark.md](tasks/WP03-email-channel-postmark.md)
 
