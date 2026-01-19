@@ -32,3 +32,25 @@ class AuthService:
         await self.session.flush()
 
         return user, True
+
+    async def get_or_create_user_by_identity(self, identity: str) -> tuple[User, bool]:
+        """
+        Identify user by email or phone.
+        """
+        if "@" in identity:
+            user = await self.user_repo.get_by_email(identity)
+            if user:
+                return user, False
+            
+            # Create new Business and User by email
+            business = Business(name=f"Business of {identity}")
+            self.session.add(business)
+            await self.session.flush()
+            
+            user = User(email=identity, business_id=business.id, role="owner")
+            self.user_repo.add(user)
+            await self.session.flush()
+            return user, True
+        else:
+            return await self.get_or_create_user(identity)
+

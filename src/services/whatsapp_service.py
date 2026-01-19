@@ -52,23 +52,35 @@ class WhatsappService:
 
     async def handle_message(
         self,
-        user_phone: str,
         message_text: str,
+        user_id: Optional[int] = None,
+        user_phone: Optional[str] = None,
         channel: str = "whatsapp",
         is_new_user: bool = False,
         media_url: Optional[str] = None,
         media_type: Optional[str] = None,
     ) -> str:
-        # 1. Identify User/Business (Placeholder for WP04 logic)
-        user = await self.user_repo.get_by_phone(user_phone)
+        print(f"DEBUG: handle_message entered. user_id={user_id}, user_phone={user_phone}, channel={channel}")
+        # 1. Identify User
+        if user_id:
+            user = await self.user_repo.get_by_id(user_id)
+        elif user_phone:
+            user = await self.user_repo.get_by_phone(user_phone)
+        else:
+            return self.template_service.render("error_user_required")
+
         if not user:
             return self.template_service.render("error_user_required")
+
+        # Use the identity they chose for this message as the "from_number" 
+        # (could be their email if via generic webhook)
+        active_identity = user_phone or user.phone_number or user.email or "unknown"
 
         # Log User Message
         user_msg = Message(
             business_id=user.business_id,
             user_id=user.id,
-            from_number=user_phone,
+            from_number=active_identity,
             body=message_text,
             role=MessageRole.USER,
             channel_type=channel
@@ -91,33 +103,32 @@ class WhatsappService:
         # 3. State Machine Logic
         reply = ""
 
-        # 3. State Machine Logic
         if is_new_user:
-            self.logger.info(f"New user onboarding for {user_phone}")
+            self.logger.info(f"New user onboarding for {active_identity}")
             reply = self.template_service.render("welcome_message")
         
         # If reply is already set (e.g. welcome message), skip state check
         if not reply:
             if state_record.state == ConversationStatus.WAITING_CONFIRM:
-                self.logger.info(f"User {user_phone} in WAITING_CONFIRM mode")
+                self.logger.info(f"User {user.id} in WAITING_CONFIRM mode")
                 reply = await self._handle_waiting_confirm(user, state_record, message_text)
             elif state_record.state == ConversationStatus.SETTINGS:
-                self.logger.info(f"User {user_phone} in SETTINGS mode")
+                self.logger.info(f"User {user.id} in SETTINGS mode")
                 reply = await self._handle_settings(user, state_record, message_text)
             elif state_record.state == ConversationStatus.DATA_MANAGEMENT:
-                self.logger.info(f"User {user_phone} in DATA_MANAGEMENT mode")
+                self.logger.info(f"User {user.id} in DATA_MANAGEMENT mode")
                 reply = await self._handle_data_management(
                     user, state_record, message_text, media_url, media_type
                 )
             else:
                 reply = await self._handle_idle(user, state_record, message_text)
 
-        # Log Assistant Reply (Crucial Step: Must happen for ALL replies)
+        # Log Assistant Reply
         assistant_msg = Message(
             business_id=user.business_id,
             user_id=user.id,
             from_number="system",
-            to_number=user_phone,
+            to_number=active_identity,
             body=reply,
             role=MessageRole.ASSISTANT,
             channel_type=channel,
@@ -125,14 +136,17 @@ class WhatsappService:
         )
         self.session.add(assistant_msg)
         
-        # Dispatch SMS immediately
-        if channel == "sms":
+        # Dispatch SMS immediately if channel is SMS
+        if channel == "sms" and user.phone_number:
             try:
-                TwilioService().send_sms(user_phone, reply)
+                # Note: This might need to be inject via DI in a real app
+                from src.services.twilio_service import TwilioService
+                TwilioService().send_sms(user.phone_number, reply)
             except Exception as e:
                 self.logger.error(f"Failed to send SMS reply: {e}")
 
         return reply
+
 
     async def _handle_idle(
         self, user: User, state_record: ConversationState, text: str
@@ -274,7 +288,7 @@ class WhatsappService:
 
         # Execute
         executor = ToolExecutor(
-            self.session, user.business_id, user.id, user.phone_number, self.template_service
+            self.session, user.business_id, user.phone_number, self.template_service, user_id=user.id
         )
         try:
             result, metadata = await executor.execute(tool_call)
@@ -577,7 +591,7 @@ class WhatsappService:
 
         # Execute Modification Tools
         executor = ToolExecutor(
-            self.session, user.business_id, user.id, user.phone_number, self.template_service
+            self.session, user.business_id, user.phone_number, self.template_service, user_id=user.id
         )
         try:
             result, _ = await executor.execute(tool_call)

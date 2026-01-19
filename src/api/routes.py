@@ -41,6 +41,12 @@ class WebhookPayload(BaseModel):
         return v
 
 
+class GenericWebhookPayload(BaseModel):
+    identity: str = Field(..., description="Phone number or email of the CRM user")
+    message: str = Field(..., max_length=5000)
+    source: str = Field("generic", max_length=100)
+
+
 async def verify_signature(request: Request, x_hub_signature_256: str = Header(None)):
     """
     Verifies the HMAC SHA256 signature from WhatsApp.
@@ -117,11 +123,13 @@ async def webhook(
 
         # 2. Process Message
         response_text = await whatsapp_service.handle_message(
+            user_id=user.id,
             user_phone=user.phone_number,
             message_text=payload.body,
             is_new_user=is_new,
             media_url=payload.media_url,
             media_type=payload.media_type,
+            channel="whatsapp"
         )
 
         # 3. Commit Transaction
@@ -216,6 +224,7 @@ async def verify_twilio_signature(request: Request):
     
     url = str(request.url)
     form = await request.form()
+    # Twilio Validator expects a dictionary for params
     params = dict(form)
     
     if not validator.validate(url, params, signature):
@@ -240,18 +249,13 @@ async def twilio_webhook(
         auth_service, whatsapp_service = services
         form = await request.form()
         
-        from_number = form.get("From")
-        body = form.get("Body")
+        from_number = str(form.get("From"))
+        body = str(form.get("Body"))
         
-        # Twilio sends callbacks for status updates that have From but maybe different Body/Status
-        # We only care about incoming messages?
-        # Incoming messages have 'Body'.
-        
-        if not from_number:
+        if not from_number or from_number == "None":
             return {"status": "ignored"}
             
-        if body is None:
-            # Maybe a status callback
+        if body is None or body == "None":
             return {"status": "ignored"}
 
         # Rate Limit
@@ -266,6 +270,7 @@ async def twilio_webhook(
         
         # Handle Message
         await whatsapp_service.handle_message(
+            user_id=user.id,
             user_phone=user.phone_number,
             message_text=body,
             channel="sms",
@@ -280,4 +285,160 @@ async def twilio_webhook(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Error"
+        )
+
+
+@router.post("/webhooks/generic")
+async def generic_webhook(
+    payload: GenericWebhookPayload,
+    services: Tuple[AuthService, WhatsappService] = Depends(get_services),
+):
+    """
+    Generic webhook for external systems (Zapier, etc.)
+    """
+    try:
+        auth_service, whatsapp_service = services
+
+        # Identify or Onboard User
+        user, is_new = await auth_service.get_or_create_user_by_identity(payload.identity)
+
+        # Process Message
+        response_text = await whatsapp_service.handle_message(
+            user_id=user.id,
+            user_phone=user.phone_number,
+            message_text=payload.message,
+            is_new_user=is_new,
+            channel="generic"
+        )
+
+        # Commit Transaction
+        await auth_service.session.commit()
+
+        return {
+            "reply": response_text,
+            "user_id": user.id,
+            "status": "processed",
+            "source": payload.source
+        }
+
+    except Exception:
+        logger.exception("Generic webhook processing failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Error"
+        )
+
+
+@router.post("/webhooks/postmark/inbound")
+async def postmark_inbound_webhook(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Handles inbound email messages from Postmark.
+    Postmark sends JSON payload with email details.
+    """
+    try:
+        # Parse JSON payload from Postmark
+        payload = await request.json()
+        
+        # Extract email fields
+        from_email = payload.get("From", "")
+        subject = payload.get("Subject", "")
+        text_body = payload.get("TextBody", "")
+        
+        # Extract threading headers for conversation continuity
+        message_id = payload.get("MessageID", "")
+        in_reply_to = payload.get("Headers", [])
+        references = None
+        in_reply_to_value = None
+        
+        # Parse headers array to extract In-Reply-To and References
+        for header in in_reply_to if isinstance(in_reply_to, list) else []:
+            if header.get("Name") == "In-Reply-To":
+                in_reply_to_value = header.get("Value")
+            elif header.get("Name") == "References":
+                references = header.get("Value")
+        
+        if not from_email or not text_body:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Missing required fields: From or TextBody"
+            )
+        
+        # Rate limiting
+        if check_rate_limit(from_email):
+            logger.warning(f"Rate limit exceeded for {from_email}")
+            return {"status": "rate_limited"}
+        
+        # Get or create user by email
+        auth_service = AuthService(db)
+        user, is_new = await auth_service.get_or_create_user_by_identity(from_email)
+        
+        # Ensure user has an email (it should always have one at this point)
+        user_identifier = user.email or from_email
+        
+        # Process message using WhatsappService (unified message handling)
+        whatsapp_service = WhatsappService(db, llm_parser, template_service)
+        response_text = await whatsapp_service.handle_message(
+            user_id=user.id,
+            user_phone=user_identifier,  # Using email as identifier
+            message_text=text_body,
+            is_new_user=is_new,
+            channel="email"
+        )
+        
+        # Store threading metadata in the most recent message
+        # Query the last message for this user directly
+        from sqlalchemy import desc
+        query = (
+            select(Message)
+            .where(Message.user_id == user.id)
+            .order_by(desc(Message.created_at))
+            .limit(1)
+        )
+        result = await db.execute(query)
+        last_message = result.scalar_one_or_none()
+        
+        if last_message:
+            if not last_message.log_metadata:
+                last_message.log_metadata = {}
+            last_message.log_metadata["email_message_id"] = message_id
+            if in_reply_to_value:
+                last_message.log_metadata["in_reply_to"] = in_reply_to_value
+            if references:
+                last_message.log_metadata["references"] = references
+        
+        # Commit transaction
+        await db.commit()
+        
+        # Send response via Postmark
+        from src.services.postmark_service import PostmarkService
+        postmark_service = PostmarkService()
+        
+        # Prepare reply subject
+        reply_subject = subject if subject.startswith("Re:") else f"Re: {subject}"
+        
+        await postmark_service.send_email(
+            to_email=from_email,
+            subject=reply_subject,
+            body=response_text,
+            in_reply_to=message_id,  # Reply to the incoming message
+            references=f"{references} {message_id}" if references else message_id
+        )
+
+        
+        return {
+            "status": "success",
+            "message": "Email processed"
+        }
+        
+    except HTTPException:
+        raise
+    
+    except Exception:
+        logger.exception("Postmark webhook processing failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An internal error occurred."
         )

@@ -4,7 +4,8 @@ subtasks:
   - T015
   - T016
   - T017
-lane: planned
+lane: "doing"
+agent: "Antigravity"
 history:
   - date: 2026-01-19
     action: created
@@ -51,3 +52,7 @@ Third-party tools (Zapier, Forms) need a way to create leads or send messages wi
 
 - **Unit**: Test payload validation logic.
 - **Integration**: Post data to the endpoint and check database for new Message.
+
+## Activity Log
+
+- 2026-01-19T18:48:28Z – Antigravity – lane=doing – Started implementation of Generic Webhook

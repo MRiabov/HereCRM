@@ -47,6 +47,8 @@ class ToolExecutor:
         self.user_id = user_id
         self.user_phone = user_phone
         self.template_service = template_service
+
+
         self.job_repo = JobRepository(session)
         self.customer_repo = CustomerRepository(session)
         self.request_repo = RequestRepository(session)
