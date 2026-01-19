@@ -1,12 +1,13 @@
 ---
 work_package_id: WP04
 title: Channel Adaptation & Polish
-lane: planned
+lane: "for_review"
 subtasks:
   - T011
   - T012
   - T013
   - T014
+agent: "Antigravity"
 ---
 
 # WP04: Channel Adaptation & Polish
@@ -52,3 +53,8 @@ Make the assistant feel native to the channel (short for WhatsApp) and robust ag
 - System handles missing manual gracefully.
 - Assistant can explain "Why did that fail?" if the log contains the error.
 - `manual.md` is populated with real instructions.
+
+## Activity Log
+
+- 2026-01-19T17:12:04Z – Antigravity – lane=doing – Polishing response style and error handling
+- 2026-01-19T17:12:43Z – Antigravity – lane=for_review – Implementation complete and verified

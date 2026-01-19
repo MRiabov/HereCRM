@@ -21,10 +21,13 @@ class HelpService:
         manual_path = os.path.join(current_dir, "assets", "manual.md")
         
         if not os.path.exists(manual_path):
-            return "Product manual is currently unavailable."
+            return "I can't access my training manual right now, but I'm here to help! try 'add lead John Doe'."
             
         with open(manual_path, "r") as f:
-            self._manual_cache = f.read()
+            content = f.read().strip()
+            if not content:
+                return "I can't access my training manual right now, but I'm here to help! try 'add lead John Doe'."
+            self._manual_cache = content
             
         return self._manual_cache
 
@@ -62,7 +65,11 @@ class HelpService:
         
         style_guide = ""
         if settings:
-            style_guide = f"Response style: {settings.style}. Max length: {settings.max_length} characters."
+            style_guide = (
+                f"Response style: {settings.style}.\n"
+                f"MAX LENGTH: {settings.max_length} characters. You MUST stay below this limit.\n"
+                f"CHANNEL: {channel}."
+            )
 
         system_prompt = (
             "You are a helpful CRM assistant for HereCRM.\n"
@@ -80,7 +87,9 @@ class HelpService:
             
             # Include metadata context if available (e.g., tool call info or errors)
             if msg.log_metadata:
-                content += f"\n[Technical Context: {msg.log_metadata}]"
+                # Provide system note with error details if present
+                error_details = msg.log_metadata.get("error") or msg.log_metadata
+                content += f"\n[System Note: Context/Error: {error_details}]"
                 
             messages.append({"role": role, "content": content})
             
