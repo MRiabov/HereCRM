@@ -23,6 +23,7 @@ dependencies = [
     "alembic>=1.13.0",
     "python-multipart",
     "boto3",
+    "twilio>=9.9.1",
 ]
 
 [build-system]

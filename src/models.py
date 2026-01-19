@@ -194,6 +194,7 @@ class ConversationState(Base):
     )
     draft_data: Mapped[Optional[Any]] = mapped_column(JSON)
     last_action_metadata: Mapped[Optional[dict]] = mapped_column(JSON)
+    active_channel: Mapped[str] = mapped_column(String, default="whatsapp")
     last_updated: Mapped[datetime] = mapped_column(
         DateTime,
         default=lambda: datetime.now(timezone.utc),
@@ -202,6 +203,8 @@ class ConversationState(Base):
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="conversation_state")
+
+
 
 class MessageRole(str, enum.Enum):
     USER = "user"
@@ -218,6 +221,8 @@ class Message(Base):
     to_number: Mapped[Optional[str]] = mapped_column(String)
     body: Mapped[str] = mapped_column(Text)
     role: Mapped[MessageRole] = mapped_column(SAEnum(MessageRole))
+    channel_type: Mapped[str] = mapped_column(String, default="whatsapp")
+    external_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     log_metadata: Mapped[Optional[dict]] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)

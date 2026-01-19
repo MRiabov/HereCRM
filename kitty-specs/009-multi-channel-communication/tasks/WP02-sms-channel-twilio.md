@@ -5,7 +5,8 @@ subtasks:
   - T008
   - T009
   - T010
-lane: planned
+lane: "doing"
+agent: "codex"
 history:
   - date: 2026-01-19
     action: created
@@ -52,3 +53,7 @@ We need to support SMS as a fallback or primary channel. Twilio is the chosen pr
 
 - **Unit**: Mock Twilio client to test `send_sms` logic.
 - **Integration**: Use `ngrok` or similar to test local webhook handling with real Twilio (if dev env allows) or simulate POST requests with valid signatures.
+
+## Activity Log
+
+- 2026-01-19T17:53:23Z – codex – lane=doing – Started implementation

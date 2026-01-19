@@ -7,7 +7,8 @@ subtasks:
   - T004
   - T005
   - T006
-lane: planned
+lane: "doing"
+agent: "codex"
 history:
   - date: 2026-01-19
     action: created
@@ -64,3 +65,10 @@ Currently, the system uses `phone_number` as the primary key. This limits us to 
 - `Message` and `ConversationState` link to `users.id`.
 - Application boots without schema errors.
 - Existing functionality (WhatsApp chat) works with the new schema.
+
+## Activity Log
+
+- 2026-01-19T17:11:03Z – codex – lane=doing – Started implementation
+- 2026-01-19T17:44:37Z – codex – lane=for_review – Refactor complete and verified with tests
+- 2026-01-19T17:49:00Z – antigravity – lane=planned – Review rejected: Missing migration scripts
+- 2026-01-19T17:51:23Z – codex – lane=doing – Addressing review feedback

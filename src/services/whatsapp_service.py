@@ -13,6 +13,7 @@ from src.llm_client import LLMParser
 from src.tool_executor import ToolExecutor
 from src.services.template_service import TemplateService
 from src.services.data_management import DataManagementService
+from src.services.twilio_service import TwilioService
 from src.uimodels import (
     AddJobTool,
     AddLeadTool,
@@ -53,6 +54,7 @@ class WhatsappService:
         self,
         user_phone: str,
         message_text: str,
+        channel: str = "whatsapp",
         is_new_user: bool = False,
         media_url: Optional[str] = None,
         media_type: Optional[str] = None,
@@ -68,7 +70,8 @@ class WhatsappService:
             user_id=user.id,
             from_number=user_phone,
             body=message_text,
-            role=MessageRole.USER
+            role=MessageRole.USER,
+            channel_type=channel
         )
         self.session.add(user_msg)
         await self.session.flush()
@@ -77,10 +80,13 @@ class WhatsappService:
         state_record = await self.state_repo.get_by_user_id(user.id)
         if not state_record:
             state_record = ConversationState(
-                user_id=user.id, state=ConversationStatus.IDLE
+                user_id=user.id, state=ConversationStatus.IDLE, active_channel=channel
             )
             self.state_repo.add(state_record)
             await self.session.flush()
+
+        # Update active channel
+        state_record.active_channel = channel
 
         # 3. State Machine Logic
         reply = ""
@@ -114,10 +120,18 @@ class WhatsappService:
             to_number=user_phone,
             body=reply,
             role=MessageRole.ASSISTANT,
+            channel_type=channel,
             log_metadata=self._current_metadata if self._current_metadata else None
         )
         self.session.add(assistant_msg)
         
+        # Dispatch SMS immediately
+        if channel == "sms":
+            try:
+                TwilioService().send_sms(user_phone, reply)
+            except Exception as e:
+                self.logger.error(f"Failed to send SMS reply: {e}")
+
         return reply
 
     async def _handle_idle(

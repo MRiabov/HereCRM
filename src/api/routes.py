@@ -2,6 +2,7 @@ import hmac
 import hashlib
 import logging
 from typing import Tuple
+from twilio.request_validator import RequestValidator
 
 from fastapi import APIRouter, Depends, HTTPException, Header, Request, status
 from pydantic import BaseModel, Field, field_validator
@@ -183,3 +184,100 @@ async def get_history(
         }
         for msg in messages
     ]
+
+
+async def verify_twilio_signature(request: Request):
+    """
+    Verifies the Twilio signature to ensure requests are coming from Twilio.
+    """
+    if not settings.twilio_auth_token:
+        # If not configured, we might be in dev mode or forgot config.
+        # Log error and fail secure.
+        logger.error("TWILIO_AUTH_TOKEN is not configured.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Configuration Error",
+        )
+
+    signature = request.headers.get("X-Twilio-Signature")
+    if not signature:
+         # In dev/testing via curl, this might be missing.
+         # For strict security, we block.
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Missing Twilio Signature"
+        )
+    
+    validator = RequestValidator(settings.twilio_auth_token)
+    
+    # Get the URL and params
+    # Note: request.url might be http if behind auth-proxy, while Twilio sees https.
+    # This often causes validation failures.
+    # We will try validating against the request URL, and if that fails, try https version.
+    
+    url = str(request.url)
+    form = await request.form()
+    params = dict(form)
+    
+    if not validator.validate(url, params, signature):
+        # Try https if http
+        if url.startswith("http://"):
+             secure_url = url.replace("http://", "https://", 1)
+             if validator.validate(secure_url, params, signature):
+                 return
+
+        logger.warning(f"Invalid Twilio signature. URL: {url}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Twilio Signature"
+        )
+
+
+@router.post("/webhooks/twilio", dependencies=[Depends(verify_twilio_signature)])
+async def twilio_webhook(
+    request: Request,
+    services: Tuple[AuthService, WhatsappService] = Depends(get_services),
+):
+    try:
+        auth_service, whatsapp_service = services
+        form = await request.form()
+        
+        from_number = form.get("From")
+        body = form.get("Body")
+        
+        # Twilio sends callbacks for status updates that have From but maybe different Body/Status
+        # We only care about incoming messages?
+        # Incoming messages have 'Body'.
+        
+        if not from_number:
+            return {"status": "ignored"}
+            
+        if body is None:
+            # Maybe a status callback
+            return {"status": "ignored"}
+
+        # Rate Limit
+        if check_rate_limit(from_number):
+             # For SMS, sending a reply "Too many requests" costs money.
+             # Just ignore or log.
+             logger.warning(f"Rate limit exceeded for {from_number} (SMS)")
+             return {"status": "rate_limited"}
+
+        # Get/Create User
+        user, is_new = await auth_service.get_or_create_user(from_number)
+        
+        # Handle Message
+        await whatsapp_service.handle_message(
+            user_phone=user.phone_number,
+            message_text=body,
+            channel="sms",
+            is_new_user=is_new
+        )
+        
+        await auth_service.session.commit()
+        return {"status": "ok"}
+        
+    except Exception:
+        logger.exception("Twilio webhook processing failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Error"
+        )
