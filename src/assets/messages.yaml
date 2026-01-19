@@ -76,9 +76,9 @@ settings_menu: |
   ⚙️ *Settings Mode*
   
   Options:
-  - *List Services*: 'List' or 'Show services'
-  - *Add Service*: 'Add Service [Name] [Price]' (e.g., 'Add Service Window Clean 50')
-  - *Delete Service*: 'Delete Service [ID]'
+  - *Services/Products*: 'List', 'Add Service [Name] [Price]', 'Delete Service [Name]' [e.g.: Add Service Exterior Window Cleaning 5$]
+  - *Preferences*: 'Set default city [City]', 'Confirm by default [true/false]'
+  - *Localization*: 'Set timezone [Zone]', 'Set language [Lang]'
   - *Exit*: 'Exit' or 'Back'
 service_list: |
   *Service Catalog*:

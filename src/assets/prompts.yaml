@@ -42,6 +42,7 @@ settings_system_instruction: |
   3. If the user wants to see services, use ListServicesTool.
   4. Match service names fuzzily if needed. If the user says 'change price of X', use EditServiceTool. If they say 'remove X', use DeleteServiceTool. If they say 'add X', use AddServiceTool.
   5. 'Delete Service' does NOT require an ID anymore. Match by name.
+  6. If the user wants to change a preference like 'default city' or 'language', use UpdateSettingsTool.
 
 retry_instruction: |
   The previous attempt failed to produce a structured tool call. 
@@ -126,6 +127,14 @@ tool_descriptions:
       -> UpdateSettingsTool(setting_key="language", setting_value="French")
     - User: "Set timezone to GMT"
       -> UpdateSettingsTool(setting_key="timezone", setting_value="GMT")
+    - User: "Set default city to Dublin"
+      -> UpdateSettingsTool(setting_key="default_city", setting_value="Dublin")
+    - User: "Change default country to Ireland"
+      -> UpdateSettingsTool(setting_key="default_country", setting_value="Ireland")
+    - User: "Skip confirmations"
+      -> UpdateSettingsTool(setting_key="confirm_by_default", setting_value="true")
+    - User: "I want to see things in Spanish"
+      -> UpdateSettingsTool(setting_key="language", setting_value="Spanish")
 
   ConvertRequestTool: |
     Convert a general request or a query into a specific action.

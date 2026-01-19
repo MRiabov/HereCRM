@@ -171,6 +171,14 @@ class LLMParser:
                     "parameters": ExitSettingsTool.schema(),
                 },
             },
+            {
+                "type": "function",
+                "function": {
+                    "name": "UpdateSettingsTool",
+                    "description": tool_desc.get("UpdateSettingsTool", ""),
+                    "parameters": UpdateSettingsTool.schema(),
+                },
+            },
         ]
 
         self.datamgmt_tools = [
@@ -344,6 +352,7 @@ class LLMParser:
             "DeleteServiceTool": DeleteServiceTool,
             "ListServicesTool": ListServicesTool,
             "ExitSettingsTool": ExitSettingsTool,
+            "UpdateSettingsTool": UpdateSettingsTool,
         }
         
         return await self._chat_with_retry(messages, self.settings_tools, model_map)
