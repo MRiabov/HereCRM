@@ -25,6 +25,7 @@ from src.uimodels import (
     ExportQueryTool,
     ExitDataManagementTool,
 )
+from src.tools.invoice_tools import SendInvoiceTool
 from src.services.template_service import TemplateService
 
 
@@ -130,6 +131,15 @@ class LLMParser:
                 },
             },
         ]
+
+        self.tools.append({
+            "type": "function",
+            "function": {
+                "name": "SendInvoiceTool",
+                "description": "Send a professional PDF invoice to a customer for their last job.",
+                "parameters": SendInvoiceTool.schema(),
+            },
+        })
 
         self.settings_tools = [
             {
@@ -411,9 +421,11 @@ class LLMParser:
             "ConvertRequestTool": ConvertRequestTool,
             "HelpTool": HelpTool,
             "GetPipelineTool": GetPipelineTool,
+            "SendInvoiceTool": SendInvoiceTool,
         }
 
         return await self._chat_with_retry(messages, self.tools, model_map)
+
 
 
 # Singleton instance
