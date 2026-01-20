@@ -6,8 +6,10 @@ subtasks:
   - "T019"
 title: "Scope Enforcement"
 phase: "Phase 5 - Security & Monetization"
-lane: "planned"
+lane: "doing"
 dependencies: ["WP00", "WP03"]
+agent: "Antigravity"
+shell_pid: "3877841"
 history:
   - timestamp: "2026-01-20T14:45:30Z"
     lane: "planned"
@@ -77,3 +79,4 @@ history:
 ## Activity Log
 
 - 2026-01-20T14:45:30Z – antigravity – lane=planned – Prompt created.
+- 2026-01-20T19:05:37Z – Antigravity – shell_pid=3877841 – lane=doing – Started implementation via workflow command
