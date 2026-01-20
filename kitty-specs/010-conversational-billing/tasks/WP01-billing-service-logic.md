@@ -7,8 +7,10 @@ subtasks:
   - "T009"
 title: "Billing Service Logic"
 phase: "Phase 2 - Core Services"
-lane: "planned"
+lane: "doing"
 dependencies: ["WP00"]
+agent: "Antigravity"
+shell_pid: "3779362"
 history:
   - timestamp: "2026-01-20T14:45:30Z"
     lane: "planned"
@@ -89,3 +91,4 @@ history:
 ## Activity Log
 
 - 2026-01-20T14:45:30Z – antigravity – lane=planned – Prompt created.
+- 2026-01-20T15:49:02Z – Antigravity – shell_pid=3779362 – lane=doing – Started implementation via workflow command
