@@ -36,7 +36,7 @@
 
 - [x] T011: Define `CreateQuoteInput` schema in `src/uimodels.py`
 - [x] T012: Implement `CreateQuoteTool` wrapper
-- [ ] T013: Register tool in `src/llm_client.py`
+- [x] T013: Register tool in `src/llm_client.py`
 - [ ] T014: Add test for tool execution with mock service
 
 ### WP04: Confirmation Workflow
