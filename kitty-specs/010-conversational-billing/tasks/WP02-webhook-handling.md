@@ -6,7 +6,7 @@ subtasks:
   - "T012"
 title: "Webhook Handling"
 phase: "Phase 3 - Integration"
-lane: "planned"
+lane: "doing"
 dependencies: ["WP01"]
 agent: "Antigravity"
 shell_pid: "3779362"
@@ -86,3 +86,4 @@ history:
 - 2026-01-20T16:50:29Z – Antigravity – shell_pid=3779362 – lane=for_review – Implemented Stripe webhook endpoint and processing logic. Added integration tests covering successful flow and error cases. Updated Business model with billing fields.
 - 2026-01-20T16:51:57Z – Antigravity – shell_pid=3779362 – lane=doing – Started review via workflow command
 - 2026-01-20T16:56:39Z – Antigravity – shell_pid=3779362 – lane=planned – Moved to planned
+- 2026-01-20T17:23:35Z – Antigravity – shell_pid=3779362 – lane=doing – Started implementation via workflow command
