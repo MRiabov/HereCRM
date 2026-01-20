@@ -34,6 +34,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(webhook_router)
+from src.api.webhooks.stripe_webhook import router as stripe_router
+app.include_router(stripe_router, prefix="/webhooks", tags=["webhooks"])
 
 
 @app.get("/health")
