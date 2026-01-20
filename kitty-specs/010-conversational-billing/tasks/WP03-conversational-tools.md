@@ -7,8 +7,10 @@ subtasks:
   - "T016"
 title: "Conversational Tools & State Transitions"
 phase: "Phase 4 - User Interface"
-lane: "planned"
+lane: "doing"
 dependencies: ["WP01"]
+agent: "Antigravity"
+shell_pid: "3837511"
 history:
   - timestamp: "2026-01-20T14:45:30Z"
     lane: "planned"
@@ -85,3 +87,4 @@ history:
 ## Activity Log
 
 - 2026-01-20T14:45:30Z – antigravity – lane=planned – Prompt created.
+- 2026-01-20T16:52:19Z – Antigravity – shell_pid=3837511 – lane=doing – Started implementation via workflow command
