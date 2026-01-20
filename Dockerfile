@@ -3,6 +3,18 @@ FROM astral/uv:python3.12-bookworm-slim
 # Set the working directory
 WORKDIR /app
 
+# Install system dependencies for WeasyPrint
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libcairo2 \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libxml2-dev \
+    libxslt-dev \
+    libffi-dev \
+    shared-mime-info \
+    && rm -rf /var/lib/apt/lists/*
+
 # Enable bytecode compilation
 ENV UV_COMPILE_BYTECODE=1
 
