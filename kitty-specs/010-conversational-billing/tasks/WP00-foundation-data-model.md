@@ -8,7 +8,7 @@ subtasks:
   - "T005"
 title: "Foundation & Data Model"
 phase: "Phase 1 - Infrastructure"
-lane: "doing"
+lane: "done"
 dependencies: []
 agent: "Antigravity"
 shell_pid: "3779362"
@@ -104,3 +104,4 @@ history:
 - 2026-01-20T15:47:59Z – Antigravity – shell_pid=3779362 – lane=for_review – Ready for review: Foundation & Data Model implemented with billing fields, config, and migration.
 - 2026-01-20T16:27:37Z – Antigravity – shell_pid=3779362 – lane=done – Marked as done per user request.
 - 2026-01-20T17:31:07Z – Antigravity – shell_pid=3779362 – lane=doing – Started review via workflow command
+- 2026-01-20T17:34:45Z – Antigravity – shell_pid=3779362 – lane=done – Review passed: Foundation and data model for billing are correctly implemented. Stripe is installed, config is created, and Business model/migrations are ready for billing integration.
