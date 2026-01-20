@@ -1,9 +1,11 @@
 ---
 work_package_id: WP04
 title: Agent Tools & Integration
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks: [T011, T012, T013, T014]
+agent: "antigravity"
+shell_pid: "3779362"
 ---
 
 # Work Package 04: Agent Tools & Integration
@@ -77,3 +79,7 @@ Expose the dashboard and assignment capabilities to the LLM agent via structured
 ## Implementation Command
 
 `spec-kitty implement WP04 --base WP03`
+
+## Activity Log
+
+- 2026-01-20T18:41:51Z – antigravity – shell_pid=3779362 – lane=doing – Started implementation via workflow command
