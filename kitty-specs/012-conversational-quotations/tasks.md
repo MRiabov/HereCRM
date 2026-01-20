@@ -23,7 +23,7 @@
 **Test Criteria**: PDF is generated, uploaded to S3, and link is sent via WhatsApp.
 
 - [x] T006: Create `src/templates/quote.html` Jinja2 template
-- [ ] T007: Update `PDFGenerator` to support quote rendering
+- [x] T007: Update `PDFGenerator` to support quote rendering
 - [ ] T008: Implement `QuoteService.generate_pdf` and `send_quote` methods
 - [ ] T009: Add `quote_proposal` message template to `messages.yaml`
 - [ ] T010: Write integration tests for PDF generation and sending flow
