@@ -5,6 +5,7 @@ lane: "done"
 dependencies: []
 subtasks: ["T001", "T002", "T003", "T004", "T005"]
 agent: "Antigravity"
+assignee: "Antigravity"
 shell_pid: "3779362"
 review_status: "has_feedback"
 reviewed_by: "MRiabov"
