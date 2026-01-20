@@ -1,7 +1,7 @@
 ---
 work_package_id: "WP01"
 title: "Foundation & Core Service"
-lane: "for_review"
+lane: "doing"
 dependencies: []
 subtasks: ["T001", "T002", "T003", "T004", "T005"]
 agent: "Antigravity"
@@ -82,3 +82,4 @@ We are introducing a new entity `Quote` which is similar to an Invoice but repre
 
 - 2026-01-20T18:18:08Z – Antigravity – shell_pid=3779362 – lane=doing – Started implementation via workflow command
 - 2026-01-20T18:29:02Z – Antigravity – shell_pid=3779362 – lane=for_review – Ready for review: Established Quote and QuoteLineItem models, fixed migration history, and implemented QuoteService with unit tests.
+- 2026-01-20T18:31:36Z – Antigravity – shell_pid=3779362 – lane=doing – Started review via workflow command
