@@ -46,53 +46,16 @@
         }
     </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-[#0d1b0d] dark:text-white transition-colors duration-200">
+<body class="bg-white font-display text-black">
 <div class="relative flex min-h-screen flex-col">
 <!-- Navigation Header -->
-<header class="no-print sticky top-0 z-50 flex items-center justify-between border-b border-solid border-[#e7f3e7] dark:border-[#1e3a1e] bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-10 py-3">
-<div class="flex items-center gap-4">
-<div class="size-6 text-primary">
-<svg fill="currentColor" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-<path d="M24 0.757355L47.2426 24L24 47.2426L0.757355 24L24 0.757355ZM21 35.7574V12.2426L9.24264 24L21 35.7574Z"></path>
-</svg>
-</div>
-<h2 class="text-lg font-bold leading-tight tracking-[-0.015em]">HereCRM</h2>
-</div>
-<div class="flex flex-1 justify-end gap-4">
-<div class="hidden md:flex items-center gap-8 mr-8">
-<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Dashboard</a>
-<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Jobs</a>
-<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Quotes</a>
-<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Invoices</a>
-</div>
-<div class="flex gap-2">
-<button class="flex min-w-[100px] cursor-pointer items-center justify-center rounded-lg h-10 px-4 bg-primary text-black text-sm font-bold tracking-[0.015em] hover:opacity-90 transition-opacity">
-<span class="truncate">Save PDF</span>
-</button>
-<button class="flex items-center justify-center rounded-lg h-10 bg-[#e7f3e7] dark:bg-[#1e3a1e] text-[#0d1b0d] dark:text-white px-3 hover:bg-primary/20 transition-colors">
-<span class="material-symbols-outlined">download</span>
-</button>
-<button class="flex items-center justify-center rounded-lg h-10 bg-[#e7f3e7] dark:bg-[#1e3a1e] text-[#0d1b0d] dark:text-white px-3 hover:bg-primary/20 transition-colors" onclick="window.print()">
-<span class="material-symbols-outlined">print</span>
-</button>
-</div>
-<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-primary/20" data-alt="User profile avatar placeholder" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuADB_rD8VhK8r9k24f-n0xJ9Owzvb_EcXOpkMnxXSTDVqhg13CI5t2588xUMFSysv5-YDgeJ63CKBp0XR2akQoRQr5UJyttkdexbu_MBYuqHadbXxl-xO8Ka6XaYiSwDoutxbfMZ9sjh7DBAs4wPQqdNoIdCeBoAlVGhbRWuBSaEHYdl4iS97WUbacQdgsUVKFIZPuMUCXszZUUKZdpRo5DKJUd0g1B1RhykmC8KUT9VURCMey22N1tNrp7LKxh-kJUULXTh7QF77I");'></div>
-</div>
-</header>
+
 <main class="flex-1 overflow-y-auto py-10 px-4">
-<!-- Breadcrumbs / Page Title -->
-<div class="max-w-[960px] mx-auto mb-6 no-print">
-<div class="flex items-center gap-2 text-sm text-[#4c9a4c] mb-2">
-<a href="#">Quotes</a>
-<span class="material-symbols-outlined text-xs">chevron_right</span>
-<span class="text-[#0d1b0d] dark:text-white">QT-2023-001 Preview</span>
-</div>
-<h1 class="text-3xl font-bold">Quote Preview</h1>
-</div>
+
 <!-- PDF Mockup Container -->
-<div class="a4-container bg-white dark:bg-zinc-900 shadow-2xl rounded-sm border border-gray-100 dark:border-zinc-800 flex flex-col gap-10">
+<div class="a4-container bg-white flex flex-col gap-10">
 <!-- Document Header -->
-<div class="flex justify-between items-start border-b-4 border-primary pb-8">
+<div class="flex justify-between items-start pb-8">
 <div class="flex flex-col gap-4">
 <div class="flex items-center gap-3">
 <div class="size-10 text-primary">
@@ -151,7 +114,7 @@
 <div class="mt-4 flex-1">
 <table class="w-full text-left border-collapse">
 <thead>
-<tr class="border-b-2 border-primary">
+<tr class="">
 <th class="py-3 text-xs font-bold uppercase tracking-widest text-gray-500">Description</th>
 <th class="py-3 text-xs font-bold uppercase tracking-widest text-gray-500 text-center w-24">Qty</th>
 <th class="py-3 text-xs font-bold uppercase tracking-widest text-gray-500 text-right w-32">Unit Price</th>
@@ -200,14 +163,14 @@
 <span class="text-gray-500">Tax (10%)</span>
 <span class="font-medium">$82.50</span>
 </div>
-<div class="flex justify-between items-center pt-3 border-t border-primary/30">
+<div class="flex justify-between items-center pt-3">
 <span class="text-base font-bold">Grand Total</span>
 <span class="text-2xl font-black text-primary">$907.50</span>
 </div>
 </div>
 </div>
 <!-- Terms & Acceptance -->
-<div class="mt-auto pt-10 border-t border-gray-100 dark:border-zinc-800">
+<div class="mt-auto pt-10">
 <div class="flex flex-col items-center gap-6 text-center">
 <div class="max-w-md">
 <h4 class="text-xs font-bold uppercase text-gray-400 mb-2">Terms &amp; Conditions</h4>
@@ -217,42 +180,10 @@
                                 Thank you for choosing HereCRM Services for your maintenance needs.
                             </p>
 </div>
-<!-- CTA Button -->
-<a class="no-print group flex items-center gap-3 bg-primary px-8 py-4 rounded-xl text-black font-bold text-lg hover:scale-105 transition-all shadow-lg shadow-primary/20" href="#">
-<span>View &amp; Accept Online</span>
-<span class="material-symbols-outlined transition-transform group-hover:translate-x-1">arrow_forward</span>
-</a>
-<p class="no-print text-xs text-gray-400">Scan QR or click above to pay via secure portal</p>
+
 </div>
 </div>
-</div>
-<!-- Additional Help / Support Footer for the web view -->
-<div class="max-w-[960px] mx-auto mt-12 mb-12 flex justify-between items-center no-print">
-<div class="flex gap-4">
-<div class="p-3 bg-white dark:bg-zinc-800 rounded-lg border border-gray-100 dark:border-zinc-800 flex items-center gap-3">
-<div class="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-<span class="material-symbols-outlined">support_agent</span>
-</div>
-<div>
-<p class="text-xs font-bold">Need Help?</p>
-<p class="text-[10px] text-gray-500">Chat with our team</p>
-</div>
-</div>
-<div class="p-3 bg-white dark:bg-zinc-800 rounded-lg border border-gray-100 dark:border-zinc-800 flex items-center gap-3">
-<div class="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-<span class="material-symbols-outlined">history</span>
-</div>
-<div>
-<p class="text-xs font-bold">Revision History</p>
-<p class="text-[10px] text-gray-500">View 3 past versions</p>
-</div>
-</div>
-</div>
-<div class="flex gap-3">
-<button class="text-sm font-bold text-gray-500 hover:text-primary transition-colors">Decline Quote</button>
-<button class="text-sm font-bold text-primary px-6 py-2 border-2 border-primary rounded-lg hover:bg-primary hover:text-black transition-all">Request Change</button>
-</div>
-</div>
+
 </main>
 </div>
 </body></html>
