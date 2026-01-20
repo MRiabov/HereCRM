@@ -1,9 +1,11 @@
 ---
 work_package_id: "WP01"
 title: "Data Model & Core Services"
-lane: "planned"
+lane: "doing"
 dependencies: []
 subtasks: ["T001", "T002", "T003", "T004"]
+agent: "Antigravity"
+shell_pid: "3779362"
 ---
 
 # Work Package 01: Data Model & Core Services
@@ -81,3 +83,7 @@ Establish the database schema foundation and basic service layer for the Employe
 ## Implementation Command
 
 `spec-kitty implement WP01`
+
+## Activity Log
+
+- 2026-01-20T16:18:05Z – Antigravity – shell_pid=3779362 – lane=doing – Started implementation via workflow command
