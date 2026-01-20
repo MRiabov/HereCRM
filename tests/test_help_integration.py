@@ -55,7 +55,7 @@ async def test_help_tool_integration(test_session: AsyncSession, template_servic
         service = WhatsappService(test_session, mock_parser, template_service)
         user_phone = "123456789"
         
-        response = await service.handle_message(user_phone, "Help me")
+        response = await service.handle_message("Help me", user_phone=user_phone)
         
         assert response == "RAG Response"
         MockHelpService.assert_called_once_with(test_session, mock_parser)

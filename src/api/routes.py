@@ -1,3 +1,4 @@
+from httpcore import request
 import hmac
 import hashlib
 import logging
@@ -206,47 +207,32 @@ async def verify_twilio_signature(request: Request):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Configuration Error",
         )
-<<<<<<< HEAD
     
     # Get the signature from headers
     signature = request.headers.get("X-Twilio-Signature", "")
     if not signature:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Missing Twilio Signature"
         )
     
-    # Get the full URL (Twilio uses this in signature calculation)
+    # Use Twilio's official RequestValidator
+    validator = RequestValidator(settings.twilio_auth_token)
+    
+    # Get the full URL and form data
     url = str(request.url)
-    
-    # Get form data (Twilio sends form-encoded data)
     form_data = await request.form()
+    params = dict(form_data)
     
-    # Twilio sorts params alphabetically and concatenates them
-    # Format: url + sorted params as key=value pairs
-    params_string = url
-    for key in sorted(form_data.keys()):
-        params_string += f"{key}{form_data[key]}"
-    
-    # Calculate expected signature
-    expected_signature = hmac.new(
-        settings.twilio_auth_token.encode("utf-8"),
-        params_string.encode("utf-8"),
-        hashlib.sha256
-    ).digest()
-    
-    # Twilio sends base64-encoded signature
-    import base64
-    expected_signature_b64 = base64.b64encode(expected_signature).decode()
-    
-    if not hmac.compare_digest(signature, expected_signature_b64):
+    if not validator.validate(url, params, signature):
         logger.warning("Invalid Twilio webhook signature attempt.")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid Signature"
+            detail="Invalid Twilio Signature"
         )
     
     return form_data
+
 
 
 @router.post("/webhooks/twilio", dependencies=[Depends(verify_twilio_signature)])
@@ -295,6 +281,31 @@ async def twilio_webhook(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Error"
+        )
+
+
+async def verify_generic_api_key(x_api_key: str = Header(None, alias="X-API-Key")):
+    """
+    Verifies the API key for the generic webhook.
+    """
+    if not settings.generic_webhook_secret:
+        logger.error("GENERIC_WEBHOOK_SECRET is not configured.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Configuration Error"
+        )
+
+    if not x_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing API Key"
+        )
+
+    if not hmac.compare_digest(x_api_key, settings.generic_webhook_secret):
+        logger.warning("Invalid Generic Webhook API Key attempt.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API Key"
         )
 
 

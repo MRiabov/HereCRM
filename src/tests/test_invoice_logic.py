@@ -62,7 +62,7 @@ async def test_create_invoice_success(session: AsyncSession, mock_s3_service, mo
 @pytest.mark.asyncio
 async def test_send_invoice_tool_success(session: AsyncSession, mock_s3_service, mock_pdf_generator, template_service):
     # Setup ToolExecutor
-    executor = ToolExecutor(session, business_id=1, user_phone="123", template_service=template_service)
+    executor = ToolExecutor(session, business_id=1, user_id=1, user_phone="123", template_service=template_service)
     
     # Setup Data
     customer = Customer(name="John Doe", business_id=1, phone="555-1234")
@@ -86,7 +86,7 @@ async def test_send_invoice_tool_success(session: AsyncSession, mock_s3_service,
 @pytest.mark.asyncio
 async def test_send_invoice_tool_no_job(session: AsyncSession, mock_s3_service, mock_pdf_generator, template_service):
     # Setup ToolExecutor
-    executor = ToolExecutor(session, business_id=1, user_phone="123", template_service=template_service)
+    executor = ToolExecutor(session, business_id=1, user_id=1, user_phone="123", template_service=template_service)
     
     # Setup Data (Customer but no job)
     customer = Customer(name="Jane Doe", business_id=1)
@@ -104,7 +104,7 @@ async def test_send_invoice_tool_no_job(session: AsyncSession, mock_s3_service, 
 @pytest.mark.asyncio
 async def test_existing_invoice_warning(session: AsyncSession, mock_s3_service, mock_pdf_generator, template_service):
     # Setup ToolExecutor
-    executor = ToolExecutor(session, business_id=1, user_phone="123", template_service=template_service)
+    executor = ToolExecutor(session, business_id=1, user_id=1, user_phone="123", template_service=template_service)
     
     # Setup Data
     customer = Customer(name="Bob Smith", business_id=1)

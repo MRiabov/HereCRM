@@ -48,17 +48,17 @@ async def test_settings_flow(test_session, mock_parser, mock_template_service):
     service = WhatsappService(test_session, mock_parser, mock_template_service)
     
     # 1. Enter Settings
-    response = await service.handle_message("123", "settings")
-    assert "Settings Mode" in response
+    response = await service.handle_message("settings", user_phone="123")
+    assert mock_template_service.render("settings_menu").split('\n')[0] in response
     
     state = await service.state_repo.get_by_user_id(user.id)
     assert state.state == ConversationStatus.SETTINGS
     
     # 2. Add Service
     mock_parser.parse_settings.return_value = AddServiceTool(name="Window Clean", price=50.0)
-    response = await service.handle_message("123", "Add Service Window Clean 50")
+    response = await service.handle_message("Add Service Window Clean 50", user_phone="123")
+    assert "added" in response # Keep some basic checks where template is complex
     assert "Window Clean" in response
-    assert "added" in response
     assert "50.00" in response
     
     # Verify DB
@@ -71,13 +71,13 @@ async def test_settings_flow(test_session, mock_parser, mock_template_service):
     
     # 3. List Services
     mock_parser.parse_settings.return_value = ListServicesTool()
-    response = await service.handle_message("123", "List")
+    response = await service.handle_message("List", user_phone="123")
     assert "Window Clean" in response
     assert "50.00" in response
     
     # 4. Delete Service
     mock_parser.parse_settings.return_value = DeleteServiceTool(name="Window Clean")
-    response = await service.handle_message("123", "Delete Service")
+    response = await service.handle_message("Delete Service", user_phone="123")
     assert "deleted" in response
     
     services = await repo.get_all_for_business(biz.id)
@@ -85,8 +85,8 @@ async def test_settings_flow(test_session, mock_parser, mock_template_service):
     
     # 5. Exit
     mock_parser.parse_settings.return_value = ExitSettingsTool()
-    response = await service.handle_message("123", "Exit")
-    assert "Welcome back" in response
+    response = await service.handle_message("Exit", user_phone="123")
+    assert mock_template_service.render("welcome_back").split('\n')[0] in response
     
     state = await service.state_repo.get_by_user_id(user.id)
     assert state.state == ConversationStatus.IDLE
