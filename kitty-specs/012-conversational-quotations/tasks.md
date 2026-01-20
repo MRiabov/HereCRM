@@ -49,4 +49,4 @@
 - [ ] T016: Implement public API endpoint for web confirmation
 - [x] T017: Implement text-based "Confirm" intent handler in `whatsapp_service.py`
 - [x] T018: Write tests for confirmation flow (Web and Text) and Job verification
-- [ ] T019: Verify end-to-end "Quote -> Confirm -> Job" flow
+- [x] T019: Verify end-to-end "Quote -> Confirm -> Job" flow
