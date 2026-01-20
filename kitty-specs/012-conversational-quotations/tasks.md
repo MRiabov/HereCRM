@@ -14,7 +14,7 @@
 - [x] T002: Update `Business` and `Customer` models with relationships
 - [x] T003: Generate and apply Alembic migration
 - [x] T004: Implement `QuoteService` class with `create_quote` logic
-- [ ] T005: Write unit tests for Quote models and service
+- [x] T005: Write unit tests for Quote models and service
 
 ### WP02: PDF Generation & Delivery
 
