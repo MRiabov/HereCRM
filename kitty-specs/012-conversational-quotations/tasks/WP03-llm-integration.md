@@ -1,9 +1,11 @@
 ---
 work_package_id: WP03
 title: LLM Tool Integration
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks: [T011, T012, T013, T014]
+agent: "Antigravity"
+shell_pid: "3779362"
 ---
 
 ### Objective
@@ -62,3 +64,7 @@ The system uses `llm_client.py` and `tools/*.py` to map intentions to functions.
 ### Verification
 
 - Run `pytest tests/unit/test_quote_tools.py`.
+
+## Activity Log
+
+- 2026-01-20T19:08:39Z – Antigravity – shell_pid=3779362 – lane=doing – Started implementation via workflow command
