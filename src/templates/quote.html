@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Quotable PDF Document Design</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;family=Noto+Sans:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13ec13",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#102210",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .a4-container {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            margin: auto;
+        }
+        @media print {
+            .no-print { display: none; }
+            body { background: white; }
+            .a4-container { box-shadow: none; margin: 0; padding: 10mm; }
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#0d1b0d] dark:text-white transition-colors duration-200">
+<div class="relative flex min-h-screen flex-col">
+<!-- Navigation Header -->
+<header class="no-print sticky top-0 z-50 flex items-center justify-between border-b border-solid border-[#e7f3e7] dark:border-[#1e3a1e] bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-10 py-3">
+<div class="flex items-center gap-4">
+<div class="size-6 text-primary">
+<svg fill="currentColor" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 0.757355L47.2426 24L24 47.2426L0.757355 24L24 0.757355ZM21 35.7574V12.2426L9.24264 24L21 35.7574Z"></path>
+</svg>
+</div>
+<h2 class="text-lg font-bold leading-tight tracking-[-0.015em]">HereCRM</h2>
+</div>
+<div class="flex flex-1 justify-end gap-4">
+<div class="hidden md:flex items-center gap-8 mr-8">
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Jobs</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Quotes</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Invoices</a>
+</div>
+<div class="flex gap-2">
+<button class="flex min-w-[100px] cursor-pointer items-center justify-center rounded-lg h-10 px-4 bg-primary text-black text-sm font-bold tracking-[0.015em] hover:opacity-90 transition-opacity">
+<span class="truncate">Save PDF</span>
+</button>
+<button class="flex items-center justify-center rounded-lg h-10 bg-[#e7f3e7] dark:bg-[#1e3a1e] text-[#0d1b0d] dark:text-white px-3 hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined">download</span>
+</button>
+<button class="flex items-center justify-center rounded-lg h-10 bg-[#e7f3e7] dark:bg-[#1e3a1e] text-[#0d1b0d] dark:text-white px-3 hover:bg-primary/20 transition-colors" onclick="window.print()">
+<span class="material-symbols-outlined">print</span>
+</button>
+</div>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-primary/20" data-alt="User profile avatar placeholder" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuADB_rD8VhK8r9k24f-n0xJ9Owzvb_EcXOpkMnxXSTDVqhg13CI5t2588xUMFSysv5-YDgeJ63CKBp0XR2akQoRQr5UJyttkdexbu_MBYuqHadbXxl-xO8Ka6XaYiSwDoutxbfMZ9sjh7DBAs4wPQqdNoIdCeBoAlVGhbRWuBSaEHYdl4iS97WUbacQdgsUVKFIZPuMUCXszZUUKZdpRo5DKJUd0g1B1RhykmC8KUT9VURCMey22N1tNrp7LKxh-kJUULXTh7QF77I");'></div>
+</div>
+</header>
+<main class="flex-1 overflow-y-auto py-10 px-4">
+<!-- Breadcrumbs / Page Title -->
+<div class="max-w-[960px] mx-auto mb-6 no-print">
+<div class="flex items-center gap-2 text-sm text-[#4c9a4c] mb-2">
+<a href="#">Quotes</a>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-[#0d1b0d] dark:text-white">QT-2023-001 Preview</span>
+</div>
+<h1 class="text-3xl font-bold">Quote Preview</h1>
+</div>
+<!-- PDF Mockup Container -->
+<div class="a4-container bg-white dark:bg-zinc-900 shadow-2xl rounded-sm border border-gray-100 dark:border-zinc-800 flex flex-col gap-10">
+<!-- Document Header -->
+<div class="flex justify-between items-start border-b-4 border-primary pb-8">
+<div class="flex flex-col gap-4">
+<div class="flex items-center gap-3">
+<div class="size-10 text-primary">
+<svg fill="currentColor" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 0.757355L47.2426 24L24 47.2426L0.757355 24L24 0.757355ZM21 35.7574V12.2426L9.24264 24L21 35.7574Z"></path>
+</svg>
+</div>
+<h2 class="text-2xl font-extrabold tracking-tight">HereCRM Services</h2>
+</div>
+<div class="text-sm text-gray-500 dark:text-zinc-400 space-y-1">
+<p>123 Business Way, Suite 100</p>
+<p>Silicon Valley, CA 94025</p>
+<p>+1 (555) 000-1234 | contact@herecrm.com</p>
+</div>
+</div>
+<div class="text-right">
+<h1 class="text-4xl font-black text-primary tracking-tighter">QUOTATION</h1>
+<p class="mt-2 text-sm font-semibold text-gray-400"># QT-2023-001</p>
+</div>
+</div>
+<!-- Info Grid -->
+<div class="grid grid-cols-2 gap-12">
+<div>
+<h3 class="text-xs font-bold uppercase tracking-widest text-primary mb-3">Bill To</h3>
+<div class="text-sm space-y-1">
+<p class="text-lg font-bold">John Doe</p>
+<p class="text-gray-600 dark:text-zinc-400">456 Residential Ave</p>
+<p class="text-gray-600 dark:text-zinc-400">Springfield, IL 62704</p>
+<p class="text-gray-600 dark:text-zinc-400">john.doe@example.com</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-4">
+<div>
+<h3 class="text-xs font-bold uppercase tracking-widest text-primary mb-1">Issue Date</h3>
+<p class="text-sm font-medium">October 24, 2023</p>
+</div>
+<div>
+<h3 class="text-xs font-bold uppercase tracking-widest text-primary mb-1">Expiry Date</h3>
+<p class="text-sm font-medium">November 24, 2023</p>
+</div>
+</div>
+<div class="space-y-4">
+<div>
+<h3 class="text-xs font-bold uppercase tracking-widest text-primary mb-1">Currency</h3>
+<p class="text-sm font-medium">USD ($)</p>
+</div>
+<div>
+<h3 class="text-xs font-bold uppercase tracking-widest text-primary mb-1">Status</h3>
+<span class="inline-block px-2 py-0.5 text-[10px] font-bold bg-primary/20 text-primary border border-primary/30 rounded uppercase">Draft</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Table Section -->
+<div class="mt-4 flex-1">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b-2 border-primary">
+<th class="py-3 text-xs font-bold uppercase tracking-widest text-gray-500">Description</th>
+<th class="py-3 text-xs font-bold uppercase tracking-widest text-gray-500 text-center w-24">Qty</th>
+<th class="py-3 text-xs font-bold uppercase tracking-widest text-gray-500 text-right w-32">Unit Price</th>
+<th class="py-3 text-xs font-bold uppercase tracking-widest text-gray-500 text-right w-32">Total</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-gray-100 dark:divide-zinc-800">
+<tr>
+<td class="py-5">
+<p class="font-bold text-sm">Window Cleaning - Exterior</p>
+<p class="text-xs text-gray-500 mt-1">Full cleaning of 10 large exterior windows including frames.</p>
+</td>
+<td class="py-5 text-center text-sm">10</td>
+<td class="py-5 text-right text-sm">$45.00</td>
+<td class="py-5 text-right text-sm font-bold">$450.00</td>
+</tr>
+<tr>
+<td class="py-5">
+<p class="font-bold text-sm">Gutter Debris Removal</p>
+<p class="text-xs text-gray-500 mt-1">Clearing of leaves and sediment from roof drainage system.</p>
+</td>
+<td class="py-5 text-center text-sm">1</td>
+<td class="py-5 text-right text-sm">$125.00</td>
+<td class="py-5 text-right text-sm font-bold">$125.00</td>
+</tr>
+<tr>
+<td class="py-5">
+<p class="font-bold text-sm">Pressure Washing Driveway</p>
+<p class="text-xs text-gray-500 mt-1">Standard 2-car driveway power wash treatment.</p>
+</td>
+<td class="py-5 text-center text-sm">1</td>
+<td class="py-5 text-right text-sm">$250.00</td>
+<td class="py-5 text-right text-sm font-bold">$250.00</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Totals Section -->
+<div class="flex justify-end mt-8">
+<div class="w-64 space-y-3">
+<div class="flex justify-between text-sm">
+<span class="text-gray-500">Subtotal</span>
+<span class="font-medium">$825.00</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-gray-500">Tax (10%)</span>
+<span class="font-medium">$82.50</span>
+</div>
+<div class="flex justify-between items-center pt-3 border-t border-primary/30">
+<span class="text-base font-bold">Grand Total</span>
+<span class="text-2xl font-black text-primary">$907.50</span>
+</div>
+</div>
+</div>
+<!-- Terms & Acceptance -->
+<div class="mt-auto pt-10 border-t border-gray-100 dark:border-zinc-800">
+<div class="flex flex-col items-center gap-6 text-center">
+<div class="max-w-md">
+<h4 class="text-xs font-bold uppercase text-gray-400 mb-2">Terms &amp; Conditions</h4>
+<p class="text-[10px] text-gray-400 leading-relaxed">
+                                This quotation is valid for 30 days. Work will be scheduled upon digital acceptance. 
+                                A 20% deposit may be required for jobs exceeding $1,000. 
+                                Thank you for choosing HereCRM Services for your maintenance needs.
+                            </p>
+</div>
+<!-- CTA Button -->
+<a class="no-print group flex items-center gap-3 bg-primary px-8 py-4 rounded-xl text-black font-bold text-lg hover:scale-105 transition-all shadow-lg shadow-primary/20" href="#">
+<span>View &amp; Accept Online</span>
+<span class="material-symbols-outlined transition-transform group-hover:translate-x-1">arrow_forward</span>
+</a>
+<p class="no-print text-xs text-gray-400">Scan QR or click above to pay via secure portal</p>
+</div>
+</div>
+</div>
+<!-- Additional Help / Support Footer for the web view -->
+<div class="max-w-[960px] mx-auto mt-12 mb-12 flex justify-between items-center no-print">
+<div class="flex gap-4">
+<div class="p-3 bg-white dark:bg-zinc-800 rounded-lg border border-gray-100 dark:border-zinc-800 flex items-center gap-3">
+<div class="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">support_agent</span>
+</div>
+<div>
+<p class="text-xs font-bold">Need Help?</p>
+<p class="text-[10px] text-gray-500">Chat with our team</p>
+</div>
+</div>
+<div class="p-3 bg-white dark:bg-zinc-800 rounded-lg border border-gray-100 dark:border-zinc-800 flex items-center gap-3">
+<div class="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">history</span>
+</div>
+<div>
+<p class="text-xs font-bold">Revision History</p>
+<p class="text-[10px] text-gray-500">View 3 past versions</p>
+</div>
+</div>
+</div>
+<div class="flex gap-3">
+<button class="text-sm font-bold text-gray-500 hover:text-primary transition-colors">Decline Quote</button>
+<button class="text-sm font-bold text-primary px-6 py-2 border-2 border-primary rounded-lg hover:bg-primary hover:text-black transition-all">Request Change</button>
+</div>
+</div>
+</main>
+</div>
+</body></html>
