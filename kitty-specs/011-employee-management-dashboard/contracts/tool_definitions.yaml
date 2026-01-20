@@ -1,0 +1,51 @@
+openapi: 3.0.0
+info:
+  title: Employee Management Tools
+  version: 1.0.0
+  description: Internal tool definitions for the Agent to control the dashboard.
+
+paths: {}
+
+components:
+  schemas:
+    # These represent the Tool Arguments the LLM will generate
+    
+    AssignJobArgs:
+      type: object
+      required:
+        - job_id
+        - employee_query
+      properties:
+        job_id:
+          type: integer
+          description: The numeric ID of the job to assign (e.g., 123).
+        employee_query:
+          type: string
+          description: The name or partial name of the employee to assign to (e.g., "John").
+    
+    ReassignJobArgs:
+      type: object
+      required:
+        - job_id
+        - target_employee_query
+      properties:
+        job_id:
+          type: integer
+        target_employee_query:
+          type: string
+          description: The new employee to give the job to.
+    
+    UnassignJobArgs:
+      type: object
+      required:
+        - job_id
+      properties:
+        job_id:
+          type: integer
+          
+    ListScheduleArgs:
+      type: object
+      properties:
+        date_query:
+          type: string
+          description: Natural language date (e.g. "today", "tomorrow", "next monday"). Defaults to today.

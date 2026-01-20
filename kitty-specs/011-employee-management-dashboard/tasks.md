@@ -45,9 +45,9 @@
 **Priority**: Medium
 **Dependencies**: WP01
 
-- [ ] **T008**: Create Jinja2 template `src/templates/dashboard.txt` matching FR-004 layout.
-- [ ] **T009**: Implement `render_dashboard(data)` in `src/lib/text_formatter.py` (or service method) that prepares data structs and renders the template.
-- [ ] **T010**: Verify output format with a test case in `tests/unit/test_presentation.py`.
+- [x] **T008**: Create Jinja2 template `src/templates/dashboard.txt` matching FR-004 layout.
+- [x] **T009**: Implement `render_dashboard(data)` in `src/lib/text_formatter.py` (or service method) that prepares data structs and renders the template.
+- [x] **T010**: Verify output format with a test case in `tests/unit/test_presentation.py`.
 
 **Implementation Sketch**:
 
@@ -61,10 +61,10 @@
 **Priority**: Final
 **Dependencies**: WP02, WP03
 
-- [ ] **T011**: Create `ShowScheduleTool` and `AssignJobTool` in `src/tools/employee_management.py`.
-- [ ] **T012**: Wire tools to use `DashboardService` and `AssignmentService` (including handling the fuzzy match results/clarifications).
-- [ ] **T013**: Register tools in the main `LLMClient` or agent loop configuration.
-- [ ] **T014**: Create integration test `tests/integration/test_employee_dashboard_flow.py` simulating a full user conversation.
+- [x] **T011**: Create `ShowScheduleTool` and `AssignJobTool` in `src/tools/employee_management.py`.
+- [x] **T012**: Wire tools to use `DashboardService` and `AssignmentService` (including handling the fuzzy match results/clarifications).
+- [x] **T013**: Register tools in the main `LLMClient` or agent loop configuration.
+- [x] **T014**: Create integration test `tests/integration/test_employee_dashboard_flow.py` simulating a full user conversation.
 
 **Implementation Sketch**:
 

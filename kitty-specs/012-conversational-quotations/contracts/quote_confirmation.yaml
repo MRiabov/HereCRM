@@ -1,0 +1,40 @@
+openapi: 3.0.0
+info:
+  title: Quotation Confirmation API
+  version: 1.0.0
+  description: Public endpoint for external website confirmation of quotes.
+
+paths:
+  /api/public/quotes/confirm:
+    post:
+      summary: Confirm a quote using a secure token
+      operationId: confirmQuote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  description: The secure external_token from the quote.
+              required:
+                - token
+      responses:
+        '200':
+          description: Quote successfully accepted and job created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  job_id:
+                    type: string
+                    format: uuid
+        '404':
+          description: Quote not found or token invalid.
+        '400':
+          description: Quote is already accepted or expired.

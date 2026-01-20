@@ -1,9 +1,7 @@
-# Implementation Plan: [FEATURE]
-*Path: [templates/plan-template.md](templates/plan-template.md)*
+# Implementation Plan: 012-conversational-quotations
 
-
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/kitty-specs/[###-feature-name]/spec.md`
+**Branch**: `012-conversational-quotations` | **Date**: 2026-01-20 | **Spec**: [spec.md](./spec.md)
+**Input**: Feature specification from `/kitty-specs/012-conversational-quotations/spec.md`
 
 **Note**: This template is filled in by the `/spec-kitty.plan` command. See `.kittify/templates/commands/plan.md` for the execution workflow.
 
@@ -11,31 +9,27 @@ The planner will not begin until all planning questions have been answered—cap
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+Implement a conversational quotation system that allows business owners to generate price proposals using natural language (e.g., "send a quote to John for window cleaning"). Quotes are stored as persistent entities with a lifecycle (DRAFT, SENT, ACCEPTED). Acceptance is triggered via a text reply "Confirm" (resolving to the most recent quote) or through a secure link on an external website (`HereCRMWebsite`). PDF generation, S3 storage, and intent detection patterns will be adapted from Spec 006.
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
-
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: Python 3.12
+**Primary Dependencies**: `weasyprint`, `jinja2`, `boto3`, `sqlmodel`
+**Storage**: PostgreSQL, S3 (Backblaze B2) for PDFs
+**Testing**: `pytest`
+**Target Platform**: Linux server
+**Project Type**: Single project
+**Performance Goals**: Quote generation and transmission < 3 seconds
+**Constraints**: Secure token-based confirmation for external website
+**Scale/Scope**: 100% automation of "Confirm" replies to Job creation
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- LLM-First Text Processing: [PASS] Quote creation and confirmation intent will use LLM tools.
+- Intent Transparency and Control: [PASS] System with notify users of quote creation and allow cancellation/editing via text or CRM.
+- No Brittle Parsing: [PASS] Use Pydantic models for LLM output validation.
 
 ## Project Structure
 
@@ -59,50 +53,25 @@ kitty-specs/[###-feature]/
   not include Option labels.
 -->
 
-```
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
+```bash
 src/
-├── models/
+├── models.py            # Quote, QuoteLineItem models
 ├── services/
-├── cli/
-└── lib/
-
-tests/
-├── contract/
-├── integration/
-└── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
-
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+│   ├── quote_service.py # Core logic for quotes
+│   ├── pdf_generator.py # Refactored common logic + Quote spec
+│   └── storage.py       # Reused S3 service
+├── tools/
+│   └── quote_tools.py   # LLM tools for creating quotes
+└── api/
+    └── public.py        # Confirmation endpoint
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Option 1: Single project.
 
 ## Complexity Tracking
 
-*Fill ONLY if Constitution Check has violations that must be justified*
+[Fill ONLY if Constitution Check has violations that must be justified]
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+| :--- | :--- | :--- |
+| N/A | | |
