@@ -7,10 +7,10 @@ subtasks:
   - "T016"
 title: "Conversational Tools & State Transitions"
 phase: "Phase 4 - User Interface"
-lane: "for_review"
+lane: "doing"
 dependencies: ["WP01"]
 agent: "Antigravity"
-shell_pid: "3837511"
+shell_pid: "3779362"
 history:
   - timestamp: "2026-01-20T14:45:30Z"
     lane: "planned"
@@ -89,3 +89,4 @@ history:
 - 2026-01-20T14:45:30Z – antigravity – lane=planned – Prompt created.
 - 2026-01-20T16:52:19Z – Antigravity – shell_pid=3837511 – lane=doing – Started implementation via workflow command
 - 2026-01-20T17:17:39Z – Antigravity – shell_pid=3837511 – lane=for_review – Implemented WP03: Conversational billing tools, state transitions, and templates. Tests passing.
+- 2026-01-20T17:30:29Z – Antigravity – shell_pid=3779362 – lane=doing – Started implementation via workflow command
