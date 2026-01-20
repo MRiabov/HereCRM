@@ -32,4 +32,7 @@ jobs:
 
       - name: Run tests
         # Running with -v for verbose output
+        env:
+          OPENROUTER_API_KEY: "dummy_key"
+          WHATSAPP_APP_SECRET: "dummy_secret"
         run: uv run pytest -v
