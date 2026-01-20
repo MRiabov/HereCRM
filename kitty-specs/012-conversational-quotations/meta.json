@@ -1,8 +1,22 @@
 {
+  "accept_commit": null,
+  "acceptance_history": [
+    {
+      "accepted_at": "2026-01-20T21:22:57Z",
+      "accepted_by": "antigravity",
+      "accepted_from_commit": "e7767a0c87a370468d4265c9f79a155f23c31f2a",
+      "branch": "main",
+      "mode": "local"
+    }
+  ],
+  "acceptance_mode": "local",
+  "accepted_at": "2026-01-20T21:22:57Z",
+  "accepted_by": "antigravity",
+  "accepted_from_commit": "e7767a0c87a370468d4265c9f79a155f23c31f2a",
+  "created_at": "2026-01-20T17:35:00Z",
   "feature_number": "012",
-  "slug": "012-conversational-quotations",
   "friendly_name": "Conversational Quotations",
   "mission": "software-dev",
-  "source_description": "Building a text-first CRM, as described in kitty-specs/001-whatsapp-ai-crm/spec.md, and now I need a quotation system.\n\nOn a request of customer like \"send an invoice to John, clean 15 windows for 150$\", it will look up a phone number of John (assuming there is only one John, otherwise there is a resolution), and sends them an invoice.\n\nIt looks up line items, so here it will define that we provide a 10x of service \"clean window exterior\". Line items are described here:kitty-specs/004-line-items-and-service-catalog/spec.md \n\nThe feature is very similar to invoicing... see kitty-specs/006-professional-invoices .\nI would also say that I wish that an invoice directs us to a website... where the customer can confirm the quote. The website in question will be done in other project. Alternatively, they can reply \"confirm invoice\" in text or a SMS. I think kitty-specs/003-automatic-customer-messaging/spec.md dealt with it.\n\nOkay, specify the quotation system",
-  "created_at": "2026-01-20T17:35:00Z"
+  "slug": "012-conversational-quotations",
+  "source_description": "Building a text-first CRM, as described in kitty-specs/001-whatsapp-ai-crm/spec.md, and now I need a quotation system.\n\nOn a request of customer like \"send an invoice to John, clean 15 windows for 150$\", it will look up a phone number of John (assuming there is only one John, otherwise there is a resolution), and sends them an invoice.\n\nIt looks up line items, so here it will define that we provide a 10x of service \"clean window exterior\". Line items are described here:kitty-specs/004-line-items-and-service-catalog/spec.md \n\nThe feature is very similar to invoicing... see kitty-specs/006-professional-invoices .\nI would also say that I wish that an invoice directs us to a website... where the customer can confirm the quote. The website in question will be done in other project. Alternatively, they can reply \"confirm invoice\" in text or a SMS. I think kitty-specs/003-automatic-customer-messaging/spec.md dealt with it.\n\nOkay, specify the quotation system"
 }
