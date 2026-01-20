@@ -1,7 +1,7 @@
 ---
 work_package_id: WP04
 title: Confirmation Workflow
-lane: "doing"
+lane: "for_review"
 dependencies: []
 subtasks: [T015, T016, T017, T018, T019]
 agent: "Antigravity"
@@ -89,3 +89,4 @@ Confirmation can happen in two ways:
 - 2026-01-20T19:14:32Z – Antigravity – shell_pid=3779362 – lane=doing – Started review via workflow command
 - 2026-01-20T19:54:30Z – Antigravity – shell_pid=3779362 – lane=planned – Moved to planned
 - 2026-01-20T19:55:12Z – Antigravity – shell_pid=3779362 – lane=doing – Started implementation via workflow command
+- 2026-01-20T20:07:17Z – Antigravity – shell_pid=3779362 – lane=for_review – Ready for review: Implemented scope enforcement in ToolExecutor, added ManageEmployeesTool and MassEmailTool with scope metadata, and verified with tests.
