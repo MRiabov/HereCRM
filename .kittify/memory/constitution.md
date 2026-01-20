@@ -27,3 +27,10 @@ The system must prioritize transparency and user control while balancing communi
 - **Cancelability**: Users must always have a clear path to cancel or rectify an action if the interpretation was incorrect.
 - **Channel Optimization**: Explicit "Is this what you want?" confirmations are optional and configurable per channel. High-cost channels (e.g., SMS) should favor implicit notification with "Edit/Cancel" options to minimize message overhead.
 - **Goal**: Prevent unintended side effects without imposing unnecessary friction or cost on the user.
+
+### 3. Progressive Documentation & Assistant Readiness
+
+A feature is not considered complete until documentation is added and the system's help capabilities are updated:
+
+- **Helpful Messages**: User-facing "help" messages or guided hints must be integrated (e.g., in `src/assets/messages.yaml`) to assist with discovery and usage.
+- **Intelligent Assistant Knowledge**: The Intelligent Product Assistant ([spec](kitty-specs/008-intelligent-product-assistant/spec.md)) must be updated (via `src/assets/manual.md` or similar) to ensure it can accurately respond to user queries about the new feature.
