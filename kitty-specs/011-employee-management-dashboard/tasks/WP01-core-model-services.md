@@ -1,7 +1,7 @@
 ---
 work_package_id: "WP01"
 title: "Data Model & Core Services"
-lane: "doing"
+lane: "for_review"
 dependencies: []
 subtasks: ["T001", "T002", "T003", "T004"]
 agent: "Antigravity"
@@ -87,3 +87,4 @@ Establish the database schema foundation and basic service layer for the Employe
 ## Activity Log
 
 - 2026-01-20T16:18:05Z – Antigravity – shell_pid=3779362 – lane=doing – Started implementation via workflow command
+- 2026-01-20T16:27:48Z – Antigravity – shell_pid=3779362 – lane=for_review – Ready for review: BillingService implemented with status retrieval, checkout session creation, and upgrade link generation. Unit tests passing.
