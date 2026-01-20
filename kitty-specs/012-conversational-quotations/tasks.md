@@ -10,7 +10,7 @@
 **Priority**: P0 (Blocker)
 **Test Criteria**: Unit tests pass for model creation and service CRUD operations.
 
-- [ ] T001: Create `Quote` and `QuoteLineItem` models in `src/models.py`
+- [x] T001: Create `Quote` and `QuoteLineItem` models in `src/models.py`
 - [ ] T002: Update `Business` and `Customer` models with relationships
 - [ ] T003: Generate and apply Alembic migration
 - [ ] T004: Implement `QuoteService` class with `create_quote` logic
