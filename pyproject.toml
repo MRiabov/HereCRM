@@ -26,7 +26,8 @@ dependencies = [
     "twilio>=9.9.1",
     "weasyprint",
     "jinja2",
-
+    "spec-kitty-cli>=0.11.1",
+    "stripe>=14.2.0",
 ]
 
 [build-system]

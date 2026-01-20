@@ -1,0 +1,25 @@
+{
+  "description": "Expected payload for Stripe Webhook: customer.subscription.updated",
+  "type": "object",
+  "properties": {
+    "type": { "const": "customer.subscription.updated" },
+    "data": {
+      "object": {
+        "object": { "const": "subscription" },
+        "id": { "type": "string" },
+        "customer": { "type": "string" },
+        "status": { "type": "string" },
+        "items": {
+          "data": {
+            "type": "array",
+            "items": {
+              "price": { "id": { "type": "string" } },
+              "quantity": { "type": "integer" }
+            }
+          }
+        },
+        "metadata": { "type": "object" }
+      }
+    }
+  }
+}

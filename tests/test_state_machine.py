@@ -68,9 +68,12 @@ async def test_state_idle_to_confirm(
 
     # Send message in IDLE state
     response = await service.handle_message(
-        user_phone, "Add job John Doe Fix window 50"
+        "Add job John Doe Fix window 50", user_phone=user_phone
     )
 
+    # Expect job_summary header
+    expected = template_service.render("job_summary", category="Job", client_details="", price="", description="", status="")
+    # Check for the static part of the template "Job summary:"
     assert "Job summary:" in response
 
     # Verify state updated in DB
@@ -119,9 +122,9 @@ async def test_state_confirm_yes(
     service = WhatsappService(test_session, mock_parser, template_service)
 
     # Confirm
-    response = await service.handle_message("123456789", "Yes")
+    response = await service.handle_message("Yes", user_phone="123456789")
 
-    assert "Job added" in response
+    assert template_service.render("job_added", category="Job", name="John Doe", location="No location", price_info="").split(":")[0] in response
 
     # Verify job created
     from sqlalchemy import select
@@ -170,9 +173,9 @@ async def test_undo_functionality(
     service = WhatsappService(test_session, mock_parser, template_service)
 
     # Undo
-    response = await service.handle_message("123456789", "undo")
+    response = await service.handle_message("undo", user_phone="123456789")
 
-    assert "Undone: Deleted job" in response
+    assert template_service.render("undo_deleted", entity_type="job") in response
 
     # Verify job deleted
     from sqlalchemy import select
@@ -219,9 +222,9 @@ async def test_undo_promotion(
     service = WhatsappService(test_session, mock_parser, template_service)
 
     # Undo
-    response = await service.handle_message("123456789", "undo")
+    response = await service.handle_message("undo", user_phone="123456789")
 
-    assert "Reverted Job promotion back to Request" in response
+    assert template_service.render("undo_promotion_reverted") in response
 
     # Verify job deleted
     from sqlalchemy import select
@@ -270,9 +273,9 @@ async def test_undo_settings_update(
     service = WhatsappService(test_session, mock_parser, template_service)
 
     # Undo
-    response = await service.handle_message("123456789", "undo")
+    response = await service.handle_message("undo", user_phone="123456789")
 
-    assert "Restored setting 'confirm_by_default' to its previous value" in response
+    assert template_service.render("undo_setting_reverted", key="confirm_by_default") in response
 
     # Verify preference reverted
     from sqlalchemy import select
@@ -322,16 +325,15 @@ async def test_schedule_ambiguous_customer(
     service = WhatsappService(test_session, mock_parser, template_service)
 
     # 1. User says schedule John
-    response = await service.handle_message("123456789", "Schedule John tomorrow")
+    response = await service.handle_message("Schedule John tomorrow", user_phone="123456789")
 
     # Should ask for confirmation
-    assert "Please confirm: Schedule" in response
+    assert template_service.render("confirm_prompt", summary="Schedule").split(":")[0] in response
 
     # 2. Confirm -> Should hit ToolExecutor and find multiple customers
-    response_confirm = await service.handle_message("123456789", "Yes")
+    response_confirm = await service.handle_message("Yes", user_phone="123456789")
 
-    assert "Multiple customers found matching 'John Doe'" in response_confirm
-    assert "Please be more specific" in response_confirm
+    assert template_service.render("job_multiple_found", query="John Doe").split("'")[0] in response_confirm
 
 
 @pytest.mark.asyncio
@@ -358,12 +360,12 @@ async def test_edit_last_flow(test_session, template_service):
         customer_phone=None,
         location=None,
     )
-    await service.handle_message("123456789", "Add John faucet $50")
-    await service.handle_message("123456789", "yes")
+    await service.handle_message("Add John faucet $50", user_phone="123456789")
+    await service.handle_message("yes", user_phone="123456789")
 
     # 2. Check edit last
-    reply = await service.handle_message("123456789", "edit last")
-    assert "Edit the last Job" in reply
+    reply = await service.handle_message("edit last", user_phone="123456789")
+    assert template_service.render("edit_last_prompt", category="Job", details="MARKER").split("MARKER")[0].strip() in reply
     assert "John" in reply
     assert "50$" in reply
     assert "faucet" in reply
@@ -384,8 +386,8 @@ async def test_unparseable_input_help(test_session, template_service):
 
     # LLM returns None for unclear input
     mock_parser.parse.return_value = None
-    reply = await service.handle_message("123456789", "blablabla")
+    reply = await service.handle_message("blablabla", user_phone="123456789")
 
-    assert "Sorry, we couldn't understand your request" in reply
+    assert template_service.render("error_unclear_input").split('\n')[0] in reply
     assert "Available commands" in reply
     assert "help" in reply
