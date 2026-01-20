@@ -24,9 +24,9 @@
 
 - [x] T006: Create `src/templates/quote.html` Jinja2 template
 - [x] T007: Update `PDFGenerator` to support quote rendering
-- [ ] T008: Implement `QuoteService.generate_pdf` and `send_quote` methods
-- [ ] T009: Add `quote_proposal` message template to `messages.yaml`
-- [ ] T010: Write integration tests for PDF generation and sending flow
+- [x] T008: Implement `QuoteService.generate_pdf` and `send_quote` methods
+- [x] T009: Add `quote_proposal` message template to `messages.yaml`
+- [x] T010: Write integration tests for PDF generation and sending flow
 
 ### WP03: LLM Tool Integration
 
