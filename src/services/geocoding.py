@@ -6,9 +6,23 @@ logger = logging.getLogger(__name__)
 
 
 class GeocodingService:
+    _shared_client: Optional[httpx.AsyncClient] = None
+
     def __init__(self, user_agent: str = "WhatsAppCRM/1.0"):
         self.base_url = "https://nominatim.openstreetmap.org/search"
         self.user_agent = user_agent
+
+    @classmethod
+    def get_client(cls) -> httpx.AsyncClient:
+        if cls._shared_client is None or cls._shared_client.is_closed:
+            cls._shared_client = httpx.AsyncClient(timeout=10.0)
+        return cls._shared_client
+
+    @classmethod
+    async def close_client(cls):
+        if cls._shared_client:
+            await cls._shared_client.aclose()
+            cls._shared_client = None
 
     async def get_coordinates(
         self, address: str
@@ -24,21 +38,21 @@ class GeocodingService:
         headers = {"User-Agent": self.user_agent}
 
         try:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    self.base_url, params=params, headers=headers, timeout=10.0
-                )
-                response.raise_for_status()
-                data = response.json()
+            client = self.get_client()
+            response = await client.get(
+                self.base_url, params=params, headers=headers
+            )
+            response.raise_for_status()
+            data = response.json()
 
-                if data and isinstance(data, list) and len(data) > 0:
-                    lat = float(data[0]["lat"])
-                    lon = float(data[0]["lon"])
-                    details = data[0].get("address", {})
-                    return lat, lon, details
+            if data and isinstance(data, list) and len(data) > 0:
+                lat = float(data[0]["lat"])
+                lon = float(data[0]["lon"])
+                details = data[0].get("address", {})
+                return lat, lon, details
 
-                logger.info(f"No results found for address: {address}")
-                return None, None, None
+            logger.info(f"No results found for address: {address}")
+            return None, None, None
 
         except httpx.HTTPError as e:
             logger.error(f"Geocoding error for address '{address}': {e}")
