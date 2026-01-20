@@ -51,6 +51,7 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     phone_number: Mapped[Optional[str]] = mapped_column(String, unique=True, nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String, unique=True, nullable=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"))
@@ -163,6 +164,8 @@ class Job(Base):
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="jobs")
     customer: Mapped["Customer"] = relationship(back_populates="jobs")
+    employee_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
+    employee: Mapped[Optional["User"]] = relationship(foreign_keys=[employee_id])
     line_items: Mapped[List["LineItem"]] = relationship(back_populates="job", cascade="all, delete-orphan")
     invoices: Mapped[List["Invoice"]] = relationship(back_populates="job", cascade="all, delete-orphan")
 
