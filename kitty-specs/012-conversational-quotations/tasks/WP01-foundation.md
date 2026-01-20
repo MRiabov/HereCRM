@@ -1,9 +1,11 @@
 ---
 work_package_id: "WP01"
 title: "Foundation & Core Service"
-lane: "planned"
+lane: "doing"
 dependencies: []
 subtasks: ["T001", "T002", "T003", "T004", "T005"]
+agent: "Antigravity"
+shell_pid: "3779362"
 ---
 
 ### Objective
@@ -75,3 +77,7 @@ We are introducing a new entity `Quote` which is similar to an Invoice but repre
 
 - Run `pytest tests/unit/test_quote_service.py`.
 - Ensure migration runs without errors.
+
+## Activity Log
+
+- 2026-01-20T18:18:08Z – Antigravity – shell_pid=3779362 – lane=doing – Started implementation via workflow command
