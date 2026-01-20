@@ -45,7 +45,7 @@
 **Priority**: P1
 **Test Criteria**: Accepting a quote creates a Job and updates Quote status.
 
-- [ ] T015: Implement `QuoteService.confirm_quote` logic (Status update + Job creation)
+- [x] T015: Implement `QuoteService.confirm_quote` logic (Status update + Job creation)
 - [ ] T016: Implement public API endpoint for web confirmation
 - [x] T017: Implement text-based "Confirm" intent handler in `whatsapp_service.py`
 - [x] T018: Write tests for confirmation flow (Web and Text) and Job verification
