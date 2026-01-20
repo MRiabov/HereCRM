@@ -7,7 +7,7 @@ subtasks:
   - "T016"
 title: "Conversational Tools & State Transitions"
 phase: "Phase 4 - User Interface"
-lane: "doing"
+lane: "for_review"
 dependencies: ["WP01"]
 agent: "Antigravity"
 shell_pid: "3837511"
@@ -74,10 +74,10 @@ history:
 
 ## Definition of Done Checklist
 
-- [ ] `GetBillingStatusTool` and `RequestUpgradeTool` registered and working
-- [ ] User state updates to `BILLING` on request
-- [ ] Messages rendered via templates
-- [ ] E2E tests for "billing" command show correct status
+- [x] `GetBillingStatusTool` and `RequestUpgradeTool` registered and working
+- [x] User state updates to `BILLING` on request
+- [x] Messages rendered via templates
+- [x] E2E tests for "billing" command show correct status
 
 ## Review Guidance
 
@@ -88,3 +88,4 @@ history:
 
 - 2026-01-20T14:45:30Z – antigravity – lane=planned – Prompt created.
 - 2026-01-20T16:52:19Z – Antigravity – shell_pid=3837511 – lane=doing – Started implementation via workflow command
+- 2026-01-20T17:17:39Z – Antigravity – shell_pid=3837511 – lane=for_review – Implemented WP03: Conversational billing tools, state transitions, and templates. Tests passing.
