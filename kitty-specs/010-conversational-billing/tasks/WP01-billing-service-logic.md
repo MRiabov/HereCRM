@@ -78,10 +78,10 @@ history:
 
 ## Definition of Done Checklist
 
-- [x] `BillingService` implemented with status and link methods
-- [x] Stripe API initialized correctly
-- [x] Unit tests passing with 80%+ coverage for service methods
-- [x] Metadata correctly passed to Stripe sessions
+- [ ] `BillingService` implemented with status and link methods
+- [ ] Stripe API initialized correctly
+- [ ] Unit tests passing with 80%+ coverage for service methods
+- [ ] Metadata correctly passed to Stripe sessions
 
 ## Review Guidance
 
@@ -92,5 +92,3 @@ history:
 
 - 2026-01-20T14:45:30Z – antigravity – lane=planned – Prompt created.
 - 2026-01-20T15:49:02Z – Antigravity – shell_pid=3779362 – lane=doing – Started implementation via workflow command
-- 2026-01-20T16:38:59Z – Antigravity – shell_pid=3779362 – lane=for_review – Implemented BillingService with full test coverage and configuration-driven item names. Added STRIPE_SECRET_KEY to .env.example.
-- 2026-01-20T16:40:39Z – Antigravity – shell_pid=3779362 – lane=doing – Started review via workflow command

@@ -8,12 +8,10 @@ subtasks:
   - "T005"
 title: "Foundation & Data Model"
 phase: "Phase 1 - Infrastructure"
-lane: "done"
+lane: "for_review"
 dependencies: []
 agent: "Antigravity"
 shell_pid: "3779362"
-reviewed_by: "MRiabov"
-review_status: "approved"
 history:
   - timestamp: "2026-01-20T14:45:30Z"
     lane: "planned"
@@ -102,4 +100,3 @@ history:
 - 2026-01-20T14:45:30Z – antigravity – lane=planned – Prompt created.
 - 2026-01-20T15:25:45Z – Antigravity – shell_pid=3779362 – lane=doing – Started implementation via workflow command
 - 2026-01-20T15:47:59Z – Antigravity – shell_pid=3779362 – lane=for_review – Ready for review: Foundation & Data Model implemented with billing fields, config, and migration.
-- 2026-01-20T16:27:37Z – Antigravity – shell_pid=3779362 – lane=done – Marked as done per user request.
