@@ -14,10 +14,13 @@ error_unclear_input: |
   - *Search*: 'Find John' or 'Show all jobs' or 'Find lead of High Street 34'
   - *Requests*: Somebody asked to call later? Store it as a request for later review. 'Add request: John on High Street 34, call 0871235678 tomorrow at 12:00'
   - *Promote*: Want to convert request to job? 'Promote request for High Street 34 to job'
+  - *Pipeline*: 'Show pipeline', 'Show Lost customers' or 'Mark John as Not Interested'
+  - *Invoice*: 'Send invoice to John'
+  - *Status*: 'On my way to John'
   - *Edit*: 'Edit Job, Lead or Request: John on High Street 34, call 0871235678 tomorrow at 12:00'
   - *Settings*: 'Update settings'
 
-  Note: Ideally, identify all customers by phone number or street address to avoid ambiguity or duplicates.
+   Note: Identify customers by phone or address to avoid duplicates. On SMS/Email, actions auto-confirm after 45s unless cancelled.
 
   Type 'help' for more details.
 error_edit_nothing: "Nothing to edit."
@@ -90,17 +93,26 @@ error_invalid_service_format: "❌ Invalid format. Usage: 'Add Service [Name] [P
 
 # Help Message
 help_message: |
-  Available commands:
-  - *Add Job*: 'Add: John, 123 Main St, 086 456 123, $50'
-  - *Add Lead*: 'Add lead: John, 123 Main St, 086 456 123'
-  - *Schedule*: 'Schedule John tomorrow at 2pm' or "Schedule John 0871235678 tommorrow at 14:00"
-  - *Search*: 'Find John' or 'Show all jobs' or 'Find lead of High Street 34'
-  - *Settings*: 'Update settings'
-  - *Requests*: Somebody asked to call later? Store it as a request for later review. 'Add request: John on High Street 34, call 0871235678 tomorrow at 12:00'
-  - *Promote*: Want to convert request to job? 'Promote request for High Street 34 to job'
-  - *Edit*: 'Edit Job, Lead or Request: John on High Street 34, call 0871235678 tomorrow at 12:00'
+  Here are some *key* ways I can assist you:
+
+  - *Add Jobs*: e.g. "Fix sink for John $50"
+  - *Add Leads*: e.g. "Register client: Sarah in Dublin"
+  - *Schedule*: e.g. "Schedule John for tomorrow 2pm"
+
+  **Advanced commands:**
   
-  Note: Ideally, identify all customers by phone number or street address to avoid ambiguity or duplicates.
+  - *Search*: 'Find John' or 'Show all jobs' or 'Find lead of High Street 34'
+  - *Requests*: Store a request for later review: 'Add request: John on High Street 34, call 0871235678 tomorrow at 12:00'
+  - *Promote to Job*: Convert a request into a job: 'Promote request for High Street 34 to job'
+  - *Sales Pipeline*: View sales funnel or update customer status: 'Show sales pipeline', 'Show Lost customers', 'Mark John as Not Interested'
+  - *Invoice*: Generate and send an invoice: 'Send invoice to John'
+  - *Send Status*: Notify customer you are on the way: 'On my way to John'. The client receives "Hello, I'm on my way to you. Will be there soon." (configurable)
+  - *Edit*: Modify an entry: 'Edit Job, Lead or Request: John on High Street 34...'
+  - *Settings*: Configure preferences: 'Update settings'
+  
+  Note: Identify customers by phone or address to avoid duplicates.
+# redacted: On SMS/Email, actions auto-confirm after 45s unless cancelled.
+
 
 # Onboarding
 welcome_message: |
@@ -113,6 +125,9 @@ welcome_message: |
   - *Add Leads*: 'Add lead Mary'
   - *Schedule*: 'Schedule John for tomorrow 2pm'
   - *Search*: 'Show my jobs for today'
+  - *Pipeline*: 'Show pipeline'
+  - *Invoice*: 'Send invoice to John'
+  - *Send Status to customer*: 'On my way to John'
   
   Try saying "Add job Fix faucet for Bob at 42 Wallaby Way $80" to get started!
 
