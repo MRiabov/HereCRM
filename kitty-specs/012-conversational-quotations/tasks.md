@@ -11,7 +11,7 @@
 **Test Criteria**: Unit tests pass for model creation and service CRUD operations.
 
 - [x] T001: Create `Quote` and `QuoteLineItem` models in `src/models.py`
-- [ ] T002: Update `Business` and `Customer` models with relationships
+- [x] T002: Update `Business` and `Customer` models with relationships
 - [ ] T003: Generate and apply Alembic migration
 - [ ] T004: Implement `QuoteService` class with `create_quote` logic
 - [ ] T005: Write unit tests for Quote models and service
