@@ -27,6 +27,7 @@ from src.uimodels import (
 )
 from src.tools.invoice_tools import SendInvoiceTool
 from src.services.template_service import TemplateService
+from src.config.loader import get_channel_config_loader
 
 
 class LLMParser:
@@ -386,7 +387,11 @@ class LLMParser:
         return await self._chat_with_retry(messages, self.settings_tools, model_map)
 
     async def parse(
-        self, text: str, system_time: Optional[str] = None, service_catalog: Optional[str] = None
+        self, 
+        text: str, 
+        system_time: Optional[str] = None, 
+        service_catalog: Optional[str] = None,
+        channel_name: str = "whatsapp"
     ) -> Optional[
         Union[
             AddJobTool,
@@ -416,6 +421,15 @@ class LLMParser:
             system_instruction += self.prompts_service.render(
                 "service_catalog_matching", service_catalog=service_catalog
             )
+
+        # 3. Channel constraints
+        config_loader = get_channel_config_loader()
+        channel_config = config_loader.get_channel_config(channel_name)
+        max_length = channel_config.get("max_length", 4096)
+        
+        # If max_length is restrictive (e.g. SMS), add instruction
+        if max_length < 200:
+             system_instruction += f"\nIMPORTANT: The user is on a character-limited channel (max {max_length} chars). Keep your response Extremely concise. No fluff."
 
         messages = [{"role": "system", "content": system_instruction}]
 

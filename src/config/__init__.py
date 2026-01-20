@@ -14,12 +14,24 @@ class Settings(BaseSettings):
     whatsapp_app_secret: str
     openrouter_model: str = "meta-llama/llama-3.1-8b-instruct"
 
+    # Twilio Settings
+    twilio_account_sid: Optional[str] = None
+    twilio_auth_token: Optional[str] = None
+    twilio_phone_number: Optional[str] = None
+
+    # Postmark Settings
+    postmark_server_token: Optional[str] = None
+    from_email_address: Optional[str] = None
+
     # S3 / Storage Settings
     s3_bucket_name: str = "here-crm-exports"
     s3_endpoint_url: Optional[str] = None
     s3_access_key_id: Optional[str] = None
     s3_secret_access_key: Optional[str] = None
     s3_region_name: str = "us-east-1"
+    
+    # Generic Webhook Settings
+    generic_webhook_secret: Optional[str] = None
 
     # Twilio Settings
     twilio_account_sid: Optional[str] = None

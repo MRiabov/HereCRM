@@ -33,20 +33,24 @@ class AuthService:
 
         return user, True
 
-    async def create_user_by_email(self, email: str) -> User:
+    async def get_or_create_user_by_identity(self, identity: str) -> tuple[User, bool]:
         """
-        Creates a new Business and User with the given email address.
-        Returns the created User.
+        Identify user by email or phone.
         """
-        # Create new Business and User
-        business = Business(name=f"Business of {email}")
-        self.session.add(business)
-        # Flush to generate ID for the business
-        await self.session.flush()
+        if "@" in identity:
+            user = await self.user_repo.get_by_email(identity)
+            if user:
+                return user, False
+            
+            # Create new Business and User by email
+            business = Business(name=f"Business of {identity}")
+            self.session.add(business)
+            await self.session.flush()
+            
+            user = User(email=identity, business_id=business.id, role="owner")
+            self.user_repo.add(user)
+            await self.session.flush()
+            return user, True
+        else:
+            return await self.get_or_create_user(identity)
 
-        user = User(email=email, business_id=business.id, role="owner")
-        self.user_repo.add(user)
-        # Flush to make the user available in the session identity map
-        await self.session.flush()
-
-        return user

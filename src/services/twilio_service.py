@@ -1,6 +1,7 @@
 import logging
+import re
 from twilio.rest import Client
-from twilio.base.exceptions import TwilioRestException
+from twilio.base.exceptions import TwilioRestException, TwilioException
 
 from src.config import settings
 
@@ -25,6 +26,12 @@ class TwilioService:
                 "Twilio credentials not configured. SMS functionality will be disabled."
             )
     
+    def validate_e164(self, phone: str) -> bool:
+        """Validate phone number is in E.164 format."""
+        if not phone:
+            return False
+        return bool(re.match(r'^\+[1-9]\d{1,14}$', phone))
+
     async def send_sms(self, to_number: str, body: str) -> bool:
         """
         Send an SMS message via Twilio.
@@ -35,12 +42,28 @@ class TwilioService:
             
         Returns:
             bool: True if message was sent successfully, False otherwise
+        
+        Raises:
+            ValueError: If inputs are invalid.
         """
         if not self.client or not self.from_number:
             self.logger.error("Cannot send SMS: Twilio not configured")
             return False
+
+        # Input Validation
+        if not self.validate_e164(to_number):
+            raise ValueError(f"Invalid recipient phone number: {to_number}. Must be in E.164 format.")
+        
+        if not body:
+            raise ValueError("SMS body cannot be empty.")
+            
+        if len(body) > 1600:
+            raise ValueError(f"SMS body too long ({len(body)} chars). Max is 1600.")
         
         try:
+            # Twilio SDK is synchronous by default, but we keep the method async
+            # for architectural consistency with other channel services (like Postmark).
+            # In a production app, we might use a thread pool or an async twilio client if available.
             message = self.client.messages.create(
                 body=body,
                 from_=self.from_number,
@@ -58,6 +81,11 @@ class TwilioService:
             )
             return False
             
+        except TwilioException as e:
+            self.logger.error(f"Twilio SDK error sending SMS to {to_number}: {e}")
+            return False
+
         except Exception as e:
             self.logger.exception(f"Unexpected error sending SMS to {to_number}: {e}")
             return False
+

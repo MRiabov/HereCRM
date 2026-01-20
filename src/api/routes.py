@@ -2,8 +2,9 @@ import hmac
 import hashlib
 import logging
 from typing import Tuple
+from twilio.request_validator import RequestValidator
 
-from fastapi import APIRouter, Depends, HTTPException, Header, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Header, Request, status, Response
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,6 +39,12 @@ class WebhookPayload(BaseModel):
             # Strip spaces, dashes, and parentheses
             return "".join(c for c in v if c.isdigit() or c == "+")
         return v
+
+
+class GenericWebhookPayload(BaseModel):
+    identity: str = Field(..., description="Phone number or email of the CRM user")
+    message: str = Field(..., max_length=5000)
+    source: str = Field("generic", max_length=100)
 
 
 async def verify_signature(request: Request, x_hub_signature_256: str = Header(None)):
@@ -116,11 +123,13 @@ async def webhook(
 
         # 2. Process Message
         response_text = await whatsapp_service.handle_message(
+            user_id=user.id,
             user_phone=user.phone_number,
             message_text=payload.body,
             is_new_user=is_new,
             media_url=payload.media_url,
             media_type=payload.media_type,
+            channel="whatsapp"
         )
 
         # 3. Commit Transaction
@@ -187,15 +196,17 @@ async def get_history(
 
 async def verify_twilio_signature(request: Request):
     """
-    Verifies the Twilio request signature.
-    This protects against spoofed requests.
+    Verifies the Twilio signature to ensure requests are coming from Twilio.
     """
     if not settings.twilio_auth_token:
+        # If not configured, we might be in dev mode or forgot config.
+        # Log error and fail secure.
         logger.error("TWILIO_AUTH_TOKEN is not configured.")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Configuration Error",
         )
+<<<<<<< HEAD
     
     # Get the signature from headers
     signature = request.headers.get("X-Twilio-Signature", "")
@@ -238,81 +249,113 @@ async def verify_twilio_signature(request: Request):
     return form_data
 
 
-@router.post("/webhooks/twilio")
+@router.post("/webhooks/twilio", dependencies=[Depends(verify_twilio_signature)])
 async def twilio_webhook(
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    services: Tuple[AuthService, WhatsappService] = Depends(get_services),
 ):
-    """
-    Handles inbound SMS messages from Twilio.
-    """
     try:
-        # Verify signature and get form data
-        form_data = await verify_twilio_signature(request)
+        auth_service, whatsapp_service = services
+        form = await request.form()
         
-        # Extract Twilio parameters (ensure they are strings)
-        from_number = str(form_data.get("From", ""))
-        body = str(form_data.get("Body", ""))
+        from_number = str(form.get("From"))
+        body = str(form.get("Body"))
         
-        if not from_number or not body:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Missing required fields: From or Body"
-            )
-        
-        # Rate limiting
+        if not from_number or from_number == "None":
+            return Response(content='<?xml version="1.0" encoding="UTF-8"?><Response></Response>', media_type="application/xml")
+            
+        if body is None or body == "None":
+            return Response(content='<?xml version="1.0" encoding="UTF-8"?><Response></Response>', media_type="application/xml")
+
+        # Rate Limit
         if check_rate_limit(from_number):
-            logger.warning(f"Rate limit exceeded for {from_number}")
-            return {"status": "rate_limited"}
-        
-        # Get or create user
-        auth_service = AuthService(db)
+             logger.warning(f"Rate limit exceeded for {from_number} (SMS)")
+             return Response(content='<?xml version="1.0" encoding="UTF-8"?><Response></Response>', media_type="application/xml")
+
+        # Get/Create User
         user, is_new = await auth_service.get_or_create_user(from_number)
         
-        # Process message using WhatsappService (unified message handling)
-        whatsapp_service = WhatsappService(db, llm_parser, template_service)
-        response_text = await whatsapp_service.handle_message(
-            user_phone=from_number,
+        # Handle Message
+        # The reply text is sent via TwilioService inside handle_message for SMS channel
+        await whatsapp_service.handle_message(
+            user_id=user.id,
+            user_phone=user.phone_number,
             message_text=body,
-            is_new_user=is_new,
+            channel="sms",
+            is_new_user=is_new
         )
+        
+        await auth_service.session.commit()
+        
+        # Return empty TwiML response as we use the Twilio REST API for replies
+        return Response(content='<?xml version="1.0" encoding="UTF-8"?><Response></Response>', media_type="application/xml")
 
-        
-        # Commit transaction
-        await db.commit()
-        
-        # Send response via Twilio
-        from src.services.twilio_service import TwilioService
-        twilio_service = TwilioService()
-        await twilio_service.send_sms(from_number, response_text)
-        
-        # Return TwiML response (Twilio expects this format)
-        return {
-            "status": "success",
-            "message": "SMS processed"
-        }
-        
-    except HTTPException:
-        raise
-    
     except Exception:
         logger.exception("Twilio webhook processing failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An internal error occurred."
+            detail="Internal Error"
         )
+
+
+@router.post("/webhooks/generic", dependencies=[Depends(verify_generic_api_key)])
+async def generic_webhook(
+    payload: GenericWebhookPayload,
+    services: Tuple[AuthService, WhatsappService] = Depends(get_services),
+):
+    """
+    Generic webhook for external systems (Zapier, etc.)
+    """
+    try:
+        auth_service, whatsapp_service = services
+
+        # Rate Limiting
+        if check_rate_limit(payload.identity):
+            logger.warning(f"Rate limit exceeded for {payload.identity} (Generic)")
+            return {"reply": "Too many requests. Please try again later."}
+
+        # Identify or Onboard User
+        user, is_new = await auth_service.get_or_create_user_by_identity(payload.identity)
+
+        # Process Message
+        response_text = await whatsapp_service.handle_message(
+            user_id=user.id,
+            user_phone=user.phone_number,
+            message_text=payload.message,
+            is_new_user=is_new,
+            channel=payload.source
+        )
+
+        # Commit Transaction
+        await auth_service.session.commit()
+
+        return {
+            "reply": response_text,
+            "user_id": user.id,
+            "status": "processed",
+            "source": payload.source
+        }
+
+    except Exception:
+        logger.exception("Generic webhook processing failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Error"
+        )
+
 
 
 @router.post("/webhooks/postmark/inbound")
 async def postmark_inbound_webhook(
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    services: Tuple[AuthService, WhatsappService] = Depends(get_services),
 ):
     """
     Handles inbound email messages from Postmark.
     Postmark sends JSON payload with email details.
     """
     try:
+        auth_service, whatsapp_service = services
         # Parse JSON payload from Postmark
         payload = await request.json()
         
@@ -346,33 +389,22 @@ async def postmark_inbound_webhook(
             return {"status": "rate_limited"}
         
         # Get or create user by email
-        from src.repositories import UserRepository
-        user_repo = UserRepository(db)
-        user = await user_repo.get_by_email(from_email)
-        
-        is_new = False
-        if not user:
-            # Create new user with email
-            # Note: We need to check if this is allowed per spec (T013)
-            # The spec says "Create user if new (optional? verify spec)"
-            # For now, we'll create the user
-            auth_service = AuthService(db)
-            user = await auth_service.create_user_by_email(from_email)
-            is_new = True
+        user, is_new = await auth_service.get_or_create_user_by_identity(from_email)
         
         # Ensure user has an email (it should always have one at this point)
         user_identifier = user.email or from_email
         
         # Process message using WhatsappService (unified message handling)
-        whatsapp_service = WhatsappService(db, llm_parser, template_service)
         response_text = await whatsapp_service.handle_message(
+            user_id=user.id,
             user_phone=user_identifier,  # Using email as identifier
             message_text=text_body,
             is_new_user=is_new,
+            channel="email"
         )
         
         # Store threading metadata in the most recent message
-        # Query the last message for this user directly
+        # Query the last message for this user directly via session
         from sqlalchemy import desc
         query = (
             select(Message)
@@ -380,7 +412,7 @@ async def postmark_inbound_webhook(
             .order_by(desc(Message.created_at))
             .limit(1)
         )
-        result = await db.execute(query)
+        result = await auth_service.session.execute(query)
         last_message = result.scalar_one_or_none()
         
         if last_message:
@@ -393,7 +425,7 @@ async def postmark_inbound_webhook(
                 last_message.log_metadata["references"] = references
         
         # Commit transaction
-        await db.commit()
+        await auth_service.session.commit()
         
         # Send response via Postmark
         from src.services.postmark_service import PostmarkService
@@ -425,3 +457,4 @@ async def postmark_inbound_webhook(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An internal error occurred."
         )
+

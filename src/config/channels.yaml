@@ -1,0 +1,15 @@
+channels:
+  sms:
+    provider: twilio
+    auto_confirm: true
+    auto_confirm_timeout: 45
+    max_length: 160
+  email:
+    provider: postmark
+    auto_confirm: true
+    auto_confirm_timeout: 45
+    max_length: 10000
+  whatsapp:
+    provider: meta
+    auto_confirm: false
+    max_length: 4096

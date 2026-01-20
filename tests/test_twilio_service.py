@@ -96,6 +96,24 @@ class TestTwilioService:
             mock_client_class.return_value = mock_client
             
             service = TwilioService()
-            result = await service.send_sms("+invalid", "Test message")
+            with pytest.raises(ValueError, match="Invalid recipient phone number"):
+                await service.send_sms("+invalid", "Test message")
+
+    @pytest.mark.asyncio
+    @patch('src.services.twilio_service.settings')
+    async def test_send_sms_validation_errors(self, mock_settings):
+        """Test SMS sending fails for invalid inputs"""
+        mock_settings.twilio_account_sid = "test_sid"
+        mock_settings.twilio_auth_token = "test_token"
+        mock_settings.twilio_phone_number = "+1234567890"
+        
+        with patch('src.services.twilio_service.Client'):
+            service = TwilioService()
             
-            assert result is False
+            # Empty body
+            with pytest.raises(ValueError, match="SMS body cannot be empty"):
+                await service.send_sms("+1234567890", "")
+            
+            # Too long body
+            with pytest.raises(ValueError, match="SMS body too long"):
+                await service.send_sms("+1234567890", "a" * 1601)

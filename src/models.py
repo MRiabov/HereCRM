@@ -14,6 +14,7 @@ class UserRole(str, enum.Enum):
 class ConversationStatus(str, enum.Enum):
     IDLE = "idle"
     WAITING_CONFIRM = "waiting_confirm"
+    PENDING_AUTO_CONFIRM = "pending_auto_confirm"
     SETTINGS = "settings"
     DATA_MANAGEMENT = "data_management"
 
@@ -57,6 +58,7 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
+    preferred_channel: Mapped[str] = mapped_column(String, default="whatsapp")
     preferences: Mapped[dict] = mapped_column(
         JSON, default=lambda: {"confirm_by_default": False}
     )
@@ -195,6 +197,9 @@ class ConversationState(Base):
     )
     draft_data: Mapped[Optional[Any]] = mapped_column(JSON)
     last_action_metadata: Mapped[Optional[dict]] = mapped_column(JSON)
+    pending_action_timestamp: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    pending_action_payload: Mapped[Optional[dict]] = mapped_column(JSON)
+    active_channel: Mapped[str] = mapped_column(String, default="whatsapp")
     last_updated: Mapped[datetime] = mapped_column(
         DateTime,
         default=lambda: datetime.now(timezone.utc),
@@ -220,6 +225,7 @@ class Invoice(Base):
     # Relationships
     job: Mapped["Job"] = relationship(back_populates="invoices")
 
+
 class MessageRole(str, enum.Enum):
     USER = "user"
     ASSISTANT = "assistant"
@@ -235,6 +241,8 @@ class Message(Base):
     to_number: Mapped[Optional[str]] = mapped_column(String)
     body: Mapped[str] = mapped_column(Text)
     role: Mapped[MessageRole] = mapped_column(SAEnum(MessageRole))
+    channel_type: Mapped[str] = mapped_column(String, default="whatsapp")
+    external_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     log_metadata: Mapped[Optional[dict]] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)

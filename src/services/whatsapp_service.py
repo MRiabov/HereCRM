@@ -13,6 +13,11 @@ from src.llm_client import LLMParser
 from src.tool_executor import ToolExecutor
 from src.services.template_service import TemplateService
 from src.services.data_management import DataManagementService
+from src.services.twilio_service import TwilioService
+from src.config.loader import get_channel_config_loader
+from src.database import AsyncSessionLocal
+import asyncio
+from datetime import datetime, timedelta, timezone
 from src.uimodels import (
     AddJobTool,
     AddLeadTool,
@@ -53,24 +58,38 @@ class WhatsappService:
 
     async def handle_message(
         self,
-        user_phone: str,
         message_text: str,
+        user_id: Optional[int] = None,
+        user_phone: Optional[str] = None,
+        channel: str = "whatsapp",
         is_new_user: bool = False,
         media_url: Optional[str] = None,
         media_type: Optional[str] = None,
     ) -> str:
-        # 1. Identify User/Business (Placeholder for WP04 logic)
-        user = await self.user_repo.get_by_phone(user_phone)
+        print(f"DEBUG: handle_message entered. user_id={user_id}, user_phone={user_phone}, channel={channel}")
+        # 1. Identify User
+        if user_id:
+            user = await self.user_repo.get_by_id(user_id)
+        elif user_phone:
+            user = await self.user_repo.get_by_phone(user_phone)
+        else:
+            return self.template_service.render("error_user_required")
+
         if not user:
             return self.template_service.render("error_user_required")
+
+        # Use the identity they chose for this message as the "from_number" 
+        # (could be their email if via generic webhook)
+        active_identity = user_phone or user.phone_number or user.email or "unknown"
 
         # Log User Message
         user_msg = Message(
             business_id=user.business_id,
             user_id=user.id,
-            from_number=user_phone,
+            from_number=active_identity,
             body=message_text,
-            role=MessageRole.USER
+            role=MessageRole.USER,
+            channel_type=channel
         )
         self.session.add(user_msg)
         await self.session.flush()
@@ -79,48 +98,66 @@ class WhatsappService:
         state_record = await self.state_repo.get_by_user_id(user.id)
         if not state_record:
             state_record = ConversationState(
-                user_id=user.id, state=ConversationStatus.IDLE
+                user_id=user.id, state=ConversationStatus.IDLE, active_channel=channel
             )
             self.state_repo.add(state_record)
             await self.session.flush()
 
+        # Update active channel
+        state_record.active_channel = channel
+
         # 3. State Machine Logic
         reply = ""
 
-        # 3. State Machine Logic
         if is_new_user:
-            self.logger.info(f"New user onboarding for {user_phone}")
+            self.logger.info(f"New user onboarding for {active_identity}")
             reply = self.template_service.render("welcome_message")
         
         # If reply is already set (e.g. welcome message), skip state check
         if not reply:
             if state_record.state == ConversationStatus.WAITING_CONFIRM:
-                self.logger.info(f"User {user_phone} in WAITING_CONFIRM mode")
+                self.logger.info(f"User {user.id} in WAITING_CONFIRM mode")
                 reply = await self._handle_waiting_confirm(user, state_record, message_text)
             elif state_record.state == ConversationStatus.SETTINGS:
-                self.logger.info(f"User {user_phone} in SETTINGS mode")
+                self.logger.info(f"User {user.id} in SETTINGS mode")
                 reply = await self._handle_settings(user, state_record, message_text)
             elif state_record.state == ConversationStatus.DATA_MANAGEMENT:
-                self.logger.info(f"User {user_phone} in DATA_MANAGEMENT mode")
+                self.logger.info(f"User {user.id} in DATA_MANAGEMENT mode")
                 reply = await self._handle_data_management(
                     user, state_record, message_text, media_url, media_type
                 )
+            elif state_record.state == ConversationStatus.PENDING_AUTO_CONFIRM:
+                self.logger.info(f"User {user.id} in PENDING_AUTO_CONFIRM mode")
+                reply = await self._handle_pending_auto_confirm(user, state_record, message_text)
             else:
                 reply = await self._handle_idle(user, state_record, message_text)
 
-        # Log Assistant Reply (Crucial Step: Must happen for ALL replies)
+        # Log Assistant Reply
         assistant_msg = Message(
             business_id=user.business_id,
             user_id=user.id,
             from_number="system",
-            to_number=user_phone,
+            to_number=active_identity,
             body=reply,
             role=MessageRole.ASSISTANT,
+            channel_type=channel,
             log_metadata=self._current_metadata if self._current_metadata else None
         )
         self.session.add(assistant_msg)
         
+        # Dispatch SMS if channel is SMS or user identity suggests SMS
+        # In multi-channel mode, we should respect the active_channel if it's set
+        effective_channel = state_record.active_channel or channel
+        
+        if effective_channel == "sms" and user.phone_number:
+            try:
+                from src.services.twilio_service import TwilioService
+                await TwilioService().send_sms(user.phone_number, reply)
+            except Exception as e:
+                self.logger.error(f"Failed to send SMS reply to {user.id}: {e}")
+
         return reply
+
 
     async def _handle_idle(
         self, user: User, state_record: ConversationState, text: str
@@ -161,8 +198,16 @@ class WhatsappService:
             [f"- ID {s.id}: {s.name} (${s.default_price})" for s in services]
         ) if services else None
 
+        # 1. Channel config for parsing
+        channel_name = state_record.active_channel or "whatsapp"
+        
         system_time = datetime.now(timezone.utc).isoformat()
-        tool_call = await self.parser.parse(text, system_time=system_time, service_catalog=service_catalog_str)
+        tool_call = await self.parser.parse(
+            text, 
+            system_time=system_time, 
+            service_catalog=service_catalog_str,
+            channel_name=channel_name
+        )
         
         if tool_call:
             # Capture tool call metadata
@@ -187,21 +232,42 @@ class WhatsappService:
                     channel="whatsapp"
                 )
 
-            # Store draft and transition to WAITING_CONFIRM
+            # Prepare state record
             state_record.draft_data = {
                 "tool_name": tool_call.__class__.__name__,
                 "arguments": tool_call.dict(),
             }
-            state_record.state = ConversationStatus.WAITING_CONFIRM
+            
+            # Check Auto-Confirm Config
+            config_loader = get_channel_config_loader()
+            channel_config = config_loader.get_channel_config(channel_name)
+            auto_confirm = channel_config.get("auto_confirm", False)
+            timeout = channel_config.get("auto_confirm_timeout", 45)
 
-            # Simple summary for confirmation
+            # Generate Summary
             summary = self._generate_summary(tool_call)
-            prompt_key = (
-                "confirm_edit_prompt"
-                if isinstance(tool_call, EditCustomerTool)
-                else "confirm_prompt"
-            )
-            return self.template_service.render(prompt_key, summary=summary)
+            
+            if auto_confirm and not isinstance(tool_call, (EditCustomerTool, UpdateSettingsTool)): 
+                # Note: We might want to EXCLUDE destructive tools from auto-confirm if needed.
+                # For now, following spec: "when a tool call is proposed... if auto_confirm is true"
+                
+                state_record.state = ConversationStatus.PENDING_AUTO_CONFIRM
+                # Store timestamp in UTC
+                execution_time = datetime.now(timezone.utc) + timedelta(seconds=timeout)
+                state_record.pending_action_timestamp = execution_time
+                
+                # Spawn background task
+                asyncio.create_task(self._auto_confirm_task(user.id, timeout))
+                
+                return f"Prepared: {summary}. Auto-confirming in {timeout}s. Reply NO to cancel."
+            else:
+                state_record.state = ConversationStatus.WAITING_CONFIRM
+                prompt_key = (
+                    "confirm_edit_prompt"
+                    if isinstance(tool_call, EditCustomerTool)
+                    else "confirm_prompt"
+                )
+                return self.template_service.render(prompt_key, summary=summary)
 
         # If truly unclear
         return self.template_service.render("error_unclear_input")
@@ -270,7 +336,7 @@ class WhatsappService:
 
         # Execute
         executor = ToolExecutor(
-            self.session, user.business_id, user.id, user.phone_number, self.template_service
+            self.session, user.business_id, user.id, user.phone_number or "", self.template_service
         )
         try:
             result, metadata = await executor.execute(tool_call)
@@ -577,7 +643,7 @@ class WhatsappService:
 
         # Execute Modification Tools
         executor = ToolExecutor(
-            self.session, user.business_id, user.id, user.phone_number, self.template_service
+            self.session, user.business_id, user.id, user.phone_number or "", self.template_service
         )
         try:
             result, _ = await executor.execute(tool_call)
@@ -642,3 +708,114 @@ class WhatsappService:
                 return f"Export failed: {str(e)}"
 
         return "I didn't understand that command. You can upload a file to import, or say 'Export customers in Dublin' to export data. Type 'exit' to leave."
+
+    async def _handle_pending_auto_confirm(
+        self, user: User, state_record: ConversationState, text: str
+    ) -> str:
+        """
+        User interrupted the auto-confirm countdown.
+        """
+        lower_text = text.lower().strip()
+        
+        # Explicit confirmation
+        if lower_text in ["yes", "y", "confirm", "ok", "okay"]:
+            return await self._execute_draft(user, state_record)
+            
+        # Explicit cancellation
+        if lower_text in ["no", "n", "cancel", "stop", "wait"]:
+            state_record.state = ConversationStatus.IDLE
+            state_record.draft_data = None
+            state_record.pending_action_timestamp = None
+            return self.template_service.render("action_cancelled")
+            
+        # Any other input acts as an interrupt and new command
+        state_record.state = ConversationStatus.IDLE
+        state_record.draft_data = None
+        state_record.pending_action_timestamp = None
+        
+        # Process as new idle message
+        prefix = "Auto-confirm cancelled. "
+        response = await self._handle_idle(user, state_record, text)
+        return prefix + response
+
+    async def _auto_confirm_task(self, user_id: int, timeout: int):
+        """
+        Background task to execute draft if still pending.
+        """
+        try:
+            await asyncio.sleep(timeout)
+            
+            # Create a new session for the background operation
+            async with AsyncSessionLocal() as session:
+                # Re-fetch state
+                state_repo = ConversationStateRepository(session)
+                user_repo = UserRepository(session)
+                
+                state_record = await state_repo.get_by_user_id(user_id)
+                user = await user_repo.get_by_id(user_id)
+                
+                if not state_record or not user:
+                    return
+
+                # Check if still in PENDING_AUTO_CONFIRM
+                if state_record.state == ConversationStatus.PENDING_AUTO_CONFIRM:
+                    # Double check timestamp to be sure
+                    now = datetime.now(timezone.utc)
+                    if state_record.pending_action_timestamp and now >= state_record.pending_action_timestamp:
+                        
+                        # Execute!
+                        # We need a temporary service instance
+                        # Note: We need a template service and parser, but execute_draft mainly needs ToolExecutor
+                        # We can instantiate a minimal WhatsappService or just copy the logic.
+                        # Copying logic is safer to avoid circular deps or complex setups.
+                        
+                        # Reconstruct tool
+                        draft = state_record.draft_data
+                        if not draft:
+                            return
+                            
+                        # ... (Simplified execution logic) ...
+                        # Ideally _execute_draft should be static or separate, but it uses self.template_service
+                        # I'll create a new service instance
+                        
+                        from src.services.template_service import TemplateService
+                        from src.llm_client import parser # Use singleton
+                        
+                        tmp_service = WhatsappService(session, parser, TemplateService())
+                        
+                        result = await tmp_service._execute_draft(user, state_record)
+                        
+                        # Send result to user via channel
+                        active_channel = state_record.active_channel or "whatsapp"
+                        recipient = user.phone_number if active_channel == "sms" else (user.email or user.phone_number)
+                        
+                        if active_channel == "sms" and user.phone_number:
+                            from src.services.twilio_service import TwilioService
+                            await TwilioService().send_sms(user.phone_number, result)
+                        elif active_channel == "email" and (user.email or user.phone_number): # Support email sending
+                             from src.services.postmark_service import PostmarkService
+                             # We need basic subject
+                             to_email = user.email or user.phone_number or ""
+                             if to_email:
+                                 await PostmarkService().send_email(
+                                     to_email=to_email,
+                                     subject="Action Confirmed",
+                                     body=result
+                                 )
+                        
+                        # Log the system message
+                        sys_msg = Message(
+                            business_id=user.business_id,
+                            user_id=user.id,
+                            from_number="system",
+                            to_number=recipient or "unknown",
+                            body=result,
+                            role=MessageRole.ASSISTANT,
+                            channel_type=active_channel
+                        )
+                        session.add(sys_msg)
+                        await session.commit()
+                        
+        except Exception as e:
+            logging.error(f"Auto-confirm task failed for user {user_id}: {e}")
+
