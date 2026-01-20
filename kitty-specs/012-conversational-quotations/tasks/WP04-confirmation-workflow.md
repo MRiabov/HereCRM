@@ -90,3 +90,4 @@ Confirmation can happen in two ways:
 - 2026-01-20T19:54:30Z – Antigravity – shell_pid=3779362 – lane=planned – Moved to planned
 - 2026-01-20T19:55:12Z – Antigravity – shell_pid=3779362 – lane=doing – Started implementation via workflow command
 - 2026-01-20T20:07:17Z – Antigravity – shell_pid=3779362 – lane=for_review – Ready for review: Implemented scope enforcement in ToolExecutor, added ManageEmployeesTool and MassEmailTool with scope metadata, and verified with tests.
+- 2026-01-20T20:18:01Z – Antigravity – shell_pid=3779362 – lane=for_review – Ready for review: Implemented confirmation logic in QuoteService (T015), public API endpoint (T016), and WhatsApp intent handler (T017). Verified with integration tests (T018).
