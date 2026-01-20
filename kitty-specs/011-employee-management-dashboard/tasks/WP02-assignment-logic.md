@@ -1,11 +1,11 @@
 ---
 work_package_id: WP02
 title: Intelligent Assignment Logic
-lane: "for_review"
+lane: "doing"
 dependencies: []
 subtasks: [T005, T006, T007]
 agent: "Antigravity"
-shell_pid: "3837732"
+shell_pid: "3779362"
 ---
 
 # Work Package 02: Intelligent Assignment Logic
@@ -65,3 +65,4 @@ Enhance the assignment service with "human" capabilities: resolving names vaguel
 
 - 2026-01-20T16:52:47Z – Antigravity – shell_pid=3837732 – lane=doing – Started implementation via workflow command
 - 2026-01-20T16:57:36Z – Antigravity – shell_pid=3837732 – lane=for_review – Implemented AssignmentService with fuzzy search and conflict detection. Added tests.
+- 2026-01-20T18:12:09Z – Antigravity – shell_pid=3779362 – lane=doing – Started review via workflow command
