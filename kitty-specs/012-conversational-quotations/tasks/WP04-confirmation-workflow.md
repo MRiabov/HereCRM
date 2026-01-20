@@ -1,9 +1,11 @@
 ---
 work_package_id: WP04
 title: Confirmation Workflow
-lane: "for_review"
+lane: "doing"
 dependencies: []
 subtasks: [T015, T016, T017, T018, T019]
+agent: "Antigravity"
+shell_pid: "3779362"
 ---
 
 ### Objective
@@ -82,3 +84,4 @@ Confirmation can happen in two ways:
 ## Activity Log
 
 - 2026-01-20T19:12:38Z – unknown – lane=for_review – Ready for review: Implemented scope enforcement in ToolExecutor, added required_scope metadata support, and verified with tests. Also shimmed missing Business model fields and billing_config.yaml from WP00.
+- 2026-01-20T19:14:32Z – Antigravity – shell_pid=3779362 – lane=doing – Started review via workflow command
