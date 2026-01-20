@@ -1,9 +1,11 @@
 ---
 work_package_id: WP03
 title: Dashboard Presentation
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks: [T008, T009, T010]
+agent: "Antigravity"
+shell_pid: "3779362"
 ---
 
 # Work Package 03: Dashboard Presentation
@@ -70,3 +72,7 @@ Implement the View layer. Create the text template and rendering logic that tran
 ## Implementation Command
 
 `spec-kitty implement WP03 --base WP01`
+
+## Activity Log
+
+- 2026-01-20T18:12:33Z – Antigravity – shell_pid=3779362 – lane=doing – Started implementation via workflow command
