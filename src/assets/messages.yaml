@@ -72,6 +72,26 @@ convert_success: "✔ Converted Request to Job: {description}"
 convert_failed: "Could not find request matching '{query}'"
 job_multiple_found: "Multiple customers found matching '{query}'. Please be more specific (e.g., use full name or phone)."
 undo_deleted_job: "Undone: Deleted job for {customer_name}"
+
+# Billing
+billing_status: |
+  *Subscription Status*:
+  - Plan: {plan}
+  - Seats: {seats}
+  - Active Addons: {addons}
+
+billing_upgrade_quote: |
+  *Upgrade Quote*:
+  {description}
+  
+  To proceed, use this secure link:
+  {url}
+
+payment_link_ready: |
+  *Payment Link Ready*:
+  Please follow this link to complete your payment:
+  {url}
+
 settings_menu: |
   ⚙️ *Settings Mode*
   

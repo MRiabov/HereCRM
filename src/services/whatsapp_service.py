@@ -34,6 +34,8 @@ from src.uimodels import (
     ExitSettingsTool,
     ExportQueryTool,
     ExitDataManagementTool,
+    GetBillingStatusTool,
+    RequestUpgradeTool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
 
@@ -129,6 +131,9 @@ class WhatsappService:
             elif state_record.state == ConversationStatus.PENDING_AUTO_CONFIRM:
                 self.logger.info(f"User {user.id} in PENDING_AUTO_CONFIRM mode")
                 reply = await self._handle_pending_auto_confirm(user, state_record, message_text)
+            elif state_record.state == ConversationStatus.BILLING:
+                self.logger.info(f"User {user.id} in BILLING mode")
+                reply = await self._handle_billing(user, state_record, message_text)
             else:
                 reply = await self._handle_idle(user, state_record, message_text)
 
@@ -185,6 +190,21 @@ class WhatsappService:
         if lower_text in ["manage data", "import", "export", "import export", "data"]:
             state_record.state = ConversationStatus.DATA_MANAGEMENT
             return "You are now in Data Management mode. You can upload files (CSV, Excel) to import data, or describe what you want to export. Type 'exit' to return to the main menu."
+
+        # Handle Billing Entry
+        if lower_text in ["billing", "subscription", "upgrade", "my plan", "limits"]:
+            state_record.state = ConversationStatus.BILLING
+            # We explicitly execute GetBillingStatusTool immediately to show current status as entry point
+            # This is a nice UX touch - user says "Billing" and gets the status immediately.
+            executor = ToolExecutor(
+                self.session, user.business_id, user.id, user.phone_number or "", self.template_service
+            )
+            try:
+                result, _ = await executor.execute(GetBillingStatusTool())
+                return result + "\n\n(Type 'upgrade seat' or 'buy addon' to purchase extras, or 'back' to exit)"
+            except Exception as e:
+                self.logger.error(f"Failed to auto-show billing status: {e}")
+                return "You are now in Billing mode. Type 'status', 'upgrade', or 'back' to exit."
 
         # Parse with LLM
         from datetime import datetime, timezone
@@ -323,7 +343,10 @@ class WhatsappService:
             "HelpTool": HelpTool,
             "GetPipelineTool": GetPipelineTool,
             "UpdateCustomerStageTool": UpdateCustomerStageTool,
+            "UpdateCustomerStageTool": UpdateCustomerStageTool,
             "SendInvoiceTool": SendInvoiceTool,
+            "GetBillingStatusTool": GetBillingStatusTool,
+            "RequestUpgradeTool": RequestUpgradeTool,
         }
 
         tool_cls = model_map.get(tool_name)
@@ -488,7 +511,10 @@ class WhatsappService:
             "HelpTool": "Help",
             "GetPipelineTool": "Pipeline",
             "UpdateCustomerStageTool": "Pipeline Stage Update",
+            "UpdateCustomerStageTool": "Pipeline Stage Update",
             "SendInvoiceTool": "Send Invoice",
+            "GetBillingStatusTool": "Billing Status",
+            "RequestUpgradeTool": "Request Upgrade",
         }
         model_name = tool_call.__class__.__name__
         name = friendly_names.get(model_name, model_name.replace("Tool", ""))
@@ -590,6 +616,13 @@ class WhatsappService:
 
         if isinstance(tool_call, SendInvoiceTool):
             return f"generate and send invoice to {tool_call.query}"
+
+        if isinstance(tool_call, GetBillingStatusTool):
+            return "check billing status"
+
+        if isinstance(tool_call, RequestUpgradeTool):
+            item = tool_call.item_id or tool_call.item_type
+            return f"request upgrade for {tool_call.quantity} x {item}"
 
         if hasattr(tool_call, "description") and tool_call.description:
             return f"{name}: {tool_call.description}"
@@ -708,6 +741,68 @@ class WhatsappService:
                 return f"Export failed: {str(e)}"
 
         return "I didn't understand that command. You can upload a file to import, or say 'Export customers in Dublin' to export data. Type 'exit' to leave."
+
+    async def _handle_billing(
+        self, user: User, state_record: ConversationState, text: str
+    ) -> str:
+        lower_text = text.lower().strip()
+
+        if lower_text in ["exit", "back", "cancel", "return"]:
+            state_record.state = ConversationStatus.IDLE
+            return self.template_service.render("welcome_back")
+        
+        # We can implement a simple parser or just keyword matching for now,
+        # but better to use the LLM if complex inputs are allowed.
+        # Since T013 defined tools, let's try to parse user intent into those tools.
+        
+        # Check if user says "status" explicitly
+        if lower_text in ["status", "check", "info"]:
+            executor = ToolExecutor(
+                self.session, user.business_id, user.id, user.phone_number or "", self.template_service
+            )
+            res, _ = await executor.execute(GetBillingStatusTool())
+            return res
+
+        # For everything else, we might need a mini-parser or rely on general tool parsing?
+        # The general parser `self.parser.parse()` is designed for IDLE state mostly.
+        # But we can reuse it if we tell it what tools are available, OR we construct tools manually.
+        
+        # Simple regex/logic for now as per "Conversational Tools" requirement
+        if "seat" in lower_text:
+             # Assume 1 seat unless number specified
+            import re
+            qty = 1
+            numbers = re.findall(r'\d+', lower_text)
+            if numbers:
+                qty = int(numbers[0])
+            
+            tool = RequestUpgradeTool(item_type="seat", quantity=qty)
+            state_record.draft_data = {
+                "tool_name": "RequestUpgradeTool",
+                "arguments": tool.dict()
+            }
+            # Go to confirmation
+            state_record.state = ConversationStatus.WAITING_CONFIRM
+            summary = self._generate_summary(tool)
+            return self.template_service.render("confirm_prompt", summary=summary)
+
+        # Allow addons
+        if "addon" in lower_text or "campaign" in lower_text:
+            # This is tricky without knowing addon IDs. 
+            # We should probably list them or assume a generic one?
+            # Let's map "campaign" to "campaign_manager" (an example ID)
+            addon_id = "campaign_manager" if "campaign" in lower_text else "unknown_addon"
+            tool = RequestUpgradeTool(item_type="addon", item_id=addon_id, quantity=1)
+            
+            state_record.draft_data = {
+                "tool_name": "RequestUpgradeTool",
+                "arguments": tool.dict()
+            }
+            state_record.state = ConversationStatus.WAITING_CONFIRM
+            summary = self._generate_summary(tool)
+            return self.template_service.render("confirm_prompt", summary=summary)
+
+        return "Unknown command. Try 'status', 'buy seat', or 'back'."
 
     async def _handle_pending_auto_confirm(
         self, user: User, state_record: ConversationState, text: str

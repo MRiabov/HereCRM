@@ -16,6 +16,7 @@ from src.services.geocoding import GeocodingService
 from src.services.inference_service import InferenceService
 from src.services.search_service import SearchService
 from src.services.chat_utils import format_line_items
+from src.services.billing_service import BillingService
 from src.uimodels import (
     AddJobTool,
     AddLeadTool,
@@ -33,6 +34,8 @@ from src.uimodels import (
     DeleteServiceTool,
     ListServicesTool,
     ExitSettingsTool,
+    GetBillingStatusTool,
+    RequestUpgradeTool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
 
@@ -60,6 +63,7 @@ class ToolExecutor:
         self.geocoding_service = GeocodingService()
         self.search_service = SearchService(session, self.geocoding_service)
         self.invoice_service = InvoiceService(session)
+        self.billing_service = BillingService(session)
 
     async def _get_user_defaults(self) -> Tuple[Optional[str], Optional[str]]:
         user = await self.user_repo.get_by_id(self.user_id)
@@ -87,6 +91,8 @@ class ToolExecutor:
             ListServicesTool,
             ExitSettingsTool,
             SendInvoiceTool,
+            GetBillingStatusTool,
+            RequestUpgradeTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
 
@@ -128,6 +134,10 @@ class ToolExecutor:
             return "Help is handled by the service layer directly.", None
         elif isinstance(tool_call, SendInvoiceTool):
             return await self._execute_send_invoice(tool_call)
+        elif isinstance(tool_call, GetBillingStatusTool):
+            return await self._execute_get_billing_status(tool_call)
+        elif isinstance(tool_call, RequestUpgradeTool):
+            return await self._execute_request_upgrade(tool_call)
         return "Unknown tool call", None
 
     # ... (other methods unchanged)
@@ -693,4 +703,64 @@ class ToolExecutor:
                 "customer": customer.name
             },
         )
+    async def _execute_get_billing_status(
+        self, tool: GetBillingStatusTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        status_info = await self.billing_service.get_billing_status(self.business_id)
+        
+        if "error" in status_info:
+            return f"Error retrieving billing status: {status_info['error']}", None
+
+        return (
+            self.template_service.render(
+                "billing_status",
+                plan=status_info.get("status", "free").title(),
+                seats=status_info.get("seat_limit", 1),
+                addons=", ".join([a.get("name", "Unknown") for a in status_info.get("active_addons", [])]) or "None"
+            ),
+            {
+                "action": "query",
+                "entity": "billing",
+                "status": status_info
+            }
+        )
+
+    async def _execute_request_upgrade(
+        self, tool: RequestUpgradeTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        # Generate upgrade link
+        try:
+            # We need valid success/cancel URLs. 
+            # In a real app these would be public endpoints. 
+            # For this MVP/local env, we'll assume a placeholder or simple landing page.
+            # Using example.com for now as per likely dev setup, or a deep link if mobile.
+            base_url = "https://herecrm.app"  
+            success_url = f"{base_url}/billing/success?session_id={{CHECKOUT_SESSION_ID}}"
+            cancel_url = f"{base_url}/billing/cancel"
+
+            result = await self.billing_service.create_upgrade_link(
+                business_id=self.business_id,
+                item_type=tool.item_type,
+                item_id=tool.item_id or "",
+                success_url=success_url,
+                cancel_url=cancel_url
+            )
+            
+            return (
+                self.template_service.render(
+                    "billing_upgrade_quote",
+                    description=result["description"],
+                    url=result["url"]
+                ),
+                {
+                    "action": "upgrade_request",
+                    "entity": "billing",
+                    "url": result["url"],
+                    "description": result["description"]
+                }
+            )
+        except ValueError as e:
+            return f"Could not generate upgrade link: {str(e)}", None
+        except Exception as e:
+            return f"System error generating upgrade link: {str(e)}", None
 

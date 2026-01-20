@@ -313,6 +313,26 @@ class ExportQueryTool(BaseModel):
             return "csv" # Default to csv if invalid
         return v.lower()
 
+class GetBillingStatusTool(BaseModel):
+    """Check the current subscription status, limits, and usage.
+    Triggered when user asks about 'billing', 'subscription', 'plan', or 'limits'."""
+    pass
+
+
+class RequestUpgradeTool(BaseModel):
+    """Request an upgrade for seats or addons.
+    Triggered when user wants to 'buy seats', 'add user limit', 'purchase addon', or 'upgrade plan'."""
+    
+    item_type: str = Field(..., description="Type of item: 'seat' or 'addon'")
+    item_id: Optional[str] = Field(None, description="Specific addon ID if type is 'addon' (e.g., 'campaign_manager'). Leave empty for seats.")
+    quantity: int = Field(1, description="Number of items to add")
+
+    @validator("item_type")
+    def validate_type(cls, v):
+        if v not in ["seat", "addon"]:
+            raise ValueError("item_type must be 'seat' or 'addon'")
+        return v
+
 class ExitDataManagementTool(BaseModel):
     """Exit the data management mode."""
     pass
