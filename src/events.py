@@ -19,14 +19,21 @@ class EventBus:
         """Emit an event to all subscribers."""
         if event_name in self._subscribers:
             logger.debug(f"Emitting {event_name} with data: {data}")
+            coroutines = []
             for callback in self._subscribers[event_name]:
                 try:
                     if asyncio.iscoroutinefunction(callback):
-                        await callback(data)
+                        coroutines.append(callback(data))
                     else:
                         callback(data)
                 except Exception as e:
                     logger.error(f"Error in event handler for {event_name}: {e}", exc_info=True)
+
+            if coroutines:
+                results = await asyncio.gather(*coroutines, return_exceptions=True)
+                for result in results:
+                    if isinstance(result, Exception):
+                        logger.error(f"Error in event handler for {event_name}: {result}", exc_info=True)
         else:
             logger.debug(f"No subscribers for {event_name}")
 
