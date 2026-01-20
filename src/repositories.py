@@ -313,14 +313,31 @@ class CustomerRepository(BaseRepository[Customer]):
 
         return customers
 
-    async def get_pipeline_summary(self, business_id: int) -> dict[PipelineStage, List[Customer]]:
-        query = select(Customer).where(Customer.business_id == business_id)
-        result = await self.session.execute(query)
-        customers = list(result.scalars().all())
+    async def get_pipeline_summary(self, business_id: int, example_limit: int = 5) -> dict[PipelineStage, dict]:
+        # Aggregate counts directly in the database
+        count_stmt = (
+            select(Customer.pipeline_stage, func.count(Customer.id))
+            .where(Customer.business_id == business_id)
+            .group_by(Customer.pipeline_stage)
+        )
+        result = await self.session.execute(count_stmt)
+        counts = dict(result.all())
 
-        summary = {stage: [] for stage in PipelineStage}
-        for customer in customers:
-            summary[customer.pipeline_stage].append(customer)
+        summary = {}
+        for stage in PipelineStage:
+            # Fetch up to `example_limit` examples for each stage
+            example_stmt = (
+                select(Customer)
+                .where(Customer.business_id == business_id, Customer.pipeline_stage == stage)
+                .limit(example_limit)
+            )
+            example_result = await self.session.execute(example_stmt)
+            examples = list(example_result.scalars().all())
+
+            summary[stage] = {
+                "count": counts.get(stage, 0),
+                "examples": examples
+            }
         return summary
 
 
