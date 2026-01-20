@@ -1,79 +1,25 @@
 ---
-description: Execute the implementation plan by processing and executing all tasks defined in tasks.md
+description: Create an isolated workspace (worktree) for implementing a specific work package.
 ---
 
 
-## Work Package Selection
+**IMPORTANT**: After running the command below, you'll see a LONG work package prompt (~1000+ lines).
 
-**User specified**: `$ARGUMENTS`
+**You MUST scroll to the BOTTOM** to see the completion command!
 
-**Your task**: Determine which WP to implement:
-- If `$ARGUMENTS` is empty → Find first WP file with `lane: "planned"` in `tasks/` directory
-- If `$ARGUMENTS` provided → Normalize it:
-  - `wp01` → `WP01`
-  - `WP01` → `WP01`
-  - `WP01-foo-bar` → `WP01`
-  - Then find: `tasks/WP01*.md`
+Run this command to get the work package prompt and implementation instructions:
 
-**Once you know which WP**, proceed to setup.
-
----
-
-## Setup (Do This First)
-
-**1. Move WP to doing lane:**
 ```bash
-spec-kitty agent tasks move-task <WPID> --to doing --note "Started implementation" --agent "codex"
-```
-This updates frontmatter, captures shell PID, adds activity log, and creates a commit.
-
-**2. Get the prompt file path:**
-The WP file is at: `kitty-specs/<feature>/tasks/<WPID>-<slug>.md`
-Find the full absolute path.
-
-**3. Verify the move worked:**
-```bash
-git log -1  # Should show "Start <WPID>: Move to doing lane"
+spec-kitty agent workflow implement $ARGUMENTS --agent <your-name>
 ```
 
----
+**CRITICAL**: You MUST provide `--agent <your-name>` to track who is implementing!
 
-## Implementation (Do This Second)
+If no WP ID is provided, it will automatically find the first work package with `lane: "planned"` and move it to "doing" for you.
 
-**1. READ THE PROMPT FILE** (`tasks/<WPID>-slug.md`)
-   - This is your complete implementation guide
-   - Check `review_status` in frontmatter:
-     - If `has_feedback` → Read `## Review Feedback` section first
-     - Treat action items as your TODO list
-
-**2. Read supporting docs:**
-   - `tasks.md` - Full task breakdown
-   - `plan.md` - Tech stack and architecture
-   - `spec.md` - Requirements
-   - `data-model.md`, `contracts/`, `research.md`, `quickstart.md` (if exist)
-
-**3. Implement following the prompt's guidance:**
-   - Follow subtask order
-   - Respect dependencies (sequential vs parallel `[P]`)
-   - Run tests if required
-   - Commit as you complete major milestones
-
-**4. When complete:**
+**After implementation, scroll to the bottom and run**:
 ```bash
-spec-kitty agent tasks move-task <WPID> --to for_review --note "Ready for review"
-git add <your-changes>
-git commit -m "Complete <WPID>: <description>"
+spec-kitty agent tasks move-task WP## --to for_review --note "Ready for review: <summary>"
 ```
 
----
-
-## That's It
-
-**Simple workflow:**
-1. Find which WP (from `$ARGUMENTS` or first planned)
-2. Move it to doing
-3. Read the prompt file
-4. Do the work
-5. Move to for_review
-
-**No busywork, no shell PID tracking, just implement.**
+**The Python script handles all file updates automatically - no manual editing required!**

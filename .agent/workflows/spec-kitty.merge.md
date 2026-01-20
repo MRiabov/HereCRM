@@ -2,18 +2,24 @@
 description: Merge a completed feature into the main branch and clean up worktree
 ---
 
-**Path reference rule:** When you mention directories or files, provide either the absolute path or a path relative to the project root (for example, `kitty-specs/<feature>/tasks/`). Never refer to a folder by name alone.
 
-*Path: [.kittify/templates/commands/merge.md](.kittify/templates/commands/merge.md)*
+# /spec-kitty.merge - Merge Feature to Main
 
+**Version**: 0.11.0+
+**Purpose**: Merge ALL completed work packages for a feature into main branch.
 
-# Merge Feature Branch
+## CRITICAL: Workspace-per-WP Model (0.11.0)
 
-This command merges a completed feature branch into the main/target branch and handles cleanup of worktrees and branches.
+In 0.11.0, each work package has its own worktree:
+- `.worktrees/###-feature-WP01/`
+- `.worktrees/###-feature-WP02/`
+- `.worktrees/###-feature-WP03/`
+
+**Merge merges ALL WP branches at once** (not incrementally one-by-one).
 
 ## ⛔ Location Pre-flight Check (CRITICAL)
 
-**BEFORE PROCEEDING:** You MUST be in the feature worktree, NOT the main repository.
+**BEFORE PROCEEDING:** You MUST be in a feature worktree, NOT the main repository.
 
 Verify your current location:
 ```bash
@@ -22,8 +28,8 @@ git branch --show-current
 ```
 
 **Expected output:**
-- `pwd`: Should end with `.worktrees/001-feature-name` (or similar feature worktree)
-- Branch: Should show your feature branch name like `001-feature-name` (NOT `main` or `release/*`)
+- `pwd`: Should end with `.worktrees/###-feature-name-WP01` (or similar feature worktree)
+- Branch: Should show your feature branch name like `###-feature-name-WP01` (NOT `main` or `release/*`)
 
 **If you see:**
 - Branch showing `main` or `release/`
@@ -31,44 +37,69 @@ git branch --show-current
 
 ⛔ **STOP - DANGER! You are in the wrong location!**
 
-This command merges your feature INTO main. Running from the wrong location can cause:
-- Loss of work
-- Merge conflicts
-- Repository corruption
-
 **Correct the issue:**
-1. Navigate to your feature worktree: `cd .worktrees/001-feature-name`
-2. Verify you're on the correct feature branch: `git branch --show-current`
+1. Navigate to ANY worktree for this feature: `cd .worktrees/###-feature-name-WP01`
+2. Verify you're on a feature branch: `git branch --show-current`
 3. Then run this merge command again
 
 ---
+
+## Location Pre-flight Check (CRITICAL for AI Agents)
+
+Before merging, verify you are in the correct working directory by running this validation:
+
+```bash
+python3 -c "
+from specify_cli.guards import validate_worktree_location
+result = validate_worktree_location()
+if not result.is_valid:
+    print(result.format_error())
+    print('\nThis command MUST run from a feature worktree, not the main repository.')
+    print('\nFor workspace-per-WP features, run from ANY WP worktree:')
+    print('  cd /path/to/project/.worktrees/<feature>-WP01')
+    print('  # or any other WP worktree for this feature')
+    raise SystemExit(1)
+else:
+    print('✓ Location verified:', result.branch_name)
+"
+```
+
+**What this validates**:
+- Current branch follows the feature pattern like `001-feature-name` or `001-feature-name-WP01`
+- You're not attempting to run from `main` or any release branch
+- The validator prints clear navigation instructions if you're outside the feature worktree
+
+**For workspace-per-WP features (0.11.0+)**:
+- Run merge from ANY WP worktree (e.g., `.worktrees/014-feature-WP09/`)
+- The merge command automatically detects all WP branches and merges them sequentially
+- You do NOT need to run merge from each WP worktree individually
 
 ## Prerequisites
 
 Before running this command:
 
-1. ✅ Feature must pass `/spec-kitty.accept` checks
-2. ✅ All work packages must be in `tasks/`
-3. ✅ Working directory must be clean (no uncommitted changes)
-4. ✅ Run the command from the feature worktree (Spec Kitty will move the merge to the primary repo automatically)
+1. ✅ All work packages must be in `done` lane (reviewed and approved)
+2. ✅ Feature must pass `/spec-kitty.accept` checks
+3. ✅ Working directory must be clean (no uncommitted changes in main)
+4. ✅ **You must be in main repository root** (not in a worktree)
 
-## Location Pre-flight Check (CRITICAL for AI Agents)
+## Command Syntax
 
-Before merging, verify you are in the correct working directory by running the shared pre-flight validation:
-
-```python
+```bash
+spec-kitty merge ###-feature-slug [OPTIONS]
 ```
 
-**What this validates**:
-- Current branch follows the feature pattern like `001-feature-name`
-- You're not attempting to run from `main` or any release branch
-- The validator prints clear navigation instructions if you're outside the feature worktree
+**Example**:
+```bash
+cd /tmp/spec-kitty-test/test-project  # Main repo root
+spec-kitty merge 001-cli-hello-world
+```
 
 ## What This Command Does
 
 1. **Detects** your current feature branch and worktree status
 2. **Verifies** working directory is clean
-3. **Switches** to the target branch (default: `main`) in the primary repository
+3. **Switches** to the target branch (default: `main`)
 4. **Updates** the target branch (`git pull --ff-only`)
 5. **Merges** the feature using your chosen strategy
 6. **Optionally pushes** to origin
@@ -168,13 +199,35 @@ spec-kitty merge --strategy rebase
 
 Spec Kitty uses an **opinionated worktree approach**:
 
-### The Pattern
+### Workspace-per-WP Model (0.11.0+)
+
+In the current model, each work package gets its own worktree:
+
+```
+my-project/                              # Main repo (main branch)
+├── .worktrees/
+│   ├── 001-auth-system-WP01/           # WP01 worktree
+│   ├── 001-auth-system-WP02/           # WP02 worktree
+│   ├── 001-auth-system-WP03/           # WP03 worktree
+│   └── 002-dashboard-WP01/             # Different feature
+├── .kittify/
+├── kitty-specs/
+└── ... (main branch files)
+```
+
+**Merge behavior for workspace-per-WP**:
+- Run `spec-kitty merge` from **any** WP worktree for the feature
+- The command automatically detects all WP branches (WP01, WP02, WP03, etc.)
+- Merges each WP branch into main in sequence
+- Cleans up all WP worktrees and branches
+
+### Legacy Pattern (0.10.x)
 ```
 my-project/                    # Main repo (main branch)
 ├── .worktrees/
-│   ├── 001-auth-system/      # Feature 1 worktree
-│   ├── 002-dashboard/        # Feature 2 worktree
-│   └── 003-notifications/    # Feature 3 worktree
+│   ├── 001-auth-system/      # Feature 1 worktree (single)
+│   ├── 002-dashboard/        # Feature 2 worktree (single)
+│   └── 003-notifications/    # Feature 3 worktree (single)
 ├── .kittify/
 ├── kitty-specs/
 └── ... (main branch files)
@@ -184,7 +237,7 @@ my-project/                    # Main repo (main branch)
 1. **Main branch** stays in the primary repo root
 2. **Feature branches** live in `.worktrees/<feature-slug>/`
 3. **Work on features** happens in their worktrees (isolation)
-4. **Merge from worktrees** using this command – the CLI will hop to the primary repo for the Git merge
+4. **Merge from worktrees** using this command
 5. **Cleanup is automatic** - worktrees removed after merge
 
 ### Why Worktrees?
@@ -249,11 +302,10 @@ git branch -d <feature-branch>
 ## Safety Features
 
 1. **Clean working directory check** - Won't merge with uncommitted changes
-2. **Primary repo hand-off** - Automatically runs Git operations from the main checkout when invoked in a worktree
-3. **Fast-forward only pull** - Won't proceed if main has diverged
-4. **Graceful failure** - If merge fails, you can fix manually
-5. **Optional operations** - Push, branch delete, and worktree removal are configurable
-6. **Dry run mode** - Preview exactly what will happen
+2. **Fast-forward only pull** - Won't proceed if main has diverged
+3. **Graceful failure** - If merge fails, you can fix manually
+4. **Optional operations** - Push, branch delete, and worktree removal are configurable
+5. **Dry run mode** - Preview exactly what will happen
 
 ## Examples
 

@@ -2,11 +2,6 @@
 description: Perform a non-destructive cross-artifact consistency and quality analysis across spec.md, plan.md, and tasks.md after task generation.
 ---
 
-**Path reference rule:** When you mention directories or files, provide either the absolute path or a path relative to the project root (for example, `kitty-specs/<feature>/tasks/`). Never refer to a folder by name alone.
-
-
-*Path: [.kittify/templates/commands/analyze.md](.kittify/templates/commands/analyze.md)*
-
 
 ## User Input
 
@@ -15,68 +10,6 @@ $ARGUMENTS
 ```
 
 You **MUST** consider the user input before proceeding (if not empty).
-
----
-
-## Location Pre-flight Check
-
-**BEFORE PROCEEDING:** Verify you are working in the feature worktree.
-
-```bash
-pwd
-git branch --show-current
-```
-
-**Expected output:**
-- `pwd`: Should end with `.worktrees/001-feature-name` (or similar feature worktree)
-- Branch: Should show your feature branch name like `001-feature-name` (NOT `main`)
-
-**If you see the main branch or main repository path:**
-
-⛔ **STOP - You are in the wrong location!**
-
-This command reads your feature artifacts (spec, plan, tasks) which are in your feature worktree.
-
-**Correct the issue:**
-1. Navigate to your feature worktree: `cd .worktrees/001-feature-name`
-2. Verify you're on the correct feature branch: `git branch --show-current`
-3. Then run this analyze command again
-
----
-
-## What This Command Analyzes
-
-This command performs a comprehensive cross-artifact analysis. It reads (but does NOT modify):
-
-**Files analyzed**:
-- **spec.md** – Requirements, user stories, edge cases
-- **plan.md** – Architecture choices, data model, technical design
-- **tasks.md** – Work breakdown, task descriptions, phases
-- **constitution.md** – Project principles (from `.kittify/memory/constitution.md`)
-
-**Output**: analysis.md report with consistency findings and recommendations
-
----
-
-## Workflow Context
-
-**Before this**: `/spec-kitty.tasks` created your task breakdown (tasks.md complete)
-
-**This command**:
-- Validates consistency across all artifacts
-- Detects gaps, duplications, ambiguities
-- Verifies alignment with project constitution
-- Produces read-only analysis report (no file modifications)
-
-**After this**:
-- Review analysis findings
-- Fix any CRITICAL or HIGH severity issues
-- Proceed to `/spec-kitty.implement` when ready
-- Or return to `/spec-kitty.plan` or `/spec-kitty.tasks` if major revisions needed
-
-This command is a quality gate before implementation begins.
-
----
 
 ## Goal
 
@@ -92,7 +25,7 @@ Identify inconsistencies, duplications, ambiguities, and underspecified items ac
 
 ### 1. Initialize Analysis Context
 
-Run `spec-kitty agent check-prerequisites --json --require-tasks --include-tasks` once from repo root and parse JSON for FEATURE_DIR and AVAILABLE_DOCS. Derive absolute paths:
+Run `(Missing script command for sh)` once from repo root and parse JSON for FEATURE_DIR and AVAILABLE_DOCS. Derive absolute paths:
 
 - SPEC = FEATURE_DIR/spec.md
 - PLAN = FEATURE_DIR/plan.md

@@ -9,17 +9,7 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import (
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    MutableMapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-)
+from typing import Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence, Set, Tuple
 
 from task_helpers import (
     LANES,
@@ -195,9 +185,7 @@ def _iter_work_packages(repo_root: Path, feature: str) -> Iterable[WorkPackage]:
     feature_dir = repo_root / "kitty-specs" / feature
     tasks_dir = feature_dir / "tasks"
     if not tasks_dir.exists():
-        raise AcceptanceError(
-            f"Feature '{feature}' has no tasks directory at {tasks_dir}."
-        )
+        raise AcceptanceError(f"Feature '{feature}' has no tasks directory at {tasks_dir}.")
 
     if is_legacy_format(feature_dir):
         # Legacy format: lane determined by subdirectory
@@ -250,9 +238,10 @@ def detect_feature_slug(
         return env["SPECIFY_FEATURE"].strip()
 
     try:
-        branch = run_git(
-            ["rev-parse", "--abbrev-ref", "HEAD"], cwd=repo_root, check=True
-        ).stdout.strip()
+        branch = (
+            run_git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=repo_root, check=True)
+            .stdout.strip()
+        )
         if branch and branch != "HEAD" and re.match(r"^\d{3}-", branch):
             return branch
     except TaskCliError:
@@ -310,23 +299,15 @@ def _check_needs_clarification(files: Sequence[Path]) -> List[str]:
 
 
 def _missing_artifacts(feature_dir: Path) -> Tuple[List[str], List[str]]:
-    required = [
-        feature_dir / "spec.md",
-        feature_dir / "plan.md",
-        feature_dir / "tasks.md",
-    ]
+    required = [feature_dir / "spec.md", feature_dir / "plan.md", feature_dir / "tasks.md"]
     optional = [
         feature_dir / "quickstart.md",
         feature_dir / "data-model.md",
         feature_dir / "research.md",
         feature_dir / "contracts",
     ]
-    missing_required = [
-        str(p.relative_to(feature_dir)) for p in required if not p.exists()
-    ]
-    missing_optional = [
-        str(p.relative_to(feature_dir)) for p in optional if not p.exists()
-    ]
+    missing_required = [str(p.relative_to(feature_dir)) for p in required if not p.exists()]
+    missing_optional = [str(p.relative_to(feature_dir)) for p in optional if not p.exists()]
     return missing_required, missing_optional
 
 
@@ -338,18 +319,18 @@ def normalize_feature_encoding(repo_root: Path, feature: str) -> List[Path]:
     """
     # Map Unicode characters to ASCII equivalents
     NORMALIZE_MAP = {
-        "\u2018": "'",  # Left single quotation mark → apostrophe
-        "\u2019": "'",  # Right single quotation mark → apostrophe
-        "\u201a": "'",  # Single low-9 quotation mark → apostrophe
-        "\u201c": '"',  # Left double quotation mark → straight quote
-        "\u201d": '"',  # Right double quotation mark → straight quote
-        "\u201e": '"',  # Double low-9 quotation mark → straight quote
-        "\u2014": "--",  # Em dash → double hyphen
-        "\u2013": "-",  # En dash → hyphen
-        "\u2026": "...",  # Horizontal ellipsis → three dots
-        "\u00a0": " ",  # Non-breaking space → regular space
-        "\u2022": "*",  # Bullet → asterisk
-        "\u00b7": "*",  # Middle dot → asterisk
+        '\u2018': "'",    # Left single quotation mark → apostrophe
+        '\u2019': "'",    # Right single quotation mark → apostrophe
+        '\u201A': "'",    # Single low-9 quotation mark → apostrophe
+        '\u201C': '"',    # Left double quotation mark → straight quote
+        '\u201D': '"',    # Right double quotation mark → straight quote
+        '\u201E': '"',    # Double low-9 quotation mark → straight quote
+        '\u2014': '--',   # Em dash → double hyphen
+        '\u2013': '-',    # En dash → hyphen
+        '\u2026': '...',  # Horizontal ellipsis → three dots
+        '\u00A0': ' ',    # Non-breaking space → regular space
+        '\u2022': '*',    # Bullet → asterisk
+        '\u00B7': '*',    # Middle dot → asterisk
     }
 
     feature_dir = repo_root / "kitty-specs" / feature
@@ -367,11 +348,7 @@ def normalize_feature_encoding(repo_root: Path, feature: str) -> List[Path]:
     ]
     candidates.extend(p for p in primary_files if p.exists())
 
-    for subdir in [
-        feature_dir / "tasks",
-        feature_dir / "research",
-        feature_dir / "checklists",
-    ]:
+    for subdir in [feature_dir / "tasks", feature_dir / "research", feature_dir / "checklists"]:
         if subdir.exists():
             candidates.extend(path for path in subdir.rglob("*.md"))
 
@@ -399,7 +376,7 @@ def normalize_feature_encoding(repo_root: Path, feature: str) -> List[Path]:
             text = data.decode("utf-8", errors="replace")
 
         # Strip UTF-8 BOM if present in the text
-        text = text.lstrip("\ufeff")
+        text = text.lstrip('\ufeff')
 
         # Normalize Unicode characters to ASCII equivalents
         for unicode_char, ascii_replacement in NORMALIZE_MAP.items():
@@ -424,9 +401,10 @@ def collect_feature_summary(
 
     branch: Optional[str] = None
     try:
-        branch_value = run_git(
-            ["rev-parse", "--abbrev-ref", "HEAD"], cwd=repo_root, check=True
-        ).stdout.strip()
+        branch_value = (
+            run_git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=repo_root, check=True)
+            .stdout.strip()
+        )
         if branch_value and branch_value != "HEAD":
             branch = branch_value
     except TaskCliError:
@@ -434,18 +412,16 @@ def collect_feature_summary(
 
     try:
         worktree_root = Path(
-            run_git(
-                ["rev-parse", "--show-toplevel"], cwd=repo_root, check=True
-            ).stdout.strip()
+            run_git(["rev-parse", "--show-toplevel"], cwd=repo_root, check=True)
+            .stdout.strip()
         ).resolve()
     except TaskCliError:
         worktree_root = repo_root
 
     try:
         git_common_dir = Path(
-            run_git(
-                ["rev-parse", "--git-common-dir"], cwd=repo_root, check=True
-            ).stdout.strip()
+            run_git(["rev-parse", "--git-common-dir"], cwd=repo_root, check=True)
+            .stdout.strip()
         ).resolve()
         primary_repo_root = git_common_dir.parent
     except TaskCliError:
@@ -497,9 +473,7 @@ def collect_feature_summary(
                     f"{wp_id}: Activity Log missing entry for lane={wp.current_lane}"
                 )
             if wp.current_lane == "done" and entries[-1]["lane"] != "done":
-                activity_issues.append(
-                    f"{wp_id}: latest Activity Log entry not lane=done"
-                )
+                activity_issues.append(f"{wp_id}: latest Activity Log entry not lane=done")
 
         work_packages.append(
             WorkPackageState(
@@ -547,9 +521,7 @@ def collect_feature_summary(
         work_packages=work_packages,
         metadata_issues=metadata_issues,
         activity_issues=activity_issues,
-        unchecked_tasks=unchecked_tasks
-        if unchecked_tasks != ["tasks.md missing"]
-        else [],
+        unchecked_tasks=unchecked_tasks if unchecked_tasks != ["tasks.md missing"] else [],
         needs_clarification=needs_clarification,
         missing_artifacts=missing_required,
         optional_missing=missing_optional,
@@ -585,9 +557,7 @@ def perform_acceptance(
             "Acceptance checks failed; run verify to see outstanding issues."
         )
 
-    actor_name = (
-        actor or os.getenv("USER") or os.getenv("USERNAME") or "system"
-    ).strip()
+    actor_name = (actor or os.getenv("USER") or os.getenv("USERNAME") or "system").strip()
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     parent_commit: Optional[str] = None
@@ -596,9 +566,8 @@ def perform_acceptance(
     if auto_commit and mode != "checklist":
         try:
             parent_commit = (
-                run_git(
-                    ["rev-parse", "HEAD"], cwd=summary.repo_root, check=False
-                ).stdout.strip()
+                run_git(["rev-parse", "HEAD"], cwd=summary.repo_root, check=False)
+                .stdout.strip()
                 or None
             )
         except TaskCliError:
@@ -631,30 +600,25 @@ def perform_acceptance(
         if len(history) > 20:
             meta["acceptance_history"] = history[-20:]
 
-        meta_path.write_text(
-            json.dumps(meta, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-        )
+        meta_path.write_text(json.dumps(meta, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         run_git(
             ["add", str(meta_path.relative_to(summary.repo_root))],
             cwd=summary.repo_root,
             check=True,
         )
 
-        status = run_git(
-            ["diff", "--cached", "--name-only"], cwd=summary.repo_root, check=True
-        )
-        staged_files = [
-            line.strip() for line in status.stdout.splitlines() if line.strip()
-        ]
+        status = run_git(["diff", "--cached", "--name-only"], cwd=summary.repo_root, check=True)
+        staged_files = [line.strip() for line in status.stdout.splitlines() if line.strip()]
         commit_created = False
         if staged_files:
             commit_msg = f"Accept {summary.feature}"
             run_git(["commit", "-m", commit_msg], cwd=summary.repo_root, check=True)
             commit_created = True
             try:
-                accept_commit = run_git(
-                    ["rev-parse", "HEAD"], cwd=summary.repo_root, check=True
-                ).stdout.strip()
+                accept_commit = (
+                    run_git(["rev-parse", "HEAD"], cwd=summary.repo_root, check=True)
+                    .stdout.strip()
+                )
             except TaskCliError:
                 accept_commit = None
         else:
@@ -692,9 +656,7 @@ def perform_acceptance(
         cleanup_instructions.append(
             f"After merging, remove the worktree: `git worktree remove {summary.worktree_root}`"
         )
-    cleanup_instructions.append(
-        f"Delete the feature branch when done: `git branch -d {branch}`"
-    )
+    cleanup_instructions.append(f"Delete the feature branch when done: `git branch -d {branch}`")
 
     notes: List[str] = []
     if accept_commit:
