@@ -1,9 +1,11 @@
 ---
 work_package_id: WP02
 title: Intelligent Assignment Logic
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks: [T005, T006, T007]
+agent: "Antigravity"
+shell_pid: "3837732"
 ---
 
 # Work Package 02: Intelligent Assignment Logic
@@ -58,3 +60,7 @@ Enhance the assignment service with "human" capabilities: resolving names vaguel
 ## Implementation Command
 
 `spec-kitty implement WP02 --base WP01`
+
+## Activity Log
+
+- 2026-01-20T16:52:47Z – Antigravity – shell_pid=3837732 – lane=doing – Started implementation via workflow command
