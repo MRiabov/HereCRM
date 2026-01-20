@@ -130,10 +130,10 @@ class CRMService:
         summary_data = await self.customer_repo.get_pipeline_summary(self.business_id)
         return {
             stage.value: {
-                "count": len(customers),
-                "examples": [c.name for c in customers[:5]],
+                "count": data["count"],
+                "examples": [c.name for c in data["examples"]],
             }
-            for stage, customers in summary_data.items()
+            for stage, data in summary_data.items()
         }
 
     async def format_pipeline_summary(self) -> str:
