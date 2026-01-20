@@ -6,10 +6,12 @@ subtasks:
   - "T019"
 title: "Scope Enforcement"
 phase: "Phase 5 - Security & Monetization"
-lane: "doing"
+lane: "done"
 dependencies: ["WP00", "WP03"]
 agent: "Antigravity"
 shell_pid: "3877841"
+reviewed_by: "MRiabov"
+review_status: "approved"
 history:
   - timestamp: "2026-01-20T14:45:30Z"
     lane: "planned"
@@ -80,3 +82,4 @@ history:
 
 - 2026-01-20T14:45:30Z – antigravity – lane=planned – Prompt created.
 - 2026-01-20T19:05:37Z – Antigravity – shell_pid=3877841 – lane=doing – Started implementation via workflow command
+- 2026-01-20T20:25:32Z – Antigravity – shell_pid=3877841 – lane=done – Review passed: Scope enforcement implemented and verified.
