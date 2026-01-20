@@ -6,10 +6,16 @@ subtasks:
   - T020
   - T021
   - T022
-lane: planned
+lane: done
+review_status: approved without changes
+reviewed_by: antigravity
 history:
   - date: 2026-01-19
     action: created
+  - date: 2026-01-20
+    action: review_approved
+    agent: antigravity
+    note: "Review passed. All subtasks (T018-T022) implemented. Auto-confirmation logic and channel config verified. Tests passing."
 ---
 
 # WP05 - Channel Logic & Auto-Confirmation

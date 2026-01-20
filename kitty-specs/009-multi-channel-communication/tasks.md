@@ -58,9 +58,9 @@
 **Priority**: P2
 **Dependencies**: WP01
 
-- [ ] T015: Create `GenericWebhook` endpoint (JSON schema validation). <!-- id: 14 -->
-- [ ] T016: Implement logic to map webhook payload to `User` (by phone/email) and create `Message`. <!-- id: 15 -->
-- [ ] T017: Test integration with mock payload. <!-- id: 16 -->
+- [X] T015: Create `GenericWebhook` endpoint (JSON schema validation). <!-- id: 14 -->
+- [X] T016: Implement logic to map webhook payload to `User` (by phone/email) and create `Message`. <!-- id: 15 -->
+- [X] T017: Test integration with mock payload. <!-- id: 16 -->
 
 **Prompt**: [WP04-generic-webhook.md](tasks/WP04-generic-webhook.md)
 
@@ -72,10 +72,10 @@
 **Priority**: P1
 **Dependencies**: WP02, WP03
 
-- [ ] T018: Create `ChannelConfig` YAML loader/structure. <!-- id: 17 -->
-- [ ] T019: Implement `AutoConfirmation` mechanism (45s delay state machine). <!-- id: 18 -->
-- [ ] T020: Integrate `AutoConfirmation` with `ToolExecutor` (execute if no cancel). <!-- id: 19 -->
-- [ ] T021: Implement "Conciseness" logic (truncate/rewrite messages based on channel config). <!-- id: 20 -->
-- [ ] T022: Final End-to-End verification of all 3 channels. <!-- id: 21 -->
+- [X] T018: Create `ChannelConfig` YAML loader/structure. <!-- id: 17 -->
+- [X] T019: Implement `AutoConfirmation` mechanism (45s delay state machine). <!-- id: 18 -->
+- [X] T020: Integrate `AutoConfirmation` with `ToolExecutor` (execute if no cancel). <!-- id: 19 -->
+- [X] T021: Implement "Conciseness" logic (truncate/rewrite messages based on channel config). <!-- id: 20 -->
+- [X] T022: Final End-to-End verification of all 3 channels. <!-- id: 21 -->
 
 **Prompt**: [WP05-channel-logic.md](tasks/WP05-channel-logic.md)
