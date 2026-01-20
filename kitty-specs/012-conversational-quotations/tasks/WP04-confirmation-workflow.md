@@ -1,7 +1,7 @@
 ---
 work_package_id: WP04
 title: Confirmation Workflow
-lane: planned
+lane: "for_review"
 dependencies: []
 subtasks: [T015, T016, T017, T018, T019]
 ---
@@ -78,3 +78,7 @@ Confirmation can happen in two ways:
 ### Verification
 
 - Run `pytest tests/integration/test_quote_confirmation.py`.
+
+## Activity Log
+
+- 2026-01-20T19:12:38Z – unknown – lane=for_review – Ready for review: Implemented scope enforcement in ToolExecutor, added required_scope metadata support, and verified with tests. Also shimmed missing Business model fields and billing_config.yaml from WP00.
