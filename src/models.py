@@ -17,6 +17,7 @@ class ConversationStatus(str, enum.Enum):
     PENDING_AUTO_CONFIRM = "pending_auto_confirm"
     SETTINGS = "settings"
     DATA_MANAGEMENT = "data_management"
+    BILLING = "billing"
 
 
 class PipelineStage(str, enum.Enum):
@@ -45,6 +46,13 @@ class Business(Base):
     services: Mapped[List["Service"]] = relationship(back_populates="business")
     import_jobs: Mapped[List["ImportJob"]] = relationship(back_populates="business")
     export_requests: Mapped[List["ExportRequest"]] = relationship(back_populates="business")
+
+    # Billing fields
+    stripe_customer_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    stripe_subscription_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    subscription_status: Mapped[str] = mapped_column(String, default="free")
+    seat_limit: Mapped[int] = mapped_column(Integer, default=1)
+    active_addons: Mapped[list] = mapped_column(JSON, default=list)
 
 
 class User(Base):
