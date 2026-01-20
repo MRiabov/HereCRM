@@ -8,8 +8,10 @@ subtasks:
   - "T005"
 title: "Foundation & Data Model"
 phase: "Phase 1 - Infrastructure"
-lane: "planned"
+lane: "doing"
 dependencies: []
+agent: "Antigravity"
+shell_pid: "3779362"
 history:
   - timestamp: "2026-01-20T14:45:30Z"
     lane: "planned"
@@ -96,3 +98,4 @@ history:
 ## Activity Log
 
 - 2026-01-20T14:45:30Z – antigravity – lane=planned – Prompt created.
+- 2026-01-20T15:25:45Z – Antigravity – shell_pid=3779362 – lane=doing – Started implementation via workflow command
