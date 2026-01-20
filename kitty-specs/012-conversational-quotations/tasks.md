@@ -13,7 +13,7 @@
 - [x] T001: Create `Quote` and `QuoteLineItem` models in `src/models.py`
 - [x] T002: Update `Business` and `Customer` models with relationships
 - [x] T003: Generate and apply Alembic migration
-- [ ] T004: Implement `QuoteService` class with `create_quote` logic
+- [x] T004: Implement `QuoteService` class with `create_quote` logic
 - [ ] T005: Write unit tests for Quote models and service
 
 ### WP02: PDF Generation & Delivery
