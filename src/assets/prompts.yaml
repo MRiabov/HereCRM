@@ -145,6 +145,16 @@ tool_descriptions:
       -> ConvertRequestTool(query="John", action="schedule", time="Monday", iso_time="2025-06-09T09:00:00")
     - User: "Log that callback for Mary as complete"
       -> ConvertRequestTool(query="Mary", action="log")
+
+  SendStatusTool: |
+    Send a status update message to a customer (e.g. "On my way").
+    Examples of when to call:
+    - User: "On my way to John"
+      -> SendStatusTool(query="John", status_type="on_way")
+    - User: "Tell Mary I'm running late"
+      -> SendStatusTool(query="Mary", status_type="running_late", message_content="running late")
+    - User: "On my way to next scheduled client"
+      -> SendStatusTool(query="next_scheduled_client", status_type="on_way")
   
   GetPipelineTool: |
     Get a summary of the sales pipeline (funnel counts).

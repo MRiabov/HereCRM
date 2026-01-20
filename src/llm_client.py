@@ -24,6 +24,7 @@ from src.uimodels import (
     ExitSettingsTool,
     ExportQueryTool,
     ExitDataManagementTool,
+    SendStatusTool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
 from src.services.template_service import TemplateService
@@ -132,6 +133,15 @@ class LLMParser:
                 },
             },
         ]
+
+        self.tools.append({
+            "type": "function",
+            "function": {
+                "name": "SendStatusTool",
+                "description": tool_desc.get("SendStatusTool", ""),
+                "parameters": SendStatusTool.schema(),
+            },
+        })
 
         self.tools.append({
             "type": "function",
@@ -403,6 +413,7 @@ class LLMParser:
             ConvertRequestTool,
             HelpTool,
             GetPipelineTool,
+            SendStatusTool,
             str,
         ]
     ]:
@@ -453,6 +464,7 @@ class LLMParser:
             "HelpTool": HelpTool,
             "GetPipelineTool": GetPipelineTool,
             "SendInvoiceTool": SendInvoiceTool,
+            "SendStatusTool": SendStatusTool,
         }
 
         return await self._chat_with_retry(messages, self.tools, model_map)

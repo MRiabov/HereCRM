@@ -229,6 +229,25 @@ class ConvertRequestTool(BaseModel):
 
 
 
+class SendStatusTool(BaseModel):
+    """Send a status update message to a customer (e.g. 'On my way', 'Running late')."""
+
+    query: str = Field(
+        ...,
+        description="Name or phone to find the customer (or 'next_scheduled_client')",
+        max_length=100,
+    )
+    status_type: str = Field(
+        "on_way",
+        description="Type of status: 'on_way', 'running_late', 'start_job', 'finish_job'",
+    )
+    message_content: Optional[str] = Field(
+        None,
+        description="Optional custom message content (e.g. 'running 10 mins late')",
+        max_length=500,
+    )
+
+
 class HelpTool(BaseModel):
     """Get help or information about available commands."""
 

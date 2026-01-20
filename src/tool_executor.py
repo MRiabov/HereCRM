@@ -33,8 +33,12 @@ from src.uimodels import (
     DeleteServiceTool,
     ListServicesTool,
     ExitSettingsTool,
+    SendStatusTool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
+from sqlalchemy import select
+from sqlalchemy.orm import joinedload
+from datetime import datetime
 
 class ToolExecutor:
     def __init__(
@@ -87,6 +91,7 @@ class ToolExecutor:
             ListServicesTool,
             ExitSettingsTool,
             SendInvoiceTool,
+            SendStatusTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
 
@@ -128,6 +133,8 @@ class ToolExecutor:
             return "Help is handled by the service layer directly.", None
         elif isinstance(tool_call, SendInvoiceTool):
             return await self._execute_send_invoice(tool_call)
+        elif isinstance(tool_call, SendStatusTool):
+            return await self._execute_send_status(tool_call)
         return "Unknown tool call", None
 
     # ... (other methods unchanged)
@@ -693,4 +700,67 @@ class ToolExecutor:
                 "customer": customer.name
             },
         )
+
+    async def _execute_send_status(
+        self, tool: SendStatusTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        
+        # 1. Resolve Customer/Job
+        job = None
+        customer = None
+        
+        if tool.query == "next_scheduled_client":
+             stmt = (
+                 select(Job)
+                 .where(
+                     Job.business_id == self.business_id,
+                     Job.scheduled_at >= datetime.now(),
+                     Job.status == "scheduled"
+                 )
+                 .order_by(Job.scheduled_at.asc())
+                 .limit(1)
+                 .options(joinedload(Job.customer))
+             )
+             result = await self.session.execute(stmt)
+             job = result.scalar_one_or_none()
+             if job:
+                 customer = job.customer
+        else:
+            # Search for customer
+            customers = await self.customer_repo.search(tool.query, self.business_id)
+            if not customers:
+                return f"Could not find customer matching '{tool.query}'", None
+            if len(customers) > 1:
+                return (
+                    f"Multiple customers found matching '{tool.query}'. Please be more specific.",
+                    None,
+                )
+            customer = customers[0]
+
+        if not customer:
+             return "No next scheduled client found.", None
+
+        # 2. Emit Event
+        await event_bus.emit(
+            "SEND_STATUS_MESSAGE",
+            {
+                "customer_id": customer.id,
+                "business_id": self.business_id,
+                "status_type": tool.status_type,
+                "message_content": tool.message_content,
+                "customer_phone": customer.phone
+            }
+        )
+
+        message_desc = f"'{tool.status_type}'"
+        if tool.message_content:
+             message_desc += f" ({tool.message_content})"
+             
+        return f"✔ Sent status update to {customer.name}: {message_desc}", {
+            "action": "send_status",
+            "entity": "customer",
+            "id": customer.id,
+            "status_type": tool.status_type,
+            "customer_name": customer.name
+        }
 
