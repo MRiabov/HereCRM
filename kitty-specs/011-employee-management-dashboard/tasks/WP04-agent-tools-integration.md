@@ -1,7 +1,7 @@
 ---
 work_package_id: WP04
 title: Agent Tools & Integration
-lane: "doing"
+lane: "for_review"
 dependencies: []
 subtasks: [T011, T012, T013, T014]
 agent: "antigravity"
@@ -83,3 +83,4 @@ Expose the dashboard and assignment capabilities to the LLM agent via structured
 ## Activity Log
 
 - 2026-01-20T18:41:51Z – antigravity – shell_pid=3779362 – lane=doing – Started implementation via workflow command
+- 2026-01-20T19:08:13Z – antigravity – shell_pid=3779362 – lane=for_review – Ready for review: Implemented ShowScheduleTool and AssignJobTool with full integrations and passing tests.
