@@ -1,0 +1,19 @@
+{
+  "accept_commit": null,
+  "acceptance_history": [
+    {
+      "accepted_at": "2026-01-21T06:31:03Z",
+      "accepted_by": "antigravity",
+      "accepted_from_commit": "121902be143b3ce8a7daa5e6f0b4e888a15a633e",
+      "branch": "main",
+      "mode": "local",
+      "validation_commands": [
+        "pytest .worktrees/011-employee-management-dashboard-WP04/tests/integration/test_employee_dashboard_flow.py .worktrees/011-employee-management-dashboard-WP04/tests/test_assignment_logic.py .worktrees/011-employee-management-dashboard-WP04/tests/unit/test_presentation.py"
+      ]
+    }
+  ],
+  "acceptance_mode": "local",
+  "accepted_at": "2026-01-21T06:31:03Z",
+  "accepted_by": "antigravity",
+  "accepted_from_commit": "121902be143b3ce8a7daa5e6f0b4e888a15a633e"
+}
