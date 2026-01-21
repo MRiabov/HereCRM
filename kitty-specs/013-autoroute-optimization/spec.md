@@ -76,6 +76,7 @@ As a Business Owner or Employee, I want to define where the employee starts thei
   - Send to ORS.
   - Parse response into a human-readable preview.
 - **FR-006**: The system MUST provide a confirmation flow to apply the results to the default DB.
+- **FR-007**: The system MUST implement a command for users (Owners and Employees) to update their `default_start_location`.
 
 ### Key Entities
 
