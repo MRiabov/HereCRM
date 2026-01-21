@@ -24,6 +24,8 @@ from src.uimodels import (
     ExitSettingsTool,
     ExportQueryTool,
     ExitDataManagementTool,
+    GetBillingStatusTool,
+    RequestUpgradeTool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
 from src.services.template_service import TemplateService
@@ -129,6 +131,22 @@ class LLMParser:
                     "name": "GetPipelineTool",
                     "description": tool_desc.get("GetPipelineTool", ""),
                     "parameters": GetPipelineTool.schema(),
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "GetBillingStatusTool",
+                    "description": tool_desc.get("GetBillingStatusTool", "Check the current subscription status, limits, and usage."),
+                    "parameters": GetBillingStatusTool.schema(),
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "RequestUpgradeTool",
+                    "description": tool_desc.get("RequestUpgradeTool", "Request an upgrade for seats or addons."),
+                    "parameters": RequestUpgradeTool.schema(),
                 },
             },
         ]
@@ -453,6 +471,8 @@ class LLMParser:
             "HelpTool": HelpTool,
             "GetPipelineTool": GetPipelineTool,
             "SendInvoiceTool": SendInvoiceTool,
+            "GetBillingStatusTool": GetBillingStatusTool,
+            "RequestUpgradeTool": RequestUpgradeTool,
         }
 
         return await self._chat_with_retry(messages, self.tools, model_map)
