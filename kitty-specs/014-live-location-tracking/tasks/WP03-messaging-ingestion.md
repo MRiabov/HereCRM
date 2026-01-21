@@ -6,10 +6,10 @@ subtasks:
   - "T012"
 title: "Ingestion - Messenger Handlers"
 phase: "Phase 2 - Messenger Integration"
-lane: "for_review"
+lane: "doing"
 dependencies: ["WP01"]
 agent: "Antigravity"
-shell_pid: "4059401"
+shell_pid: "4073129"
 review_status: "has_feedback"
 reviewed_by: "MRiabov"
 history:
@@ -83,3 +83,4 @@ history:
 - 2026-01-21T10:48:06Z – Antigravity – shell_pid=4035720 – lane=planned – Moved to planned
 - 2026-01-21T11:39:26Z – Antigravity – shell_pid=4059401 – lane=doing – Started implementation via workflow command
 - 2026-01-21T11:51:33Z – Antigravity – shell_pid=4059401 – lane=for_review – Ready for review: Integrated LocationService, implemented handled for WhatsApp location messages and map links in text (SMS support).
+- 2026-01-21T12:17:21Z – Antigravity – shell_pid=4073129 – lane=doing – Started review via workflow command
