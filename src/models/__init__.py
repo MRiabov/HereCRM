@@ -4,6 +4,7 @@ from sqlalchemy import String, ForeignKey, DateTime, Text, JSON, Float, Enum as 
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 import enum
 from src.database import Base
+from src.models.integration_config import IntegrationConfig, IntegrationType
 
 
 class UserRole(str, enum.Enum):
