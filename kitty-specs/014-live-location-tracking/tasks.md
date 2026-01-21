@@ -24,7 +24,7 @@
 
 ### Included Subtasks
 
-- [ ] T001 Add `current_latitude`, `current_longitude`, `location_updated_at` to `src/models.py`.
+- [x] T001 Add `current_latitude`, `current_longitude`, `location_updated_at` to `src/models.py`.
 - [ ] T002 Generate and apply alembic revision for `User` model changes.
 - [ ] T003 Implement `src/services/location_service.py` with `update_location` and `get_employee_location`.
 - [ ] T004 Implement regex parsing for Google/Apple Maps URLs in `LocationService.parse_location_from_text`.
