@@ -30,6 +30,7 @@ from src.uimodels import (
     CreateQuoteInput,
     LocateEmployeeTool,
     CheckETATool,
+    AutorouteTool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.employee_management import ShowScheduleTool, AssignJobTool
@@ -212,6 +213,14 @@ class LLMParser:
                 "name": "CheckETATool",
                 "description": tool_desc.get("CheckETATool", "Check the estimated time of arrival for a technician to a customer."),
                 "parameters": CheckETATool.schema(),
+            },
+        })
+        self.tools.append({
+            "type": "function",
+            "function": {
+                "name": "AutorouteTool",
+                "description": tool_desc.get("AutorouteTool", "Preview or execute automatic job routing to minimize distance and maximize jobs."),
+                "parameters": AutorouteTool.schema(),
             },
         })
 
@@ -535,6 +544,7 @@ class LLMParser:
             "CreateQuoteTool": CreateQuoteInput,
             "LocateEmployeeTool": LocateEmployeeTool,
             "CheckETATool": CheckETATool,
+            "AutorouteTool": AutorouteTool,
         }
 
         return await self._chat_with_retry(messages, self.tools, model_map)

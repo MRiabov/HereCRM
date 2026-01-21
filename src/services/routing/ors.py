@@ -1,8 +1,9 @@
 import requests
-from typing import List, Dict, Any, Optional
+from datetime import datetime
+from typing import List, Dict, Any
 from src.models import Job, User
 from src.config import settings
-from .base import RoutingServiceProvider, RoutingSolution, RoutingException
+from .base import RoutingServiceProvider, RoutingSolution, RoutingException, RoutingStep
 
 class OpenRouteServiceAdapter(RoutingServiceProvider):
     """
@@ -131,16 +132,33 @@ class OpenRouteServiceAdapter(RoutingServiceProvider):
                 if vehicle_id is None:
                     continue
                 
-                ordered_jobs = []
+                ordered_steps = []
                 steps = route_data.get("steps", [])
                 for step in steps:
                     if step.get("type") == "job":
                         job_id = step.get("id")
                         if job_id in job_map:
-                            ordered_jobs.append(job_map[job_id])
+                            arrival_s = step.get("arrival")
+                            service_s = step.get("service", 0)
+                            
+                            arrival_dt = None
+                            departure_dt = None
+                            
+                            if arrival_s is not None:
+                                # Convert seconds to datetime
+                                arrival_dt = datetime.fromtimestamp(arrival_s)
+                                departure_dt = datetime.fromtimestamp(arrival_s + service_s)
+                            
+                            ordered_steps.append(RoutingStep(
+                                job=job_map[job_id],
+                                arrival_time=arrival_dt,
+                                departure_time=departure_dt,
+                                duration_from_prev=step.get("duration"),
+                                distance_to_prev=step.get("distance")
+                            ))
                             assigned_ids.add(job_id)
                 
-                routes[vehicle_id] = ordered_jobs
+                routes[vehicle_id] = ordered_steps
 
         unassigned_jobs = [j for j in original_jobs if j.id not in assigned_ids]
         

@@ -1,7 +1,7 @@
 ---
 work_package_id: "WP01"
 title: "RBAC Foundation & Service"
-lane: "doing"
+lane: "done"
 dependencies: []
 subtasks:
   - "T001"
@@ -11,6 +11,8 @@ subtasks:
   - "T005"
 agent: "Antigravity"
 shell_pid: "4158559"
+reviewed_by: "MRiabov"
+review_status: "approved"
 ---
 
 # WP01: RBAC Foundation & Service
@@ -99,3 +101,4 @@ Update the `UserRole` enum, create the `rbac_tools.yaml` configuration, and impl
 ## Activity Log
 
 - 2026-01-21T16:35:43Z – Antigravity – shell_pid=4158559 – lane=doing – Started implementation via workflow command
+- 2026-01-21T17:25:40Z – Antigravity – shell_pid=4158559 – lane=done – Review passed: RBAC foundation implemented, UserRole updated (MEMBER -> EMPLOYEE, added MANAGER), RBACService with tool-permission mapping created and tested. DB migration for roles included.

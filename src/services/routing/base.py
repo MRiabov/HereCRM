@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import List, Dict, Any, Optional
 from src.models import Job, User
 
@@ -8,11 +9,22 @@ class RoutingException(Exception):
     pass
 
 @dataclass
+class RoutingStep:
+    """
+    Represents a specific visit in a route.
+    """
+    job: Job
+    arrival_time: Optional[datetime] = None
+    departure_time: Optional[datetime] = None
+    distance_to_prev: Optional[float] = None # in meters/km
+    duration_from_prev: Optional[float] = None # in seconds
+
+@dataclass
 class RoutingSolution:
     """
     Represents the output of a routing optimization.
     """
-    routes: Dict[int, List[Job]]
+    routes: Dict[int, List[RoutingStep]]
     unassigned_jobs: List[Job]
     metrics: Dict[str, Any] = field(default_factory=dict)
 

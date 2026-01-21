@@ -48,9 +48,11 @@ from src.uimodels import (
     CreateQuoteInput,
     LocateEmployeeTool,
     CheckETATool,
+    AutorouteTool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.quote_tools import CreateQuoteTool
+from src.tools.routing_tools import AutorouteToolExecutor
 from src.services.quote_service import QuoteService
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
@@ -138,6 +140,7 @@ class ToolExecutor:
             CreateQuoteInput,
             LocateEmployeeTool,
             CheckETATool,
+            AutorouteTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
 
@@ -220,6 +223,8 @@ class ToolExecutor:
             return await self._execute_locate_employee(tool_call)
         elif isinstance(tool_call, CheckETATool):
             return await self._execute_check_eta(tool_call)
+        elif isinstance(tool_call, AutorouteTool):
+            return await self._execute_autoroute(tool_call)
         return "Unknown tool call", None
 
     # ... (other methods unchanged)
@@ -1160,4 +1165,19 @@ class ToolExecutor:
              "action": "check_eta",
              "eta_minutes": eta,
              "tech_name": tech.name
+        }
+
+    async def _execute_autoroute(
+        self, tool: AutorouteTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        executor = AutorouteToolExecutor(self.session, self.business_id)
+        result = await executor.run(tool)
+        
+        action = "apply_route" if tool.apply else "preview_route"
+        
+        return result, {
+            "action": action,
+            "entity": "schedule",
+            "date": tool.date or datetime.today().date().isoformat(),
+            "preview": result
         }
