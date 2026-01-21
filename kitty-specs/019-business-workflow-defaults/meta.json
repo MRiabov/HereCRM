@@ -1,0 +1,8 @@
+{
+  "feature_number": "019",
+  "slug": "business-workflow-defaults",
+  "friendly_name": "Business Workflow Defaults",
+  "mission": "software-dev",
+  "source_description": "\"default workflow\" for a business user.\n\nHere's a problem:\nBusinesses have different workflows. In my country, we never need to invoice customers, whereas in US it's commonplace.\nSome business owners never send a \"quote\", while others do it routinely.\nSome business owners assume that the job is paid on-spot (because it always is) while others need to record payment.\n\nMake a simple, user-friendly setting for such workflows.",
+  "created_at": "2026-01-21T19:08:18Z"
+}
