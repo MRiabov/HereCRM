@@ -1,9 +1,11 @@
 ---
 work_package_id: "WP04"
 title: "Daily Shift Scheduler"
-lane: "planned"
+lane: "doing"
 subtasks: ["T013", "T014", "T015", "T018"]
 dependencies: ["WP03"]
+agent: "Antigravity"
+shell_pid: "4186310"
 ---
 
 ## Objective
@@ -74,3 +76,4 @@ This requires `apscheduler` (installed in WP01) running in the background.
 ## Activity Log
 
 - [INIT] Task generated.
+- 2026-01-21T18:04:16Z – Antigravity – shell_pid=4186310 – lane=doing – Started implementation via workflow command
