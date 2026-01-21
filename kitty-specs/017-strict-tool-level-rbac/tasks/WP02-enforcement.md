@@ -1,12 +1,14 @@
 ---
 work_package_id: WP02
 title: Tool Execution Enforcement
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks:
 - T006
 - T007
 - T008
+agent: "Antigravity"
+shell_pid: "4166443"
 ---
 
 # WP02: Tool Execution Enforcement
@@ -57,3 +59,7 @@ Modify `ToolExecutor` to intercept execution calls, check permissions using `RBA
 - `ToolExecutor` enforces permissions for every call.
 - Unauthorized calls result in the specific friendly error message.
 - Integration tests cover all 3 roles against restricted and allowed tools.
+
+## Activity Log
+
+- 2026-01-21T16:49:13Z – Antigravity – shell_pid=4166443 – lane=doing – Started implementation via workflow command
