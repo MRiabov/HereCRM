@@ -129,6 +129,22 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_jobs_business_id'), 'jobs', ['business_id'], unique=False)
+    op.create_table('messages',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('business_id', sa.Integer(), nullable=False),
+    sa.Column('from_number', sa.String(), nullable=False),
+    sa.Column('to_number', sa.String(), nullable=True),
+    sa.Column('body', sa.Text(), nullable=False),
+    sa.Column('role', sa.Enum('USER', 'ASSISTANT', name='messagerole'), nullable=False),
+    sa.Column('channel_type', sa.String(), nullable=False),
+    sa.Column('external_id', sa.String(), nullable=True),
+    sa.Column('log_metadata', sa.JSON(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['business_id'], ['businesses.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_messages_business_id'), 'messages', ['business_id'], unique=False)
+    op.create_index(op.f('ix_messages_from_number'), 'messages', ['from_number'], unique=False)
     op.create_table('line_items',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('job_id', sa.Integer(), nullable=False),
