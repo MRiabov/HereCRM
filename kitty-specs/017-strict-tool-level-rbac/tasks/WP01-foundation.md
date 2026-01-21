@@ -1,7 +1,7 @@
 ---
 work_package_id: "WP01"
 title: "RBAC Foundation & Service"
-lane: "planned"
+lane: "doing"
 dependencies: []
 subtasks:
   - "T001"
@@ -9,6 +9,8 @@ subtasks:
   - "T003"
   - "T004"
   - "T005"
+agent: "Antigravity"
+shell_pid: "4158559"
 ---
 
 # WP01: RBAC Foundation & Service
@@ -93,3 +95,7 @@ Update the `UserRole` enum, create the `rbac_tools.yaml` configuration, and impl
 - `UserRole` has the correct 3 values.
 - DB migration runs successfully.
 - `RBACService` is implemented and unit tests pass.
+
+## Activity Log
+
+- 2026-01-21T16:35:43Z – Antigravity – shell_pid=4158559 – lane=doing – Started implementation via workflow command
