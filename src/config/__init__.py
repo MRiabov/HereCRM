@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     # Postmark Settings
     postmark_server_token: Optional[str] = None
     from_email_address: Optional[str] = None
+    postmark_auth_user: Optional[str] = None
+    postmark_auth_pass: Optional[str] = None
 
     # S3 / Storage Settings
     s3_bucket_name: str = "here-crm-exports"
@@ -38,15 +40,6 @@ class Settings(BaseSettings):
     
     # Generic Webhook Settings
     generic_webhook_secret: Optional[str] = None
-
-    # Twilio Settings
-    twilio_account_sid: Optional[str] = None
-    twilio_auth_token: Optional[str] = None
-    twilio_phone_number: Optional[str] = None
-
-    # Postmark Settings
-    postmark_server_token: Optional[str] = None
-    from_email_address: Optional[str] = None
 
     # OpenRouteService
     openrouteservice_api_key: Optional[str] = None
