@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from src.models import Base
 from src.database import engine
+from src.services.cache import ServiceCatalogCache
 
 # Inject dummy keys BEFORE standard imports can fail
 os.environ["GOOGLE_API_KEY"] = "dummy_test_key"
@@ -19,6 +20,11 @@ def set_test_env():
     # This fixture ensures these remain set, though the top-level
     # execution is what really saves us from import errors.
     os.environ["WA_PHONE_ID"] = "dummy_phone_id"
+    yield
+
+@pytest.fixture(autouse=True)
+def clear_service_cache():
+    ServiceCatalogCache.get_instance().clear()
     yield
 
 @pytest.fixture(scope="function", autouse=True)

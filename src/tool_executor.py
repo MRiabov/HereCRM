@@ -698,6 +698,9 @@ class ToolExecutor:
         if not target:
              return f"Could not find service matching '{tool.original_name}'", None
 
+        # Re-attach to session if it came from cache (detached)
+        target = await self.session.merge(target)
+
         old_data = {"name": target.name, "default_price": target.default_price}
         
         if tool.new_name:
@@ -734,6 +737,8 @@ class ToolExecutor:
         if not target:
             return f"Could not find service matching '{tool.name}' to delete.", None
 
+        # Re-attach to session if it came from cache (detached)
+        target = await self.session.merge(target)
         await self.session.delete(target)
         await self.session.flush()
 

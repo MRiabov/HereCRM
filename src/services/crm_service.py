@@ -101,6 +101,10 @@ class CRMService:
             return f"Could not find request matching '{query}'", None
 
         req = requests[0]
+        # Capture request state early to avoid expiration issues after commit/delete
+        req_id = req.id
+        req_content = req.content
+        old_status = req.status
 
         if action == "schedule":
             # Promotion logic: Request -> Job
@@ -130,7 +134,7 @@ class CRMService:
 
             job = await self.create_job(
                 customer_id=customer_id,
-                description=f"Converted from request: {req.content}. Time: {time or 'N/A'}",
+                description=f"Converted from request: {req_content}. Time: {time or 'N/A'}",
                 status="scheduled" if time else "pending",
                 scheduled_at=scheduled_at,
             )
@@ -142,17 +146,27 @@ class CRMService:
                 "action": "promote",
                 "entity": "job",
                 "id": job.id,
-                "old_request_content": req.content,
+                "old_request_content": req_content,
                 "description": job.description,
             }
 
         elif action == "complete":
-            old_status = req.status
             req.status = "completed"
-            return f"✔ Request marked as completed: {req.content[:30]}", {
+            await self.session.commit()
+            return f"✔ Request marked as completed: {req_content[:30]}", {
                 "action": "update",
                 "entity": "request",
-                "id": req.id,
+                "id": req_id,
+                "old_status": old_status,
+            }
+
+        elif action == "log":
+            req.status = "logged"
+            await self.session.commit()
+            return f"✔ Request logged: {req_content[:30]}", {
+                "action": "update",
+                "entity": "request",
+                "id": req_id,
                 "old_status": old_status,
             }
 
@@ -175,7 +189,7 @@ class CRMService:
                 customer_id = customers[0].id
 
             quote = await self.quote_service.create_from_request(
-                request_id=req.id,
+                request_id=req_id,
                 customer_id=customer_id
             )
             
@@ -184,11 +198,11 @@ class CRMService:
             await self.session.commit()
             await self.session.refresh(quote)
 
-            return f"✔ Converted Request to Quote: {req.content[:50]}", {
+            return f"✔ Converted Request to Quote: {req_content[:50]}", {
                 "action": "promote",
                 "entity": "quote",
                 "id": quote.id,
-                "old_request_content": req.content,
+                "old_request_content": req_content,
                 "customer_name": customers[0].name if customers else "General Customer",
             }
 

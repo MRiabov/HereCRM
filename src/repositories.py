@@ -16,6 +16,7 @@ from src.models import (
     LineItem,
     CustomerAvailability,
 )
+from src.services.cache import ServiceCatalogCache
 import math
 import re
 
@@ -136,9 +137,41 @@ class ServiceRepository(BaseRepository[Service]):
         super().__init__(session, Service)
 
     async def get_all_for_business(self, business_id: int) -> List[Service]:
-        return await self.get_all(business_id)
+        cache = ServiceCatalogCache.get_instance()
+        cached_data = cache.get(business_id)
+        if cached_data is not None:
+             # Create transient Service objects from cached dictionaries
+             return [Service(**data) for data in cached_data]
+
+        # Capture version before query to handle race conditions
+        version = cache.get_version(business_id)
+        services = await self.get_all(business_id)
+
+        # Serialize to dicts for caching using SQLAlchemy inspection for robustness
+        # We assume services are loaded (which get_all ensures)
+        to_cache = []
+        for s in services:
+             # Only cache columns, not relationships
+             data = {c.name: getattr(s, c.name) for c in s.__table__.columns}
+             to_cache.append(data)
+
+        cache.set(business_id, to_cache, version)
+        return services
 
     async def get_by_name(self, name: str, business_id: int) -> Optional[Service]:
+        # Optimization: Check cache first
+        # This avoids a DB query if we already have the full catalog in memory
+        cache = ServiceCatalogCache.get_instance()
+        cached_data = cache.get(business_id)
+
+        if cached_data is not None:
+            name_lower = name.lower()
+            for data in cached_data:
+                # Basic ilike check in python
+                if data.get('name', '').lower() == name_lower:
+                    return Service(**data)
+            return None
+
         query = select(Service).where(
             Service.name.ilike(name), Service.business_id == business_id
         )
@@ -577,3 +610,12 @@ def update_job_value(mapper, connection, target):
 event.listen(LineItem, "after_insert", update_job_value)
 event.listen(LineItem, "after_update", update_job_value)
 event.listen(LineItem, "after_delete", update_job_value)
+
+
+def invalidate_service_cache(mapper, connection, target):
+    if hasattr(target, 'business_id'):
+        ServiceCatalogCache.get_instance().invalidate(target.business_id)
+
+event.listen(Service, "after_insert", invalidate_service_cache)
+event.listen(Service, "after_update", invalidate_service_cache)
+event.listen(Service, "after_delete", invalidate_service_cache)
