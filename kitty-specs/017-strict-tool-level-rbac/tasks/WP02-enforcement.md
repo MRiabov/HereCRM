@@ -1,7 +1,7 @@
 ---
 work_package_id: WP02
 title: Tool Execution Enforcement
-lane: "planned"
+lane: "done"
 dependencies: []
 subtasks:
 - T006
@@ -69,3 +69,4 @@ Modify `ToolExecutor` to intercept execution calls, check permissions using `RBA
 - 2026-01-21T17:16:29Z – Antigravity – shell_pid=4176707 – lane=doing – Started review via workflow command
 - 2026-01-21T17:47:02Z – Antigravity – shell_pid=4176707 – lane=done – Review passed: RBAC enforcement implemented in ToolExecutor with comprehensive role checks, configuration, and passing integration tests.
 - 2026-01-21T17:52:04Z – Antigravity – shell_pid=4176707 – lane=planned – Moved to planned
+- 2026-01-21T17:53:29Z – Antigravity – shell_pid=4176707 – lane=done – Undo accidental move to planned
