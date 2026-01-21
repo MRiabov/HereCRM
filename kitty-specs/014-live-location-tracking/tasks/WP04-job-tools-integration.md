@@ -1,7 +1,7 @@
 ---
 work_package_id: WP04
 title: Implementation - Tools & Integration
-lane: "done"
+lane: "doing"
 dependencies:
 - WP01
 - WP02
@@ -111,3 +111,4 @@ history:
 - 2026-01-21T12:21:28Z – Antigravity – shell_pid=4070339 – lane=for_review – Ready for review: Implemented LocateEmployeeTool and CheckETATool, added get_active_job_for_customer to CRMService, and extended OpenRouteServiceAdapter with ETA calculation. Integration tests verified.
 - 2026-01-21T12:27:09Z – Antigravity – shell_pid=4073129 – lane=doing – Started review via workflow command
 - 2026-01-21T13:03:57Z – Antigravity – shell_pid=4073129 – lane=done – Review passed: Implemented LocateEmployeeTool and CheckETATool with active job lookup, stale location handling, and ORS ETA calculation. Verified with end-to-end integration test.
+- 2026-01-21T13:13:56Z – Antigravity – shell_pid=4073129 – lane=doing – Started review via workflow command
