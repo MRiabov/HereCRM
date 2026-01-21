@@ -1,7 +1,7 @@
 import hmac
 import hashlib
 import logging
-import secrets
+
 from typing import Tuple
 from twilio.request_validator import RequestValidator
 
@@ -388,7 +388,7 @@ async def verify_generic_api_key(x_api_key: str = Header(None, alias="X-API-Key"
         )
 
 
-async def verify_postmark_auth(credentials: HTTPBasicCredentials = Depends(security)):
+async def verify_postmark_auth(credentials: HTTPBasicCredentials = Depends(HTTPBasic())):
     """
     Verifies Basic Auth credentials for Postmark webhooks.
     """
@@ -399,16 +399,14 @@ async def verify_postmark_auth(credentials: HTTPBasicCredentials = Depends(secur
             detail="Configuration Error",
         )
 
-    current_username_bytes = credentials.username.encode("utf8")
-    correct_username_bytes = settings.postmark_auth_user.encode("utf8")
-    is_correct_username = secrets.compare_digest(
-        current_username_bytes, correct_username_bytes
+    # Secure comparison
+    is_correct_username = hmac.compare_digest(
+        credentials.username.encode("utf8"),
+        settings.postmark_auth_user.encode("utf8")
     )
-
-    current_password_bytes = credentials.password.encode("utf8")
-    correct_password_bytes = settings.postmark_auth_pass.encode("utf8")
-    is_correct_password = secrets.compare_digest(
-        current_password_bytes, correct_password_bytes
+    is_correct_password = hmac.compare_digest(
+        credentials.password.encode("utf8"),
+        settings.postmark_auth_pass.encode("utf8")
     )
 
     if not (is_correct_username and is_correct_password):
