@@ -156,6 +156,8 @@ tool_descriptions:
     - User: "On my way to next scheduled client"
       -> SendStatusTool(query="next_scheduled_client", status_type="on_way")
   
+#FIXME: next_scheduled_client? why not search?
+
   GetPipelineTool: |
     Get a summary of the sales pipeline (funnel counts).
     Examples of when to call:

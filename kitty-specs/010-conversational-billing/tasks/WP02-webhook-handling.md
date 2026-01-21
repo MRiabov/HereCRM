@@ -69,10 +69,10 @@ history:
 
 ## Definition of Done Checklist
 
-- [ ] Webhook endpoint implemented and functional
-- [ ] Signature verification working (tested with valid/invalid signatures)
-- [ ] DB updates correctly reflect Stripe subscription changes
-- [ ] Integration tests passing
+- [x] Webhook endpoint implemented and functional
+- [x] Signature verification working (tested with valid/invalid signatures)
+- [x] DB updates correctly reflect Stripe subscription changes
+- [x] Integration tests passing
 
 ## Review Guidance
 

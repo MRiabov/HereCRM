@@ -86,11 +86,11 @@ history:
 
 ## Definition of Done Checklist
 
-- [ ] `stripe` package installed and in dependencies
-- [ ] `billing_config.yaml` exists with products
-- [ ] `ConversationStatus` includes `BILLING`
-- [ ] Database schema updated via Alembic
-- [ ] `Business` model reflects new fields
+- [x] `stripe` package installed and in dependencies
+- [x] `billing_config.yaml` exists with products
+- [x] `ConversationStatus` includes `BILLING`
+- [x] Database schema updated via Alembic
+- [x] `Business` model reflects new fields
 
 ## Review Guidance
 

@@ -68,10 +68,10 @@ history:
 
 ## Definition of Done Checklist
 
-- [ ] Tool metadata includes scopes
-- [ ] `ToolExecutor` blocks unauthorized calls
-- [ ] User receives helpful upgrade prompt when blocked
-- [ ] Automated tests cover authorized/unauthorized scenarios
+- [x] Tool metadata includes scopes
+- [x] `ToolExecutor` blocks unauthorized calls
+- [x] User receives helpful upgrade prompt when blocked
+- [x] Automated tests cover authorized/unauthorized scenarios
 
 ## Review Guidance
 
