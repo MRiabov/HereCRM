@@ -6,8 +6,10 @@ subtasks:
   - "T012"
 title: "Ingestion - Messenger Handlers"
 phase: "Phase 2 - Messenger Integration"
-lane: "for_review"
+lane: "doing"
 dependencies: ["WP01"]
+agent: "Antigravity"
+shell_pid: "4035720"
 history:
   - timestamp: "2026-01-21T10:21:37Z"
     lane: "planned"
@@ -75,3 +77,4 @@ history:
 
 - 2026-01-21T10:21:37Z – antigravity – lane=planned – Prompt created.
 - 2026-01-21T10:45:08Z – unknown – lane=for_review – Ready for review: Implemented Autoroute Command Preview (read-only mode) with data fetching, routing service integration, and human-readable preview display.
+- 2026-01-21T10:45:39Z – Antigravity – shell_pid=4035720 – lane=doing – Started review via workflow command
