@@ -28,7 +28,7 @@
 - [x] T002 Generate and apply alembic revision for `User` model changes.
 - [x] T003 Implement `src/services/location_service.py` with `update_location` and `get_employee_location`.
 - [x] T004 Implement regex parsing for Google/Apple Maps URLs in `LocationService.parse_location_from_text`.
-- [ ] T005 [P] Add unit tests for `LocationService` (parsing logic and DB updates).
+- [x] T005 [P] Add unit tests for `LocationService` (parsing logic and DB updates).
 
 ### Implementation Notes
 
