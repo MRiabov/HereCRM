@@ -1,7 +1,7 @@
 ---
 work_package_id: WP04
 title: Implementation - Tools & Integration
-lane: "doing"
+lane: "for_review"
 dependencies:
 - WP01
 - WP02
@@ -114,3 +114,4 @@ history:
 - 2026-01-21T13:13:56Z – Antigravity – shell_pid=4073129 – lane=doing – Started review via workflow command
 - 2026-01-21T13:42:32Z – Antigravity – shell_pid=4073129 – lane=planned – Moved to planned
 - 2026-01-21T15:10:20Z – Antigravity – shell_pid=4073129 – lane=doing – Started implementation via workflow command
+- 2026-01-21T15:27:19Z – Antigravity – shell_pid=4073129 – lane=for_review – Addressed review feedback: updated system prompts in prompts.yaml, added owner-only check for customer_query in CheckETATool, and refactored routing service to use a provider pattern in ToolExecutor. Verified with integration tests.
