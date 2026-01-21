@@ -29,7 +29,7 @@ async def test_assignment_service(test_session: AsyncSession):
     test_session.add(biz)
     await test_session.flush()
 
-    user = User(business_id=biz.id, phone_number="12345", role=UserRole.MEMBER)
+    user = User(business_id=biz.id, phone_number="12345", role=UserRole.EMPLOYEE)
     test_session.add(user)
     
     customer = Customer(business_id=biz.id, name="Test Customer")
@@ -63,7 +63,7 @@ async def test_dashboard_service_schedules(test_session: AsyncSession):
     await test_session.flush()
 
     user1 = User(business_id=biz.id, phone_number="111", role=UserRole.OWNER)
-    user2 = User(business_id=biz.id, phone_number="222", role=UserRole.MEMBER)
+    user2 = User(business_id=biz.id, phone_number="222", role=UserRole.EMPLOYEE)
     test_session.add_all([user1, user2])
     
     customer = Customer(business_id=biz.id, name="Test Customer")

@@ -19,7 +19,7 @@ class DashboardService:
         # 1. Fetch all employees (Owners and Members)
         stmt = select(User).where(
             User.business_id == business_id,
-            User.role.in_([UserRole.OWNER, UserRole.MEMBER])
+            User.role.in_([UserRole.OWNER, UserRole.MANAGER, UserRole.EMPLOYEE])
         )
         result = await self.session.execute(stmt)
         employees = result.scalars().all()

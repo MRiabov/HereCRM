@@ -73,7 +73,7 @@ class UserRepository(BaseRepository[User]):
     async def get_team_members(self, business_id: int) -> List[User]:
         query = select(User).where(
             User.business_id == business_id,
-            User.role.in_([UserRole.MEMBER, UserRole.OWNER])
+            User.role.in_([UserRole.EMPLOYEE, UserRole.MANAGER, UserRole.OWNER])
         )
         result = await self.session.execute(query)
         return list(result.scalars().all())
