@@ -48,7 +48,7 @@
 - **Goal**: Complete the command by adding the interactive confirmation and transaction application logic.
 - **Priority**: Medium
 - **Subtasks**:
-  - [ ] T014: Add interactive confirmation prompt
+  - [x] T014: Add interactive confirmation prompt
   - [ ] T015: Implement `apply_schedule` transaction logic
   - [ ] T016: Add notification hooks (placeholder)
 - **Dependencies**: WP03
