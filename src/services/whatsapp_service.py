@@ -13,7 +13,7 @@ from src.llm_client import LLMParser
 from src.tool_executor import ToolExecutor
 from src.services.template_service import TemplateService
 from src.services.data_management import DataManagementService
-from src.services.twilio_service import TwilioService
+from src.services.location_service import LocationService
 from src.config.loader import get_channel_config_loader
 from src.database import AsyncSessionLocal
 import asyncio
@@ -114,6 +114,32 @@ class WhatsappService:
 
         # 3. State Machine Logic
         reply = ""
+
+        # Priority: Location Update (WhatsApp Location or SMS Map Link)
+        location_coords = None
+        if media_type == "location":
+            # Direct location message (usually text contains lat,lng or we parse it)
+            location_coords = LocationService.parse_location_from_text(message_text)
+            # If parse failed but it's explicitly a location message, we might need a fallback
+            # assuming message_text IS "lat,lng"
+            if not location_coords and "," in message_text:
+                try:
+                    parts = message_text.split(",")
+                    lat = float(parts[0].strip())
+                    lng = float(parts[1].strip())
+                    location_coords = (lat, lng)
+                except ValueError:
+                    pass
+        
+        # Fallback: Check text for map links (WhatsApp or SMS)
+        if not location_coords:
+             location_coords = LocationService.parse_location_from_text(message_text)
+
+        if location_coords:
+            lat, lng = location_coords
+            await LocationService.update_location(self.session, user.id, lat, lng)
+            self.logger.info(f"Updated location for user {user.id}: {lat}, {lng}")
+            return "Thanks, your location has been updated and tracking is active."
 
         if is_new_user:
             self.logger.info(f"New user onboarding for {active_identity}")
@@ -517,7 +543,6 @@ class WhatsappService:
             "ConvertRequestTool": "Convert",
             "HelpTool": "Help",
             "GetPipelineTool": "Pipeline",
-            "UpdateCustomerStageTool": "Pipeline Stage Update",
             "UpdateCustomerStageTool": "Pipeline Stage Update",
             "SendInvoiceTool": "Send Invoice",
             "GetBillingStatusTool": "Billing Status",
