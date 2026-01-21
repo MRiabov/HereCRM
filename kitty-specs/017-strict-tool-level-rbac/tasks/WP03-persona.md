@@ -1,12 +1,14 @@
 ---
 work_package_id: WP03
 title: Persona & Documentation
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks:
 - T009
 - T010
 - T011
+agent: "Antigravity"
+shell_pid: "4176707"
 ---
 
 # WP03: Persona & Documentation
@@ -64,3 +66,7 @@ Implement a disclaimer appendage for non-owner responses and update the user man
 
 - Non-owners receive role-appropriate responses with disclaimers where applicable.
 - `manual.md` accurately reflects the new RBAC system.
+
+## Activity Log
+
+- 2026-01-21T17:28:53Z – Antigravity – shell_pid=4176707 – lane=doing – Started implementation via workflow command
