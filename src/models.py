@@ -66,6 +66,7 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     phone_number: Mapped[Optional[str]] = mapped_column(String, unique=True, nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String, unique=True, nullable=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"))
