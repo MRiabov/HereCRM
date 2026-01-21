@@ -1,0 +1,8 @@
+{
+  "feature_number": "017",
+  "slug": "017-strict-tool-level-rbac",
+  "friendly_name": "Strict Tool-Level RBAC and Persona Enforcement",
+  "mission": "software-dev",
+  "source_description": "strict role-based access control: All tools that a LLM can call are now scoped. Scoped by accessibility - a business owner can only access them, or an employee. For example, an employee shouldn't have access to billing, to exporting all customers, to sending invoices, etc. Also, an intelligent assistant must be able to only answer queries as an assistant. Also, I suggest adding a \"Manager\" role, who is able to access all tools except billing.",
+  "created_at": "2026-01-21T15:58:00Z"
+}
