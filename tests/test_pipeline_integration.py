@@ -124,14 +124,8 @@ async def test_manual_update_persistence(test_session):
     service = CRMService(test_session, biz.id)
     
     # Manual update to LOST
-    # Assuming `update_customer_stage` exists from WP04
-    try:
-        updated = await service.update_customer_stage(c1.id, "lost")
-        assert updated.pipeline_stage == PipelineStage.LOST
-        
-        await test_session.refresh(c1)
-        assert c1.pipeline_stage == PipelineStage.LOST
-    except AttributeError:
-        # If method doesn't exist yet (if WP04 wasn't fully merged/finished), 
-        # this test acts as a TODO reminder or fails correctly.
-        pytest.fail("CRMService.update_customer_stage not found (WP04 verification)")
+    updated = await service.update_customer_stage(c1.id, "lost")
+    assert updated.pipeline_stage == PipelineStage.LOST
+
+    await test_session.refresh(c1)
+    assert c1.pipeline_stage == PipelineStage.LOST
