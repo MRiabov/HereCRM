@@ -22,6 +22,18 @@ async def test_employee_dashboard_flow_mocked():
     mock_dashboard_service = AsyncMock()
     mock_assignment_service = AsyncMock()
     mock_template_service = MagicMock()
+    mock_user_repo = AsyncMock()
+    
+    # Mock user for RBAC checks
+    from src.models import User, UserRole
+    mock_user = User(
+        id=1,
+        name="Test Owner",
+        phone_number="123",
+        business_id=1,
+        role=UserRole.OWNER
+    )
+    mock_user_repo.get_by_id.return_value = mock_user
     
     def mock_render(key, **kwargs):
         if key == "employee_ambiguous":
@@ -41,7 +53,7 @@ async def test_employee_dashboard_flow_mocked():
          patch('src.tool_executor.JobRepository'), \
          patch('src.tool_executor.CustomerRepository'), \
          patch('src.tool_executor.RequestRepository'), \
-         patch('src.tool_executor.UserRepository'), \
+         patch('src.tool_executor.UserRepository', return_value=mock_user_repo), \
          patch('src.tool_executor.ServiceRepository'), \
          patch('src.tool_executor.GeocodingService'), \
          patch('src.tool_executor.SearchService'):
@@ -57,6 +69,7 @@ async def test_employee_dashboard_flow_mocked():
         # Override the services directly just to be sure (since __init__ creates them)
         executor.dashboard_service = mock_dashboard_service
         executor.assignment_service = mock_assignment_service
+        executor.user_repo = mock_user_repo
 
         # --- Step 1: Show Schedule ---
         # Setup mock return
