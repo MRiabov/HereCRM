@@ -122,6 +122,7 @@ async def test_execute_log_request(
     req = Request(business_id=biz.id, content="Info only request", status="pending")
     test_session.add(req)
     await test_session.flush()
+    req_id = req.id  # Capture ID before session expiration
 
     executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
     tool = ConvertRequestTool(query="Info", action="log")
@@ -134,7 +135,8 @@ async def test_execute_log_request(
     # Verify status changed but request still exists
     from sqlalchemy import select
 
-    res = await test_session.execute(select(Request).where(Request.id == req.id))
+    # We use the captured ID to avoid accessing attributes on expired objects
+    res = await test_session.execute(select(Request).where(Request.id == req_id))
     updated_req = res.scalar_one()
     assert updated_req.status == "logged"
 

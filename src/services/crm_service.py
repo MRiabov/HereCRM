@@ -148,8 +148,24 @@ class CRMService:
 
         elif action == "complete":
             old_status = req.status
+            # Cache content before commit expires the object
+            content_preview = req.content[:30]
             req.status = "completed"
-            return f"✔ Request marked as completed: {req.content[:30]}", {
+            await self.session.commit()
+            return f"✔ Request marked as completed: {content_preview}", {
+                "action": "update",
+                "entity": "request",
+                "id": req.id,
+                "old_status": old_status,
+            }
+
+        elif action == "log":
+            old_status = req.status
+            # Cache content before commit expires the object
+            content_preview = req.content[:30]
+            req.status = "logged"
+            await self.session.commit()
+            return f"✔ Request logged: {content_preview}", {
                 "action": "update",
                 "entity": "request",
                 "id": req.id,
@@ -180,15 +196,17 @@ class CRMService:
             )
             
             # Deletion logic matches 'schedule' action
+            # Cache content before delete/commit
+            content_preview = req.content
             await self.session.delete(req)
             await self.session.commit()
             await self.session.refresh(quote)
 
-            return f"✔ Converted Request to Quote: {req.content[:50]}", {
+            return f"✔ Converted Request to Quote: {content_preview[:50]}", {
                 "action": "promote",
                 "entity": "quote",
                 "id": quote.id,
-                "old_request_content": req.content,
+                "old_request_content": content_preview,
                 "customer_name": customers[0].name if customers else "General Customer",
             }
 
