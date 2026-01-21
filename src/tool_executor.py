@@ -1,6 +1,6 @@
 from typing import Union, Optional, Tuple, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import Job, Customer, Request
+from src.models import Customer, Request
 from src.repositories import (
     JobRepository,
     CustomerRepository,
@@ -8,7 +8,6 @@ from src.repositories import (
     UserRepository,
     ServiceRepository,
 )
-from src.events import event_bus
 from src.services.crm_service import CRMService
 from src.services.invoice_service import InvoiceService
 from src.services.template_service import TemplateService
@@ -16,6 +15,9 @@ from src.services.geocoding import GeocodingService
 from src.services.inference_service import InferenceService
 from src.services.search_service import SearchService
 from src.services.chat_utils import format_line_items
+from src.services.dashboard_service import DashboardService
+from src.services.assignment_service import AssignmentService
+from src.lib.text_formatter import render_employee_dashboard
 from src.uimodels import (
     AddJobTool,
     AddLeadTool,
@@ -35,6 +37,7 @@ from src.uimodels import (
     ExitSettingsTool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
+from src.tools.employee_management import ShowScheduleTool, AssignJobTool
 
 class ToolExecutor:
     def __init__(
@@ -60,6 +63,8 @@ class ToolExecutor:
         self.geocoding_service = GeocodingService()
         self.search_service = SearchService(session, self.geocoding_service)
         self.invoice_service = InvoiceService(session)
+        self.dashboard_service = DashboardService(session)
+        self.assignment_service = AssignmentService(session, self.business_id)
 
     async def _get_user_defaults(self) -> Tuple[Optional[str], Optional[str]]:
         user = await self.user_repo.get_by_id(self.user_id)
@@ -87,6 +92,8 @@ class ToolExecutor:
             ListServicesTool,
             ExitSettingsTool,
             SendInvoiceTool,
+            ShowScheduleTool,
+            AssignJobTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
 
@@ -128,6 +135,10 @@ class ToolExecutor:
             return "Help is handled by the service layer directly.", None
         elif isinstance(tool_call, SendInvoiceTool):
             return await self._execute_send_invoice(tool_call)
+        elif isinstance(tool_call, ShowScheduleTool):
+            return await self._execute_show_schedule(tool_call)
+        elif isinstance(tool_call, AssignJobTool):
+            return await self._execute_assign_job(tool_call)
         return "Unknown tool call", None
 
     # ... (other methods unchanged)
@@ -693,4 +704,60 @@ class ToolExecutor:
                 "customer": customer.name
             },
         )
+
+    async def _execute_show_schedule(
+        self, tool: ShowScheduleTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        from datetime import date
+        target_date = date.today()
+        if tool.date:
+            try:
+                target_date = date.fromisoformat(tool.date)
+            except ValueError:
+                return self.template_service.render("error_invalid_date", date=tool.date), None
+
+        schedule = await self.dashboard_service.get_employee_schedules(self.business_id, target_date)
+        unscheduled = await self.dashboard_service.get_unscheduled_jobs(self.business_id)
+        
+        # WP03 presentation layer call
+        report = render_employee_dashboard({
+            "employees": [{"name": emp.name, "jobs": jobs} for emp, jobs in schedule.items()],
+            "unscheduled": unscheduled
+        })
+        
+        return report, {"action": "query", "entity": "dashboard", "date": target_date.isoformat()}
+
+    async def _execute_assign_job(
+        self, tool: AssignJobTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        # 1. Ambiguity Handling: Find employee by name
+        employees = await self.assignment_service.find_employee_by_name(tool.assign_to_name)
+        
+        if not employees:
+            return self.template_service.render("employee_not_found", name=tool.assign_to_name), None
+        
+        if len(employees) > 1:
+            names = ", ".join([e.name or "Unnamed" for e in employees])
+            return self.template_service.render("employee_ambiguous", name=tool.assign_to_name, matches=names), None
+        
+        employee = employees[0]
+        
+        # 2. Call AssignmentService
+        result = await self.assignment_service.assign_job(tool.job_id, employee.id)
+        
+        if not result.success:
+            return f"Error: {result.error}", None
+        
+        msg = self.template_service.render("job_assigned", job_id=tool.job_id, employee_name=employee.name)
+        if result.warning:
+            msg += f" (Note: {result.warning})"
+            
+        return msg, {
+            "action": "update",
+            "entity": "job",
+            "id": tool.job_id,
+            "employee_id": employee.id,
+            "employee_name": employee.name,
+            "warning": result.warning
+        }
 

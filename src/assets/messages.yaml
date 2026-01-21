@@ -14,6 +14,8 @@ error_unclear_input: |
   - *Search*: 'Find John' or 'Show all jobs' or 'Find lead of High Street 34'
   - *Requests*: Somebody asked to call later? Store it as a request for later review. 'Add request: John on High Street 34, call 0871235678 tomorrow at 12:00'
   - *Promote*: Want to convert request to job? 'Promote request for High Street 34 to job'
+  - *Teams*: 'Show schedule' or 'Where are my employees?'
+  - *Assign*: 'Assign job 123 to John'
   - *Edit*: 'Edit Job, Lead or Request: John on High Street 34, call 0871235678 tomorrow at 12:00'
   - *Settings*: 'Update settings'
 
@@ -88,6 +90,12 @@ service_deleted: "🗑️ Service {id} deleted."
 error_service_not_found: "❌ Service {id} not found."
 error_invalid_service_format: "❌ Invalid format. Usage: 'Add Service [Name] [Price]'"
 
+# Employee Management
+employee_not_found: "❌ Could not find employee named '{name}'."
+employee_ambiguous: "❓ Status: Ambiguous. Did you mean {matches}?"
+job_assigned: "✅ Assigned Job #{job_id} to {employee_name}."
+error_invalid_date: "❌ Invalid date format: {date}. Please use YYYY-MM-DD."
+
 # Help Message
 help_message: |
   Available commands:
@@ -98,6 +106,8 @@ help_message: |
   - *Settings*: 'Update settings'
   - *Requests*: Somebody asked to call later? Store it as a request for later review. 'Add request: John on High Street 34, call 0871235678 tomorrow at 12:00'
   - *Promote*: Want to convert request to job? 'Promote request for High Street 34 to job'
+  - *Teams*: 'Show schedule' or 'Where are my employees?'
+  - *Assign*: 'Assign job 123 to John'
   - *Edit*: 'Edit Job, Lead or Request: John on High Street 34, call 0871235678 tomorrow at 12:00'
   
   Note: Ideally, identify all customers by phone number or street address to avoid ambiguity or duplicates.

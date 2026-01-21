@@ -26,6 +26,7 @@ from src.uimodels import (
     ExitDataManagementTool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
+from src.tools.employee_management import ShowScheduleTool, AssignJobTool
 from src.services.template_service import TemplateService
 from src.config.loader import get_channel_config_loader
 
@@ -139,6 +140,22 @@ class LLMParser:
                 "name": "SendInvoiceTool",
                 "description": "Send a professional PDF invoice to a customer for their last job.",
                 "parameters": SendInvoiceTool.schema(),
+            },
+        })
+        self.tools.append({
+            "type": "function",
+            "function": {
+                "name": "ShowScheduleTool",
+                "description": "Show the schedule for all employees for today. Use when user wants to see team status.",
+                "parameters": ShowScheduleTool.schema(),
+            },
+        })
+        self.tools.append({
+            "type": "function",
+            "function": {
+                "name": "AssignJobTool",
+                "description": "Assign a specific job to an employee by name.",
+                "parameters": AssignJobTool.schema(),
             },
         })
 
@@ -453,6 +470,8 @@ class LLMParser:
             "HelpTool": HelpTool,
             "GetPipelineTool": GetPipelineTool,
             "SendInvoiceTool": SendInvoiceTool,
+            "ShowScheduleTool": ShowScheduleTool,
+            "AssignJobTool": AssignJobTool,
         }
 
         return await self._chat_with_retry(messages, self.tools, model_map)
