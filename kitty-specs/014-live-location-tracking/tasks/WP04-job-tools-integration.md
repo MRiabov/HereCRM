@@ -1,7 +1,7 @@
 ---
 work_package_id: WP04
 title: Implementation - Tools & Integration
-lane: "planned"
+lane: "doing"
 dependencies:
 - WP01
 - WP02
@@ -113,3 +113,4 @@ history:
 - 2026-01-21T13:03:57Z – Antigravity – shell_pid=4073129 – lane=done – Review passed: Implemented LocateEmployeeTool and CheckETATool with active job lookup, stale location handling, and ORS ETA calculation. Verified with end-to-end integration test.
 - 2026-01-21T13:13:56Z – Antigravity – shell_pid=4073129 – lane=doing – Started review via workflow command
 - 2026-01-21T13:42:32Z – Antigravity – shell_pid=4073129 – lane=planned – Moved to planned
+- 2026-01-21T15:10:20Z – Antigravity – shell_pid=4073129 – lane=doing – Started implementation via workflow command
