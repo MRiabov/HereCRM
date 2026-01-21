@@ -88,7 +88,7 @@
 
 - [x] T010 [P] Update `src/services/whatsapp_service.py` to recognize `type="location"` messages.
 - [x] T011 [P] Update `src/services/twilio_service.py` to scan SMS body for map links using `LocationService`.
-- [ ] T012 Ensure auto-reply "Tracking started" is sent upon successful location share.
+- [x] T012 Ensure auto-reply "Tracking started" is sent upon successful location share.
 
 ### Implementation Notes
 
