@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from typing import List, Optional, Any
-from sqlalchemy import String, ForeignKey, DateTime, Text, JSON, Float, Enum as SAEnum, Integer
+from sqlalchemy import String, ForeignKey, DateTime, Text, JSON, Float, Enum as SAEnum, Integer, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 import enum
 from src.database import Base
@@ -82,6 +82,8 @@ class User(Base):
         JSON, default=lambda: {"confirm_by_default": False}
     )
     timezone: Mapped[str] = mapped_column(String, default="UTC")
+    default_start_location_lat: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    default_start_location_lng: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="users")
@@ -100,6 +102,7 @@ class Service(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
+    estimated_duration: Mapped[int] = mapped_column(Integer, default=60)
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="services")
@@ -160,6 +163,20 @@ class Customer(Base):
     business: Mapped["Business"] = relationship(back_populates="customers")
     jobs: Mapped[List["Job"]] = relationship(back_populates="customer")
     quotes: Mapped[List["Quote"]] = relationship(back_populates="customer")
+    availability: Mapped[List["CustomerAvailability"]] = relationship(back_populates="customer", cascade="all, delete-orphan")
+
+
+class CustomerAvailability(Base):
+    __tablename__ = "customer_availability"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), index=True)
+    start_time: Mapped[datetime] = mapped_column(DateTime)
+    end_time: Mapped[datetime] = mapped_column(DateTime)
+    is_available: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # Relationships
+    customer: Mapped["Customer"] = relationship(back_populates="availability")
 
 
 class Job(Base):
@@ -179,6 +196,7 @@ class Job(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
+    estimated_duration: Mapped[int] = mapped_column(Integer, default=60)
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="jobs")
