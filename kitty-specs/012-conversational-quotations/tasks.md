@@ -60,4 +60,4 @@
 - [x] T020: Implement `QuoteService.create_from_request` logic
 - [x] T021: Add "Promote to Quote" action to `ConvertRequestTool`
 - [x] T022: Update `WhatsAppService` to handle "Promote to Quote" intent/flow
-- [ ] T023: Write tests for Request -> Quote promotion
+- [x] T023: Write tests for Request -> Quote promotion
