@@ -1,50 +1,12 @@
-## Review Feedback for WP01
+### Review Feedback for WP04
 
-### Critical Issue
+The implementation is functionally correct and passes the integration tests. However, there are a few missing pieces and improvements needed:
 
-**Issue 1: Missing Database Migration**
+1. **System Prompt Update Missing**: Subtask T016 specifically requested updating the system prompts to explain when to use `LocateEmployeeTool` and `CheckETATool`. While the tools are registered in `llm_client.py`, the `src/assets/prompts.yaml` (where the system instruction actually resides) was not updated. Without this, the LLM may not consistently trigger these tools for user queries like "Where is my tech?" or "Where are my employees?".
+   - **Action**: Add intent parsing guidelines and tool descriptions for `LocateEmployeeTool` and `CheckETATool` to `src/assets/prompts.yaml`.
 
-The `employee_id` field was added to the `Job` model in `src/models.py` (lines 166-167), but no Alembic migration was generated to apply this schema change to the actual database.
+2. **Error Message Consistency**: The `CheckETATool` logic uses `self.user_phone` as the default customer phone. While this works for WhatsApp, it might be worth explicitly verifying if the user is a customer or an admin before allowing `customer_query` overrides, as per the spec's intent to restrict some data.
 
-**How to fix:**
-1. Ensure you have a `.env` file with a valid `DATABASE_URL` (or use a test database)
-2. Generate the migration:
-   ```bash
-   cd .worktrees/011-employee-management-dashboard-WP01
-   source ../../.venv/bin/activate
-   alembic revision --autogenerate -m "add_employee_assignment_to_jobs"
-   ```
-3. Review the generated migration file in `alembic/versions/` to ensure it adds:
-   - `employee_id` column (INTEGER, nullable, with index)
-   - Foreign key constraint to `users.id`
-4. Commit the migration file to the worktree
+3. **Routing Service Import**: In `src/tool_executor.py`, `OpenRouteServiceAdapter` is imported and instantiated inside `_execute_check_eta`. It might be better to inject it or use the `RoutingServiceProvider` pattern if we want to support the mock service in production for any reason.
 
-**Note:** The alembic command failed during review due to async database connection issues. You may need to temporarily use a synchronous database URL or create the migration manually.
-
-### Minor Issue
-
-**Issue 2: Model Field Organization**
-
-In `src/models.py`, the `employee_id` and `employee` fields (lines 166-167) are placed between the relationship definitions rather than with the other column definitions.
-
-**Current structure:**
-```python
-# Line 163-169
-# Relationships
-business: Mapped["Business"] = relationship(back_populates="jobs")
-customer: Mapped["Customer"] = relationship(back_populates="customers")
-employee_id: Mapped[Optional[int]] = mapped_column(...)  # ← Column definition
-employee: Mapped[Optional["User"]] = relationship(...)    # ← Relationship
-line_items: Mapped[List["LineItem"]] = relationship(...)
-```
-
-**Recommended structure:**
-Move `employee_id` to line 162 (after `created_at`, before the "# Relationships" comment), and `employee` to line 168 (with other relationships).
-
-This is a minor code organization issue and doesn't affect functionality.
-
-### Summary
-
-The implementation is **mostly correct** with good test coverage. The critical blocker is the missing database migration. Once that's added, this WP will be ready to merge.
-
-**Action Required:** Add the Alembic migration file before approval.
+Please update the `prompts.yaml` and re-submit for review.
