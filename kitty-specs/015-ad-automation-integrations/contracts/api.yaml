@@ -1,0 +1,150 @@
+openapi: 3.0.0
+info:
+  title: HereCRM Integrations API
+  version: 1.0.0
+  description: API for external tools (Zapier, Landing Pages) to write data into HereCRM and for provisioning integrations.
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /api/v1/integrations/leads:
+    post:
+      summary: Create a new Lead (Customer)
+      operationId: create_integration_lead
+      tags:
+        - Integrations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - phone
+              properties:
+                name:
+                  type: string
+                  example: "John Doe"
+                phone:
+                  type: string
+                  pattern: "^\\+?[1-9]\\d{1,14}$"
+                  example: "+15550199"
+                email:
+                  type: string
+                  format: email
+                  example: "john@example.com"
+                source:
+                  type: string
+                  example: "Facebook Ads"
+      responses:
+        '201':
+          description: Lead created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  customer_id:
+                    type: string
+                    format: uuid
+                  is_existing:
+                    type: boolean
+                    description: True if configured phone number already existed
+        '401':
+          description: Invalid API Key
+
+  /api/v1/integrations/requests:
+    post:
+      summary: Create a Service Request
+      description: Creates a customer (if needed) and opens a new service request.
+      operationId: create_integration_request
+      tags:
+        - Integrations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - phone
+                - service_type
+              properties:
+                name:
+                  type: string
+                phone:
+                  type: string
+                email:
+                  type: string
+                address:
+                  type: string
+                  example: "123 Main St, Springfield"
+                service_type:
+                  type: string
+                  example: "Plumbing Leak"
+                notes:
+                  type: string
+                source:
+                  type: string
+      responses:
+        '201':
+          description: Request created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_id:
+                    type: string
+                    format: uuid
+                  customer_id:
+                    type: string
+                    format: uuid
+
+  /api/v1/integrations/provision:
+    post:
+      summary: Provision Integration Credentials
+      description: |
+        Secure endpoint to exchange a temporary auth-id for saving credentials. 
+        This is NOT protected by X-API-Key but by the `auth_id` signature validation.
+      security: [] 
+      tags:
+        - Provisions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - auth_id
+                - config_type
+                - payload
+              properties:
+                auth_id:
+                  type: string
+                  description: "Signed UUID from the setup URL"
+                config_type:
+                  type: string
+                  enum: [META_CAPI, WEBHOOK, INBOUND_KEY]
+                label:
+                  type: string
+                  description: "User friendly name"
+                payload:
+                  type: object
+                  description: "The sensitive credential data"
+      responses:
+        '200':
+          description: Configuration saved successfully
+        '403':
+          description: Invalid or expired auth_id

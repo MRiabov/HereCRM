@@ -1,108 +1,77 @@
-# Implementation Plan: [FEATURE]
-*Path: [templates/plan-template.md](templates/plan-template.md)*
+# Implementation Plan: Ad Automation & Integrations
 
+*Path: templates/plan-template.md*
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/kitty-specs/[###-feature-name]/spec.md`
-
-**Note**: This template is filled in by the `/spec-kitty.plan` command. See `.kittify/templates/commands/plan.md` for the execution workflow.
-
-The planner will not begin until all planning questions have been answered—capture those answers in this document before progressing to later phases.
+**Branch**: `015-ad-automation-integrations` | **Date**: 2026-01-21 | **Spec**: [015-ad-automation-integrations](spec.md)
+**Input**: Feature specification from `/kitty-specs/015-ad-automation-integrations/spec.md`
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+This feature introduces a secure integration layer to HereCRM to automate data ingestion from ad platforms (Leads, Requests) and report "Booked" conversions back to Meta/Facebook. It utilizes an Event-Driven Architecture via the existing `EventBus` to asynchronously dispatch webhooks and CAPI events without blocking user flows. Authentication is managed via database-backed API keys, provisioned through a secure signed-URL flow.
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
-
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: Python 3.11
+**Primary Dependencies**: FastAPI, Pydantic, AIOHTTP (for outbound requests)
+**Storage**: PostgreSQL (via existing ORM)
+**Testing**: pytest (Unit & Integration)
+**Target Platform**: Linux server
+**Project Type**: Single project (Backend)
+**Performance Goals**: Non-blocking dispatch (<50ms added to main request), eventually consistent delivery.
+**Constraints**: Zero impact on "Book Job" transaction latency.
+**Scale/Scope**: Low volume (<100 events/day), high reliability required.
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- **LLM-First Text Processing**: N/A - This is a deterministic API integration feature.
+- **Intent Transparency**: N/A - Backend-to-backend communication. Failures logged for admin visibility.
+- **Progressive Documentation**:
+  - **Helpful Messages**: Error messages for API endpoints must be clear for integrators.
+  - **Assistant Knowledge**: Update `src/assets/manual.md` with details on how to generate generic webhook signatures and configure Meta CAPI.
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```
-kitty-specs/[###-feature]/
-├── plan.md              # This file (/spec-kitty.plan command output)
-├── research.md          # Phase 0 output (/spec-kitty.plan command)
-├── data-model.md        # Phase 1 output (/spec-kitty.plan command)
-├── quickstart.md        # Phase 1 output (/spec-kitty.plan command)
-├── contracts/           # Phase 1 output (/spec-kitty.plan command)
-└── tasks.md             # Phase 2 output (/spec-kitty.tasks command - NOT created by /spec-kitty.plan)
+kitty-specs/015-ad-automation-integrations/
+├── plan.md              # This file
+├── research.md          # Skipped (Stack confirmed)
+├── data-model.md        # Phase 1 output
+├── quickstart.md        # Phase 1 output
+├── contracts/           # Phase 1 output
+└── tasks.md             # Phase 2 output
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 
 ```
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
 src/
 ├── models/
+│   └── integration_config.py  # New model for API Keys & Webhook Config
+├── api/
+│   └── v1/
+│       └── integrations.py    # New inbound endpoints (Leads, Requests, Provision)
 ├── services/
-├── cli/
-└── lib/
+│   └── integration_service.py # Core logic for provisioning and ingest
+├── handlers/                  # Event Consumers
+│   └── integration_handlers.py # Meta CAPI & Webhook dispatch logic
+└── events.py                  # Integration with existing global EventBus
 
 tests/
-├── contract/
 ├── integration/
+│   └── test_integrations_api.py
 └── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
-
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+    └── test_event_dispatch.py
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Standard backend module expansion. New `handlers/` directory introduced to organize event consumers cleanly.
 
 ## Complexity Tracking
 
-*Fill ONLY if Constitution Check has violations that must be justified*
-
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+| New `IntegrationConfig` Model | Dynamic API Key management | Hardcoded env vars rejected by user for security & usability |
+| EventBus + Async Handlers | Performance (Non-blocking) | Synchronous hooks would slow down critical "Book Job" user path |
