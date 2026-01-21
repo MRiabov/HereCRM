@@ -1,9 +1,11 @@
 ---
 work_package_id: "WP02"
 title: "Interactive Job Completion"
-lane: "planned"
+lane: "doing"
 subtasks: ["T007", "T008", "T009", "T010"]
 dependencies: ["WP01"]
+agent: "antigravity"
+shell_pid: "4166443"
 ---
 
 ## Objective
@@ -73,3 +75,4 @@ The core interaction of the "Guided Workflow" is the employee simply typing "don
 ## Activity Log
 
 - [INIT] Task generated.
+- 2026-01-21T16:49:49Z – antigravity – shell_pid=4166443 – lane=doing – Started implementation via workflow command
