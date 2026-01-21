@@ -90,8 +90,9 @@ class BillingService:
         item_name = item_id or item_type
         
         if item_type == "seat":
-            price_id = self.config.get("products", {}).get("seat", {}).get("price_id")
-            item_name = "Additional Seat"
+            seat_config = self.config.get("products", {}).get("seat", {})
+            price_id = seat_config.get("price_id")
+            item_name = seat_config.get("name", "Additional Seat")
         elif item_type == "addon":
             for addon in self.config.get("addons", []):
                 if addon.get("id") == item_id:
