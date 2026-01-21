@@ -1,5 +1,6 @@
 ---
 work_package_id: "WP03"
+assignee: "Antigravity"
 subtasks:
   - "T010"
   - "T011"

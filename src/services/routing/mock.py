@@ -1,5 +1,5 @@
 import math
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from src.models import Job, User
 from .base import RoutingServiceProvider, RoutingSolution
 

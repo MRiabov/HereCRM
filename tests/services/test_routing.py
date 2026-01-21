@@ -123,3 +123,37 @@ def test_ors_adapter_missing_key():
     # Should raise RoutingException
     with pytest.raises(RoutingException):
         adapter.calculate_routes([], [])
+@patch("requests.get")
+def test_ors_adapter_get_eta_minutes(mock_get):
+    adapter = OpenRouteServiceAdapter(api_key="test-key")
+    
+    # Mock response: 7 minutes -> 420 seconds
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.json.return_value = {
+        "features": [{
+            "properties": {
+                "summary": {
+                    "duration": 420.0  # 7 minutes
+                }
+            }
+        }]
+    }
+    
+    eta = adapter.get_eta_minutes(40.7128, -74.0060, 40.7306, -73.9352)
+    # 7 mins should round up to 10 mins
+    assert eta == 10
+    
+    # Mock response: 12 minutes -> 720 seconds
+    mock_get.return_value.json.return_value = {
+        "features": [{
+            "properties": {
+                "summary": {
+                    "duration": 720.0  # 12 minutes
+                }
+            }
+        }]
+    }
+    
+    eta = adapter.get_eta_minutes(40.7128, -74.0060, 40.7306, -73.9352)
+    # 12 mins should round up to 15 mins
+    assert eta == 15
