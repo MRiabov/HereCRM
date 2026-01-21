@@ -16,6 +16,7 @@ from src.models import (
     LineItem,
     CustomerAvailability,
 )
+from src.services.cache import ServiceCatalogCache
 import math
 import re
 
@@ -136,7 +137,31 @@ class ServiceRepository(BaseRepository[Service]):
         super().__init__(session, Service)
 
     async def get_all_for_business(self, business_id: int) -> List[Service]:
-        return await self.get_all(business_id)
+        cache = ServiceCatalogCache.get_instance()
+        cached_data = cache.get(business_id)
+        if cached_data is not None:
+             # Create transient Service objects from cached dictionaries
+             # Note: These are NOT attached to the session. Consumers must merge() if they intend to modify DB state.
+             return [Service(**data) for data in cached_data]
+
+        services = await self.get_all(business_id)
+
+        # Serialize to dicts for caching
+        to_cache = []
+        for s in services:
+             data = {
+                 'id': s.id,
+                 'business_id': s.business_id,
+                 'name': s.name,
+                 'description': s.description,
+                 'default_price': s.default_price,
+                 'created_at': s.created_at,
+                 'estimated_duration': s.estimated_duration
+             }
+             to_cache.append(data)
+
+        cache.set(business_id, to_cache)
+        return services
 
     async def get_by_name(self, name: str, business_id: int) -> Optional[Service]:
         query = select(Service).where(
@@ -577,3 +602,12 @@ def update_job_value(mapper, connection, target):
 event.listen(LineItem, "after_insert", update_job_value)
 event.listen(LineItem, "after_update", update_job_value)
 event.listen(LineItem, "after_delete", update_job_value)
+
+
+def invalidate_service_cache(mapper, connection, target):
+    if hasattr(target, 'business_id'):
+        ServiceCatalogCache.get_instance().invalidate(target.business_id)
+
+event.listen(Service, "after_insert", invalidate_service_cache)
+event.listen(Service, "after_update", invalidate_service_cache)
+event.listen(Service, "after_delete", invalidate_service_cache)
