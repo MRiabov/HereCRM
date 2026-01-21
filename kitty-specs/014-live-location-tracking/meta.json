@@ -1,0 +1,8 @@
+{
+  "feature_number": "014",
+  "slug": "014-live-location-tracking",
+  "friendly_name": "Live Location Tracking",
+  "mission": "software-dev",
+  "source_description": "Live location tracking for employers and for customers. Businesses should be able to obtain employee location at any time. Customers should be able to inquire about the employees location and get an automated response - \"we are 5 minutes away.\"\n\nTwo ways to accomplish this:\n1. if the customer chats through Whatsapp: the employee can send a \"live location\" for the next 8 hours (as usual in whatsapp)\n2. if impossible, send a request to messages or any other communication medium to get a static location and calculate from there\n3. (in the future) possibly use a live location sharing app, but that goes against the idea of not using an app. Probably not.\n\nWe will use OpenRouteService to calculate the distance (we also have OpenRouteService features already in works - @[kitty-specs/013-autoroute-optimization/spec.md])",
+  "created_at": "2026-01-21T09:20:04Z"
+}
