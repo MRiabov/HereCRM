@@ -1,108 +1,118 @@
-# Implementation Plan: [FEATURE]
-*Path: [templates/plan-template.md](templates/plan-template.md)*
-
-
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/kitty-specs/[###-feature-name]/spec.md`
-
-**Note**: This template is filled in by the `/spec-kitty.plan` command. See `.kittify/templates/commands/plan.md` for the execution workflow.
-
-The planner will not begin until all planning questions have been answered—capture those answers in this document before progressing to later phases.
-
-## Summary
-
-[Extract from feature spec: primary requirement + technical approach from research]
+# Implementation Plan - Live Location Tracking
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
+We are implementing live location tracking for employees to enable automated ETA updates for customers. This feature depends on:
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+1. **WhatsApp/Twilio Integration**: Receiving location coordinates from user messages.
+2. **OpenRouteService (ORS)**: Calculating driving times between current employee location and customer address.
+3. **Spec 013 Alignment**: Spec 013 (Autoroute) introduces `OpenRouteServiceAdapter`. We MUST reuse or extend this infrastructure.
+
+**Constraints & assumptions:**
+
+- **Spec 013 Dependency**: Spec 013 is in progress. We assume we can pull its code (models/services) as a base. If not available, we must implement a compatible scaffolding.
+- **Location Source**: We rely on Twilio's standard location parameters (`Latitude`, `Longitude`) for WhatsApp.
+- **Fallback**: Static Google Maps links via SMS must be parsed.
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+N/A - No constitution file present.
 
-[Gates determined based on constitution file]
+## Architecture
 
-## Project Structure
+### 1. Data Model Updates (`User`)
 
-### Documentation (this feature)
+We will add fields to the existing `User` model to store the last known location.
 
-```
-kitty-specs/[###-feature]/
-├── plan.md              # This file (/spec-kitty.plan command output)
-├── research.md          # Phase 0 output (/spec-kitty.plan command)
-├── data-model.md        # Phase 1 output (/spec-kitty.plan command)
-├── quickstart.md        # Phase 1 output (/spec-kitty.plan command)
-├── contracts/           # Phase 1 output (/spec-kitty.plan command)
-└── tasks.md             # Phase 2 output (/spec-kitty.tasks command - NOT created by /spec-kitty.plan)
+```python
+class User(Base):
+    # ... existing fields ...
+    current_latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    current_longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    location_updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 ```
 
-### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
+### 2. Services
 
-```
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
+- **`LocationService`**: New service.
+  - `update_location(user_id, lat, lng)`: Updates DB fields.
+  - `parse_location_from_text(text)`: Extracts coords from Google Maps shortlinks (for SMS fallback).
+  - `get_employee_location(user_id)`: Returns current coords and freshness.
 
-tests/
-├── contract/
-├── integration/
-└── unit/
+- **`RoutingService` (Shared with 013)**:
+  - We will assume `src.services.routing` exists or create it.
+  - Add `get_eta(origin_lat, origin_lng, dest_lat, dest_lng) -> int (minutes)`:
+    - Calls data provider (ORS).
+    - Returns driving duration in minutes.
 
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
+- **`WhatsAppService` / `TwilioService`**:
+  - Update `handle_message` payload processing to extract `Latitude`/`Longitude` if present in form data (Twilio specific) or Attachment.
 
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
+### 3. User Flows
 
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
+- **Employee Update**:
+  - Sends location -> Webhook -> `TwilioService` extracts coords -> `LocationService` updates DB -> Auto-reply "Tracking started".
+- **Customer ETA**:
+  - Customer says "Where are you?" -> LLM identifies intent -> Tool `GetETATool` ->
+  - Finds active Job for customer -> Gets Employee ID -> Gets Employee Location ->
+  - Calls `RoutingService.get_eta` -> Returns "10 mins away".
+- **Business Query**:
+  - Admin says "Locate John" -> Tool `LocateEmployeeTool` -> Returns map link/address.
 
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
-```
+## Work Packages
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+### Phase 0: Research & Scaffolding
 
-## Complexity Tracking
+- **WP00**: Sync & Research
+  - **Goal**: Establish base from Spec 013 and verify API details.
+  - **Tasks**:
+    - [Manual] Pull/Merge changes from Spec 013 (or copy `RoutingService` and ORS adapter).
+    - Verify Twilio WhatsApp location webhook payload format.
+    - Verify Google Maps URL formats for regex parsing.
+    - Verify ORS `/v2/directions` API response for ETA.
 
-*Fill ONLY if Constitution Check has violations that must be justified*
+### Phase 1: Core Location Infrastructure
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+- **WP01**: Model & Location Service
+  - **Goal**: Ability to store and retrieve user locations.
+  - **Tasks**:
+    - Migration: Add fields to `User`.
+    - Implement `LocationService` (update, get, parse map links).
+    - Unit tests for regex parsing of map links.
+
+- **WP02**: ORS Routing Integration
+  - **Goal**: Ability to calculate drive time.
+  - **Tasks**:
+    - Extend `RoutingService` (from 013) with `calculate_eta`.
+    - Implement ORS client logic for Matrix/Directions if missing.
+    - Add Mock implementation for tests.
+
+### Phase 2: Messenger Integration
+
+- **WP03**: Ingest Location Data
+  - **Goal**: WhatsApp/SMS location messages update the DB.
+  - **Tasks**:
+    - Update `TwilioService.process_webhook` (or equivalent) to handle `Latitude`/`Longitude` params.
+    - Update `WhatsAppService` to delegate location updates to `LocationService`.
+    - Add handling for text-based map links.
+
+### Phase 3: User Facing Features
+
+- **WP04**: Tools & Logic
+  - **Goal**: Expose data to LLM/Users.
+  - **Tasks**:
+    - Implement `LocateEmployeeTool` (Admin).
+    - Implement `CheckETATool` (Customer).
+      - Logic: Find active job by customer phone & time.
+      - Logic: Calculate ETA.
+    - Register tools with `ToolExecutor`.
+
+---
+
+**Step-by-step Execution Plan**:
+
+1. Run `WP00` manually/interactively to sync 013 code.
+2. Implement WP01 (Models).
+3. Implement WP02 (Routing).
+4. Implement WP03 (Ingest).
+5. Implement WP04 (Tools).
