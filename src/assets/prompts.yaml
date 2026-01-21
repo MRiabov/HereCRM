@@ -147,6 +147,8 @@ tool_descriptions:
       -> ConvertRequestTool(query="John", action="schedule", time="Monday", iso_time="2025-06-09T09:00:00")
     - User: "Log that callback for Mary as complete"
       -> ConvertRequestTool(query="Mary", action="log")
+    - User: "Promote John's request to a quote"
+      -> ConvertRequestTool(query="John", action="quote")
 
   SendStatusTool: |
     Send a status update message to a customer (e.g. "On my way").

@@ -4,6 +4,7 @@ from src.models import Job, Customer, PipelineStage
 from src.repositories import JobRepository, CustomerRepository, RequestRepository
 from src.events import event_bus
 from datetime import datetime
+from src.services.quote_service import QuoteService
 
 
 class CRMService:
@@ -13,6 +14,7 @@ class CRMService:
         self.job_repo = JobRepository(session)
         self.customer_repo = CustomerRepository(session)
         self.request_repo = RequestRepository(session)
+        self.quote_service = QuoteService(session)
 
     async def create_job(
         self,
@@ -114,14 +116,40 @@ class CRMService:
                 "old_status": old_status,
             }
 
-        elif action == "log":
-            old_status = req.status
-            req.status = "logged"
-            return f"✔ Request logged: {req.content[:30]}", {
-                "action": "update",
-                "entity": "request",
-                "id": req.id,
-                "old_status": old_status,
+        elif action == "quote":
+            # Promotion logic: Request -> Quote
+            customers = await self.customer_repo.search(query, self.business_id)
+            if not customers:
+                # Same fallback as schedule
+                all_customers = await self.customer_repo.get_all(self.business_id)
+                if all_customers:
+                    customer_id = all_customers[0].id
+                else:
+                    new_customer = Customer(
+                        name="General Customer", business_id=self.business_id
+                    )
+                    self.customer_repo.add(new_customer)
+                    await self.session.flush()
+                    customer_id = new_customer.id
+            else:
+                customer_id = customers[0].id
+
+            quote = await self.quote_service.create_from_request(
+                request_id=req.id,
+                customer_id=customer_id
+            )
+            
+            # Deletion logic matches 'schedule' action
+            await self.session.delete(req)
+            await self.session.commit()
+            await self.session.refresh(quote)
+
+            return f"✔ Converted Request to Quote: {req.content[:50]}", {
+                "action": "promote",
+                "entity": "quote",
+                "id": quote.id,
+                "old_request_content": req.content,
+                "customer_name": customers[0].name if customers else "General Customer",
             }
 
         return f"Unknown action: {action}", None
