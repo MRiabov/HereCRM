@@ -28,6 +28,7 @@ dependencies = [
     "jinja2",
     "spec-kitty-cli>=0.11.1",
     "stripe>=14.2.0",
+    "apscheduler",
 ]
 
 [build-system]
