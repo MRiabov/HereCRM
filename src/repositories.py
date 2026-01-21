@@ -141,7 +141,6 @@ class ServiceRepository(BaseRepository[Service]):
         cached_data = cache.get(business_id)
         if cached_data is not None:
              # Create transient Service objects from cached dictionaries
-             # Note: These are NOT attached to the session. Consumers must merge() if they intend to modify DB state.
              return [Service(**data) for data in cached_data]
 
         services = await self.get_all(business_id)
