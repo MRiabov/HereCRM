@@ -85,6 +85,11 @@ class User(Base):
     default_start_location_lat: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     default_start_location_lng: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
+    # Location tracking fields
+    current_latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    current_longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    location_updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="users")
     conversation_state: Mapped[Optional["ConversationState"]] = relationship(back_populates="user")
