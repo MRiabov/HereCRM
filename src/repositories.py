@@ -14,6 +14,7 @@ from src.models import (
     PipelineStage,
     Service,
     LineItem,
+    CustomerAvailability,
 )
 import math
 import re
@@ -189,6 +190,22 @@ class RequestRepository(BaseRepository[Request]):
             conditions.append(Request.created_at <= max_date)
 
         stmt = select(Request).where(and_(*conditions))
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+
+class CustomerAvailabilityRepository(BaseRepository[CustomerAvailability]):
+    def __init__(self, session: AsyncSession):
+        super().__init__(session, CustomerAvailability)
+
+    async def get_for_customer(self, customer_id: int, min_date: Optional[datetime] = None, max_date: Optional[datetime] = None) -> List[CustomerAvailability]:
+        conditions = [CustomerAvailability.customer_id == customer_id]
+        if min_date:
+            conditions.append(CustomerAvailability.end_time >= min_date)
+        if max_date:
+            conditions.append(CustomerAvailability.start_time <= max_date)
+        
+        stmt = select(CustomerAvailability).where(and_(*conditions)).order_by(CustomerAvailability.start_time)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
