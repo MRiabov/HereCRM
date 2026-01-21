@@ -124,6 +124,14 @@ class ScheduleJobTool(BaseModel):
     )
 
 
+class CompleteJobTool(BaseModel):
+    """Mark a job as completed.
+    Triggered when an employee says 'done #123' or 'finished job #123'."""
+
+    job_id: int = Field(..., description="The unique ID of the job (e.g. 123 from #123)")
+    notes: Optional[str] = Field(None, description="Additional notes about the completion")
+
+
 class AddRequestTool(BaseModel):
     """Store a general request or note.
     ONLY triggered if user explicitly says 'add request' or similar."""

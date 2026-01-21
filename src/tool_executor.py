@@ -17,6 +17,7 @@ from src.services.geocoding import GeocodingService
 from src.services.inference_service import InferenceService
 from src.services.search_service import SearchService
 from src.services.chat_utils import format_line_items
+from src.services.guided_workflow_service import GuidedWorkflowService
 from src.services.billing_service import BillingService
 from src.services.dashboard_service import DashboardService
 from src.services.assignment_service import AssignmentService
@@ -48,6 +49,7 @@ from src.uimodels import (
     CreateQuoteInput,
     LocateEmployeeTool,
     CheckETATool,
+    CompleteJobTool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.quote_tools import CreateQuoteTool
@@ -138,6 +140,7 @@ class ToolExecutor:
             CreateQuoteInput,
             LocateEmployeeTool,
             CheckETATool,
+            CompleteJobTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
 
@@ -220,6 +223,8 @@ class ToolExecutor:
             return await self._execute_locate_employee(tool_call)
         elif isinstance(tool_call, CheckETATool):
             return await self._execute_check_eta(tool_call)
+        elif isinstance(tool_call, CompleteJobTool):
+            return await self._execute_complete_job(tool_call)
         return "Unknown tool call", None
 
     # ... (other methods unchanged)
@@ -1166,4 +1171,53 @@ class ToolExecutor:
              "action": "check_eta",
              "eta_minutes": eta,
              "tech_name": tech.name
+        }
+    async def _execute_complete_job(
+        self, tool: CompleteJobTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        # 1. Fetch Job
+        job = await self.job_repo.get_by_id(tool.job_id, self.business_id)
+        if not job:
+            return f"Job #{tool.job_id} not found.", None
+
+        # 2. Permission Check
+        # User must be owner OR the assigned employee
+        user = await self.user_repo.get_by_id(self.user_id)
+        is_owner = user.role == UserRole.OWNER if user else False
+        is_assigned = job.employee_id == self.user_id
+        
+        if not (is_owner or is_assigned):
+             return f"Permission denied. You are not assigned to Job #{tool.job_id}.", None
+
+        # 3. Update Status
+        old_status = job.status
+        if old_status == "completed":
+             return f"Job #{job.id} is already completed.", None
+             
+        job.status = "completed"
+        # If notes provided, append to description for record
+        if tool.notes:
+            job.description = (job.description or "") + f"\n[Completion Notes]: {tool.notes}"
+        
+        await self.session.flush()
+
+        # 4. Guided Workflow Integration (The WP03 part)
+        response_msg = f"✔ Job #{job.id} marked as completed."
+        
+        # Check for next scheduled job for the assigned employee
+        employee_id = job.employee_id
+        if employee_id:
+             next_job = await GuidedWorkflowService.get_next_job_for_employee(self.session, employee_id)
+             if next_job:
+                 guide_msg = GuidedWorkflowService.format_next_job_message(next_job)
+                 response_msg += f"\n\n{guide_msg}"
+             else:
+                 response_msg += "\n\nYou have no more scheduled jobs for today. Great work!"
+
+        return response_msg, {
+            "action": "update",
+            "entity": "job",
+            "id": job.id,
+            "status": "completed",
+            "prev_status": old_status
         }
