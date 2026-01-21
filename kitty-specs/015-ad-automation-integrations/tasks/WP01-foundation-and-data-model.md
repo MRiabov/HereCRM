@@ -1,7 +1,7 @@
 ---
 work_package_id: "WP01"
 title: "Foundation & Data Model"
-lane: "doing"
+lane: "for_review"
 subtasks: ["T001", "T002", "T003", "T004", "T005"]
 dependencies: []
 agent: "Antigravity"
@@ -93,3 +93,4 @@ We need a secure way to store integration credentials (API keys, Meta Access Tok
 ## Activity Log
 
 - 2026-01-21T13:31:18Z – Antigravity – shell_pid=4073129 – lane=doing – Started implementation via workflow command
+- 2026-01-21T14:20:04Z – Antigravity – shell_pid=4073129 – lane=for_review – Ready for review: Established database foundation (IntegrationConfig) and core service layer for API key management. Includes Alembic migration and unit tests.
