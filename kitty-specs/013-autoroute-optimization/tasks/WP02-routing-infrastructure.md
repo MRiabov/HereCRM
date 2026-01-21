@@ -1,7 +1,7 @@
 ---
 work_package_id: "WP02"
 title: "Routing Service Infrastructure"
-lane: "planned"
+lane: "doing"
 dependencies: ["WP01"]
 subtasks:
   - "T005"
@@ -9,6 +9,8 @@ subtasks:
   - "T007"
   - "T008"
   - "T009"
+agent: "Antigravity"
+shell_pid: "4007002"
 ---
 
 # Work Package 02: Routing Service Infrastructure
@@ -101,3 +103,7 @@ The system needs to optimize routes using an external API (ORS). To ensure testa
 - [ ] `OpenRouteServiceAdapter` implemented (payload & parsing)
 - [ ] API Key configuration added
 - [ ] Tests passing for both implementations
+
+## Activity Log
+
+- 2026-01-21T09:46:07Z – Antigravity – shell_pid=4007002 – lane=doing – Started implementation via workflow command
