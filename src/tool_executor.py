@@ -774,13 +774,72 @@ class ToolExecutor:
         if "error" in status_info:
             return f"Error retrieving billing status: {status_info['error']}", None
 
+        # Calculate seats used
+        team_members = await self.user_repo.get_team_members(self.business_id)
+        seats_used = len(team_members)
+        
+        active_addons = status_info.get("active_addons", [])
+        
+        # Addon definitions
+        # These match the text provided by the user
+        addon_definitions = {
+            "manage_employees": {
+                "name": "Employee Management addon",
+                "price": "€30/mo",
+                "desc": "Scheduling, automatic notification, and automatic routing."
+            },
+            "campaigns": {
+                "name": "Campaign Messaging addon",
+                "price": "€20/mo",
+                "desc": "1000 messages included"
+            },
+            "extra_commands": {
+                "name": "Extra commands package",
+                "price": "€20/mo",
+                "desc": "1000 commands included (note: using SMS and AI costs us money per every request!)"
+            }
+        }
+        
+        # Build Active Addons string
+        active_lines = []
+        for addon_id in active_addons:
+            if addon_id in addon_definitions:
+                defi = addon_definitions[addon_id]
+                # Show full description for active addons as requested
+                active_lines.append(f"- {defi['name']} ({defi['price']}) - {defi['desc']}")
+            else:
+                # Fallback for unknown addons
+                formatted_name = addon_id.replace("_", " ").title()
+                active_lines.append(f"- {formatted_name}")
+        
+        if not active_lines:
+            active_lines.append("None")
+        
+        addons_str = "\n  ".join(active_lines)
+
+        # Build Available Upgrades string
+        upgrade_lines = []
+        upgrade_lines.append("- Add Seat (€50/mo)")
+        
+        for addon_id, defi in addon_definitions.items():
+            if addon_id not in active_addons:
+                upgrade_lines.append(f"- {defi['name']} ({defi['price']}) - {defi['desc']}")
+        
+        upgrades_str = "\n  ".join(upgrade_lines)
+
+        # Use the richer templates (header + body)
+        header = self.template_service.render("billing_status_header")
+        body = self.template_service.render(
+            "billing_status_body",
+            status=status_info.get("status", "free").title(),
+            seats_used=seats_used,
+            seat_limit=status_info.get("seat_limit", 1),
+            addons=addons_str,
+            available_upgrades=upgrades_str
+        )
+        
         return (
-            self.template_service.render(
-                "billing_status",
-                plan=status_info.get("status", "free").title(),
-                seats=status_info.get("seat_limit", 1),
-                addons=", ".join([a.get("name", "Unknown") for a in status_info.get("active_addons", [])]) or "None"
-            ),
+            f"{header}\n{body}",
             {
                 "action": "query",
                 "entity": "billing",

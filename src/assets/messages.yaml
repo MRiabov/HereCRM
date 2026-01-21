@@ -89,6 +89,7 @@ billing_status: |
   *Subscription Status*:
   - Plan: {plan}
   - Seats: {seats}
+  - Messages: 1000/mo included (then $0.02/msg)
   - Active Addons: {addons}
 
 billing_upgrade_quote: |
@@ -180,17 +181,15 @@ billing_status_header: "💳 *Billing & Subscription*"
 billing_status_body: |
   Status: {status}
   Seats: {seats_used}/{seat_limit}
+  Messages: 1000/mo included (then $0.02/msg)
   
   *Active Addons*:
   {addons}
   
   *Available Upgrades*:
-  - Add Seat (€50/mo)
-  - Employee Management addon (€30/mo) - Scheduling, automatic notification, and automatic routing.
-  - Campaign Messaging addon (€20/mo) - 1000 messages included
-  - Extra commands package (€20/mo) - 1000 commands included (note: using SMS and AI costs us money per every request!)
+  {available_upgrades}
   
-  Type 'upgrade [item]' to get a payment link.
+  Type 'upgrade [item]' to get a payment link and purchase.
 
 upgrade_link_message: "🔗 Here is your secure link to {action}: {url}\n(Link expires in 24 hours)"
 billing_error: "❌ Billing error: {error}"
