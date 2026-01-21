@@ -1,7 +1,7 @@
 ---
 work_package_id: "WP02"
 title: "Routing Service Infrastructure"
-lane: "for_review"
+lane: "planned"
 dependencies: ["WP01"]
 subtasks:
   - "T005"
@@ -11,6 +11,8 @@ subtasks:
   - "T009"
 agent: "Antigravity"
 shell_pid: "4007002"
+review_status: "has_feedback"
+reviewed_by: "MRiabov"
 ---
 
 # Work Package 02: Routing Service Infrastructure
@@ -108,3 +110,4 @@ The system needs to optimize routes using an external API (ORS). To ensure testa
 
 - 2026-01-21T09:46:07Z – Antigravity – shell_pid=4007002 – lane=doing – Started implementation via workflow command
 - 2026-01-21T09:52:31Z – Antigravity – shell_pid=4007002 – lane=for_review – Ready for review: Implemented Routing Service Infrastructure including Mock and ORS adapters.
+- 2026-01-21T11:00:31Z – Antigravity – shell_pid=4007002 – lane=planned – Moved to planned
