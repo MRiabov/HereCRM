@@ -1,7 +1,7 @@
 import math
-from typing import List, Dict, Any
+from typing import List, Dict
 from src.models import Job, User
-from .base import RoutingServiceProvider, RoutingSolution
+from .base import RoutingServiceProvider, RoutingSolution, RoutingStep
 
 class MockRoutingService(RoutingServiceProvider):
     """
@@ -10,7 +10,7 @@ class MockRoutingService(RoutingServiceProvider):
     """
     
     def calculate_routes(self, jobs: List[Job], employees: List[User]) -> RoutingSolution:
-        routes: Dict[int, List[Job]] = {e.id: [] for e in employees}
+        routes: Dict[int, List[RoutingStep]] = {e.id: [] for e in employees}
         unassigned_jobs: List[Job] = []
         
         for job in jobs:
@@ -33,14 +33,12 @@ class MockRoutingService(RoutingServiceProvider):
                 
                 dist = self._haversine(job.latitude, job.longitude, lat, lng)
                 
-                # Simple capacity check or balancing could go here
-                
                 if dist < min_dist:
                     min_dist = dist
                     best_employee = employee
             
             if best_employee:
-                routes[best_employee.id].append(job)
+                routes[best_employee.id].append(RoutingStep(job=job))
             else:
                 unassigned_jobs.append(job)
                 

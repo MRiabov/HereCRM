@@ -402,3 +402,9 @@ class CreateQuoteInput(BaseModel):
     Triggered when user wants to 'send a quote', 'create proposal', or 'give price'."""
     customer_identifier: str = Field(..., description="Name or Phone of the customer to find.")
     items: List[QuoteLineItemInput] = Field(..., description="List of items in the quote")
+
+
+class AutorouteTool(BaseModel):
+    """Preview or execute automatic job routing to minimize distance and maximize jobs.
+    Triggered when user says 'autoroute', 'optimize schedule', or 'plan my day'."""
+    date: Optional[str] = Field(None, description="The date to optimize for (YYYY-MM-DD). Defaults to today.")
