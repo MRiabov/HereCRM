@@ -9,10 +9,10 @@
 - **Goal**: Establish the data models required for availability and routing optimizations.
 - **Priority**: Critical (Foundation)
 - **Subtasks**:
-  - [ ] T001: Create `CustomerAvailability` model and migration
-  - [ ] T002: Update `User` model with start location fields
-  - [ ] T003: Update `Job` and `Service` with duration fields
-  - [ ] T004: Implement `AvailabilityService` basics
+  - [x] T001: Create `CustomerAvailability` model and migration
+  - [x] T002: Update `User` model with start location fields
+  - [x] T003: Update `Job` and `Service` with duration fields
+  - [x] T004: Implement `AvailabilityService` basics
 - **Dependencies**: None
 - **Prompt Size**: ~300 lines
 
