@@ -319,13 +319,37 @@ class CustomerRepository(BaseRepository[Customer]):
             if max_date:
                 conditions.append(Customer.created_at <= max_date)
 
+        # Spatial Filtering Optimization (SQL-side bounding box)
+        if center_lat is not None and center_lon is not None and radius:
+            deg_rad = math.degrees(radius / 6371000)
+            lat_min, lat_max = center_lat - deg_rad, center_lat + deg_rad
+            # Adjust longitude delta based on latitude
+            lon_delta = deg_rad / math.cos(math.radians(center_lat)) if abs(center_lat) < 89 else 180
+            lon_min, lon_max = center_lon - lon_delta, center_lon + lon_delta
+
+            conditions.append(Customer.latitude.between(lat_min, lat_max))
+
+            # Handle Dateline wrapping
+            if lon_min < -180:
+                conditions.append(or_(
+                    Customer.longitude.between(lon_min + 360, 180),
+                    Customer.longitude.between(-180, lon_max)
+                ))
+            elif lon_max > 180:
+                conditions.append(or_(
+                    Customer.longitude.between(lon_min, 180),
+                    Customer.longitude.between(-180, lon_max - 360)
+                ))
+            else:
+                conditions.append(Customer.longitude.between(lon_min, lon_max))
+
         # Combine all DB conditions
         stmt = stmt.where(and_(*conditions)).distinct()
 
         result = await self.session.execute(stmt)
         customers = list(result.scalars().all())
 
-        # Spatial Filtering (Python-side)
+        # Fine-grained Spatial Filtering (Python-side)
         if center_lat is not None and center_lon is not None and radius:
             filtered = []
             for c in customers:
