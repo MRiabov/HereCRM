@@ -1,7 +1,7 @@
 ---
 work_package_id: "WP03"
 title: "Autoroute Command - Preview"
-lane: "for_review"
+lane: "doing"
 dependencies: ["WP02"]
 subtasks:
   - "T010"
@@ -9,7 +9,7 @@ subtasks:
   - "T012"
   - "T013"
 agent: "Antigravity"
-shell_pid: "4007482"
+shell_pid: "4059401"
 ---
 
 # Work Package 03: Autoroute Command - Preview
@@ -94,3 +94,4 @@ This is the user-facing entry point. It must gather all necessary context (avail
 
 - 2026-01-21T10:23:53Z – Antigravity – shell_pid=4007482 – lane=doing – Started implementation via workflow command
 - 2026-01-21T11:50:59Z – Antigravity – shell_pid=4007482 – lane=for_review – Ready for review: Implemented AutorouteTool with timing extraction from ORS and accurate preview display.
+- 2026-01-21T12:05:28Z – Antigravity – shell_pid=4059401 – lane=doing – Started review via workflow command
