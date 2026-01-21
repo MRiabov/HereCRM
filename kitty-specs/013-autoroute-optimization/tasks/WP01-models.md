@@ -1,13 +1,15 @@
 ---
 work_package_id: "WP01"
 title: "Database Migrations & Models"
-lane: "planned"
+lane: "doing"
 dependencies: []
 subtasks:
   - "T001"
   - "T002"
   - "T003"
   - "T004"
+agent: "antigravity"
+shell_pid: "3980068"
 ---
 
 # Work Package 01: Database Migrations & Models
@@ -91,3 +93,7 @@ We are implementing an "autoroute" feature to optimize job scheduling. This requ
 - [ ] Migrations created and applied successfully
 - [ ] `AvailabilityService` implemented with basic CRUD
 - [ ] Unit tests passing
+
+## Activity Log
+
+- 2026-01-21T09:32:20Z – antigravity – shell_pid=3980068 – lane=doing – Started implementation via workflow command
