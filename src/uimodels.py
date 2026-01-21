@@ -1,5 +1,5 @@
-from pydantic.v1 import BaseModel, Field, validator
 from typing import Optional, List, ClassVar
+from pydantic.v1 import BaseModel, Field, validator
 
 # Allowlist for settings that can be updated via LLM
 ALLOWED_SETTING_KEYS = ["confirm_by_default", "language", "timezone", "notifications", "default_city", "default_country"]
@@ -382,3 +382,23 @@ class ManageEmployeesTool(BaseModel):
     required_scope: ClassVar[str] = "manage_employees"
     action: str = Field(..., description="Action: 'list', 'assign_shift', 'view_availability'")
     details: Optional[str] = Field(None, description="Details for the action")
+
+
+class QuoteLineItemInput(BaseModel):
+    """A single line item in a quote."""
+    description: str = Field(..., description="Description of the service or item")
+    quantity: float = Field(1.0, description="Quantity or amount")
+    price: float = Field(..., description="Price per unit")
+
+    @validator("quantity", "price")
+    def validate_positive(cls, v):
+        if v < 0:
+            raise ValueError("Must be non-negative")
+        return v
+
+
+class CreateQuoteInput(BaseModel):
+    """Create and send a quote to a customer.
+    Triggered when user wants to 'send a quote', 'create proposal', or 'give price'."""
+    customer_identifier: str = Field(..., description="Name or Phone of the customer to find.")
+    items: List[QuoteLineItemInput] = Field(..., description="List of items in the quote")

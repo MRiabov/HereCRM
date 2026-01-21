@@ -45,8 +45,11 @@ from src.uimodels import (
     ExitDataManagementTool,
     GetBillingStatusTool,
     RequestUpgradeTool,
+    CreateQuoteInput,
 )
 from src.tools.invoice_tools import SendInvoiceTool
+from src.tools.quote_tools import CreateQuoteTool
+from src.services.quote_service import QuoteService
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from datetime import datetime
@@ -79,7 +82,10 @@ class ToolExecutor:
         self.invoice_service = InvoiceService(session)
         self.billing_service = BillingService(session)
         self.dashboard_service = DashboardService(session)
+        self.billing_service = BillingService(session)
+        self.dashboard_service = DashboardService(session)
         self.assignment_service = AssignmentService(session, self.business_id)
+        self.quote_service = QuoteService(session)
 
     async def _get_user_defaults(self) -> Tuple[Optional[str], Optional[str]]:
         user = await self.user_repo.get_by_id(self.user_id)
@@ -115,7 +121,9 @@ class ToolExecutor:
             GetBillingStatusTool,
             RequestUpgradeTool,
             ShowScheduleTool,
+            ShowScheduleTool,
             AssignJobTool,
+            CreateQuoteInput,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
 
@@ -192,6 +200,8 @@ class ToolExecutor:
             return await self._execute_show_schedule(tool_call)
         elif isinstance(tool_call, AssignJobTool):
             return await self._execute_assign_job(tool_call)
+        elif isinstance(tool_call, CreateQuoteInput):
+            return await self._execute_create_quote(tool_call)
         return "Unknown tool call", None
 
     # ... (other methods unchanged)
@@ -816,6 +826,10 @@ class ToolExecutor:
             return f"Could not generate upgrade link: {str(e)}", None
         except Exception as e:
             return f"System error generating upgrade link: {str(e)}", None
+
+    async def _execute_create_quote(self, tool: CreateQuoteInput) -> Tuple[str, Optional[Dict[str, Any]]]:
+        quote_tool = CreateQuoteTool(self.quote_service, self.customer_repo, self.business_id)
+        return await quote_tool.run(tool)
 
     async def _execute_send_status(
         self, tool: SendStatusTool
