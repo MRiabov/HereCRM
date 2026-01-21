@@ -8,7 +8,7 @@ subtasks:
   - "T005"
 title: "Foundation - Models & Location Service"
 phase: "Phase 1 - Core Location Infrastructure"
-lane: "doing"
+lane: "for_review"
 dependencies: []
 agent: "Antigravity"
 shell_pid: "4035720"
@@ -98,3 +98,4 @@ history:
 
 - 2026-01-21T10:21:37Z – antigravity – lane=planned – Prompt created.
 - 2026-01-21T10:48:44Z – Antigravity – shell_pid=4035720 – lane=doing – Started implementation via workflow command
+- 2026-01-21T11:00:46Z – Antigravity – shell_pid=4035720 – lane=for_review – Ready for review: Implemented location models, service, and comprehensive tests. All 12 unit tests passing.
