@@ -1,7 +1,7 @@
 ---
 work_package_id: WP03
 title: Persona & Documentation
-lane: "doing"
+lane: "done"
 dependencies: []
 subtasks:
 - T009
@@ -9,6 +9,8 @@ subtasks:
 - T011
 agent: "Antigravity"
 shell_pid: "4186310"
+reviewed_by: "MRiabov"
+review_status: "approved"
 ---
 
 # WP03: Persona & Documentation
@@ -71,3 +73,4 @@ Implement a disclaimer appendage for non-owner responses and update the user man
 
 - 2026-01-21T17:28:53Z – Antigravity – shell_pid=4176707 – lane=doing – Started implementation via workflow command
 - 2026-01-21T18:11:52Z – Antigravity – shell_pid=4186310 – lane=doing – Started review via workflow command
+- 2026-01-21T18:15:26Z – Antigravity – shell_pid=4186310 – lane=done – Review passed: RBAC disclaimer implemented in prompt and tool executor, confirmed by integration tests. Manual updated.
