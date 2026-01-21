@@ -1,9 +1,11 @@
 ---
 work_package_id: "WP03"
 title: "Proactive Next-Job Guide"
-lane: "planned"
+lane: "doing"
 subtasks: ["T011", "T012", "T016", "T017"]
 dependencies: ["WP02"]
+agent: "Antigravity"
+shell_pid: "4176707"
 ---
 
 ## Objective
@@ -78,3 +80,4 @@ This relies on the `CompleteJobTool` from WP02 triggers this logic.
 ## Activity Log
 
 - [INIT] Task generated.
+- 2026-01-21T17:28:42Z – Antigravity – shell_pid=4176707 – lane=doing – Started implementation via workflow command
