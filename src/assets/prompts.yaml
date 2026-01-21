@@ -17,6 +17,8 @@ system_instruction: |
   6. If the user says "add person" or "add customer" or "add lead" or similar, use AddLeadTool.
   7. If the user says "request", "new request", "add request" or similar, use AddRequestTool.
   8. If the user says "pipeline", "funnel", "sales health" or similar, use GetPipelineTool.
+  9. If the user says "billing", "subscription", "upgrade", "my plan", or asks about "limits", use GetBillingStatusTool.
+  10. If the user wants to "buy seats", "add users", "purchase addon", or "upgrade seats", use RequestUpgradeTool.
 
   ### AddJobTool guidelines:
   - AddJobTool is a tool used to store information about past job performed.
@@ -169,6 +171,19 @@ tool_descriptions:
       -> GetPipelineTool()
 
   HelpTool: "Get help or information about available commands."
+  
+  GetBillingStatusTool: |
+    Check the current subscription status, limits, and usage.
+    Examples:
+    - User: "What is my billing status?" -> GetBillingStatusTool()
+    - User: "show subscription info" -> GetBillingStatusTool()
+  
+  RequestUpgradeTool: |
+    Request an upgrade for seats or addons.
+    Examples:
+    - User: "buy 5 seats" -> RequestUpgradeTool(item_type="seat", quantity=5)
+    - User: "I want the campaign manager addon" -> RequestUpgradeTool(item_type="addon", item_id="campaign_manager", quantity=1)
+
   
   # Settings tools
   AddServiceTool: "Add a new service to the catalog."
