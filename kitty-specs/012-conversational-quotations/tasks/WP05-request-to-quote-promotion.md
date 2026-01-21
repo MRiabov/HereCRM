@@ -1,24 +1,29 @@
 ---
 work_package_id: "WP05"
 subtasks:
-  - "T020"
-  - "T021"
-  - "T022"
-  - "T023"
+  - "T020": "done"
+  - "T021": "done"
+  - "T022": "done"
+  - "T023": "done"
 title: "Request to Quote Promotion"
 phase: "Phase 3 - Conversational Workflows"
 lane: "doing"
-assignee: ""
+assignee: "Antigravity"
 agent: "Antigravity"
 shell_pid: "4007482"
 review_status: ""
 reviewed_by: ""
 history:
-  - timestamp: "2026-01-21T09:50:41Z"
-    lane: "planned"
+  - timestamp: "2026-01-21T10:15:00Z"
+    lane: "doing"
     agent: "Antigravity"
-    shell_pid: ""
-    action: "Prompt generated to fulfill user request for implementation"
+    shell_pid: "4007482"
+    action: "Implemented QuoteService.create_from_request, updated ConvertRequestTool schema and CRMService logic, added tests and WhatsAppService integration"
+  - timestamp: "2026-01-21T10:20:00Z"
+    lane: "for_review"
+    agent: "Antigravity"
+    shell_pid: "4007482"
+    action: "Moved to for_review after successful integration tests"
 ---
 
 # Work Package Prompt: WP05 – Request to Quote Promotion
@@ -97,3 +102,4 @@ history:
 
 - 2026-01-21T09:50:41Z – Antigravity – lane=planned – Prompt created.
 - 2026-01-21T09:52:45Z – Antigravity – shell_pid=4007482 – lane=doing – Started implementation via workflow command
+- 2026-01-21T09:58:34Z – Antigravity – shell_pid=4007482 – lane=doing – Started review via workflow command
