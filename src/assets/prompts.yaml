@@ -20,6 +20,8 @@ system_instruction: |
   9. If the user says "billing", "subscription", "upgrade", "my plan", or asks about "limits", use GetBillingStatusTool.
   10. If the user wants to "buy seats", "add users", "purchase addon", or "upgrade seats", use RequestUpgradeTool.
 
+  11. If the user says "team schedule", "show schedule", "where are my employees", "activity today", or similar, use ShowScheduleTool.
+
   ### AddJobTool guidelines:
   - AddJobTool is a tool used to store information about past job performed.
   - It is not used to schedule future jobs. For that, use ScheduleJobTool.
@@ -185,6 +187,18 @@ tool_descriptions:
     Examples:
     - User: "buy 5 seats" -> RequestUpgradeTool(item_type="seat", quantity=5)
     - User: "I want the campaign manager addon" -> RequestUpgradeTool(item_type="addon", item_id="campaign_manager", quantity=1)
+
+  ShowScheduleTool: |
+    Show the schedule for all employees for today.
+    Examples:
+    - User: "Show team schedule" -> ShowScheduleTool()
+    - User: "Where are my employees?" -> ShowScheduleTool()
+    - User: "Show schedule for 2025-01-01" -> ShowScheduleTool(date="2025-01-01")
+
+  AssignJobTool: |
+    Assign a specific job to an employee.
+    Examples:
+    - User: "Assign job 123 to John" -> AssignJobTool(job_id=123, assign_to_name="John")
 
   CreateQuoteTool: |
     Create and send a quote/proposal to a customer.

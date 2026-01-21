@@ -184,7 +184,7 @@ class LLMParser:
             "type": "function",
             "function": {
                 "name": "ShowScheduleTool",
-                "description": "Show the schedule for all employees for today. Use when user wants to see team status.",
+                "description": tool_desc.get("ShowScheduleTool", "Show the schedule for all employees for today. Use when user wants to see team status."),
                 "parameters": ShowScheduleTool.schema(),
             },
         })
@@ -192,7 +192,7 @@ class LLMParser:
             "type": "function",
             "function": {
                 "name": "AssignJobTool",
-                "description": "Assign a specific job to an employee by name.",
+                "description": tool_desc.get("AssignJobTool", "Assign a specific job to an employee by name."),
                 "parameters": AssignJobTool.schema(),
             },
         })

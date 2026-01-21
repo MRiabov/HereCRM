@@ -2,11 +2,13 @@ import asyncio
 import logging
 from typing import Optional
 from datetime import datetime, timezone
+import httpx
 
 from src.models import MessageLog, MessageType, MessageStatus
 from src.events import event_bus
 from src.database import AsyncSessionLocal
 from src.repositories import CustomerRepository
+from src.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -56,45 +58,111 @@ class MessagingService:
             db.add(message_log)
             await db.commit()
             await db.refresh(message_log)
+        
+        # Process sending
+        try:
+            success = False
+            external_id = None
             
-            try:
-                # Mock sending message (in production, this would call external API)
-                logger.info(
-                    f"[MOCK] Sending {channel} message to {recipient_phone}: {content[:50]}..."
-                )
+            if channel == "whatsapp":
+                success, external_id = await self._send_whatsapp(recipient_phone, content)
+            elif channel == "sms":
+                success, external_id = await self._send_sms(recipient_phone, content)
+            
+            # Update status
+            async with AsyncSessionLocal() as db:
+                # Reload message_log
+                from sqlalchemy import select
+                stmt = select(MessageLog).where(MessageLog.id == message_log.id)
+                result = await db.execute(stmt)
+                msg_log = result.scalar_one()
                 
-                # Simulate API call delay
-                await asyncio.sleep(0.1)
-                
-                # Update status to SENT
-                async with AsyncSessionLocal() as db:
-                    # Reload message_log in this session
-                    from sqlalchemy import select
-                    stmt = select(MessageLog).where(MessageLog.id == message_log.id)
-                    result = await db.execute(stmt)
-                    msg_log = result.scalar_one()
-                    
+                if success:
                     msg_log.status = MessageStatus.SENT
                     msg_log.sent_at = datetime.now(timezone.utc)
-                    msg_log.external_id = f"mock_{msg_log.id}_{int(datetime.now(timezone.utc).timestamp())}"
-                    
-                    await db.commit()
-                
-                logger.info(f"Message {message_log.id} sent successfully")
-                
-            except Exception as e:
-                # Update status to FAILED on error
-                logger.error(f"Failed to send message {message_log.id}: {e}")
-                async with AsyncSessionLocal() as db:
-                    from sqlalchemy import select
-                    stmt = select(MessageLog).where(MessageLog.id == message_log.id)
-                    result = await db.execute(stmt)
-                    msg_log = result.scalar_one()
+                    if external_id:
+                        msg_log.external_id = external_id
+                    logger.info(f"Message {message_log.id} sent successfully via {channel}")
+                else:
                     msg_log.status = MessageStatus.FAILED
-                    msg_log.error_message = str(e)
-                    await db.commit()
-            
-            return message_log
+                    msg_log.error_message = "Provider request failed"
+                
+                await db.commit()
+                
+        except Exception as e:
+            logger.error(f"Failed to send message {message_log.id}: {e}")
+            async with AsyncSessionLocal() as db:
+                from sqlalchemy import select
+                stmt = select(MessageLog).where(MessageLog.id == message_log.id)
+                result = await db.execute(stmt)
+                msg_log = result.scalar_one()
+                msg_log.status = MessageStatus.FAILED
+                msg_log.error_message = str(e)
+                await db.commit()
+        
+        return message_log
+
+    async def _send_whatsapp(self, recipient_phone: str, content: str) -> tuple[bool, Optional[str]]:
+        """
+        Send WhatsApp message via Meta Graph API.
+        Returns: (success, message_id)
+        """
+        if not settings.whatsapp_access_token or not settings.whatsapp_phone_number_id:
+            logger.warning("WhatsApp settings not configured. Falling back to MOCK log.")
+            logger.info(f"[MOCK] WhatsApp to {recipient_phone}: {content}")
+            return True, f"mock_wa_{int(datetime.now().timestamp())}"
+
+        url = f"https://graph.facebook.com/{settings.whatsapp_api_version}/{settings.whatsapp_phone_number_id}/messages"
+        headers = {
+            "Authorization": f"Bearer {settings.whatsapp_access_token}",
+            "Content-Type": "application/json",
+        }
+        
+        # Basic text message payload
+        payload = {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": recipient_phone,
+            "type": "text",
+            "text": {
+                "body": content
+            }
+        }
+        
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.post(url, headers=headers, json=payload, timeout=10.0)
+                
+                if response.status_code in (200, 201):
+                    data = response.json()
+                    # Extract message ID from response: {'messaging_product': 'whatsapp', 'contacts': [...], 'messages': [{'id': '...'}]}
+                    msg_id = None
+                    if "messages" in data and len(data["messages"]) > 0:
+                        msg_id = data["messages"][0].get("id")
+                    return True, msg_id
+                else:
+                    logger.error(f"Meta API Error: {response.status_code} - {response.text}")
+                    return False, None
+            except Exception as e:
+                logger.error(f"Exception sending to Meta API: {e}")
+                return False, None
+
+    async def _send_sms(self, recipient_phone: str, content: str) -> tuple[bool, Optional[str]]:
+        """
+        Send SMS via TwilioService.
+        """
+        from src.services.twilio_service import TwilioService
+        
+        try:
+            # We need to modify TwilioService to return ID or just trust True/False
+            # The current TwilioService.send_sms returns bool.
+            # We'll instantiate it here.
+            service = TwilioService()
+            success = await service.send_sms(recipient_phone, content)
+            return success, f"twilio_{int(datetime.now().timestamp())}" if success else None
+        except Exception as e:
+            logger.error(f"Error calling TwilioService: {e}")
+            return False, None
 
     async def enqueue_message(
         self,

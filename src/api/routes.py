@@ -1,11 +1,10 @@
-from httpcore import request
 import hmac
 import hashlib
 import logging
 from typing import Tuple
 from twilio.request_validator import RequestValidator
 
-from fastapi import APIRouter, Depends, HTTPException, Header, Request, status, Response
+from fastapi import APIRouter, Depends, HTTPException, Header, Request, status, Response, Query
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -102,58 +101,134 @@ async def get_services(
     return auth_service, whatsapp_service
 
 
+@router.get("/webhook")
+async def verify_webhook(
+    mode: str = Query(alias="hub.mode"),
+    token: str = Query(alias="hub.verify_token"),
+    challenge: str = Query(alias="hub.challenge"),
+):
+    """
+    Meta Webhook Verification Challenge.
+    """
+    if mode == "subscribe" and token == settings.whatsapp_verify_token:
+        return int(challenge)
+    raise HTTPException(status_code=403, detail="Verification failed")
+
+
 @router.post("/webhook", dependencies=[Depends(verify_signature)])
 async def webhook(
-    payload: WebhookPayload,
+    request: Request,
     services: Tuple[AuthService, WhatsappService] = Depends(get_services),
 ):
     try:
         auth_service, whatsapp_service = services
+        
+        # Read body as JSON
+        try:
+            body = await request.json()
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid JSON")
 
-        # 1. Rate Limiting
-        if check_rate_limit(payload.from_number):
-            masked_phone = (
-                payload.from_number[:3] + "****" + payload.from_number[-2:]
-                if len(payload.from_number) > 5
-                else "***"
+        # 1. Handle Real Meta Payload
+        if body.get("object") == "whatsapp_business_account":
+            processed_count = 0
+            for entry in body.get("entry", []):
+                for change in entry.get("changes", []):
+                    value = change.get("value", {})
+                    
+                    if "messages" in value:
+                        for msg in value.get("messages", []):
+                            from_number = msg.get("from")  # e.g. "16505551234"
+                            msg_type = msg.get("type")
+                            
+                            # Extract content
+                            text_body = ""
+                            media_url = None
+                            media_type = None
+                            
+                            if msg_type == "text":
+                                text_body = msg.get("text", {}).get("body", "")
+                            elif msg_type == "image":
+                                media_type = "image"
+                                text_body = "[Image]" 
+                            else:
+                                text_body = f"[{msg_type} message]"
+                                
+                            # Rate Limit
+                            if check_rate_limit(from_number):
+                                logger.warning(f"Rate limit exceeded for {from_number}")
+                                continue
+
+                            # Get/Create User
+                            user, is_new = await auth_service.get_or_create_user(from_number)
+                            
+                            # Handle Message
+                            response_text = await whatsapp_service.handle_message(
+                                user_id=user.id,
+                                user_phone=user.phone_number,
+                                message_text=text_body,
+                                is_new_user=is_new,
+                                channel="whatsapp",
+                                media_url=media_url,
+                                media_type=media_type
+                            )
+                            
+                            # Send Reply explicitly via Cloud API
+                            if response_text:
+                                from src.services.messaging_service import messaging_service
+                                await messaging_service.send_message(
+                                    recipient_phone=user.phone_number,
+                                    content=response_text,
+                                    channel="whatsapp",
+                                    trigger_source="bot_reply"
+                                )
+                            
+                            processed_count += 1
+            
+            # Commit transaction for all processed messages
+            await auth_service.session.commit()
+            return {"status": "ok", "processed": processed_count}
+
+        # 2. Fallback: Stub/Simulator Payload (Flat JSON)
+        elif "from_number" in body:
+            # Reconstruct WebhookPayload-like object manually to reuse logic or just parse directly
+            from_number = body.get("from_number")
+            text_body = body.get("body", "")
+            media_url = body.get("media_url")
+            media_type = body.get("media_type")
+            
+            if check_rate_limit(from_number):
+                return {"reply": "Too many requests. Please try again later."}
+
+            user, is_new = await auth_service.get_or_create_user(from_number)
+            
+            response_text = await whatsapp_service.handle_message(
+                user_id=user.id,
+                user_phone=user.phone_number,
+                message_text=text_body,
+                is_new_user=is_new,
+                media_url=media_url,
+                media_type=media_type,
+                channel="whatsapp"
             )
-            logger.warning(f"Rate limit exceeded for {masked_phone}")
-            return {"reply": "Too many requests. Please try again later."}
+            
+            await auth_service.session.commit()
+            
+            # For stub, we return the reply in body (legacy behavior)
+            return {"reply": response_text}
 
-        # 2. Identify or Onboard User
-        user, is_new = await auth_service.get_or_create_user(payload.from_number)
-
-        # 2. Process Message
-        response_text = await whatsapp_service.handle_message(
-            user_id=user.id,
-            user_phone=user.phone_number,
-            message_text=payload.body,
-            is_new_user=is_new,
-            media_url=payload.media_url,
-            media_type=payload.media_type,
-            channel="whatsapp"
-        )
-
-        # 3. Commit Transaction
-        await auth_service.session.commit()
-
-        return {"reply": response_text}
+        else:
+            # Unrecognized format, return 200 to acknowledge webhook (prevent retries) but log warning
+            logger.warning(f"Unrecognized webhook format: {body.keys()}")
+            return {"status": "ignored"}
 
     except HTTPException:
-        # Re-raise HTTP exceptions (like 403 Signature)
         raise
-
     except Exception:
         logger.exception("Webhook processing failed")
-
-        # Return generic error to client
-        # We assume 200 OK + error message is better for WhatsApp than 500
-        # But for an API, we should probably return 500 if it's a system crash.
-        # However, for webhooks, sometimes 200 is needed to stop retries.
-        # Let's stick to 500 for now as 'Internal Server Error' is standard.
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An internal error occurred. Our team has been notified.",
+            detail="An internal error occurred."
         )
 
 

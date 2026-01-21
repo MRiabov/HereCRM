@@ -12,6 +12,12 @@ load_dotenv()
 class Settings(BaseSettings):
     openrouter_api_key: str
     whatsapp_app_secret: str
+    whatsapp_phone_number_id: Optional[str] = None
+    whatsapp_access_token: Optional[str] = None
+    whatsapp_verify_token: Optional[str] = "blue_cat_123" # Default or env
+    whatsapp_api_version: str = "v18.0"
+    waba_id: Optional[str] = None
+
     openrouter_model: str = "meta-llama/llama-3.1-8b-instruct"
 
     # Twilio Settings
