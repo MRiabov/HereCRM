@@ -1,21 +1,43 @@
 # Research: Live Location Tracking
 
-## 1. Twilio WhatsApp Location Protocol
+## 1. WhatsApp Business API Protocol
 
-**Research Question**: How does Twilio deliver location messages from WhatsApp?
+**Correction**: We use the direct WhatsApp Business API (Cloud API), not Twilio for WhatsApp.
+
+**Research Question**: How does WhatsApp deliver location messages via webhook?
 **Finding**:
 
-- Twilio webhooks for WhatsApp location messages include `Latitude` and `Longitude` fields in the POST body (application/x-www-form-urlencoded).
-- Additional fields: `Address`, `Label`.
+- The payload structure is a JSON object with `entry` -> `changes` -> `value` -> `messages`.
+- Message type is `location`.
+- Payload fragment:
+
+```json
+{
+  "messages": [
+    {
+      "from": "16315555555",
+      "id": "wamid.HBgL...",
+      "timestamp": "1660000000",
+      "location": {
+        "latitude": 37.483307,
+        "longitude": 122.148981,
+        "name": "Facebook HQ",
+        "address": "1 Hacker Way, Menlo Park, CA 94025"
+      },
+      "type": "location"
+    }
+  ]
+}
+```
+
 - **Constraint**: The WhatsApp Business API **does not support "Live Location"** (shifting real-time pin). It only supports "Current Location" (static snapshot).
-- **Implication**: We cannot subscribe to a stream. The employee must share their "Current Location" periodically or at specific events (Start Shift, Depart Job).
 
 **Decision**:
 
-- We will process standard messages where `Latitude` and `Longitude` are present.
-- We will instruct employees to use "Send Your Current Location" rather than "Share Live Location".
+- Update `WhatsAppService` webhook handler to detect `type="location"` messages.
+- Extract `location.latitude` and `location.longitude` directly from the JSON.
 
-## 2. Google Maps URL Parsing (Fallback)
+## 2. Google Maps URL Parsing (Fallback) - SMS Only
 
 **Research Question**: What URL formats do we need to parse for SMS fallback?
 **Finding**:
@@ -29,7 +51,6 @@
 - We will use an internal service method `LocationService.resolve_url(url)` that:
   1. Follows redirects (HEAD request) to get the full URL if it is a short link.
   2. Extracts `lat` and `lng` using regex from the final URL.
-  3. Uses `GeocodingService` (Nominatim) as a final fallback if only an address string is found (less reliable).
 
 ## 3. OpenRouteService Integration
 
@@ -38,12 +59,4 @@
 
 - **Matrix API**: Best for 1-to-Many or Many-to-Many. Returns duration/distance table.
 - **Directions API**: Best for 1-to-1 with detailed path.
-- **Decision**: Use **Matrix API** even for 1-to-1 if possible as it is often faster and returns just the summary we need (seconds, meters). However, `Directions` is fine and often simpler to debug. We will use `Directions` for `get_eta` initially as we only need "duration".
-
-## 4. Spec 013 Coordination
-
-**Finding**:
-
-- Spec 013 implements `OpenRouteServiceAdapter`.
-- We must verify if it uses `openrouteservice-py` library or raw HTTP.
-- **Decision**: We will inspect the code base (or 013 PR) and extend `RoutingService`. We will implement a `get_eta(origin, dest)` method on the provider interface.
+- **Decision**: Use **Directions API** or **Matrix API** via the adapter from Spec 013. We will prioritize using the `RoutingService` interface to allow implementation swapping.

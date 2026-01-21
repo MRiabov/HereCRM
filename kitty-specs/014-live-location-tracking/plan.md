@@ -4,15 +4,15 @@
 
 We are implementing live location tracking for employees to enable automated ETA updates for customers. This feature depends on:
 
-1. **WhatsApp/Twilio Integration**: Receiving location coordinates from user messages.
+1. **WhatsApp Direct API Integration**: Receiving location coordinates from user messages.
 2. **OpenRouteService (ORS)**: Calculating driving times between current employee location and customer address.
 3. **Spec 013 Alignment**: Spec 013 (Autoroute) introduces `OpenRouteServiceAdapter`. We MUST reuse or extend this infrastructure.
 
 **Constraints & assumptions:**
 
 - **Spec 013 Dependency**: Spec 013 is in progress. We assume we can pull its code (models/services) as a base. If not available, we must implement a compatible scaffolding.
-- **Location Source**: We rely on Twilio's standard location parameters (`Latitude`, `Longitude`) for WhatsApp.
-- **Fallback**: Static Google Maps links via SMS must be parsed.
+- **Location Source**: We rely on WhatsApp Cloud API `location` message type.
+- **Fallback**: Static Google Maps links via SMS (Twilio) must be parsed.
 
 ## Constitution Check
 
@@ -45,13 +45,17 @@ class User(Base):
     - Calls data provider (ORS).
     - Returns driving duration in minutes.
 
-- **`WhatsAppService` / `TwilioService`**:
-  - Update `handle_message` payload processing to extract `Latitude`/`Longitude` if present in form data (Twilio specific) or Attachment.
+- **`WhatsAppService`**:
+  - Update `handle_message` payload processing to detect `type="location"` messages.
+  - Extract `lat`/`long` from the `location` object in the payload.
+
+- **`TwilioService` (SMS)**:
+  - Pass text messages to `LocationService.parse_location_from_text` to check for map links if no other command is matched.
 
 ### 3. User Flows
 
-- **Employee Update**:
-  - Sends location -> Webhook -> `TwilioService` extracts coords -> `LocationService` updates DB -> Auto-reply "Tracking started".
+- **Employee Update (WhatsApp)**:
+  - Sends location attachment -> Webhook -> `WhatsAppService` extracts coords -> `LocationService` updates DB -> Auto-reply "Tracking started".
 - **Customer ETA**:
   - Customer says "Where are you?" -> LLM identifies intent -> Tool `GetETATool` ->
   - Finds active Job for customer -> Gets Employee ID -> Gets Employee Location ->
@@ -67,7 +71,6 @@ class User(Base):
   - **Goal**: Establish base from Spec 013 and verify API details.
   - **Tasks**:
     - [Manual] Pull/Merge changes from Spec 013 (or copy `RoutingService` and ORS adapter).
-    - Verify Twilio WhatsApp location webhook payload format.
     - Verify Google Maps URL formats for regex parsing.
     - Verify ORS `/v2/directions` API response for ETA.
 
@@ -92,9 +95,9 @@ class User(Base):
 - **WP03**: Ingest Location Data
   - **Goal**: WhatsApp/SMS location messages update the DB.
   - **Tasks**:
-    - Update `TwilioService.process_webhook` (or equivalent) to handle `Latitude`/`Longitude` params.
-    - Update `WhatsAppService` to delegate location updates to `LocationService`.
-    - Add handling for text-based map links.
+    - Update `WhatsAppService` to handle `location` type messages.
+    - Update `TwilioService` (SMS) to detect map links in text.
+    - Connect both to `LocationService`.
 
 ### Phase 3: User Facing Features
 
