@@ -50,3 +50,14 @@
 - [x] T017: Implement text-based "Confirm" intent handler in `whatsapp_service.py`
 - [x] T018: Write tests for confirmation flow (Web and Text) and Job verification
 - [x] T019: Verify end-to-end "Quote -> Confirm -> Job" flow
+
+### WP05: Request to Quote Promotion
+
+**Goal**: Enable promoting an existing customer request to a formal Quote.
+**Priority**: P2
+**Test Criteria**: "Promote request" action successfully creates a Quote populated with request details.
+
+- [ ] T020: Implement `QuoteService.create_from_request` logic
+- [ ] T021: Add "Promote to Quote" action to `ConvertRequestTool`
+- [ ] T022: Update `WhatsAppService` to handle "Promote to Quote" intent/flow
+- [ ] T023: Write tests for Request -> Quote promotion

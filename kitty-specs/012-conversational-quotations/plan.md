@@ -9,7 +9,7 @@ The planner will not begin until all planning questions have been answered—cap
 
 ## Summary
 
-Implement a conversational quotation system that allows business owners to generate price proposals using natural language (e.g., "send a quote to John for window cleaning"). Quotes are stored as persistent entities with a lifecycle (DRAFT, SENT, ACCEPTED). Acceptance is triggered via a text reply "Confirm" (resolving to the most recent quote) or through a secure link on an external website (`HereCRMWebsite`). PDF generation, S3 storage, and intent detection patterns will be adapted from Spec 006.
+Implement a conversational quotation system that allows business owners to generate price proposals using natural language (e.g., "send a quote to John for window cleaning"). Quotes are stored as persistent entities with a lifecycle (DRAFT, SENT, ACCEPTED). Acceptance is triggered via a text reply "Confirm" (resolving to the most recent quote) or through a secure link on an external website (`HereCRMWebsite`). Additionally, existing customer **Requests** can be promoted to Quotes, similar to how they can be promoted to Jobs. PDF generation, S3 storage, and intent detection patterns will be adapted from Spec 006.
 
 ## Technical Context
 
@@ -35,7 +35,7 @@ Implement a conversational quotation system that allows business owners to gener
 
 ### Documentation (this feature)
 
-```
+```text
 kitty-specs/[###-feature]/
 ├── plan.md              # This file (/spec-kitty.plan command output)
 ├── research.md          # Phase 0 output (/spec-kitty.plan command)

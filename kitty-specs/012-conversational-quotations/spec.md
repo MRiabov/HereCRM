@@ -43,6 +43,17 @@ As a business owner, I want the quote link to lead to a website where the custom
 
 1. **Given** a Quote link is clicked and the customer confirms on the external site, **When** the external site sends a callback/update to the CRM, **Then** the system transitions the Quote to `ACCEPTED` and creates a `Job` just like the text confirmation flow.
 
+### User Story 4 - Promote Request to Quote (Priority: P2)
+
+As a business owner, I want to satisfy a customer request by sending them a formal quote instead of just scheduling a job directly.
+
+**Acceptance Scenarios**:
+
+1. **Given** an existing customer request (e.g., "I need my roof fixed"), **When** the business owner chooses to "Promote to Quote", **Then** the system:
+    - Creates a new Quote based on the request content.
+    - Links the Quote to the original Request (or resolves the Request).
+    - Allows the user to review/send the quote.
+
 ---
 
 ## 3. Requirements
@@ -56,7 +67,9 @@ As a business owner, I want the quote link to lead to a website where the custom
 - **FR-005**: System MUST provide a public-facing URL for each quote (for the external confirmation website).
 - **FR-006**: System MUST support status transitions: `DRAFT` -> `SENT` -> `ACCEPTED` / `REJECTED`.
 - **FR-007**: System MUST automatically create a `Job` entity (Spec 001) upon a Quote moving to `ACCEPTED`.
+
 - **FR-008**: System MUST support "Confirm" intent detection on incoming customer messages for active quotes.
+- **FR-009**: System MUST support promoting a `Request` entity to a `Quote` (similar to "Request -> Job" promotion), preserving customer context and description.
 
 ### Key Entities
 
