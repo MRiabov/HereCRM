@@ -1,12 +1,14 @@
 ---
 work_package_id: "WP04"
 title: "Autoroute Command - Execution"
-lane: "planned"
+lane: "doing"
 dependencies: ["WP03"]
 subtasks:
   - "T014"
   - "T015"
   - "T016"
+agent: "Antigravity"
+shell_pid: "4061897"
 ---
 
 # Work Package 04: Autoroute Command - Execution
@@ -73,3 +75,7 @@ After previewing the schedule, the user needs to commit it. This WP adds the wri
 - [ ] `apply=True` updates the database correctly.
 - [ ] Transactional integrity is ensured.
 - [ ] Notification hooks are in place.
+
+## Activity Log
+
+- 2026-01-21T12:08:34Z – Antigravity – shell_pid=4061897 – lane=doing – Started implementation via workflow command
