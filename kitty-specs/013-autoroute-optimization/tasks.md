@@ -49,7 +49,7 @@
 - **Priority**: Medium
 - **Subtasks**:
   - [x] T014: Add interactive confirmation prompt
-  - [ ] T015: Implement `apply_schedule` transaction logic
+  - [x] T015: Implement `apply_schedule` transaction logic
   - [ ] T016: Add notification hooks (placeholder)
 - **Dependencies**: WP03
 - **Prompt Size**: ~250 lines
