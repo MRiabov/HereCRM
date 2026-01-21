@@ -58,10 +58,10 @@
 
 ### Included Subtasks
 
-- [ ] T006 Create `src/services/routing_service.py` (or extend if exists from Spec 013).
-- [ ] T007 Implement `OpenRouteServiceAdapter` for driving distance and duration (ETA).
-- [ ] T008 Implement `RoutingService.get_eta_minutes` with "round up to 5 mins" logic.
-- [ ] T009 Add mock/fake implementation for ORS API in tests.
+- [x] T006 Create `src/services/routing_service.py` (or extend if exists from Spec 013).
+- [x] T007 Implement `OpenRouteServiceAdapter` for driving distance and duration (ETA).
+- [x] T008 Implement `RoutingService.get_eta_minutes` with "round up to 5 mins" logic.
+- [x] T009 Add mock/fake implementation for ORS API in tests.
 
 ### Implementation Notes
 
