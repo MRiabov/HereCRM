@@ -36,10 +36,10 @@
 - **Goal**: Implement the read-only portion of the `autoroute` command (fetch data using new models, call service, display result).
 - **Priority**: High
 - **Subtasks**:
-  - [ ] T010: Scaffold `autoroute` command
-  - [ ] T011: Implement data fetching (Jobs, Employees, Availability)
-  - [ ] T012: Integrate `RoutingService` execution
-  - [ ] T013: Implement Preview display (text table)
+  - [x] T010: Scaffold `autoroute` command
+  - [x] T011: Implement data fetching (Jobs, Employees, Availability)
+  - [x] T012: Integrate `RoutingService` execution
+  - [x] T013: Implement Preview display (text table)
 - **Dependencies**: WP02
 - **Prompt Size**: ~350 lines
 
