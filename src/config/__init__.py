@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     postmark_server_token: Optional[str] = None
     from_email_address: Optional[str] = None
 
+    # OpenRouteService
+    openrouteservice_api_key: Optional[str] = None
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
