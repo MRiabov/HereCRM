@@ -113,7 +113,7 @@
 
 ### Included Subtasks
 
-- [ ] T013 Implement `JobService.get_active_job_for_customer(phone_number)` (window: start-30m to end+30m).
+- [x] T013 Implement `JobService.get_active_job_for_customer(phone_number)` (window: start-30m to end+30m).
 - [ ] T014 [P] Create `LocateEmployeeTool` for admin queries (returns link/timestamp).
 - [ ] T015 [P] Create `CheckETATool` for customer queries (calculates distance from technician to job).
 - [ ] T016 Register tools in `ToolExecutor` and update `InferenceService` prompts.
