@@ -352,6 +352,12 @@ class RequestUpgradeTool(BaseModel):
             raise ValueError("item_type must be 'seat' or 'addon'")
         return v
 
+
+class ProServiceTool(BaseModel):
+    """A premium tool for Pro businesses only."""
+    required_scope: ClassVar[str] = "pro_features"
+    pass
+
 class ExitDataManagementTool(BaseModel):
     """Exit the data management mode."""
     pass

@@ -68,6 +68,9 @@ history:
 
 ## Definition of Done Checklist
 
+- [x] **T017**: Add `required_scope: Optional` to `BaseTool` or tool metadata registry. <!-- id: 16 -->
+- [x] **T018**: Implement enforcement logic in `ToolExecutor.execute`: verify `business.active_addons` contains the `required_scope` before running the tool. <!-- id: 17 -->
+- [x] **T019**: Create a `ProServiceTool` (dummy tool) requiring a scope and verify it is blocked for users without the addon in `tests/test_scope_enforcement.py`. <!-- id: 18 -->
 - [x] Tool metadata includes scopes
 - [x] `ToolExecutor` blocks unauthorized calls
 - [x] User receives helpful upgrade prompt when blocked

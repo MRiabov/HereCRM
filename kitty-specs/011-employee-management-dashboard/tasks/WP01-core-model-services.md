@@ -4,6 +4,7 @@ title: "Data Model & Core Services"
 lane: "done"
 dependencies: []
 subtasks: ["T001", "T002", "T003", "T004"]
+assignee: "antigravity"
 agent: "Antigravity"
 shell_pid: "3779362"
 review_status: "has_feedback"

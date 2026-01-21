@@ -11,10 +11,10 @@
 **Priority**: Critical path
 **Dependencies**: None
 
-- [ ] **T001**: Update `Job` model in `src/models.py` to include `employee_id` (FK to `users.id`) and `scheduled_at`.
-- [ ] **T002**: Create `DashboardService` in `src/services/dashboard_service.py` with methods to fetch scheduled jobs (grouped by user) and unscheduled jobs.
-- [ ] **T003**: Create `AssignmentService` in `src/services/assignment_service.py` with basic `assign_job(job_id, user_id)` and `unassign_job(job_id)` methods.
-- [ ] **T004**: Create unit tests in `tests/unit/test_services_core.py` to verify data storage and retrieval.
+- [x] **T001**: Update `Job` model in `src/models.py` to include `employee_id` (FK to `users.id`) and `scheduled_at`.
+- [x] **T002**: Create `DashboardService` in `src/services/dashboard_service.py` with methods to fetch scheduled jobs (grouped by user) and unscheduled jobs.
+- [x] **T003**: Create `AssignmentService` in `src/services/assignment_service.py` with basic `assign_job(job_id, user_id)` and `unassign_job(job_id)` methods.
+- [x] **T004**: Create unit tests in `tests/unit/test_services_core.py` to verify data storage and retrieval.
 
 **Implementation Sketch**:
 
@@ -29,9 +29,9 @@
 **Priority**: High
 **Dependencies**: WP01
 
-- [ ] **T005**: Implement `find_employee_by_name(name_fragment)` in `AssignmentService` using fuzzy string matching (e.g., Levenshtein or database `ILIKE`).
-- [ ] **T006**: Add validation to `assign_job`: check if user is a member, check for scheduling conflicts (warn only), ensure job exists.
-- [ ] **T007**: Create robust unit tests in `tests/unit/test_assignment_logic.py` covering edge cases (ambiguous names, non-existent jobs).
+- [x] **T005**: Implement `find_employee_by_name(name_fragment)` in `AssignmentService` using fuzzy string matching (e.g., Levenshtein or database `ILIKE`).
+- [x] **T006**: Add validation to `assign_job`: check if user is a member, check for scheduling conflicts (warn only), ensure job exists.
+- [x] **T007**: Create robust unit tests in `tests/unit/test_assignment_logic.py` covering edge cases (ambiguous names, non-existent jobs).
 
 **Implementation Sketch**:
 

@@ -4,6 +4,7 @@ title: Dashboard Presentation
 lane: "done"
 dependencies: []
 subtasks: [T008, T009, T010]
+assignee: "antigravity"
 agent: "Antigravity"
 shell_pid: "3779362"
 reviewed_by: "MRiabov"

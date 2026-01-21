@@ -80,6 +80,8 @@ history:
 
 ## Definition of Done Checklist
 
+- [x] **T008**: Implement payment link generation (`create_upgrade_link`). <!-- id: 7 -->
+- [x] **T009**: Add unit tests in `tests/test_billing_service.py` mocking Stripe API calls. <!-- id: 8 -->
 - [x] `BillingService` implemented with status and link methods
 - [x] Stripe API initialized correctly
 - [x] Unit tests passing with 80%+ coverage for service methods
