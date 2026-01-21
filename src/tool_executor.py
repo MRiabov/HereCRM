@@ -646,6 +646,8 @@ class ToolExecutor:
             old_price = existing.default_price
             existing.default_price = tool.price
             existing.name = service_name
+            if tool.reminder_text is not None:
+                existing.reminder_text = tool.reminder_text
             await self.session.flush()
             
             return f"✔ Updated existing service *'{service_name}'* – Price: {tool.price:.2f}", {
@@ -655,12 +657,14 @@ class ToolExecutor:
                 "name": service_name,
                 "old_price": old_price,
                 "new_price": tool.price,
+                "reminder_text": existing.reminder_text,
             }
 
         new_service = Service(
             business_id=self.business_id,
             name=service_name,
             default_price=tool.price,
+            reminder_text=tool.reminder_text,
         )
         self.service_repo.add(new_service)
         await self.session.flush()
@@ -698,12 +702,14 @@ class ToolExecutor:
         if not target:
              return f"Could not find service matching '{tool.original_name}'", None
 
-        old_data = {"name": target.name, "default_price": target.default_price}
+        old_data = {"name": target.name, "default_price": target.default_price, "reminder_text": target.reminder_text}
         
         if tool.new_name:
             target.name = tool.new_name
         if tool.new_price is not None:
              target.default_price = tool.new_price
+        if tool.reminder_text is not None:
+            target.reminder_text = tool.reminder_text
         
         await self.session.flush()
 

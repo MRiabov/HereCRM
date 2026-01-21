@@ -108,6 +108,7 @@ class Service(Base):
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
     estimated_duration: Mapped[int] = mapped_column(Integer, default=60)
+    reminder_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="services")
