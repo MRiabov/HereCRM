@@ -84,7 +84,7 @@ class User(Base):
     timezone: Mapped[str] = mapped_column(String, default="UTC")
     default_start_location_lat: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     default_start_location_lng: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    
+
     # Location tracking fields
     current_latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     current_longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
