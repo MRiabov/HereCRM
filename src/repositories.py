@@ -150,7 +150,7 @@ class ServiceRepository(BaseRepository[Service]):
         if not service:
             return None
 
-        allowed_fields = {"name", "description", "default_price"}
+        allowed_fields = {"name", "description", "default_price", "reminder_text"}
         for key, value in kwargs.items():
             if key in allowed_fields and hasattr(service, key):
                 setattr(service, key, value)

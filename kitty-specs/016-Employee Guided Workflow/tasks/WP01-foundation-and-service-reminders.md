@@ -1,7 +1,7 @@
 ---
 work_package_id: "WP01"
 title: "Foundation & Service Reminders"
-lane: "doing"
+lane: "for_review"
 subtasks: ["T001", "T002", "T003", "T004", "T005", "T006"]
 dependencies: []
 agent: "Antigravity"
@@ -82,3 +82,4 @@ We need to allow business owners to attach "reminder text" (e.g., "Ask about int
 
 - [INIT] Task generated.
 - 2026-01-21T16:28:01Z – Antigravity – shell_pid=4074288 – lane=doing – Started implementation via workflow command
+- 2026-01-21T16:36:22Z – Antigravity – shell_pid=4074288 – lane=for_review – Ready for review: Added reminder_text to Service model, updated repositories/tools, and added apscheduler. Subtasks T001-T006 complete.

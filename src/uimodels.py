@@ -279,6 +279,7 @@ class AddServiceTool(BaseModel):
 
     name: str = Field(..., description="Name of the service (e.g. 'Window Cleaning')")
     price: float = Field(..., description="Default price for the service")
+    reminder_text: Optional[str] = Field(None, description="Steps or script to remind employees (e.g. 'Ask if they want windows done too').")
 
     @validator("price")
     def validate_price(cls, v):
@@ -293,6 +294,7 @@ class EditServiceTool(BaseModel):
     original_name: str = Field(..., description="The name of the service to edit (to find it)")
     new_name: Optional[str] = Field(None, description="New name for the service")
     new_price: Optional[float] = Field(None, description="New default price")
+    reminder_text: Optional[str] = Field(None, description="Update the reminder text.")
     
     @validator("new_price")
     def validate_price(cls, v):
