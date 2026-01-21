@@ -426,10 +426,13 @@ class JobRepository(BaseRepository[Job]):
             conditions.append(eff_lon.between(lon_min, lon_max))
 
             stmt = select(Job).outerjoin(Job.customer).options(
-                contains_eager(Job.customer), joinedload(Job.line_items)
+                contains_eager(Job.customer).joinedload(Customer.availability), joinedload(Job.line_items)
             ).where(and_(*conditions))
         else:
-            stmt = select(Job).options(joinedload(Job.customer), joinedload(Job.line_items)).where(and_(*conditions))
+            stmt = select(Job).options(
+                joinedload(Job.customer).joinedload(Customer.availability), 
+                joinedload(Job.line_items)
+            ).where(and_(*conditions))
 
         result = await self.session.execute(stmt)
         jobs = list(result.scalars().unique().all())

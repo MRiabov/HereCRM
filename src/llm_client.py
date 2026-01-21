@@ -28,6 +28,7 @@ from src.uimodels import (
     GetBillingStatusTool,
     RequestUpgradeTool,
     CreateQuoteInput,
+    AutorouteTool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.employee_management import ShowScheduleTool, AssignJobTool
@@ -194,6 +195,14 @@ class LLMParser:
                 "name": "AssignJobTool",
                 "description": tool_desc.get("AssignJobTool", "Assign a specific job to an employee by name."),
                 "parameters": AssignJobTool.schema(),
+            },
+        })
+        self.tools.append({
+            "type": "function",
+            "function": {
+                "name": "AutorouteTool",
+                "description": tool_desc.get("AutorouteTool", "Preview or execute automatic job routing to minimize distance and maximize jobs."),
+                "parameters": AutorouteTool.schema(),
             },
         })
 
@@ -515,6 +524,7 @@ class LLMParser:
             "ShowScheduleTool": ShowScheduleTool,
             "AssignJobTool": AssignJobTool,
             "CreateQuoteTool": CreateQuoteInput,
+            "AutorouteTool": AutorouteTool,
         }
 
         return await self._chat_with_retry(messages, self.tools, model_map)

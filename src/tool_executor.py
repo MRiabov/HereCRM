@@ -46,9 +46,11 @@ from src.uimodels import (
     GetBillingStatusTool,
     RequestUpgradeTool,
     CreateQuoteInput,
+    AutorouteTool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.quote_tools import CreateQuoteTool
+from src.tools.routing_tools import AutorouteToolExecutor
 from src.services.quote_service import QuoteService
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
@@ -124,6 +126,7 @@ class ToolExecutor:
             ShowScheduleTool,
             AssignJobTool,
             CreateQuoteInput,
+            AutorouteTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
 
@@ -202,6 +205,8 @@ class ToolExecutor:
             return await self._execute_assign_job(tool_call)
         elif isinstance(tool_call, CreateQuoteInput):
             return await self._execute_create_quote(tool_call)
+        elif isinstance(tool_call, AutorouteTool):
+            return await self._execute_autoroute(tool_call)
         return "Unknown tool call", None
 
     # ... (other methods unchanged)
@@ -1007,5 +1012,18 @@ class ToolExecutor:
             "employee_id": employee.id,
             "employee_name": employee.name,
             "warning": result.warning
+        }
+
+    async def _execute_autoroute(
+        self, tool: AutorouteTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        executor = AutorouteToolExecutor(self.session, self.business_id)
+        result = await executor.run(tool)
+        
+        return result, {
+            "action": "preview_route",
+            "entity": "schedule",
+            "date": tool.date or datetime.today().date().isoformat(),
+            "preview": result
         }
 
