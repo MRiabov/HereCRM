@@ -1,10 +1,12 @@
 import hmac
 import hashlib
 import logging
+import secrets
 from typing import Tuple
 from twilio.request_validator import RequestValidator
 
 from fastapi import APIRouter, Depends, HTTPException, Header, Request, status, Response, Query
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +24,7 @@ from src.security_utils import check_rate_limit
 template_service = TemplateService()
 
 router = APIRouter()
+security = HTTPBasic()
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -385,6 +388,39 @@ async def verify_generic_api_key(x_api_key: str = Header(None, alias="X-API-Key"
         )
 
 
+async def verify_postmark_auth(credentials: HTTPBasicCredentials = Depends(security)):
+    """
+    Verifies Basic Auth credentials for Postmark webhooks.
+    """
+    if not settings.postmark_auth_user or not settings.postmark_auth_pass:
+        logger.error("POSTMARK_AUTH_USER or POSTMARK_AUTH_PASS is not configured.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Configuration Error",
+        )
+
+    current_username_bytes = credentials.username.encode("utf8")
+    correct_username_bytes = settings.postmark_auth_user.encode("utf8")
+    is_correct_username = secrets.compare_digest(
+        current_username_bytes, correct_username_bytes
+    )
+
+    current_password_bytes = credentials.password.encode("utf8")
+    correct_password_bytes = settings.postmark_auth_pass.encode("utf8")
+    is_correct_password = secrets.compare_digest(
+        current_password_bytes, correct_password_bytes
+    )
+
+    if not (is_correct_username and is_correct_password):
+        logger.warning("Invalid Postmark webhook credentials.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Credentials",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
+
+
 @router.post("/webhooks/generic", dependencies=[Depends(verify_generic_api_key)])
 async def generic_webhook(
     payload: GenericWebhookPayload,
@@ -432,7 +468,7 @@ async def generic_webhook(
 
 
 
-@router.post("/webhooks/postmark/inbound")
+@router.post("/webhooks/postmark/inbound", dependencies=[Depends(verify_postmark_auth)])
 async def postmark_inbound_webhook(
     request: Request,
     services: Tuple[AuthService, WhatsappService] = Depends(get_services),
