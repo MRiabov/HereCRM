@@ -154,3 +154,44 @@ class OpenRouteServiceAdapter(RoutingServiceProvider):
             unassigned_jobs=unassigned_jobs,
             metrics=metrics
         )
+
+    def get_eta_minutes(self, start_lat: float, start_lng: float, end_lat: float, end_lng: float) -> Optional[int]:
+        """
+        Calculate ETA in minutes between two points, rounded up to nearest 5 minutes.
+        Uses ORS V2 Directions API.
+        """
+        if not self.api_key:
+            return None
+
+        # ORS expects [lon, lat]
+        url = "https://api.openrouteservice.org/v2/directions/driving-car"
+        headers = {
+            "Authorization": self.api_key,
+            "Accept": "application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8"
+        }
+        params = {
+            "start": f"{start_lng},{start_lat}",
+            "end": f"{end_lng},{end_lat}"
+        }
+        
+        try:
+            response = requests.get(url, headers=headers, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            
+            # Response format: features[0].properties.summary.duration (seconds)
+            if "features" in data and len(data["features"]) > 0:
+                props = data["features"][0]["properties"]
+                if "summary" in props:
+                    duration_sec = props["summary"]["duration"]
+                    minutes = duration_sec / 60
+                    # Round up to 5 mins: ceil(minutes / 5) * 5
+                    import math
+                    rounded = math.ceil(minutes / 5) * 5
+                    return rounded
+        except Exception as e:
+            # In production, log this error
+            print(f"ORS ETA Error: {e}")
+            pass
+            
+        return None

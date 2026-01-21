@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from src.models import Job, User
 
 class RoutingException(Exception):
@@ -32,6 +32,13 @@ class RoutingServiceProvider(ABC):
             
         Returns:
             RoutingSolution containing assigned routes and unassigned jobs.
+        """
+        pass
+
+    @abstractmethod
+    def get_eta_minutes(self, start_lat: float, start_lng: float, end_lat: float, end_lng: float) -> Optional[int]:
+        """
+        Calculate ETA in minutes between two points.
         """
         pass
     

@@ -21,6 +21,8 @@ system_instruction: |
   10. If the user wants to "buy seats", "add users", "purchase addon", or "upgrade seats", use RequestUpgradeTool.
 
   11. If the user says "team schedule", "show schedule", "where are my employees", "activity today", or similar, use ShowScheduleTool.
+  12. If the user says "where is [employee name]", "locate [employee name]", or "where are everyone", use LocateEmployeeTool.
+  13. If the user says "Where is my technician?", "When will they arrive?", "What is the ETA?", or similar, use CheckETATool.
 
   ### AddJobTool guidelines:
   - AddJobTool is a tool used to store information about past job performed.
@@ -207,6 +209,19 @@ tool_descriptions:
       -> CreateQuoteTool(customer_identifier="John", items=[{"description": "window cleaning", "price": 50.0, "quantity": 1.0}])
     - User: "Create proposal for Mary: 5 windows at $10 each, 1 gutter job $100"
       -> CreateQuoteTool(customer_identifier="Mary", items=[{"description": "windows", "price": 10.0, "quantity": 5.0}, {"description": "gutter job", "price": 100.0, "quantity": 1.0}])
+
+  LocateEmployeeTool: |
+    Locate one or more employees on the map.
+    Examples of when to call:
+    - User: "Where is John?" -> LocateEmployeeTool(employee_name="John")
+    - User: "Locate everyone" -> LocateEmployeeTool()
+  
+  CheckETATool: |
+    Check the estimated arrival time (ETA) for a technician for a customer.
+    Examples:
+    - User: "Where is my tech?" -> CheckETATool()
+    - User: "When will the plumber arrive?" -> CheckETATool()
+    - User (Admin): "What is the ETA for customer John?" -> CheckETATool(customer_query="John")
 
   
   # Settings tools
