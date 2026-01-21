@@ -8,7 +8,8 @@ from src.database import Base
 
 class UserRole(str, enum.Enum):
     OWNER = "owner"
-    MEMBER = "member"
+    MANAGER = "manager"
+    EMPLOYEE = "employee"
 
 
 class ConversationStatus(str, enum.Enum):
@@ -73,7 +74,7 @@ class User(Base):
     phone_number: Mapped[Optional[str]] = mapped_column(String, unique=True, nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String, unique=True, nullable=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"))
-    role: Mapped[UserRole] = mapped_column(SAEnum(UserRole), default=UserRole.MEMBER)
+    role: Mapped[UserRole] = mapped_column(SAEnum(UserRole), default=UserRole.EMPLOYEE)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )

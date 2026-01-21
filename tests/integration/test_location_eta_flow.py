@@ -21,7 +21,7 @@ async def test_location_and_eta_flow(async_session):
     tech = User(
         business_id=1,
         name="John Tech",
-        role=UserRole.MEMBER,
+        role=UserRole.EMPLOYEE,
         phone_number="999888777",
         current_latitude=53.34,
         current_longitude=-6.25,

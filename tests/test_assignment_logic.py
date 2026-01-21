@@ -14,9 +14,9 @@ async def setup_data(session):
     await session.flush()
     
     # Create employees
-    user1 = User(business_id=biz.id, name="John Doe", email="john@example.com", phone_number="1234567890", role=UserRole.MEMBER)
-    user2 = User(business_id=biz.id, name="Bob Builder", email="bob@example.com", phone_number="0987654321", role=UserRole.MEMBER)
-    user3 = User(business_id=biz.id, name="Johnny Bravo", email="johnny@cartoon.com", phone_number="1122334455", role=UserRole.MEMBER)
+    user1 = User(business_id=biz.id, name="John Doe", email="john@example.com", phone_number="1234567890", role=UserRole.EMPLOYEE)
+    user2 = User(business_id=biz.id, name="Bob Builder", email="bob@example.com", phone_number="0987654321", role=UserRole.EMPLOYEE)
+    user3 = User(business_id=biz.id, name="Johnny Bravo", email="johnny@cartoon.com", phone_number="1122334455", role=UserRole.EMPLOYEE)
     
     session.add_all([user1, user2, user3])
     await session.commit()
