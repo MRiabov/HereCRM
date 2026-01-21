@@ -71,7 +71,7 @@ We will define a `RoutingServiceProvider` abstract base class to allow swapping 
 
 - **WP02**: Routing Service Infrastructure
   - Define `RoutingService` interface.
-  - Implement `MockRoutingService` (simple distance-based sort/assign).
+  - Implement `MockRoutingService` (simple distance-based sort/assign). (Note: only for tests.)
   - Implement `OpenRouteServiceAdapter` (client, payload builder, response parser).
 
 - **WP03**: Autoroute Command Logic
