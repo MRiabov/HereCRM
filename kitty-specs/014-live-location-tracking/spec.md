@@ -56,8 +56,8 @@ As a Customer waiting for a service, I want to ask "When will you arrive?" and g
 1. **Setup**:
    - Customer C has a scheduled Job J with Employee E at the current time (or soon).
    - Employee E has a recent location stored (e.g., 5km away).
-2. **Action**: Customer C sends "Where is the technician?" or "ETA".
-3. **Result**: System replies "We are approximately 10 minutes away."
+2. **Action**: Customer C sends "Where is the technician?" or "When will you arrive?".
+3. **Result**: System replies "We are approximately 10 minutes away." (Rounded up to nearest 5 mins)
 
 **Acceptance Scenarios**:
 
@@ -93,7 +93,7 @@ As a Business Owner, I want to query where a specific employee is so that I can 
 - **FR-003**: System MUST provide a mechanism to find the "active job" for a Customer based on their phone number and current time.
   - *Logic*: Find Job where `customer_phone == sender` AND `scheduled_start <= now <= scheduled_end + buffer`.
 - **FR-004**: System MUST integrate with OpenRouteService (ORS) Routing API (or Matrix API) to calculate driving time between `Employee.current_location` and `Job.location`.
-- **FR-005**: System MUST respond to semantic queries (LLM intent "check_eta" or similar) with the calculated duration.
+- **FR-005**: System MUST respond to semantic queries (LLM intent "check_eta" or similar) with the calculated duration rounded UP to the nearest 5 minutes (e.g. 7 mins -> 10 mins).
 
 ### Key Entities
 
