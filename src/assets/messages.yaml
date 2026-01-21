@@ -1,4 +1,10 @@
 # General Errors
+error_upgrade_required: |
+  ⛔ *Upgrade Required*
+  This feature requires the '{scope}' addon.
+  
+  Type 'billing' to see your current status and available upgrades.
+
 error_user_required: "Error: User access required."
 error_unknown_tool: "Error: Unknown tool in draft."
 error_no_draft: "No draft to execute."
@@ -121,3 +127,22 @@ welcome_back: |
   
   What can I help you with today? 
   (Type 'help' to see available commands)
+
+# Billing & Addons
+billing_status_header: "💳 *Billing & Subscription*"
+billing_status_body: |
+  Status: {status}
+  Seats: {seats_used}/{seat_limit}
+  
+  *Active Addons*:
+  {addons}
+  
+  *Available Upgrades*:
+  - Add Seat (€15/mo)
+  - Employee Management (€10/mo)
+  - Campaign Messaging (€25/mo)
+  
+  Type 'upgrade [item]' to get a payment link.
+
+upgrade_link_message: "🔗 Here is your secure link to {action}: {url}\n(Link expires in 24 hours)"
+billing_error: "❌ Billing error: {error}"

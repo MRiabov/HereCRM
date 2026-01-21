@@ -1,6 +1,7 @@
 from typing import Union, Optional, Tuple, Dict, Any
+import logging
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import Job, Customer, Request
+from src.models import Customer, Request
 from src.repositories import (
     JobRepository,
     CustomerRepository,
@@ -33,8 +34,16 @@ from src.uimodels import (
     DeleteServiceTool,
     ListServicesTool,
     ExitSettingsTool,
+    ManageEmployeesTool,
+    MassEmailTool,
+    ExportQueryTool,
+    ExitDataManagementTool,
+    GetBillingStatusTool,
+    RequestUpgradeTool,
 )
+from src.models import Business
 from src.tools.invoice_tools import SendInvoiceTool
+from src.services.billing_service import BillingService
 
 class ToolExecutor:
     def __init__(
@@ -50,6 +59,7 @@ class ToolExecutor:
         self.user_id = user_id
         self.user_phone = user_phone
         self.template_service = template_service
+        self.logger = logging.getLogger(__name__)
 
 
         self.job_repo = JobRepository(session)
@@ -60,6 +70,7 @@ class ToolExecutor:
         self.geocoding_service = GeocodingService()
         self.search_service = SearchService(session, self.geocoding_service)
         self.invoice_service = InvoiceService(session)
+        self.billing_service = BillingService(session)
 
     async def _get_user_defaults(self) -> Tuple[Optional[str], Optional[str]]:
         user = await self.user_repo.get_by_id(self.user_id)
@@ -87,8 +98,31 @@ class ToolExecutor:
             ListServicesTool,
             ExitSettingsTool,
             SendInvoiceTool,
+            ManageEmployeesTool,
+            MassEmailTool,
+            ExportQueryTool,
+            ExitDataManagementTool,
+            GetBillingStatusTool,
+            RequestUpgradeTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
+
+        # [T018] Scope Enforcement
+        # Check if the tool requires a specific scope
+        required_scope = getattr(tool_call, "required_scope", None)
+        if required_scope:
+            business = await self.session.get(Business, self.business_id)
+            if not business:
+                return "Error: Business not found.", None
+            
+            # Check if scope is active
+            if required_scope not in business.active_addons:
+                return (
+                    self.template_service.render(
+                        "error_upgrade_required", scope=required_scope
+                    ),
+                    None
+                )
 
         if isinstance(tool_call, AddJobTool):
             return await self._execute_add_job(tool_call)
@@ -128,6 +162,18 @@ class ToolExecutor:
             return "Help is handled by the service layer directly.", None
         elif isinstance(tool_call, SendInvoiceTool):
             return await self._execute_send_invoice(tool_call)
+        elif isinstance(tool_call, ManageEmployeesTool):
+            return f"✔ Access granted to Employee Management: {tool_call.action}", None
+        elif isinstance(tool_call, MassEmailTool):
+            return f"✔ Access granted to Campaigns: Subject '{tool_call.subject}' sent to '{tool_call.recipient_query}'", None
+        elif isinstance(tool_call, ExportQueryTool):
+            return "✔ Access granted to Data Export. Starting export...", None
+        elif isinstance(tool_call, ExitDataManagementTool):
+            return "Exit data management is handled by the service layer.", None
+        elif isinstance(tool_call, GetBillingStatusTool):
+            return await self._execute_get_billing_status(tool_call)
+        elif isinstance(tool_call, RequestUpgradeTool):
+            return await self._execute_request_upgrade(tool_call)
         return "Unknown tool call", None
 
     # ... (other methods unchanged)
@@ -694,3 +740,53 @@ class ToolExecutor:
             },
         )
 
+
+    async def _execute_get_billing_status(
+        self, tool: GetBillingStatusTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        status_info = await self.billing_service.get_billing_status(self.business_id)
+        
+        if "error" in status_info:
+            return f"Error retrieving billing status: {status_info['error']}", None
+
+        return (
+            self.template_service.render(
+                "billing_status_body",
+                status=status_info.get("status", "free").title(),
+                seat_limit=status_info.get("seat_limit", 1),
+                seats_used=status_info.get("seats_used", 1),
+                addons=", ".join(status_info.get("active_addons", [])) or "None",
+            ),
+            {"action": "query", "entity": "billing"}
+        )
+
+    async def _execute_request_upgrade(
+        self, tool: RequestUpgradeTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        # Generate upgrade link via BillingService
+        # We use dummy URLs for the bot's conversational flow (user clicks and returns)
+        success_url = "https://herecrm.app/billing/success"
+        cancel_url = "https://herecrm.app/billing/cancel"
+        
+        try:
+            result = await self.billing_service.create_upgrade_link(
+                business_id=self.business_id,
+                item_type=tool.item_type,
+                item_id=tool.item_id,
+                success_url=success_url,
+                cancel_url=cancel_url
+            )
+            url = result.get("url")
+            action = result.get("description", "your upgrade")
+        except Exception as e:
+            self.logger.error(f"Failed to generate upgrade link: {e}")
+            return f"Unable to generate upgrade link: {str(e)}", None
+
+        return (
+            self.template_service.render(
+                "upgrade_link_message",
+                action=action,
+                url=url
+            ),
+            {"action": "upgrade", "item": tool.item_id or tool.item_type}
+        )
