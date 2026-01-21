@@ -7,10 +7,12 @@ subtasks:
   - "T009"
 title: "Routing - ETA Engine & ORS Client"
 phase: "Phase 1 - Core Location Infrastructure"
-lane: "doing"
+lane: "done"
 dependencies: ["WP01"]
 agent: "Antigravity"
 shell_pid: "4035720"
+reviewed_by: "MRiabov"
+review_status: "approved"
 history:
   - timestamp: "2026-01-21T10:21:37Z"
     lane: "planned"
@@ -89,3 +91,4 @@ history:
 - 2026-01-21T10:51:43Z – Antigravity – shell_pid=4035720 – lane=doing – Started review via workflow command
 - 2026-01-21T10:54:21Z – Antigravity – shell_pid=4035720 – lane=planned – Wrong spec - reviewing 013-WP02 instead
 - 2026-01-21T11:06:05Z – Antigravity – shell_pid=4035720 – lane=doing – Started implementation via workflow command
+- 2026-01-21T16:03:48Z – Antigravity – shell_pid=4035720 – lane=done – Verified implementation and added unit tests for ETA calculation.
