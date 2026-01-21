@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     # Postmark Settings
     postmark_server_token: Optional[str] = None
     from_email_address: Optional[str] = None
+    postmark_auth_user: Optional[str] = None
+    postmark_auth_pass: Optional[str] = None
 
     # S3 / Storage Settings
     s3_bucket_name: str = "here-crm-exports"

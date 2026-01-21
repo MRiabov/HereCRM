@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch, AsyncMock, MagicMock
 from src.main import app
 from src.api.routes import get_services
+from src.config import settings
 
 class TestPostmarkWebhook:
     """Test suite for Postmark inbound webhook endpoint"""
@@ -13,34 +14,55 @@ class TestPostmarkWebhook:
     @pytest.fixture
     def client(self):
         """Create test client"""
-        return TestClient(app)
+        # Set auth credentials for tests using patch to ensure cleanup
+        with patch.object(settings, 'postmark_auth_user', 'testuser'), \
+             patch.object(settings, 'postmark_auth_pass', 'testpass'):
+            yield TestClient(app)
     
-    def test_postmark_webhook_missing_from(self, client):
+    @pytest.fixture
+    def auth_headers(self):
+        return {"Authorization": "Basic dGVzdHVzZXI6dGVzdHBhc3M="} # testuser:testpass
+
+    def test_postmark_webhook_no_auth(self, client):
+        """Test webhook rejects requests without auth"""
+        response = client.post("/webhooks/postmark/inbound", json={})
+        assert response.status_code == 401
+
+    def test_postmark_webhook_bad_auth(self, client):
+        """Test webhook rejects requests with bad auth"""
+        response = client.post(
+            "/webhooks/postmark/inbound",
+            json={},
+            headers={"Authorization": "Basic YmFkOmF1dGg="}
+        )
+        assert response.status_code == 401
+
+    def test_postmark_webhook_missing_from(self, client, auth_headers):
         """Test webhook rejects requests without From field"""
         payload = {
             "Subject": "Test",
             "TextBody": "Test body"
         }
         
-        response = client.post("/webhooks/postmark/inbound", json=payload)
+        response = client.post("/webhooks/postmark/inbound", json=payload, headers=auth_headers)
         
         assert response.status_code == 400
         assert "Missing required fields" in response.json()["detail"]
     
-    def test_postmark_webhook_missing_body(self, client):
+    def test_postmark_webhook_missing_body(self, client, auth_headers):
         """Test webhook rejects requests without TextBody field"""
         payload = {
             "From": "test@example.com",
             "Subject": "Test"
         }
         
-        response = client.post("/webhooks/postmark/inbound", json=payload)
+        response = client.post("/webhooks/postmark/inbound", json=payload, headers=auth_headers)
         
         assert response.status_code == 400
         assert "Missing required fields" in response.json()["detail"]
     
     @patch('src.api.routes.check_rate_limit')
-    def test_postmark_webhook_rate_limited(self, mock_rate_limit, client):
+    def test_postmark_webhook_rate_limited(self, mock_rate_limit, client, auth_headers):
         """Test webhook handles rate limiting"""
         mock_rate_limit.return_value = True
         
@@ -50,14 +72,14 @@ class TestPostmarkWebhook:
             "TextBody": "Test message"
         }
         
-        response = client.post("/webhooks/postmark/inbound", json=payload)
+        response = client.post("/webhooks/postmark/inbound", json=payload, headers=auth_headers)
         
         assert response.status_code == 200
         assert response.json()["status"] == "rate_limited"
 
     @patch('src.services.postmark_service.PostmarkService.send_email', new_callable=AsyncMock)
     @patch('src.api.routes.check_rate_limit')
-    def test_postmark_webhook_success(self, mock_rate_limit, mock_send_email, client):
+    def test_postmark_webhook_success(self, mock_rate_limit, mock_send_email, client, auth_headers):
         """Test happy path for Postmark webhook using dependency overrides"""
         mock_rate_limit.return_value = False
         
@@ -116,7 +138,7 @@ class TestPostmarkWebhook:
             
             app.dependency_overrides[get_db] = override_get_db
 
-            response = client.post("/webhooks/postmark/inbound", json=payload)
+            response = client.post("/webhooks/postmark/inbound", json=payload, headers=auth_headers)
             
             # Verify response
             assert response.status_code == 200, response.text
