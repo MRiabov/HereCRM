@@ -57,7 +57,7 @@
 **Priority**: P2
 **Test Criteria**: "Promote request" action successfully creates a Quote populated with request details.
 
-- [ ] T020: Implement `QuoteService.create_from_request` logic
+- [x] T020: Implement `QuoteService.create_from_request` logic
 - [ ] T021: Add "Promote to Quote" action to `ConvertRequestTool`
 - [ ] T022: Update `WhatsAppService` to handle "Promote to Quote" intent/flow
 - [ ] T023: Write tests for Request -> Quote promotion
