@@ -16,6 +16,8 @@ class RoutingStep:
     job: Job
     arrival_time: Optional[datetime] = None
     departure_time: Optional[datetime] = None
+    distance_to_prev: Optional[float] = None # in meters/km
+    duration_from_prev: Optional[float] = None # in seconds
 
 @dataclass
 class RoutingSolution:

@@ -1020,8 +1020,10 @@ class ToolExecutor:
         executor = AutorouteToolExecutor(self.session, self.business_id)
         result = await executor.run(tool)
         
+        action = "apply_route" if tool.apply else "preview_route"
+        
         return result, {
-            "action": "preview_route",
+            "action": action,
             "entity": "schedule",
             "date": tool.date or datetime.today().date().isoformat(),
             "preview": result

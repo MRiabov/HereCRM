@@ -3,6 +3,7 @@ import asyncio
 from datetime import date as date_cls, datetime, timedelta
 from typing import List
 import logging
+from src.services.messaging_service import messaging_service
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import User
@@ -82,8 +83,54 @@ class AutorouteToolExecutor:
              logger.exception("Unexpected routing error")
              return f"An unexpected error occurred during routing: {str(e)}"
 
+        if input.apply:
+            return await self.apply_schedule(solution, input.notify)
+        
         # 4. Format Output
         return await self._format_solution(solution, target_date, employees)
+
+    async def apply_schedule(self, solution: RoutingSolution, notify: bool) -> str:
+        count = 0
+        try:
+            # We use the session transaction
+            for emp_id, steps in solution.routes.items():
+                # Find employee for notification
+                employee = await self.user_repo.get_by_id(emp_id)
+                emp_name = employee.name if employee else f"Technician {emp_id}"
+
+                for step in steps:
+                    job = step.job
+                    # Update job fields
+                    job.employee_id = emp_id
+                    job.status = "scheduled"
+                    
+                    if step.arrival_time:
+                        # Arrival time is when the technician is expected to start/arrive
+                        job.scheduled_at = step.arrival_time
+                    
+                    count += 1
+
+                    if notify:
+                        # 1. Notify Employee
+                        if employee and employee.phone_number:
+                            await messaging_service.enqueue_message(
+                                recipient_phone=employee.phone_number,
+                                content=f"New job assigned: {job.description} at {job.scheduled_at.strftime('%H:%M') if job.scheduled_at else 'N/A'}",
+                                trigger_source="autoroute_assignment"
+                            )
+                        
+                        # 2. Notify Customer (Placeholder as per Spec 013 "handoff to Msg Spec")
+                        if job.customer and job.customer.phone:
+                            # Just log for now to avoid spamming customers during testing/MVP
+                            logger.info(f"Notification hook: Customer {job.customer.name} would be notified about job {job.id}")
+            
+            await self.session.commit()
+            return f"Successfully applied schedule. {count} jobs assigned and technicians notified."
+            
+        except Exception as e:
+            await self.session.rollback()
+            logger.exception("Failed to apply routing schedule")
+            return f"Failed to apply schedule: {str(e)}"
 
     async def _format_solution(self, solution: RoutingSolution, date: date_cls, employees: List[User]) -> str:
         lines = []

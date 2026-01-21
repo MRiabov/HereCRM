@@ -152,7 +152,9 @@ class OpenRouteServiceAdapter(RoutingServiceProvider):
                             ordered_steps.append(RoutingStep(
                                 job=job_map[job_id],
                                 arrival_time=arrival_dt,
-                                departure_time=departure_dt
+                                departure_time=departure_dt,
+                                duration_from_prev=step.get("duration"),
+                                distance_to_prev=step.get("distance")
                             ))
                             assigned_ids.add(job_id)
                 

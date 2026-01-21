@@ -408,3 +408,5 @@ class AutorouteTool(BaseModel):
     """Preview or execute automatic job routing to minimize distance and maximize jobs.
     Triggered when user says 'autoroute', 'optimize schedule', or 'plan my day'."""
     date: Optional[str] = Field(None, description="The date to optimize for (YYYY-MM-DD). Defaults to today.")
+    apply: bool = Field(False, description="If True, applies the schedule and assigns jobs to technicians.")
+    notify: bool = Field(True, description="If True (and apply is True), notifies technicians and customers.")

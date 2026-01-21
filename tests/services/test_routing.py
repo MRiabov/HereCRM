@@ -26,10 +26,10 @@ def test_mock_routing_service_assignments(sample_jobs, sample_employees):
     solution = service.calculate_routes(sample_jobs, sample_employees)
     
     # Employee 1 (NY) should get Job 1 (NY)
-    assert sample_jobs[0] in solution.routes[1]
+    assert any(step.job == sample_jobs[0] for step in solution.routes[1])
     
     # Employee 2 (LA) should get Job 2 (LA)
-    assert sample_jobs[1] in solution.routes[2]
+    assert any(step.job == sample_jobs[1] for step in solution.routes[2])
     
     # Job 3 (No loc) should be unassigned
     assert sample_jobs[2] in solution.unassigned_jobs
@@ -99,7 +99,7 @@ def test_ors_adapter_calculate_routes_success(mock_post, sample_jobs, sample_emp
     
     solution = adapter.calculate_routes(sample_jobs, sample_employees)
     
-    assert sample_jobs[0] in solution.routes[1]
+    assert any(step.job == sample_jobs[0] for step in solution.routes[1])
     assert solution.metrics["cost"] == 100
     
     # Job 3 is unassigned (filtered before api call)
