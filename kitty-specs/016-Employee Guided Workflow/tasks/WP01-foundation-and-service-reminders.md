@@ -1,9 +1,11 @@
 ---
 work_package_id: "WP01"
 title: "Foundation & Service Reminders"
-lane: "planned"
+lane: "doing"
 subtasks: ["T001", "T002", "T003", "T004", "T005", "T006"]
 dependencies: []
+agent: "Antigravity"
+shell_pid: "4074288"
 ---
 
 ## Objective
@@ -79,3 +81,4 @@ We need to allow business owners to attach "reminder text" (e.g., "Ask about int
 ## Activity Log
 
 - [INIT] Task generated.
+- 2026-01-21T16:28:01Z – Antigravity – shell_pid=4074288 – lane=doing – Started implementation via workflow command
