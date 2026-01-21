@@ -120,7 +120,7 @@ As a business owner, I want to know how many messages I've sent and be billed au
 - **FR-008**: System MUST provide a clear confirmation message with the total amount before generating the payment link.
 - **FR-009**: System MUST track the number of outgoing messages per business per billing cycle.
 - **FR-010**: System MUST include the first 1000 messages per month in the base plan at no extra cost.
-- **FR-011**: System MUST charge $0.02 per message for every message exceeding the 1000 message limit.
+- **FR-011**: System MUST accumulate usage and charge a set fee (e.g. $0.02) per message for every message exceeding the 1000 message limit, added to the invoice at the end of the billing cycle.
 - **FR-012**: System MUST display current message usage and estimated overage costs in the billing status response.
 
 ### Key Entities
