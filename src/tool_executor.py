@@ -46,14 +46,19 @@ from src.uimodels import (
     GetBillingStatusTool,
     RequestUpgradeTool,
     CreateQuoteInput,
+    LocateEmployeeTool,
+    CheckETATool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.quote_tools import CreateQuoteTool
 from src.services.quote_service import QuoteService
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from src.tools.employee_management import ShowScheduleTool, AssignJobTool
+from src.services.location_service import LocationService
+from src.services.routing.ors import OpenRouteServiceAdapter
+from src.config import settings
 
 class ToolExecutor:
     def __init__(
@@ -124,6 +129,8 @@ class ToolExecutor:
             ShowScheduleTool,
             AssignJobTool,
             CreateQuoteInput,
+            LocateEmployeeTool,
+            CheckETATool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
 
@@ -202,6 +209,10 @@ class ToolExecutor:
             return await self._execute_assign_job(tool_call)
         elif isinstance(tool_call, CreateQuoteInput):
             return await self._execute_create_quote(tool_call)
+        elif isinstance(tool_call, LocateEmployeeTool):
+            return await self._execute_locate_employee(tool_call)
+        elif isinstance(tool_call, CheckETATool):
+            return await self._execute_check_eta(tool_call)
         return "Unknown tool call", None
 
     # ... (other methods unchanged)
@@ -1009,3 +1020,131 @@ class ToolExecutor:
             "warning": result.warning
         }
 
+    async def _execute_locate_employee(
+        self, tool: LocateEmployeeTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        if tool.employee_name:
+            # Fuzzy search for employee
+            # We fetch all team members and filter
+            all_members = await self.user_repo.get_team_members(self.business_id)
+            target_employees = []
+            for m in all_members:
+                if m.name and tool.employee_name.lower() in m.name.lower():
+                    target_employees.append(m)
+            
+            if not target_employees:
+                return f"Could not find employee matching '{tool.employee_name}'", None
+        else:
+            # List all
+            target_employees = await self.user_repo.get_team_members(self.business_id)
+            
+        if not target_employees:
+             return "No employees found.", None
+        
+        results = []
+        for emp in target_employees:
+            lat, lng, updated_at = await LocationService.get_employee_location(self.session, emp.id)
+            status = "Location not available"
+            link = ""
+            if lat is not None and lng is not None:
+                # Add map link
+                link = f"https://www.google.com/maps?q={lat},{lng}"
+                # Calculate staleness
+                now = datetime.now(timezone.utc)
+                if updated_at:
+                    if updated_at.tzinfo is None:
+                        ua = updated_at.replace(tzinfo=timezone.utc)
+                    else:
+                        ua = updated_at
+                    
+                    diff = now - ua
+                    if diff > timedelta(minutes=30):
+                        status = f"Last seen {int(diff.total_seconds()/60)}m ago"
+                    else:
+                        status = "Live"
+                else:
+                    status = "Location available"
+            
+            line = f"- **{emp.name}**: {status}"
+            if link:
+                line += f" ([Map]({link}))"
+            results.append(line)
+            
+        return "\n".join(results), None
+
+    async def _execute_check_eta(
+        self, tool: CheckETATool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        # Identify customer
+        customer_phone = self.user_phone # Default caller
+        
+        if tool.customer_query:
+            # Admin asking for customer
+            customers = await self.customer_repo.search(tool.customer_query, self.business_id)
+            if not customers:
+                return f"Could not find customer '{tool.customer_query}'", None
+            if len(customers) > 1:
+                return f"Multiple customers found for '{tool.customer_query}'.", None
+            customer_phone = customers[0].phone
+        
+        if not customer_phone:
+             return "Could not identify customer phone number.", None
+             
+        crm_service = CRMService(self.session, self.business_id)
+        job = await crm_service.get_active_job_for_customer(customer_phone)
+        
+        if not job:
+            return "There are no active or upcoming jobs found for this customer.", None
+            
+        if not job.employee_id:
+             return "The job has no assigned technician yet.", None
+        
+        # Load employee if needed (should check if loaded or not)
+        # We use repo to fetch fresh user to be safe
+        tech = await self.user_repo.get_by_id(job.employee_id)
+             
+        if not tech:
+             return "Assigned technician not found.", None
+             
+        # Get Tech Location
+        lat, lng, updated_at = await LocationService.get_employee_location(self.session, tech.id)
+        
+        if lat is None or lng is None:
+             return f"Technician {tech.name} is assigned but their location is currently unavailable.", None
+             
+        # Check staleness
+        now = datetime.now(timezone.utc)
+        if updated_at:
+             if updated_at.tzinfo is None:
+                  ua = updated_at.replace(tzinfo=timezone.utc)
+             else:
+                  ua = updated_at
+             
+             if (now - ua) > timedelta(minutes=30):
+                  return f"Technician {tech.name} is en route, but their location signal was lost {int((now - ua).total_seconds()/60)} minutes ago. Please contact office.", None
+
+        # Calculate ETA
+        # Need Job Location
+        job_lat, job_lng = job.latitude, job.longitude
+        if job_lat is None or job_lng is None:
+             if job.location:
+                   # Geocode job.location
+                   j_lat, j_lon, _, _, _, _ = await self.geocoding_service.geocode(job.location)
+                   if j_lat and j_lon:
+                        job_lat, job_lng = j_lat, j_lon
+        
+        if job_lat is None or job_lng is None:
+             return "Job location is not geocoded. Cannot calculate ETA.", None
+             
+        # Use RoutingService
+        rs = OpenRouteServiceAdapter(api_key=settings.openrouteservice_api_key)
+        eta = rs.get_eta_minutes(lat, lng, job_lat, job_lng)
+        
+        if eta is None:
+             return f"Technician {tech.name} is en route. Unable to calculate precise ETA currently.", None
+             
+        return f"Technician {tech.name} is approximately {eta} minutes away.", {
+             "action": "check_eta",
+             "eta_minutes": eta,
+             "tech_name": tech.name
+        }

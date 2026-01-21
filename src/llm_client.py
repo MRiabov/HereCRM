@@ -28,6 +28,8 @@ from src.uimodels import (
     GetBillingStatusTool,
     RequestUpgradeTool,
     CreateQuoteInput,
+    LocateEmployeeTool,
+    CheckETATool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.employee_management import ShowScheduleTool, AssignJobTool
@@ -194,6 +196,22 @@ class LLMParser:
                 "name": "AssignJobTool",
                 "description": tool_desc.get("AssignJobTool", "Assign a specific job to an employee by name."),
                 "parameters": AssignJobTool.schema(),
+            },
+        })
+        self.tools.append({
+            "type": "function",
+            "function": {
+                "name": "LocateEmployeeTool",
+                "description": tool_desc.get("LocateEmployeeTool", "Locate an employee or list location of all employees."),
+                "parameters": LocateEmployeeTool.schema(),
+            },
+        })
+        self.tools.append({
+            "type": "function",
+            "function": {
+                "name": "CheckETATool",
+                "description": tool_desc.get("CheckETATool", "Check the estimated time of arrival for a technician to a customer."),
+                "parameters": CheckETATool.schema(),
             },
         })
 
@@ -515,6 +533,8 @@ class LLMParser:
             "ShowScheduleTool": ShowScheduleTool,
             "AssignJobTool": AssignJobTool,
             "CreateQuoteTool": CreateQuoteInput,
+            "LocateEmployeeTool": LocateEmployeeTool,
+            "CheckETATool": CheckETATool,
         }
 
         return await self._chat_with_retry(messages, self.tools, model_map)

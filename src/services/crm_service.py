@@ -1,9 +1,10 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from src.models import Job, Customer, PipelineStage
 from src.repositories import JobRepository, CustomerRepository, RequestRepository
 from src.events import event_bus
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from src.services.quote_service import QuoteService
 
 
@@ -47,6 +48,45 @@ class CRMService:
             {"job_id": job.id, "customer_id": customer_id, "business_id": self.business_id},
         )
         return job
+
+    async def get_active_job_for_customer(self, phone_number: str) -> Optional[Job]:
+        customer = await self.customer_repo.get_by_phone(phone_number, self.business_id)
+        if not customer:
+            return None
+
+        # Fetch active or upcoming jobs for this customer
+        # Uses simplistic filtering in Python for now as active window logic is complex in SQL
+        stmt = (
+            select(Job)
+            .where(Job.customer_id == customer.id)
+            .order_by(Job.scheduled_at.desc())
+            .limit(10)
+        )
+        result = await self.session.execute(stmt)
+        jobs = result.scalars().all()
+
+        now = datetime.now(timezone.utc)
+        
+        for job in jobs:
+            if not job.scheduled_at:
+                continue
+                
+            # Ensure scheduled_at is aware
+            start = job.scheduled_at
+            if start.tzinfo is None:
+                start = start.replace(tzinfo=timezone.utc)
+                
+            duration_min = job.estimated_duration or 60
+            end = start + timedelta(minutes=duration_min)
+            
+            # Allow 30m buffer before and after
+            buffered_start = start - timedelta(minutes=30)
+            buffered_end = end + timedelta(minutes=30)
+            
+            if buffered_start <= now <= buffered_end:
+                return job
+                
+        return None
 
     async def convert_request(
         self,

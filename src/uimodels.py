@@ -402,3 +402,17 @@ class CreateQuoteInput(BaseModel):
     Triggered when user wants to 'send a quote', 'create proposal', or 'give price'."""
     customer_identifier: str = Field(..., description="Name or Phone of the customer to find.")
     items: List[QuoteLineItemInput] = Field(..., description="List of items in the quote")
+class LocateEmployeeTool(BaseModel):
+    """Locate an employee or list location of all employees.
+    Triggered when admin/dispatcher asks 'Where is John?' or 'Where are my techs?'."""
+    employee_name: Optional[str] = Field(
+        None, description="Name of the employee to locate. If omitted, lists all."
+    )
+
+
+class CheckETATool(BaseModel):
+    """Check the estimated time of arrival for a technician to a customer.
+    Triggered when customer asks 'When will you arrive?', 'Where is the tech?', 'ETA'."""
+    customer_query: Optional[str] = Field(
+        None, description="Name/Phone of customer if admin is asking. If customer asks, leave empty to use sender."
+    )
