@@ -23,6 +23,8 @@ error_unclear_input: |
   - *Pipeline*: 'Show pipeline', 'Show Lost customers' or 'Mark John as Not Interested'
   - *Invoice*: 'Send invoice to John'
   - *Status*: 'On my way to John'
+  - *Teams*: 'Show schedule' or 'Where are my employees?'
+  - *Assign*: 'Assign job 123 to John'
   - *Edit*: 'Edit Job, Lead or Request: John on High Street 34, call 0871235678 tomorrow at 12:00'
   - *Settings*: 'Update settings'
 
@@ -117,6 +119,12 @@ service_deleted: "🗑️ Service {id} deleted."
 error_service_not_found: "❌ Service {id} not found."
 error_invalid_service_format: "❌ Invalid format. Usage: 'Add Service [Name] [Price]'"
 
+# Employee Management
+employee_not_found: "❌ Could not find employee named '{name}'."
+employee_ambiguous: "❓ Status: Ambiguous. Did you mean {matches}?"
+job_assigned: "✅ Assigned Job #{job_id} to {employee_name}."
+error_invalid_date: "❌ Invalid date format: {date}. Please use YYYY-MM-DD."
+
 # Help Message
 help_message: |
   Here are some *key* ways I can assist you:
@@ -124,6 +132,8 @@ help_message: |
   - *Add Jobs*: e.g. "Fix sink for John $50"
   - *Add Leads*: e.g. "Register client: Sarah in Dublin"
   - *Schedule*: e.g. "Schedule John for tomorrow 2pm"
+  - *Teams*: e.g. "Show schedule" or "Where are my employees?"
+  - *Assign*: e.g. "Assign job 123 to John"
 
   **Advanced commands:**
   
@@ -137,6 +147,7 @@ help_message: |
   - *Settings*: Configure preferences: 'Update settings'
   
   Note: Identify customers by phone or address to avoid duplicates.
+
 # redacted: On SMS/Email, actions auto-confirm after 45s unless cancelled.
 
 
@@ -154,6 +165,7 @@ welcome_message: |
   - *Pipeline*: 'Show pipeline'
   - *Invoice*: 'Send invoice to John'
   - *Send Status to customer*: 'On my way to John'
+  - *Team Management*: 'Show team schedule' or 'Assign job #123 to John'
   
   Try saying "Add job Fix faucet for Bob at 42 Wallaby Way $80" to get started!
 

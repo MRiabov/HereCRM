@@ -1,55 +1,70 @@
-from datetime import date, datetime, time
-from typing import Dict, List
+from datetime import date, datetime, timezone
+from typing import List, Dict, Any, Optional
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
-from src.models import User, Job
-from src.repositories import UserRepository, JobRepository
+from sqlalchemy.orm import selectinload
+
+from src.models import Job, User, UserRole
 
 class DashboardService:
-    def __init__(self, session, business_id: int):
+    def __init__(self, session: AsyncSession):
         self.session = session
-        self.business_id = business_id
-        self.user_repo = UserRepository(session)
-        self.job_repo = JobRepository(session)
 
-    async def get_employee_schedules(self, business_id: int, date_obj: date) -> Dict[User, List[Job]]:
+    async def get_employee_schedules(self, business_id: int, target_date: date) -> Dict[User, List[Job]]:
         """
-        Query all team members and their jobs for a specific date.
+        Query all users with roles member or owner for the business.
+        Query all jobs for the given date assigned to these users.
+        Return a structured dict: {employee_obj: [job_list]}.
         """
-        # 1. Get all team members (owners and members)
-        team_members = await self.user_repo.get_team_members(business_id)
-
-        # 2. Query jobs for the specified date
-        start_of_day = datetime.combine(date_obj, time.min)
-        end_of_day = datetime.combine(date_obj, time.max)
-        
-        # Use existing search capabilities
-        jobs = await self.job_repo.search(
-            query="all",
-            business_id=business_id,
-            min_date=start_of_day,
-            max_date=end_of_day
+        # 1. Fetch all employees (Owners and Members)
+        stmt = select(User).where(
+            User.business_id == business_id,
+            User.role.in_([UserRole.OWNER, UserRole.MEMBER])
         )
+        result = await self.session.execute(stmt)
+        employees = result.scalars().all()
 
-        # 3. Group jobs by employee
-        schedule = {user: [] for user in team_members}
-        user_map = {user.id: user for user in team_members}
-        
+        # 2. Fetch jobs for these employees on the target date
+        # We assume scheduled_at is a datetime, so we check the date part
+        start_of_day = datetime.combine(target_date, datetime.min.time()).replace(tzinfo=timezone.utc)
+        end_of_day = datetime.combine(target_date, datetime.max.time()).replace(tzinfo=timezone.utc)
+
+        # Pre-initialize the schedule map
+        schedule: Dict[User, List[Job]] = {emp: [] for emp in employees}
+
+        # Query jobs assigned to any of these employees on this date
+        employee_ids = [emp.id for emp in employees]
+        if not employee_ids:
+            return {}
+
+        job_stmt = select(Job).where(
+            Job.business_id == business_id,
+            Job.employee_id.in_(employee_ids),
+            Job.scheduled_at >= start_of_day,
+            Job.scheduled_at <= end_of_day
+        ).order_by(Job.scheduled_at.asc())
+
+        job_result = await self.session.execute(job_stmt)
+        jobs = job_result.scalars().all()
+
+        # Group jobs by employee
         for job in jobs:
-            if job.employee_id in user_map:
-                schedule[user_map[job.employee_id]].append(job)
-                
+            for emp in employees:
+                if job.employee_id == emp.id:
+                    schedule[emp].append(job)
+                    break
+
         return schedule
 
     async def get_unscheduled_jobs(self, business_id: int) -> List[Job]:
         """
-        Query all jobs in the business that have no employee assigned.
+        Query all jobs where employee_id is None AND status is pending/open.
         """
         stmt = select(Job).where(
-            and_(
-                Job.business_id == business_id,
-                Job.employee_id == None,
-                Job.status.in_(["pending", "open"])
-            )
-        )
+            Job.business_id == business_id,
+            Job.employee_id == None,
+            Job.status.in_(["pending", "open"])
+        ).order_by(Job.created_at.desc())
+
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
