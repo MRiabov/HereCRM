@@ -117,3 +117,4 @@ history:
 - 2026-01-21T15:27:19Z – Antigravity – shell_pid=4073129 – lane=for_review – Addressed review feedback: updated system prompts in prompts.yaml, added owner-only check for customer_query in CheckETATool, and refactored routing service to use a provider pattern in ToolExecutor. Verified with integration tests.
 - 2026-01-21T15:34:49Z – Antigravity – shell_pid=4074088 – lane=doing – Started review via workflow command
 - 2026-01-21T15:36:12Z – Antigravity – shell_pid=4074088 – lane=done – Review passed: Verified integration of routing service, owner role check in CheckETATool, system prompts update, and passing integration tests.
+- 2026-01-21T16:25:49Z – Antigravity – shell_pid=4074088 – lane=done – Implemented tools and integration tests.
