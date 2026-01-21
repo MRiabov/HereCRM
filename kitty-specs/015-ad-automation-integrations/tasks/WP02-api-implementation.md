@@ -1,7 +1,7 @@
 ---
 work_package_id: "WP02"
 title: "API Implementation"
-lane: "doing"
+lane: "for_review"
 subtasks: ["T006", "T007", "T008", "T009", "T010", "T011"]
 dependencies: ["WP01"]
 agent: "Antigravity"
@@ -104,3 +104,4 @@ These endpoints allow external systems to push data into HereCRM.
 ## Activity Log
 
 - 2026-01-21T15:08:09Z – Antigravity – shell_pid=4073129 – lane=doing – Started implementation via workflow command
+- 2026-01-21T15:40:21Z – Antigravity – shell_pid=4073129 – lane=for_review – Ready for review: Implemented API implementation including ApiKeyAuth, Signer, and endpoints for leads, requests, and provisioning. All integration tests pass.
