@@ -37,6 +37,13 @@ class Business(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
+    
+    # Billing Fields (Shimmed from WP00)
+    stripe_customer_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    stripe_subscription_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    subscription_status: Mapped[str] = mapped_column(String, default="free")
+    seat_limit: Mapped[int] = mapped_column(Integer, default=1)
+    active_addons: Mapped[List[str]] = mapped_column(JSON, default=lambda: ["manage_employees", "campaigns"])
 
     # Relationships
     users: Mapped[List["User"]] = relationship(back_populates="business")

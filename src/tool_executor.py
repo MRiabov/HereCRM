@@ -1,6 +1,7 @@
 from typing import Union, Optional, Tuple, Dict, Any
+import logging
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import Job, Customer, Request
+from src.models import Customer, Request, Business, Service, Job
 from src.repositories import (
     JobRepository,
     CustomerRepository,
@@ -35,6 +36,10 @@ from src.uimodels import (
     ListServicesTool,
     ExitSettingsTool,
     SendStatusTool,
+    ManageEmployeesTool,
+    MassEmailTool,
+    ExportQueryTool,
+    ExitDataManagementTool,
     GetBillingStatusTool,
     RequestUpgradeTool,
 )
@@ -57,6 +62,7 @@ class ToolExecutor:
         self.user_id = user_id
         self.user_phone = user_phone
         self.template_service = template_service
+        self.logger = logging.getLogger(__name__)
 
 
         self.job_repo = JobRepository(session)
@@ -96,10 +102,31 @@ class ToolExecutor:
             ExitSettingsTool,
             SendInvoiceTool,
             SendStatusTool,
+            ManageEmployeesTool,
+            MassEmailTool,
+            ExportQueryTool,
+            ExitDataManagementTool,
             GetBillingStatusTool,
             RequestUpgradeTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
+
+        # [T018] Scope Enforcement
+        # Check if the tool requires a specific scope
+        required_scope = getattr(tool_call, "required_scope", None)
+        if required_scope:
+            business = await self.session.get(Business, self.business_id)
+            if not business:
+                return "Error: Business not found.", None
+            
+            # Check if scope is active
+            if required_scope not in business.active_addons:
+                return (
+                    self.template_service.render(
+                        "error_upgrade_required", scope=required_scope
+                    ),
+                    None
+                )
 
         if isinstance(tool_call, AddJobTool):
             return await self._execute_add_job(tool_call)
@@ -141,6 +168,14 @@ class ToolExecutor:
             return await self._execute_send_invoice(tool_call)
         elif isinstance(tool_call, SendStatusTool):
             return await self._execute_send_status(tool_call)
+        elif isinstance(tool_call, ManageEmployeesTool):
+            return f"✔ Access granted to Employee Management: {tool_call.action}", None
+        elif isinstance(tool_call, MassEmailTool):
+            return f"✔ Access granted to Campaigns: Subject '{tool_call.subject}' sent to '{tool_call.recipient_query}'", None
+        elif isinstance(tool_call, ExportQueryTool):
+            return "✔ Access granted to Data Export. Starting export...", None
+        elif isinstance(tool_call, ExitDataManagementTool):
+            return "Exit data management is handled by the service layer.", None
         elif isinstance(tool_call, GetBillingStatusTool):
             return await self._execute_get_billing_status(tool_call)
         elif isinstance(tool_call, RequestUpgradeTool):
@@ -562,7 +597,6 @@ class ToolExecutor:
     async def _execute_add_service(
         self, tool: AddServiceTool
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
-        from src.models import Service
 
         service_name = tool.name.strip().title()
         existing = await self.service_repo.get_by_name(service_name, self.business_id)

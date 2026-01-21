@@ -1,5 +1,5 @@
 from pydantic.v1 import BaseModel, Field, validator
-from typing import Optional, List
+from typing import Optional, List, ClassVar
 
 # Allowlist for settings that can be updated via LLM
 ALLOWED_SETTING_KEYS = ["confirm_by_default", "language", "timezone", "notifications", "default_city", "default_country"]
@@ -358,3 +358,21 @@ class ExitDataManagementTool(BaseModel):
 
 
 
+
+
+
+class MassEmailTool(BaseModel):
+
+    """Send a mass email or message to multiple customers.
+    Requires 'campaigns' addon."""
+    required_scope: ClassVar[str] = "campaigns"
+    subject: str = Field(..., description="Subject of the email")
+    body: str = Field(..., description="Content of the message")
+    recipient_query: str = Field("all", description="Filter for recipients (e.g. 'all', 'Dublin customers')")
+
+class ManageEmployeesTool(BaseModel):
+    """Access employee management features (shifts, roles).
+    Requires 'manage_employees' addon."""
+    required_scope: ClassVar[str] = "manage_employees"
+    action: str = Field(..., description="Action: 'list', 'assign_shift', 'view_availability'")
+    details: Optional[str] = Field(None, description="Details for the action")
