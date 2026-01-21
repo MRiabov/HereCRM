@@ -178,6 +178,8 @@ class Job(Base):
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="jobs")
     customer: Mapped["Customer"] = relationship(back_populates="jobs")
+    employee_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
+    employee: Mapped[Optional["User"]] = relationship(foreign_keys=[employee_id])
     line_items: Mapped[List["LineItem"]] = relationship(back_populates="job", cascade="all, delete-orphan")
     invoices: Mapped[List["Invoice"]] = relationship(back_populates="job", cascade="all, delete-orphan")
 

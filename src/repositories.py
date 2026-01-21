@@ -6,6 +6,7 @@ from datetime import datetime
 from src.models import (
     Business,
     User,
+    UserRole,
     Customer,
     Job,
     Request,
@@ -64,9 +65,17 @@ class BaseRepository(Generic[T]):
         # Note: commit should be handled by the service layer or unit of work
 
 
-class UserRepository:
+class UserRepository(BaseRepository[User]):
     def __init__(self, session: AsyncSession):
-        self.session = session
+        super().__init__(session, User)
+
+    async def get_team_members(self, business_id: int) -> List[User]:
+        query = select(User).where(
+            User.business_id == business_id,
+            User.role.in_([UserRole.MEMBER, UserRole.OWNER])
+        )
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
 
     async def get_by_id(self, user_id: int) -> Optional[User]:
         query = select(User).where(User.id == user_id)
