@@ -14,11 +14,11 @@ This feature adds an integration layer for inbound lead ingestion and outbound e
 - **Priority**: High (Blocker)
 - **Tests**: Unit tests for Model and Repository.
 - **Subtasks**:
-  - [ ] **T001**: Create alembic migration for `integration_configs` table.
-  - [ ] **T002**: Implement `IntegrationConfig` SQLAlchemy model.
-  - [ ] **T003**: Create `IntegrationRepository` with CRUD and Key lookup.
-  - [ ] **T004**: Implement `IntegrationService` with API Key generation and hashing utils.
-  - [ ] **T005**: Add unit tests for Data Model and Repository.
+  - [x] T001: Create alembic migration for `integration_configs` table.
+  - [x] T002: Implement `IntegrationConfig` SQLAlchemy model.
+  - [x] T003: Create `IntegrationRepository` with CRUD and Key lookup.
+  - [x] T004: Implement `IntegrationService` with API Key generation and hashing utils.
+  - [x] T005: Add unit tests for Data Model and Repository.
 
 ### WP02: API Implementation
 
