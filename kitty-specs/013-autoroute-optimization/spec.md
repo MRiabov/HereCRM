@@ -49,13 +49,14 @@ As a Business Owner, I want to confirm the proposed route so that the jobs are a
 
 ### User Story 3 - Employee Start Locations (Priority: P2)
 
-As a Business Owner, I want to define where each employee starts their day so that routing is accurate.
+As a Business Owner or Employee, I want to define where the employee starts their day so that routing is accurate and efficient.
 
 **Why this priority**: Essential for accurate travel time calculation.
 
 **Acceptance Scenarios**:
 
-1. **Given** an employee User profile, **When** I update their settings, **Then** I can set a `default_start_location` (lat/lng or address).
+1. **Given** an employee User profile, **When** the Owner or the Employee themselves update settings, **Then** they can set a `default_start_location` (lat/lng or address).
+2. **Given** an employee receives a notification about their schedule, **When** they realize their start location is wrong, **Then** they can use a command to update it for future routing.
 
 ---
 
