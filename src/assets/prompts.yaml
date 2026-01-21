@@ -184,6 +184,14 @@ tool_descriptions:
     - User: "buy 5 seats" -> RequestUpgradeTool(item_type="seat", quantity=5)
     - User: "I want the campaign manager addon" -> RequestUpgradeTool(item_type="addon", item_id="campaign_manager", quantity=1)
 
+  CreateQuoteTool: |
+    Create and send a quote/proposal to a customer.
+    Examples of when to call:
+    - User: "Send a quote to John for window cleaning $50"
+      -> CreateQuoteTool(customer_identifier="John", items=[{"description": "window cleaning", "price": 50.0, "quantity": 1.0}])
+    - User: "Create proposal for Mary: 5 windows at $10 each, 1 gutter job $100"
+      -> CreateQuoteTool(customer_identifier="Mary", items=[{"description": "windows", "price": 10.0, "quantity": 5.0}, {"description": "gutter job", "price": 100.0, "quantity": 1.0}])
+
   
   # Settings tools
   AddServiceTool: "Add a new service to the catalog."

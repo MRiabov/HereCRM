@@ -27,6 +27,7 @@ from src.uimodels import (
     SendStatusTool,
     GetBillingStatusTool,
     RequestUpgradeTool,
+    CreateQuoteInput,
 )
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.employee_management import ShowScheduleTool, AssignJobTool
@@ -152,6 +153,15 @@ class LLMParser:
                 },
             },
         ]
+
+        self.tools.append({
+            "type": "function",
+            "function": {
+                "name": "CreateQuoteTool",
+                "description": tool_desc.get("CreateQuoteTool", "Create and send a quote to a customer"),
+                "parameters": CreateQuoteInput.schema(),
+            },
+        })
 
         self.tools.append({
             "type": "function",
@@ -504,6 +514,7 @@ class LLMParser:
             "RequestUpgradeTool": RequestUpgradeTool,
             "ShowScheduleTool": ShowScheduleTool,
             "AssignJobTool": AssignJobTool,
+            "CreateQuoteTool": CreateQuoteInput,
         }
 
         return await self._chat_with_retry(messages, self.tools, model_map)
