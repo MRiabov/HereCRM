@@ -1,6 +1,6 @@
 # Implementation Plan: [FEATURE]
-*Path: [templates/plan-template.md](templates/plan-template.md)*
 
+*Path: [templates/plan-template.md](templates/plan-template.md)*
 
 **Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
 **Input**: Feature specification from `/kitty-specs/[###-feature-name]/spec.md`
@@ -22,20 +22,52 @@ The planner will not begin until all planning questions have been answered—cap
 -->
 
 **Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+> **State the core technical decisions for this feature.**
+
+- **Scheduler Strategy**: We will use `APScheduler` (packaged as `src/services/scheduler.py`) running within the main FastAPI application to handle the "Shift Starter" events (6:30 AM employee local time). This avoids setting up external infrastructure like Celery/Redis for this MVP.
+- **Job Completion**: We will implement a new LLM tool `CompleteJobTool` (triggered by "done #123") that updates the job status and triggers the "Next Job Guide" logic.
+- **Service Reminders**: We will extend the `Service` entity (and `ServiceRepository`) to include a `reminder_text` field. We will update the `EditServiceTool` to allow business owners to configure this field (e.g., "Set reminder for Window Cleaning to 'Ask about interiors'").
+- **State Management**: The "Guided Workflow" is state-dependent. We will rely on the `Job` status ("scheduled" -> "in_progress" -> "completed") and the `User` (employee) context to determine the "next job".
+- **Messaging**: Leveraging the existing `MessagingService` (WhatsApp/Twilio) to send the push notifications.
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+> **Does this feature align with the project constitution?**
 
-[Gates determined based on constitution file]
+- [x] **Agentic**: Uses LLMs for "done" commands and natural language parsing.
+- [x] **Text-First**: All interactions (warnings, schedules, completions) happen via chat.
+- [x] **Simplicity**: No new apps or complex dashboards for the employee; just text.
+
+*Constitution check passed.*
+
+## Gateways
+
+- [x] **UX Strategy confirmed?** (Yes, text-based guided flow)
+- [x] **Database changes understood?** (Yes, `Service` model update, potential `User` timezone field)
+- [x] **Dependent features ready?** (Yes, Employee Management Dashboard is the foundation)
+
+---
+
+## Phase 0: Research (Validation)
+
+**Goal**: Ensure we have the right libraries and patterns before coding.
+
+- [ ] **Research Task 1**: Best practices for `APScheduler` with `asyncio` in FastAPI to ensuring it doesn't block the main loop.
+- [ ] **Research Task 2**: Verify how to access "Employee Local Time". Do `User` entities currently store a timezone? If not, we might need to add it or default to the Business timezone.
+- [ ] **Research Task 3**: Check `MessagingService` capabilities for proactive outbound messages (initiating a conversation flow vs replying).
+
+## Phase 1: Design & Contracts
+
+**Goal**: Define the schema and tools.
+
+- [ ] **Data Model (`data-model.md`)**:
+  - Add `reminder_text` (Text, nullable) to `Service` model.
+  - Check/Add `timezone` to `User` or `Business`.
+- [ ] **Contracts (`contracts/`)**:
+  - **Tools**: Define `CompleteJobTool` schema.
+  - **Tools**: Update `AddServiceTool` / `EditServiceTool` schemas to include `reminder_text`.
+  - **Events**: Define `SHIFT_STARTED` event payload.
+- [ ] **Agent Context**: Update `system_prompt` to understand "done" commands and the concept of "active shift".
 
 ## Project Structure
 

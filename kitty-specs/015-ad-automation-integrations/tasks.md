@@ -27,12 +27,12 @@ This feature adds an integration layer for inbound lead ingestion and outbound e
 - **Dependencies**: WP01
 - **Tests**: Integration tests for all endpoints.
 - **Subtasks**:
-  - [ ] **T006**: Implement `ApiKeyAuth` dependency for secure API access.
-  - [ ] **T007**: Implement `Signer` utility for URL signature verification.
-  - [ ] **T008**: Implement `POST /provision` endpoint for saving configs.
-  - [ ] **T009**: Implement `POST /leads` endpoint (Lead ingestion).
-  - [ ] **T010**: Implement `POST /requests` endpoint (Service Request ingestion).
-  - [ ] **T011**: Add integration tests for API endpoints.
+  - [x] **T006**: Implement `ApiKeyAuth` dependency for secure API access.
+  - [x] **T007**: Implement `Signer` utility for URL signature verification.
+  - [x] **T008**: Implement `POST /provision` endpoint for saving configs.
+  - [x] **T009**: Implement `POST /leads` endpoint (Lead ingestion).
+  - [x] **T010**: Implement `POST /requests` endpoint (Service Request ingestion).
+  - [x] **T011**: Add integration tests for API endpoints.
 
 ### WP03: Webhook Dispatcher
 
