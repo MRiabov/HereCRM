@@ -14,6 +14,7 @@ from src.database import get_db
 from src.models import Message
 from src.services.auth_service import AuthService
 from src.services.whatsapp_service import WhatsappService
+from src.services.quote_service import QuoteService
 from src.llm_client import parser as llm_parser
 from src.services.template_service import TemplateService
 from src.config import settings
@@ -468,4 +469,26 @@ async def postmark_inbound_webhook(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An internal error occurred."
         )
+
+@router.post("/quotes/{token}/confirm")
+async def confirm_quote(
+    token: str,
+    services: Tuple[AuthService, WhatsappService] = Depends(get_services),
+):
+    """
+    Public endpoint to confirm a quote via token.
+    """
+    auth_service, _ = services
+    quote_service = QuoteService(auth_service.session)
+    
+    quote = await quote_service.confirm_quote(token)
+    if not quote:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Quote not found or invalid token"
+        )
+    
+    # Notify business owner / customer about confirmation?
+    # For now just return success JSON
+    return {"status": "success", "message": "Quote accepted", "quote_id": quote.id, "job_id": quote.job_id}
 

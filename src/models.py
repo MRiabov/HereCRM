@@ -29,6 +29,14 @@ class PipelineStage(str, enum.Enum):
     LOST = "lost"
 
 
+class QuoteStatus(str, enum.Enum):
+    DRAFT = "draft"
+    SENT = "sent"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    EXPIRED = "expired"
+
+
 class Business(Base):
     __tablename__ = "businesses"
 
@@ -53,13 +61,8 @@ class Business(Base):
     services: Mapped[List["Service"]] = relationship(back_populates="business")
     import_jobs: Mapped[List["ImportJob"]] = relationship(back_populates="business")
     export_requests: Mapped[List["ExportRequest"]] = relationship(back_populates="business")
+    quotes: Mapped[List["Quote"]] = relationship(back_populates="business")
 
-    # Billing fields
-    stripe_customer_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    stripe_subscription_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    subscription_status: Mapped[str] = mapped_column(String, default="free")
-    seat_limit: Mapped[int] = mapped_column(Integer, default=1)
-    active_addons: Mapped[list] = mapped_column(JSON, default=list)
 
 
 class User(Base):
@@ -156,6 +159,7 @@ class Customer(Base):
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="customers")
     jobs: Mapped[List["Job"]] = relationship(back_populates="customer")
+    quotes: Mapped[List["Quote"]] = relationship(back_populates="customer")
 
 
 class Job(Base):
@@ -288,6 +292,50 @@ class ImportJob(Base):
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="import_jobs")
+
+
+class Quote(Base):
+    __tablename__ = "quotes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), index=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
+    status: Mapped[QuoteStatus] = mapped_column(SAEnum(QuoteStatus), default=QuoteStatus.DRAFT)
+    total_amount: Mapped[float] = mapped_column(Float, default=0.0)
+    external_token: Mapped[str] = mapped_column(String, unique=True, index=True)
+    blob_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    # Relationships
+    customer: Mapped["Customer"] = relationship(back_populates="quotes")
+    business: Mapped["Business"] = relationship(back_populates="quotes")
+    items: Mapped[List["QuoteLineItem"]] = relationship(
+        back_populates="quote", cascade="all, delete-orphan"
+    )
+    job: Mapped[Optional["Job"]] = relationship()
+
+
+class QuoteLineItem(Base):
+    __tablename__ = "quote_line_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    quote_id: Mapped[int] = mapped_column(ForeignKey("quotes.id"), index=True)
+    service_id: Mapped[Optional[int]] = mapped_column(ForeignKey("services.id"), nullable=True)
+    description: Mapped[str] = mapped_column(String)
+    quantity: Mapped[float] = mapped_column(Float, default=1.0)
+    unit_price: Mapped[float] = mapped_column(Float)
+    total: Mapped[float] = mapped_column(Float)
+
+    # Relationships
+    quote: Mapped["Quote"] = relationship(back_populates="items")
 
 
 class ExportRequest(Base):
