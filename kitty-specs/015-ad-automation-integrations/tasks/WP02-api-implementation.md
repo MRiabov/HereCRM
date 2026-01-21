@@ -1,9 +1,11 @@
 ---
 work_package_id: "WP02"
 title: "API Implementation"
-lane: "planned"
+lane: "doing"
 subtasks: ["T006", "T007", "T008", "T009", "T010", "T011"]
 dependencies: ["WP01"]
+agent: "Antigravity"
+shell_pid: "4073129"
 ---
 
 ## Objective
@@ -98,3 +100,7 @@ These endpoints allow external systems to push data into HereCRM.
 - Endpoints are secured (API Key or Signature).
 - Data is correctly persisted to `customers` and `requests` tables.
 - Integration tests pass.
+
+## Activity Log
+
+- 2026-01-21T15:08:09Z – Antigravity – shell_pid=4073129 – lane=doing – Started implementation via workflow command
