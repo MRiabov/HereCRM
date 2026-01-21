@@ -121,3 +121,21 @@ class QuoteService:
         )
         result = await self.session.execute(stmt)
         return result.scalars().first()
+
+    async def send_quote(self, quote_id: int) -> None:
+        """
+        Sends the quote to the customer via their preferred channel.
+        For now, this mocks the PDF generation and delivery by updating status.
+        """
+        quote = await self.get_quote(quote_id)
+        if not quote:
+            raise ValueError(f"Quote {quote_id} not found")
+        
+        # TODO: Integrate with PDF generation service (WP02)
+        # TODO: Integrate with MessagingService
+        
+        logger.info(f"Sending Quote #{quote.id} to Customer #{quote.customer_id}")
+        
+        quote.status = QuoteStatus.SENT
+        await self.session.commit()
+        await self.session.refresh(quote)

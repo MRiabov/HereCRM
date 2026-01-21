@@ -185,9 +185,10 @@ billing_status_body: |
   {addons}
   
   *Available Upgrades*:
-  - Add Seat (€15/mo)
-  - Employee Management (€10/mo)
-  - Campaign Messaging (€25/mo)
+  - Add Seat (€50/mo)
+  - Employee Management addon (€30/mo) - Scheduling, automatic notification, and automatic routing.
+  - Campaign Messaging addon (€20/mo) - 1000 messages included
+  - Extra commands package (€20/mo) - 1000 commands included (note: using SMS and AI costs us money per every request!)
   
   Type 'upgrade [item]' to get a payment link.
 
