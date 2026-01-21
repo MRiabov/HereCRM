@@ -2,102 +2,74 @@
 work_package_id: "WP02"
 title: "Interactive Job Completion"
 lane: "planned"
-subtasks: ["T004", "T005", "T006", "T007"]
+subtasks: ["T007", "T008", "T009", "T010"]
 dependencies: ["WP01"]
 ---
 
 ## Objective
 
-Implement the core interactive component of the guided workflow: the "done" command. When an employee marks a job as complete, the system should automatically provide the details and navigation for their next assigned task.
+Implement the "done #123" command logic, allowing employees to mark jobs as completed via chat. This includes securing the command so only the assigned employee or a business owner can execute it, and updating the system prompt to recognize the intent.
 
 ## Context
 
-The employee finishes a job and sends "done #123". The system updates the status and immediately replies with: "Job #123 completed. Next stop: [Customer] at [Address]..."
+The core interaction of the "Guided Workflow" is the employee simply typing "done #123" to finish a job. This triggers the status update. We must ensure this is secure and easy to use.
 
-- **Spec**: `kitty-specs/016-Employee Guided Workflow/spec.md`
+- **Spec**: `kitty-specs/016-Employee Guided Workflow/spec.md` (See User Story 4)
 - **Data Model**: `kitty-specs/016-Employee Guided Workflow/data-model.md`
+- **Contracts**: `kitty-specs/016-Employee Guided Workflow/contracts/tools.md`
 
 ## Subtasks
 
-### T004: Add `CompleteJobTool` to `uimodels.py`
+### T007: Implement `CompleteJobTool`
 
-**Purpose**: Define the data structure for the job completion command.
+**Purpose**: Define the tool structure for the LLM to call when it detects a completion intent.
 **Steps**:
 
 1. Open `src/uimodels.py`.
-2. Define `CompleteJobTool(BaseModel)` with:
-    - `job_id`: int (The ID of the job to complete).
-    - `notes`: Optional[str] (Any notes provided by the employee).
-3. Add a descriptive docstring to help the LLM understand when to call this tool (e.g., "Mark a job as finished or complete").
+2. Add `CompleteJobTool` class (verify exact fields in `contracts/tools.md`):
+   - `job_id`: int
+   - `notes`: Optional[str]
 
-**Files**:
+### T008: Implement Completion Logic (`_execute_complete_job`)
 
-- `src/uimodels.py`
-
-### T005: Create reusable `format_job_details` utility
-
-**Purpose**: Centralize the logic for formatting job details for WhatsApp/SMS.
-**Steps**:
-
-1. Create `src/utils/formatting.py`.
-2. Implement `format_job_details(job: Job) -> str`.
-3. The output should follow this structure:
-
-    ```
-    Next Stop: [Customer Name]
-    📍 [Address]
-    🗺️ [Google Maps Link]
-    📞 [Phone Number (tel link)]
-    ⚡ Reminders: [Service.reminder_text entries]
-    ```
-
-4. Handle geocoding for the Maps link: if `lat/lng` are present, use them; otherwise, use the address string as a search query.
-
-**Files**:
-
-- `src/utils/formatting.py`
-
-### T006: Implement `CompleteJobToolExecutor`
-
-**Purpose**: Execute the status update logic in the tool dispatcher.
+**Purpose**: Handle the database update when the tool is called.
 **Steps**:
 
 1. Open `src/tool_executor.py`.
-2. Register `CompleteJobTool` in the tool mapping.
-3. Implement `_execute_complete_job(tool_call, current_user)`:
-    - Verify the job exists and is assigned to the `current_user` (or the user is an owner).
-    - Update `job.status` to 'completed' via `JobRepository`.
-    - Retrieve the next job for the same employee for Today (where status is 'scheduled' or 'pending').
+2. Add `_execute_complete_job(tool: CompleteJobTool, user: User)`.
+3. logic:
+   - Fetch the job by `tool.job_id`.
+   - Update status to `JobStatus.COMPLETED`.
+   - Save via repository.
+   - Return a success message (e.g., "Job #123 marked as completed.").
 
-**Files**:
+### T009: Permission Check
 
-- `src/tool_executor.py`
-
-### T007: Integrate next-job push logic
-
-**Purpose**: Return the next job details as the primary tool response.
+**Purpose**: Prevent employees from completing other people's jobs.
 **Steps**:
 
-1. In `_execute_complete_job`:
-    - If a next job is found, call `format_job_details(next_job)`.
-    - Return a response like: "Job #[ID] marked as done. \n\n[Formatted Next Job Details]".
-    - If no more jobs: return "Job #[ID] marked as done. You are all set for the day!".
+1. In `_execute_complete_job`, before updating status:
+   - Check if `user.role == UserRole.BUSINESS_OWNER`. If yes, allow.
+   - If not owner, check if `job.employee_id == user.id`.
+   - If neither, raise a `PermissionError` or return a "You are not assigned to this job" error message.
 
-**Files**:
+### T010: Update System Prompt
 
-- `src/tool_executor.py`
+**Purpose**: Teach the AI to recognize "done #123".
+**Steps**:
+
+1. Open `src/services/inference_service.py`.
+2. In `get_system_prompt`, add instructions:
+   - "If the user says they are 'done' with a job or uses a phrase like 'done #123', call the `CompleteJobTool`."
+3. Add `CompleteJobTool` to the list of available tools definitions in the prompt.
 
 ## Definition of Done
 
-- [ ] "done #123" correctly triggers `CompleteJobTool`.
-- [ ] Job #123 status is updated to 'completed' in the database.
-- [ ] The system replies with next job details immediately.
-- [ ] The reply includes a valid Google Maps link and customer contact info.
-- [ ] Service reminders are correctly included in the push message.
-- [ ] Integration test passes for the full completion -> next job sequence.
+- `CompleteJobTool` is available.
+- Sending "done #123" updates the database status for that job.
+- Sending "done #123" for a job assigned to *someone else* fails with a permission error.
+- Sending "done #123" as a business owner works for any job.
 
-## Implementation Command
+## Activity Log
 
-```bash
-spec-kitty implement WP02 --base WP01
-```
+- [INIT] Task generated.
