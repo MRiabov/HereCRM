@@ -25,6 +25,24 @@ As an Employee, I want to share my live location via WhatsApp at the start of my
 1. **Given** an employee chat, **When** they send a live location message, **Then** the system parses the lat/long and updates the employee's record.
 2. **Given** an employee chat, **When** they send a static location pin, **Then** the system also accepts it and updates the record (fallback).
 
+### User Story 1b - Non-WhatsApp Location Update (Priority: P2)
+
+As an Employee without WhatsApp, I want to share my location by sending a Google Maps link via SMS so that the system can track me.
+
+**Why this priority**: Supports mixed device fleets and ensures reliability when WhatsApp is unavailable.
+
+**Independent Test**:
+
+1. **Prerequisite**: Employee uses standard SMS/MMS.
+2. **Action**: Employee opens Maps app -> Share Location -> Copy/Send Link to HereCRM number.
+3. **Result**: System parses the coordinate from the URL shortlink (e.g. `maps.app.goo.gl` or `maps.google.com`) and updates the record.
+4. **Response**: "Location updated successfully."
+
+**Acceptance Scenarios**:
+
+1. **Given** a text message containing a Google Maps URL, **When** received, **Then** the system extracts the lat/long.
+2. **Given** a system with stale location, **When** the business triggers "Request Location", **Then** the employee receives an SMS asking "Please reply with your current location link".
+
 ---
 
 ### User Story 2 - Customer Inquires ETA (Priority: P1)
@@ -70,7 +88,7 @@ As a Business Owner, I want to query where a specific employee is so that I can 
 
 ### Functional Requirements
 
-- **FR-001**: System MUST be able to receive and parse `location` type messages from the messaging provider (WhatsApp).
+- **FR-001**: System MUST be able to receive and parse `location` type messages from the messaging provider (WhatsApp) OR text messages containing standard map URLs (Google/Apple Maps).
 - **FR-002**: `User` model MUST store `current_latitude` (float), `current_longitude` (float), and `location_updated_at` (datetime).
 - **FR-003**: System MUST provide a mechanism to find the "active job" for a Customer based on their phone number and current time.
   - *Logic*: Find Job where `customer_phone == sender` AND `scheduled_start <= now <= scheduled_end + buffer`.
