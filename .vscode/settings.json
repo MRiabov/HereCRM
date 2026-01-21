@@ -1,1 +1,4 @@
-{}
+{
+    "python.pyrefly.displayTypeErrors": "force-on",
+    "editor.inlayHints.enabled": "on"
+}
