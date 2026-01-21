@@ -1,7 +1,7 @@
 ---
 work_package_id: "WP03"
 title: "Proactive Next-Job Guide"
-lane: "doing"
+lane: "for_review"
 subtasks: ["T011", "T012", "T016", "T017"]
 dependencies: ["WP02"]
 agent: "Antigravity"
@@ -81,3 +81,4 @@ This relies on the `CompleteJobTool` from WP02 triggers this logic.
 
 - [INIT] Task generated.
 - 2026-01-21T17:28:42Z – Antigravity – shell_pid=4176707 – lane=doing – Started implementation via workflow command
+- 2026-01-21T17:55:12Z – Antigravity – shell_pid=4176707 – lane=for_review – Done (forced): Implemented GuidedWorkflowService/NextJobLogic (as per WP prompt file). Note: tasks.md lists Scheduler tasks (T008-T010) for WP03, but prompt file listed T011-T017 which I implemented.
