@@ -33,3 +33,11 @@
 - [ ] **T017**: Add `required_scope: Optional[str]` to `BaseTool` or tool metadata registry. <!-- id: 16 -->
 - [ ] **T018**: Implement enforcement logic in `ToolExecutor.execute`: verify `business.active_addons` contains the `required_scope` before running the tool. <!-- id: 17 -->
 - [ ] **T019**: Create a `ProServiceTool` (dummy tool) requiring a scope and verify it is blocked for users without the addon in `tests/test_scope_enforcement.py`. <!-- id: 18 -->
+
+## WP05: Usage-Based Billing
+
+- [ ] **T020**: Update `Business` model to include `message_count_current_period` (int) and `billing_cycle_anchor` (datetime). <!-- id: 19 -->
+- [ ] **T021**: Update `BillingService` to support usage tracking: `track_message_sent(business_id)` and logic to report to Stripe Metered Billing (tiered price: 0-1000 free, >1000 $0.02). <!-- id: 20 -->
+- [ ] **T022**: Update `get_billing_status` to formatting to include "Messages: X/1000" and estimated overage cost. <!-- id: 21 -->
+- [ ] **T023**: Connect `WhatsAppService` (or message sender) to `BillingService.track_message_sent` to increment usage on every outbound message. <!-- id: 22 -->
+- [ ] **T024**: Verify usage tracking and cost calculation with new tests in `tests/test_usage_billing.py`. <!-- id: 23 -->

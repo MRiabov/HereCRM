@@ -11,7 +11,7 @@ The planner will not begin until all planning questions have been answered—cap
 
 ## Summary
 
-Implement a conversational billing system integrated with Stripe Subscriptions. Key features include: a new `BILLING` state in the chat bot, capability to view subscription status (seats, active addons), and a flow to upgrade subscriptions (add seats/addons) by generating Stripe Checkout Sessions (or Billing Portal deep links) with automatic proration. Enforce feature access via a "scope" check in the `ToolExecutor`.
+Implement a conversational billing system integrated with Stripe Subscriptions. Key features include: a new `BILLING` state in the chat bot, capability to view subscription status (seats, active addons), and a flow to upgrade subscriptions (add seats/addons). Additionally, implement usage-based billing for messaging: 1000 messages included, $0.02/msg overage. Enforce feature access via a "scope" check in the `ToolExecutor`.
 
 ## Technical Context
 

@@ -83,6 +83,22 @@ As the system administrator, I want specific tools to be restricted to businesse
 
 ---
 
+### User Story 6 - Usage Tracking & Overage Billing (Priority: P1)
+
+As a business owner, I want to know how many messages I've sent and be billed automatically for overages, so that I don't get service interruptions while paying for what I use.
+
+**Why this priority**: Essential for cost recovery (SMS/WhatsApp costs).
+
+**Independent Test**: Can be tested by simulating sending 1001 messages and verifying the billing status shows overage and the estimated cost increases.
+
+**Acceptance Scenarios**:
+
+1. **Given** a business has sent 500 messages this month (under 1000 limit), **When** they check billing status, **Then** it shows "Messages: 500/1000 (Included)".
+2. **Given** a business has sent 1050 messages, **When** they check billing status, **Then** it shows "Messages: 1050 (50 overage). Estimated Overage Cost: $1.00".
+3. **Given** the billing cycle ends, **When** the invoice is generated, **Then** it includes the $1.00 overage charge.
+
+---
+
 ### Edge Cases
 
 - **Payment Failure**: What happens if the user clicks the link but the payment fails or is cancelled? (System should assume no change until successful webhook).
@@ -102,6 +118,10 @@ As the system administrator, I want specific tools to be restricted to businesse
 - **FR-006**: System MUST expose a generic webhook endpoint (or specific Stripe endpoint) to receive `checkout.session.completed` (or similar) events and update the business's entitlements securely.
 - **FR-007**: System MUST allow adding "Seats" independently of "Addons".
 - **FR-008**: System MUST provide a clear confirmation message with the total amount before generating the payment link.
+- **FR-009**: System MUST track the number of outgoing messages per business per billing cycle.
+- **FR-010**: System MUST include the first 1000 messages per month in the base plan at no extra cost.
+- **FR-011**: System MUST charge $0.02 per message for every message exceeding the 1000 message limit.
+- **FR-012**: System MUST display current message usage and estimated overage costs in the billing status response.
 
 ### Key Entities
 
