@@ -134,4 +134,4 @@ cython_debug/
 *.pyc
 crm.db
 # Prevent worktree-local kitty-specs/ (status managed in main repo)
-kitty-specs/
+.worktrees/*/kitty-specs/
