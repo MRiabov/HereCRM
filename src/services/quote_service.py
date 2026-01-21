@@ -4,8 +4,7 @@ from typing import List, Dict, Optional
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from src.models import Quote, QuoteLineItem, QuoteStatus, Job, LineItem
-from datetime import datetime
+from src.models import Quote, QuoteLineItem, QuoteStatus, Job, LineItem, Request
 
 logger = logging.getLogger(__name__)
 
@@ -139,3 +138,35 @@ class QuoteService:
         quote.status = QuoteStatus.SENT
         await self.session.commit()
         await self.session.refresh(quote)
+
+    async def create_from_request(
+        self, request_id: int, customer_id: int, items: Optional[List[Dict]] = None
+    ) -> Quote:
+        """
+        Promotes a customer request to a quote.
+        """
+        stmt = select(Request).where(Request.id == request_id)
+        result = await self.session.execute(stmt)
+        request = result.scalars().first()
+        
+        if not request:
+            raise ValueError(f"Request {request_id} not found")
+
+        # Reuse create_quote logic if items provided
+        if items:
+            quote = await self.create_quote(customer_id, request.business_id, items)
+            # Add a reference to the source request in description if possible
+            # (Quote model doesn't have a long description, but QuoteLineItem has)
+        else:
+            # Create a draft quote with a single descriptive item from the request content
+            quote = await self.create_quote(
+                customer_id, 
+                request.business_id, 
+                [{"description": f"Request: {request.content}", "quantity": 1, "unit_price": 0.0}]
+            )
+
+        # Update request status instead of deleting (or follow Job conversion pattern)
+        # CRMService.convert_request deletes the request, so we should probably follow that.
+        # But we'll let CRMService handle the deletion to match the 'schedule' action pattern.
+        
+        return quote

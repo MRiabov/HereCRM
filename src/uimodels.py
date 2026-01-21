@@ -218,7 +218,7 @@ class ConvertRequestTool(BaseModel):
         ..., description="Name, phone number or content to identifying the entity"
     )
     action: str = Field(
-        ..., description="Action to perform: 'schedule', 'complete', or 'log'"
+        ..., description="Action to perform: 'schedule', 'complete', 'log', or 'quote'"
     )
     time: Optional[str] = Field(
         None, description="Optional time for scheduling or reminders"

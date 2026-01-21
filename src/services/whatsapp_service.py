@@ -36,6 +36,8 @@ from src.uimodels import (
     ExitDataManagementTool,
     GetBillingStatusTool,
     RequestUpgradeTool,
+    CreateQuoteInput,
+    SendStatusTool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
 
@@ -343,10 +345,11 @@ class WhatsappService:
             "HelpTool": HelpTool,
             "GetPipelineTool": GetPipelineTool,
             "UpdateCustomerStageTool": UpdateCustomerStageTool,
-            "UpdateCustomerStageTool": UpdateCustomerStageTool,
             "SendInvoiceTool": SendInvoiceTool,
             "GetBillingStatusTool": GetBillingStatusTool,
             "RequestUpgradeTool": RequestUpgradeTool,
+            "CreateQuoteTool": CreateQuoteInput,
+            "SendStatusTool": SendStatusTool,
         }
 
         tool_cls = model_map.get(tool_name)
@@ -623,6 +626,16 @@ class WhatsappService:
         if isinstance(tool_call, RequestUpgradeTool):
             item = tool_call.item_id or tool_call.item_type
             return f"request upgrade for {tool_call.quantity} x {item}"
+
+        if isinstance(tool_call, ConvertRequestTool):
+            action_map = {
+                "schedule": "Schedule",
+                "complete": "Complete",
+                "log": "Log",
+                "quote": "Quote"
+            }
+            act = action_map.get(tool_call.action, tool_call.action).capitalize()
+            return f"Convert to {act}: {tool_call.query}"
 
         if hasattr(tool_call, "description") and tool_call.description:
             return f"{name}: {tool_call.description}"
