@@ -143,26 +143,35 @@ class ServiceRepository(BaseRepository[Service]):
              # Create transient Service objects from cached dictionaries
              return [Service(**data) for data in cached_data]
 
+        # Capture version before query to handle race conditions
+        version = cache.get_version(business_id)
         services = await self.get_all(business_id)
 
-        # Serialize to dicts for caching
+        # Serialize to dicts for caching using SQLAlchemy inspection for robustness
+        # We assume services are loaded (which get_all ensures)
         to_cache = []
         for s in services:
-             data = {
-                 'id': s.id,
-                 'business_id': s.business_id,
-                 'name': s.name,
-                 'description': s.description,
-                 'default_price': s.default_price,
-                 'created_at': s.created_at,
-                 'estimated_duration': s.estimated_duration
-             }
+             # Only cache columns, not relationships
+             data = {c.name: getattr(s, c.name) for c in s.__table__.columns}
              to_cache.append(data)
 
-        cache.set(business_id, to_cache)
+        cache.set(business_id, to_cache, version)
         return services
 
     async def get_by_name(self, name: str, business_id: int) -> Optional[Service]:
+        # Optimization: Check cache first
+        # This avoids a DB query if we already have the full catalog in memory
+        cache = ServiceCatalogCache.get_instance()
+        cached_data = cache.get(business_id)
+
+        if cached_data is not None:
+            name_lower = name.lower()
+            for data in cached_data:
+                # Basic ilike check in python
+                if data.get('name', '').lower() == name_lower:
+                    return Service(**data)
+            return None
+
         query = select(Service).where(
             Service.name.ilike(name), Service.business_id == business_id
         )

@@ -101,6 +101,10 @@ class CRMService:
             return f"Could not find request matching '{query}'", None
 
         req = requests[0]
+        # Capture request state early to avoid expiration issues after commit/delete
+        req_id = req.id
+        req_content = req.content
+        old_status = req.status
 
         if action == "schedule":
             # Promotion logic: Request -> Job
@@ -130,7 +134,7 @@ class CRMService:
 
             job = await self.create_job(
                 customer_id=customer_id,
-                description=f"Converted from request: {req.content}. Time: {time or 'N/A'}",
+                description=f"Converted from request: {req_content}. Time: {time or 'N/A'}",
                 status="scheduled" if time else "pending",
                 scheduled_at=scheduled_at,
             )
@@ -142,33 +146,27 @@ class CRMService:
                 "action": "promote",
                 "entity": "job",
                 "id": job.id,
-                "old_request_content": req.content,
+                "old_request_content": req_content,
                 "description": job.description,
             }
 
         elif action == "complete":
-            old_status = req.status
-            # Cache content before commit expires the object
-            content_preview = req.content[:30]
             req.status = "completed"
             await self.session.commit()
-            return f"✔ Request marked as completed: {content_preview}", {
+            return f"✔ Request marked as completed: {req_content[:30]}", {
                 "action": "update",
                 "entity": "request",
-                "id": req.id,
+                "id": req_id,
                 "old_status": old_status,
             }
 
         elif action == "log":
-            old_status = req.status
-            # Cache content before commit expires the object
-            content_preview = req.content[:30]
             req.status = "logged"
             await self.session.commit()
-            return f"✔ Request logged: {content_preview}", {
+            return f"✔ Request logged: {req_content[:30]}", {
                 "action": "update",
                 "entity": "request",
-                "id": req.id,
+                "id": req_id,
                 "old_status": old_status,
             }
 
@@ -191,22 +189,20 @@ class CRMService:
                 customer_id = customers[0].id
 
             quote = await self.quote_service.create_from_request(
-                request_id=req.id,
+                request_id=req_id,
                 customer_id=customer_id
             )
             
             # Deletion logic matches 'schedule' action
-            # Cache content before delete/commit
-            content_preview = req.content
             await self.session.delete(req)
             await self.session.commit()
             await self.session.refresh(quote)
 
-            return f"✔ Converted Request to Quote: {content_preview[:50]}", {
+            return f"✔ Converted Request to Quote: {req_content[:50]}", {
                 "action": "promote",
                 "entity": "quote",
                 "id": quote.id,
-                "old_request_content": content_preview,
+                "old_request_content": req_content,
                 "customer_name": customers[0].name if customers else "General Customer",
             }
 
