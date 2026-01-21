@@ -21,11 +21,11 @@
 - **Goal**: Implement the routing logic core, including ORS integration and Mock fallback.
 - **Priority**: High
 - **Subtasks**:
-  - [ ] T005: Define `RoutingServiceProvider` interface
-  - [ ] T006: Implement `MockRoutingService`
-  - [ ] T007: Implement `OpenRouteServiceAdapter` request builder
-  - [ ] T008: Implement `OpenRouteServiceAdapter` response parser
-  - [ ] T009: Integration test for Routing Service
+  - [x] T005: Define `RoutingServiceProvider` interface
+  - [x] T006: Implement `MockRoutingService`
+  - [x] T007: Implement `OpenRouteServiceAdapter` request builder
+  - [x] T008: Implement `OpenRouteServiceAdapter` response parser
+  - [x] T009: Integration test for Routing Service
 - **Dependencies**: WP01
 - **Prompt Size**: ~450 lines
 
