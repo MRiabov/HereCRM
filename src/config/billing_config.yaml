@@ -6,6 +6,12 @@ products:
     unit_amount_decimal: 15.00
     currency: "eur"
 
+  messaging:
+    name: "Usage-Based Messaging"
+    description: "1000 free, then €0.02 per message"
+    price_id: "price_msg_usage_placeholder"
+
+
 addons:
   - id: "employee_management"
     name: "Employee Management"
@@ -20,3 +26,4 @@ addons:
     price_id: "price_456_placeholder"
     scope: "campaigns"
     price_display: "€25/mo"
+

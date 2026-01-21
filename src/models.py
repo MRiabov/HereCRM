@@ -53,6 +53,10 @@ class Business(Base):
     seat_limit: Mapped[int] = mapped_column(Integer, default=1)
     active_addons: Mapped[List[str]] = mapped_column(JSON, default=lambda: ["manage_employees", "campaigns"])
 
+    # T020 - Usage-Based Billing
+    message_count_current_period: Mapped[int] = mapped_column(Integer, default=0)
+    billing_cycle_anchor: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
     # Relationships
     users: Mapped[List["User"]] = relationship(back_populates="business")
     customers: Mapped[List["Customer"]] = relationship(back_populates="business")

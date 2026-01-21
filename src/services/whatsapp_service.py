@@ -13,7 +13,8 @@ from src.llm_client import LLMParser
 from src.tool_executor import ToolExecutor
 from src.services.template_service import TemplateService
 from src.services.data_management import DataManagementService
-from src.services.twilio_service import TwilioService
+from src.services.billing_service import BillingService
+
 from src.config.loader import get_channel_config_loader
 from src.database import AsyncSessionLocal
 import asyncio
@@ -47,10 +48,12 @@ class WhatsappService:
         session: AsyncSession,
         parser: LLMParser,
         template_service: TemplateService,
+        billing_service: Optional[BillingService] = None,
     ):
         self.session = session
         self.parser = parser
         self.template_service = template_service
+        self.billing_service = billing_service or BillingService(session)
         self.logger = logging.getLogger(__name__)
         self.state_repo = ConversationStateRepository(session)
         self.user_repo = UserRepository(session)
@@ -149,6 +152,11 @@ class WhatsappService:
             log_metadata=self._current_metadata if self._current_metadata else None
         )
         self.session.add(assistant_msg)
+        
+        # T023 - Usage-Based Billing: Count assistant reply
+        if self.billing_service:
+            await self.billing_service.track_message_sent(user.business_id)
+
         
         # Dispatch SMS if channel is SMS or user identity suggests SMS
         # In multi-channel mode, we should respect the active_channel if it's set
@@ -343,7 +351,6 @@ class WhatsappService:
             "HelpTool": HelpTool,
             "GetPipelineTool": GetPipelineTool,
             "UpdateCustomerStageTool": UpdateCustomerStageTool,
-            "UpdateCustomerStageTool": UpdateCustomerStageTool,
             "SendInvoiceTool": SendInvoiceTool,
             "GetBillingStatusTool": GetBillingStatusTool,
             "RequestUpgradeTool": RequestUpgradeTool,
@@ -510,7 +517,6 @@ class WhatsappService:
             "ConvertRequestTool": "Convert",
             "HelpTool": "Help",
             "GetPipelineTool": "Pipeline",
-            "UpdateCustomerStageTool": "Pipeline Stage Update",
             "UpdateCustomerStageTool": "Pipeline Stage Update",
             "SendInvoiceTool": "Send Invoice",
             "GetBillingStatusTool": "Billing Status",
