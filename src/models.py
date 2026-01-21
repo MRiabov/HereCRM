@@ -82,6 +82,11 @@ class User(Base):
         JSON, default=lambda: {"confirm_by_default": False}
     )
     timezone: Mapped[str] = mapped_column(String, default="UTC")
+    
+    # Location tracking fields
+    current_latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    current_longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    location_updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="users")
