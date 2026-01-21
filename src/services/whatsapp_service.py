@@ -38,6 +38,8 @@ from src.uimodels import (
     RequestUpgradeTool,
     CreateQuoteInput,
     SendStatusTool,
+    LocateEmployeeTool,
+    CheckETATool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
 
@@ -350,6 +352,8 @@ class WhatsappService:
             "RequestUpgradeTool": RequestUpgradeTool,
             "CreateQuoteTool": CreateQuoteInput,
             "SendStatusTool": SendStatusTool,
+            "LocateEmployeeTool": LocateEmployeeTool,
+            "CheckETATool": CheckETATool,
         }
 
         tool_cls = model_map.get(tool_name)
@@ -518,6 +522,8 @@ class WhatsappService:
             "SendInvoiceTool": "Send Invoice",
             "GetBillingStatusTool": "Billing Status",
             "RequestUpgradeTool": "Request Upgrade",
+            "LocateEmployeeTool": "Locate",
+            "CheckETATool": "ETA",
         }
         model_name = tool_call.__class__.__name__
         name = friendly_names.get(model_name, model_name.replace("Tool", ""))

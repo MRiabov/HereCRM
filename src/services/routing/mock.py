@@ -63,3 +63,12 @@ class MockRoutingService(RoutingServiceProvider):
             math.sin(dlon / 2) * math.sin(dlon / 2)
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
         return R * c
+
+    def get_eta_minutes(self, start_lat: float, start_lng: float, end_lat: float, end_lng: float) -> Optional[int]:
+        """
+        Mock ETA: haversine distance / 40km/h average speed.
+        """
+        dist = self._haversine(start_lat, start_lng, end_lat, end_lng)
+        # 40 km/h = 40/60 km/min = 0.66 km/min
+        minutes = dist / 0.66
+        return math.ceil(minutes / 5) * 5

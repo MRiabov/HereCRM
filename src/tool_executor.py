@@ -1,7 +1,7 @@
 from typing import Union, Optional, Tuple, Dict, Any
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import Customer, Request, Business, Service, Job
+from src.models import Customer, Request, Business, Service, Job, UserRole
 from src.events import event_bus
 from src.repositories import (
     JobRepository,
@@ -91,6 +91,13 @@ class ToolExecutor:
         self.dashboard_service = DashboardService(session)
         self.assignment_service = AssignmentService(session, self.business_id)
         self.quote_service = QuoteService(session)
+        self._routing_service = None
+
+    def _get_routing_service(self) -> OpenRouteServiceAdapter:
+        if not self._routing_service:
+            # In a real app we might inject this or check settings for Mock vs ORS
+            self._routing_service = OpenRouteServiceAdapter(api_key=settings.openrouteservice_api_key)
+        return self._routing_service
 
     async def _get_user_defaults(self) -> Tuple[Optional[str], Optional[str]]:
         user = await self.user_repo.get_by_id(self.user_id)
@@ -1079,6 +1086,11 @@ class ToolExecutor:
         customer_phone = self.user_phone # Default caller
         
         if tool.customer_query:
+            # Feedback 2: Role verification
+            user = await self.user_repo.get_by_id(self.user_id)
+            if not user or user.role != UserRole.OWNER:
+                 return "Error: Only business owners can query ETA for other customers.", None
+            
             # Admin asking for customer
             customers = await self.customer_repo.search(tool.customer_query, self.business_id)
             if not customers:
@@ -1137,7 +1149,8 @@ class ToolExecutor:
              return "Job location is not geocoded. Cannot calculate ETA.", None
              
         # Use RoutingService
-        rs = OpenRouteServiceAdapter(api_key=settings.openrouteservice_api_key)
+        # Feedback 3: Use the provider pattern/method instead of direct instantiation
+        rs = self._get_routing_service()
         eta = rs.get_eta_minutes(lat, lng, job_lat, job_lng)
         
         if eta is None:
