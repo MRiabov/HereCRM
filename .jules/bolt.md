@@ -1,0 +1,3 @@
+## 2026-01-22 - [ORM Caching Pitfalls]
+**Learning:** Caching SQLAlchemy model instances (ORM objects) globally leads to "Shared Mutable State" and "DetachedInstanceError". When `session.expunge()` is used, objects become detached, breaking lazy loading and change tracking for consumers expecting attached objects.
+**Action:** Always serialize ORM objects to plain dictionaries (DTOs) before caching. When retrieving from cache, reconstruct "transient" instances (e.g., `Service(**data)`) or return the dicts directly. This ensures each consumer gets a fresh, isolated copy of the data, preventing side effects and session binding issues.

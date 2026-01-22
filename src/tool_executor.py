@@ -69,7 +69,6 @@ from src.uimodels import (
     SyncQuickBooksTool,
 )
 
-from src.services.accounting.accounting_tools import AccountingToolsHandler
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.quote_tools import CreateQuoteTool
 from src.tools.routing_tools import AutorouteToolExecutor
@@ -788,17 +787,23 @@ class ToolExecutor:
 
         old_data = {"name": target.name, "default_price": target.default_price}
         
+        # Use repo.update which handles attached/detached objects correctly via ID
+        updates = {}
         if tool.new_name:
-            target.name = tool.new_name
+            updates["name"] = tool.new_name
         if tool.new_price is not None:
-             target.default_price = tool.new_price
-        
+            updates["default_price"] = tool.new_price
+
+        updated_service = await self.service_repo.update(target.id, self.business_id, **updates)
+        if not updated_service:
+            return f"Error updating service '{target.name}'", None
+
         await self.session.flush()
 
-        return f"Updated service '{target.name}' – Price: {target.default_price:.2f}", {
+        return f"Updated service '{updated_service.name}' – Price: {updated_service.default_price:.2f}", {
             "action": "update",
             "entity": "service",
-            "id": target.id,
+            "id": updated_service.id,
             "old_data": old_data,
         }
 
@@ -822,7 +827,8 @@ class ToolExecutor:
         if not target:
             return f"Could not find service matching '{tool.name}' to delete.", None
 
-        await self.session.delete(target)
+        # Use repo.delete to handle deletion by ID (safe for detached objects)
+        await self.service_repo.delete(target.id, self.business_id)
         await self.session.flush()
 
         return self.template_service.render("service_deleted", id=target.name), {
