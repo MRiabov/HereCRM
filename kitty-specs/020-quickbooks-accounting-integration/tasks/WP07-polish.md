@@ -1,7 +1,7 @@
 ---
 work_package_id: WP07
 title: Documentation & Final Polish
-lane: "doing"
+lane: "planned"
 dependencies: []
 subtasks:
 - T029
@@ -9,6 +9,8 @@ subtasks:
 - T031
 agent: "Antigravity"
 shell_pid: "164053"
+review_status: "has_feedback"
+reviewed_by: "MRiabov"
 ---
 
 ## Objective
@@ -72,3 +74,4 @@ The feature is coded, but if the "Product Assistant" doesn't know about it, user
 - 2026-01-22T10:30:19Z – gemini-agent – shell_pid=147632 – lane=doing – Started implementation via workflow command
 - 2026-01-22T11:09:17Z – gemini-agent – shell_pid=147632 – lane=for_review – Implemented QuickBooks OAuth flow, tools, and UI integration. Fixed RBACService initialization bug causing test failures. Verified integration tests.
 - 2026-01-22T11:16:18Z – Antigravity – shell_pid=164053 – lane=doing – Started review via workflow command
+- 2026-01-22T11:24:35Z – Antigravity – shell_pid=164053 – lane=planned – Moved to planned
