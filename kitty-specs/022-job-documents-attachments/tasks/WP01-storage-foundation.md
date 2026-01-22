@@ -1,9 +1,11 @@
 ---
 work_package_id: "WP01"
 title: "Storage Foundation & Models"
-lane: "planned"
+lane: "doing"
 dependencies: []
 subtasks: ["T001", "T002", "T003", "T004"]
+agent: "Antigravity"
+shell_pid: "365214"
 ---
 # Work Package 01: Storage Foundation & Models
 
@@ -102,3 +104,7 @@ This is the foundational work package for Feature 022. We need to store user-upl
 **Validation**:
 * Tests must pass.
 * Migration must be valid.
+
+## Activity Log
+
+- 2026-01-22T21:01:21Z – Antigravity – shell_pid=365214 – lane=doing – Started implementation via workflow command
