@@ -60,7 +60,7 @@
   - [x] T020: Implement batch processing, error handling, and `SyncLog` recording
   - [x] T021: Configure APScheduler job for hourly sync execution
   - [x] T022: Implement manual sync trigger logic
-  - [ ] T023: Add integration tests for full sync cycle
+  - [x] T023: Add integration tests for full sync cycle
 
 ### WP06: User Interface (Accounting State)
 
