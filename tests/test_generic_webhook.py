@@ -3,10 +3,7 @@ from httpx import AsyncClient, ASGITransport
 from src.main import app
 from src.database import get_db, Base
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from src.uimodels import AddJobTool
 from unittest.mock import AsyncMock, patch
-import json
-import os
 
 # In-memory DB for tests
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"

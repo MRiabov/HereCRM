@@ -1,9 +1,8 @@
 import pytest
-import pytest_asyncio
 from unittest.mock import MagicMock, AsyncMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.services.whatsapp_service import WhatsappService
-from src.models import User, ConversationState, ConversationStatus, Business
+from src.models import User, ConversationState, ConversationStatus
 from src.uimodels import ExportQueryTool, ExitDataManagementTool
 from src.services.template_service import TemplateService
 

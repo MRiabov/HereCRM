@@ -1,9 +1,8 @@
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.services.data_management import DataManagementService
 from src.models import Business, Customer, Job, PipelineStage
-from datetime import datetime
 
 @pytest.mark.asyncio
 async def test_export_customers_csv(async_session: AsyncSession):

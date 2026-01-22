@@ -1,5 +1,4 @@
 from pydantic.v1 import BaseModel, Field
-from typing import Optional
 
 class SendInvoiceTool(BaseModel):
     """Send an invoice to a customer.

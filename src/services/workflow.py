@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.repositories import BusinessRepository
 from src.models import InvoicingWorkflow, QuotingWorkflow, PaymentTiming
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 class WorkflowSettingsService:
     def __init__(self, session: AsyncSession):

@@ -1,6 +1,5 @@
 import os
 import pytest
-import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from src.models import Base

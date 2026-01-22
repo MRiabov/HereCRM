@@ -1,5 +1,5 @@
 import pytest
-from datetime import date, datetime
+from datetime import date
 from unittest.mock import AsyncMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import User, Job, Customer, Business

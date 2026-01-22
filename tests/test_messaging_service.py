@@ -1,6 +1,5 @@
 import pytest
 import asyncio
-from datetime import datetime, timezone
 from unittest.mock import patch
 
 from src.services.messaging_service import MessagingService

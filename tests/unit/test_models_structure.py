@@ -5,9 +5,8 @@ from datetime import datetime, timezone
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.models import Base, Business, Customer, Service, Invoice, Payment, Quote, SyncLog, QuickBooksSyncStatus
-from src.credentials_models import CredentialsBase, QuickBooksCredential, PYSQLCIPHER_AVAILABLE
-from src.database import get_credentials_db
+from src.models import Base, Business, Customer, Service, SyncLog, QuickBooksSyncStatus
+from src.credentials_models import QuickBooksCredential, PYSQLCIPHER_AVAILABLE
 
 
 @pytest.fixture
@@ -39,7 +38,7 @@ def temp_credentials_db():
     os.environ["CREDENTIALS_DB_KEY"] = test_key
     
     try:
-        from src.credentials_models import credentials_engine, CredentialsBase
+        from src.credentials_models import CredentialsBase
         # Use the temp path for testing
         from sqlalchemy import create_engine
         from sqlalchemy.pool import StaticPool
@@ -268,7 +267,7 @@ class TestDatabaseConnection:
     def test_credentials_db_file_creation(self):
         """Test that credentials database setup handles missing dependencies gracefully."""
         # This test verifies the database setup in credentials_models.py
-        from src.credentials_models import credentials_engine, CredentialsBase, PYSQLCIPHER_AVAILABLE
+        from src.credentials_models import credentials_engine, PYSQLCIPHER_AVAILABLE
         
         if PYSQLCIPHER_AVAILABLE:
             # The database should be created at module import time

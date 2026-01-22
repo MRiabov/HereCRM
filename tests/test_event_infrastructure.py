@@ -1,5 +1,4 @@
 import pytest
-import asyncio
 from src.models import PipelineStage, Customer
 from src.events import EventBus, event_bus
 

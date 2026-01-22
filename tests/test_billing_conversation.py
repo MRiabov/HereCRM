@@ -2,8 +2,8 @@ import pytest
 import unittest
 from unittest.mock import AsyncMock, MagicMock
 from src.services.whatsapp_service import WhatsappService, ConversationStatus
-from src.models import User, Business, ConversationState
-from src.uimodels import GetBillingStatusTool, RequestUpgradeTool
+from src.models import User, ConversationState
+from src.uimodels import GetBillingStatusTool
 
 @pytest.fixture
 def mock_session():

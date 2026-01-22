@@ -1,8 +1,7 @@
 from datetime import date, datetime, timezone
-from typing import List, Dict, Any, Optional
+from typing import List, Dict
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select
 
 from src.models import Job, User, UserRole
 

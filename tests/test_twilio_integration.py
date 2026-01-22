@@ -5,7 +5,6 @@ from src.services.messaging_service import MessagingService
 from src.models import User, ConversationState, ConversationStatus
 from src.services.template_service import TemplateService
 from src.llm_client import LLMParser
-from src.config import settings
 
 @pytest.mark.asyncio
 async def test_whatsapp_service_sends_via_twilio():
@@ -78,8 +77,6 @@ async def test_whatsapp_service_sends_via_twilio():
                     user_id=1,
                     channel="sms"
                 )
-
-            print(f"DEBUG: Response was: '{response}'")
 
             # Assertions
             assert response == "This is a reply"

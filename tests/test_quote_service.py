@@ -2,7 +2,6 @@ import pytest
 from src.services.quote_service import QuoteService
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from src.services.quote_service import QuoteService
 from src.models import QuoteStatus, Business, Customer, Job
 
 @pytest.mark.asyncio

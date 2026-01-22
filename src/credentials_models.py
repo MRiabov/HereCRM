@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from typing import Optional
 from sqlalchemy import String, Text, DateTime, Integer, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.pool import StaticPool

@@ -1,6 +1,5 @@
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from src.tools.quote_tools import CreateQuoteTool
+from unittest.mock import AsyncMock, patch
 from src.uimodels import CreateQuoteInput, QuoteLineItemInput
 from src.services.quote_service import QuoteService
 from src.models import Business, Customer, QuoteStatus, User

@@ -1,5 +1,4 @@
 import pytest
-import stripe
 from unittest.mock import MagicMock, AsyncMock, patch
 from src.services.billing_service import BillingService
 
