@@ -57,7 +57,7 @@
 - **Status**: Todo
 - **Subtasks**:
   - [x] T019: Implement `QuickBooksSyncManager` to orchestrate entity sync order
-  - [ ] T020: Implement batch processing, error handling, and `SyncLog` recording
+  - [x] T020: Implement batch processing, error handling, and `SyncLog` recording
   - [ ] T021: Configure APScheduler job for hourly sync execution
   - [ ] T022: Implement manual sync trigger logic
   - [ ] T023: Add integration tests for full sync cycle
