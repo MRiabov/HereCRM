@@ -12,7 +12,7 @@
 - **Subtasks**:
   - [x] T001: Add sync status fields to Business, Customer, Service, Invoice, Payment models
   - [x] T002: Create SyncLog model and QuickBooksCredential model (for encrypted DB)
-  - [ ] T003: Create Alembic migration script for all schema changes
+  - [x] T003: Create Alembic migration script for all schema changes
   - [ ] T004: Configure `credentials_db` engine and session factory in `database.py`
   - [ ] T005: Add tests for database models and encrypted DB access logic
 
