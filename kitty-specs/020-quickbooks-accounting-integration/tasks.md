@@ -80,6 +80,6 @@
 - **Dependencies**: WP06
 - **Status**: Todo
 - **Subtasks**:
-  - [ ] T029: Update `src/assets/manual.md` with QuickBooks integration guides
+  - [x] T029: Update `src/assets/manual.md` with QuickBooks integration guides
   - [ ] T030: Update `src/assets/messages.yaml` with all new response templates
   - [ ] T031: Perform final end-to-end verification and checklist run
