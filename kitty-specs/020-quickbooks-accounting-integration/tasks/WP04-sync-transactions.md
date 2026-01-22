@@ -1,7 +1,7 @@
 ---
 work_package_id: WP04
 title: Sync Logic - Invoices & Payments
-lane: "for_review"
+lane: "doing"
 dependencies: []
 subtasks:
 - T015
@@ -9,7 +9,7 @@ subtasks:
 - T017
 - T018
 agent: "Gemini"
-shell_pid: "107184"
+shell_pid: "138895"
 ---
 
 ## Objective
@@ -89,3 +89,4 @@ These entities depend on `quickbooks_id`s from the entities synced in WP03. If a
 
 - 2026-01-22T09:59:29Z – Gemini – shell_pid=107184 – lane=doing – Started implementation via workflow command
 - 2026-01-22T10:12:24Z – Gemini – shell_pid=107184 – lane=for_review – Ready for review: Implemented InvoiceSyncer and PaymentSyncer with robust dependency handling and comprehensive unit tests.
+- 2026-01-22T10:24:34Z – Gemini – shell_pid=138895 – lane=doing – Started review via workflow command
