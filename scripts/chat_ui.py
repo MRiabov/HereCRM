@@ -17,8 +17,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 try:
     from src.config import settings
     DEFAULT_SECRET = settings.whatsapp_app_secret
+    ADMIN_KEY = settings.secret_key
 except Exception:
     DEFAULT_SECRET = os.getenv("WHATSAPP_APP_SECRET", "dummy_secret")
+    ADMIN_KEY = os.getenv("SECRET_KEY", "dev_secret_key_change_me_in_production")
 
 st.set_page_config(page_title="HereCRM - Text-based CRM", page_icon="src/assets/favicon.webp")
 
@@ -91,7 +93,8 @@ with st.sidebar:
 
 def load_history():
     try:
-        response = httpx.get(f"{api_url}/history/{phone_number}")
+        headers = {"X-Admin-Key": ADMIN_KEY}
+        response = httpx.get(f"{api_url}/history/{phone_number}", headers=headers)
         if response.status_code == 200:
             st.session_state.messages = response.json()
         else:
