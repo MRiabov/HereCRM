@@ -30,10 +30,10 @@
 **Priority**: High
 **Tests**: `tests/unit/test_wage_calculator.py` coverage for all strategies.
 
-- [ ] **T006**: Define `WageStrategy` abstract base class.
-- [ ] **T007**: Implement `CommissionStrategy`, `HourlyJobStrategy`, `HourlyShiftStrategy`, `FixedDailyStrategy`.
-- [ ] **T008**: Implement `WageCalculator` service that accepts a strategy and context (time/job) to return amount.
-- [ ] **T009**: Write comprehensive unit tests for all mathematical scenarios (rounding, zero time, etc.).
+- [x] T006: Define `WageStrategy` abstract base class.
+- [x] T007: Implement `CommissionStrategy`, `HourlyJobStrategy`, `HourlyShiftStrategy`, `FixedDailyStrategy`.
+- [x] T008: Implement `WageCalculator` service that accepts a strategy and context (time/job) to return amount.
+- [x] T009: Write comprehensive unit tests for all mathematical scenarios (rounding, zero time, etc.).
 
 **Implementation**:
 
