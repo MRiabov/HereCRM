@@ -1,7 +1,7 @@
 ---
 work_package_id: WP06
 title: User Interface (Accounting State)
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks:
 - T024
@@ -9,6 +9,8 @@ subtasks:
 - T026
 - T027
 - T028
+agent: "Cascade"
+shell_pid: "41484"
 ---
 
 ## Objective
@@ -85,3 +87,7 @@ Users interact via chat. They can enter "Accounting Mode" (state), and then say 
 ## Verification
 
 - Run `pytest tests/integration/test_accounting_flow.py`.
+
+## Activity Log
+
+- 2026-01-22T08:03:10Z – Cascade – shell_pid=41484 – lane=doing – Started implementation via workflow command
