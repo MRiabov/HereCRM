@@ -38,6 +38,37 @@ class QuoteStatus(str, enum.Enum):
     EXPIRED = "expired"
 
 
+class QuickBooksSyncStatus(str, enum.Enum):
+    PENDING = "pending"
+    SYNCED = "synced"
+    FAILED = "failed"
+    SKIPPED = "skipped"
+
+
+class InvoicingWorkflow(str, enum.Enum):
+    NEVER = "never"
+    MANUAL = "manual"
+    AUTOMATIC = "automatic"
+
+
+class QuotingWorkflow(str, enum.Enum):
+    NEVER = "never"
+    MANUAL = "manual"
+    AUTOMATIC = "automatic"
+
+
+class PaymentTiming(str, enum.Enum):
+    ALWAYS_PAID_ON_SPOT = "always_paid_on_spot"
+    USUALLY_PAID_ON_SPOT = "usually_paid_on_spot"
+    PAID_LATER = "paid_later"
+
+
+class QuickBooksSyncStatus(str, enum.Enum):
+    PENDING = "pending"
+    SYNCED = "synced"
+    FAILED = "failed"
+
+
 class Business(Base):
     __tablename__ = "businesses"
 
@@ -53,6 +84,18 @@ class Business(Base):
     subscription_status: Mapped[str] = mapped_column(String, default="free")
     seat_limit: Mapped[int] = mapped_column(Integer, default=1)
     active_addons: Mapped[List[str]] = mapped_column(JSON, default=lambda: ["manage_employees", "campaigns"])
+    
+    # QuickBooks connection metadata (non-sensitive)
+    quickbooks_connected: Mapped[bool] = mapped_column(Boolean, default=False)
+    quickbooks_last_sync: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    # Workflow Settings
+    workflow_invoicing: Mapped[Optional[InvoicingWorkflow]] = mapped_column(SAEnum(InvoicingWorkflow), nullable=True)
+    workflow_quoting: Mapped[Optional[QuotingWorkflow]] = mapped_column(SAEnum(QuotingWorkflow), nullable=True)
+    workflow_payment_timing: Mapped[Optional[PaymentTiming]] = mapped_column(SAEnum(PaymentTiming), nullable=True)
+    workflow_tax_inclusive: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    workflow_include_payment_terms: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    workflow_enable_reminders: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
 
     # Relationships
     users: Mapped[List["User"]] = relationship(back_populates="business")
@@ -63,6 +106,7 @@ class Business(Base):
     import_jobs: Mapped[List["ImportJob"]] = relationship(back_populates="business")
     export_requests: Mapped[List["ExportRequest"]] = relationship(back_populates="business")
     quotes: Mapped[List["Quote"]] = relationship(back_populates="business")
+    sync_logs: Mapped[List["SyncLog"]] = relationship(back_populates="business")
 
 
 
@@ -113,6 +157,12 @@ class Service(Base):
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="services")
     line_items: Mapped[List["LineItem"]] = relationship(back_populates="service")
+    
+    # QuickBooks sync tracking
+    quickbooks_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+    quickbooks_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    quickbooks_sync_status: Mapped[Optional[QuickBooksSyncStatus]] = mapped_column(SAEnum(QuickBooksSyncStatus), nullable=True, default=QuickBooksSyncStatus.PENDING)
+    quickbooks_sync_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     @validates("default_price")
     def validate_price(self, key, value):
@@ -170,6 +220,12 @@ class Customer(Base):
     jobs: Mapped[List["Job"]] = relationship(back_populates="customer")
     quotes: Mapped[List["Quote"]] = relationship(back_populates="customer")
     availability: Mapped[List["CustomerAvailability"]] = relationship(back_populates="customer", cascade="all, delete-orphan")
+    
+    # QuickBooks sync tracking
+    quickbooks_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+    quickbooks_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    quickbooks_sync_status: Mapped[Optional[QuickBooksSyncStatus]] = mapped_column(SAEnum(QuickBooksSyncStatus), nullable=True, default=QuickBooksSyncStatus.PENDING)
+    quickbooks_sync_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
 class CustomerAvailability(Base):
@@ -270,6 +326,12 @@ class Invoice(Base):
 
     # Relationships
     job: Mapped["Job"] = relationship(back_populates="invoices")
+    
+    # QuickBooks sync tracking
+    quickbooks_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+    quickbooks_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    quickbooks_sync_status: Mapped[Optional[QuickBooksSyncStatus]] = mapped_column(SAEnum(QuickBooksSyncStatus), nullable=True, default=QuickBooksSyncStatus.PENDING)
+    quickbooks_sync_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
 class MessageRole(str, enum.Enum):
@@ -345,6 +407,12 @@ class Quote(Base):
         back_populates="quote", cascade="all, delete-orphan"
     )
     job: Mapped[Optional["Job"]] = relationship()
+    
+    # QuickBooks sync tracking
+    quickbooks_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+    quickbooks_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    quickbooks_sync_status: Mapped[Optional[QuickBooksSyncStatus]] = mapped_column(SAEnum(QuickBooksSyncStatus), nullable=True, default=QuickBooksSyncStatus.PENDING)
+    quickbooks_sync_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
 class QuoteLineItem(Base):
@@ -409,4 +477,62 @@ class MessageLog(Base):
     )
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+
+class Payment(Base):
+    __tablename__ = "payments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    invoice_id: Mapped[int] = mapped_column(ForeignKey("invoices.id"), index=True)
+    amount: Mapped[float] = mapped_column(Float)
+    payment_date: Mapped[datetime] = mapped_column(DateTime)
+    payment_method: Mapped[str] = mapped_column(String)  # 'cash', 'card', 'bank_transfer', etc.
+    status: Mapped[str] = mapped_column(String, default="completed")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+
+    # Relationships
+    invoice: Mapped["Invoice"] = relationship()
+    
+    # QuickBooks sync tracking
+    quickbooks_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+    quickbooks_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    quickbooks_sync_status: Mapped[Optional[QuickBooksSyncStatus]] = mapped_column(SAEnum(QuickBooksSyncStatus), nullable=True, default=QuickBooksSyncStatus.PENDING)
+    quickbooks_sync_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+
+class SyncLog(Base):
+    __tablename__ = "sync_logs"
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
+    
+    # Sync metadata
+    sync_timestamp: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc)
+    )
+    sync_type: Mapped[str] = mapped_column(
+        SAEnum("scheduled", "manual", name="sync_type"),
+        nullable=False
+    )
+    
+    # Results
+    records_processed: Mapped[int] = mapped_column(Integer, default=0)
+    records_succeeded: Mapped[int] = mapped_column(Integer, default=0)
+    records_failed: Mapped[int] = mapped_column(Integer, default=0)
+    
+    # Status and errors
+    status: Mapped[str] = mapped_column(
+        SAEnum("success", "partial_success", "failed", name="sync_log_status"),
+        nullable=False
+    )
+    error_details: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    
+    # Duration tracking
+    duration_seconds: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    
+    # Relationships
+    business: Mapped["Business"] = relationship(back_populates="sync_logs")
 

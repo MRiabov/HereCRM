@@ -1,7 +1,8 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy.pool import StaticPool
 import logging
-
 import os
 
 # Using relative path for SQLite database as default
@@ -46,3 +47,47 @@ class Base(DeclarativeBase):
 async def get_db():
     async with AsyncSessionLocal() as session:
         yield session
+
+
+# Credentials database setup (SQLCipher-encrypted)
+CREDENTIALS_DB_KEY = os.getenv("CREDENTIALS_DB_KEY")
+if CREDENTIALS_DB_KEY:
+    try:
+        # Import pysqlcipher3 dynamically to handle potential import issues
+        import pysqlcipher3.dbapi2 as sqlite
+        
+        credentials_engine = create_engine(
+            f"sqlite+pysqlcipher://:{CREDENTIALS_DB_KEY}@/credentials.db?cipher=aes-256-cfb&kdf_iter=64000",
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool
+        )
+        
+        CredentialsSessionLocal = sessionmaker(
+            bind=credentials_engine,
+            expire_on_commit=False,
+        )
+        
+        logging.info("Credentials database engine configured successfully")
+        
+    except ImportError as e:
+        logging.warning(f"pysqlcipher3 not available: {e}")
+        logging.warning("QuickBooks credentials encryption disabled - install sqlcipher system libraries and pysqlcipher3 Python package")
+        logging.warning("Ubuntu/Debian: sudo apt-get install sqlcipher")
+        logging.warning("Then: uv sync or pip install pysqlcipher3")
+        credentials_engine = None
+        CredentialsSessionLocal = None
+    except Exception as e:
+        logging.error(f"Failed to configure credentials database: {e}")
+        credentials_engine = None
+        CredentialsSessionLocal = None
+else:
+    logging.info("CREDENTIALS_DB_KEY environment variable not set - QuickBooks integration disabled")
+    credentials_engine = None
+    CredentialsSessionLocal = None
+
+
+def get_credentials_db():
+    """Get a synchronous session for the credentials database."""
+    if not CredentialsSessionLocal:
+        raise RuntimeError("Credentials database not configured")
+    return CredentialsSessionLocal()

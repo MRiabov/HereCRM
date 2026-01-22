@@ -2,7 +2,7 @@ from typing import Optional, List, ClassVar
 from pydantic.v1 import BaseModel, Field, validator
 
 # Allowlist for settings that can be updated via LLM
-ALLOWED_SETTING_KEYS = ["confirm_by_default", "language", "timezone", "notifications", "default_city", "default_country"]
+ALLOWED_SETTING_KEYS = ["confirm_by_default", "language", "timezone", "notifications", "default_city", "default_country", "payment_link"]
 
 
 class LineItemInfo(BaseModel):
@@ -363,8 +363,23 @@ class ExitDataManagementTool(BaseModel):
     pass
 
 
+class GetWorkflowSettingsTool(BaseModel):
+    """Retrieve the current business workflow configuration (invoicing, quoting, payments).
+    Triggered when user asks 'what are my workflow settings', 'how is my quoting set up', etc."""
+    pass
 
 
+class UpdateWorkflowSettingsTool(BaseModel):
+    """Update the business workflow configuration.
+    Allowed values for invoicing/quoting: 'never', 'manual', 'automatic'.
+    Allowed values for payment_timing: 'always_paid_on_spot', 'usually_paid_on_spot', 'paid_later'."""
+
+    invoicing: Optional[str] = Field(None, description="Invoicing workflow: 'never', 'manual', 'automatic'")
+    quoting: Optional[str] = Field(None, description="Quoting workflow: 'never', 'manual', 'automatic'")
+    payment_timing: Optional[str] = Field(None, description="Payment timing: 'always_paid_on_spot', 'usually_paid_on_spot', 'paid_later'")
+    tax_inclusive: Optional[bool] = Field(None, description="Whether prices include tax")
+    include_payment_terms: Optional[bool] = Field(None, description="Whether to show net terms on invoices")
+    enable_reminders: Optional[bool] = Field(None, description="Whether to send auto-reminders")
 
 
 class MassEmailTool(BaseModel):

@@ -1,7 +1,17 @@
 from typing import Union, Optional, Tuple, Dict, Any
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import Customer, Request, Business, Service, Job, UserRole
+from src.models import (
+    Customer,
+    Request,
+    Business,
+    Service,
+    Job,
+    UserRole,
+    InvoicingWorkflow,
+    QuotingWorkflow,
+    PaymentTiming,
+)
 from src.events import event_bus
 from src.repositories import (
     JobRepository,
@@ -21,6 +31,7 @@ from src.services.billing_service import BillingService
 from src.services.dashboard_service import DashboardService
 from src.services.assignment_service import AssignmentService
 from src.services.rbac_service import RBACService
+from src.services.workflow import WorkflowSettingsService
 from src.lib.text_formatter import render_employee_dashboard
 from src.uimodels import (
     AddJobTool,
@@ -50,6 +61,8 @@ from src.uimodels import (
     LocateEmployeeTool,
     CheckETATool,
     AutorouteTool,
+    GetWorkflowSettingsTool,
+    UpdateWorkflowSettingsTool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.quote_tools import CreateQuoteTool
@@ -94,7 +107,11 @@ class ToolExecutor:
         self.dashboard_service = DashboardService(session)
         self.assignment_service = AssignmentService(session, self.business_id)
         self.quote_service = QuoteService(session)
-        self.rbac_service = RBACService()
+        self.rbac_service = RBACService(session)
+        self.workflow_service = WorkflowSettingsService(session)
+
+        # [T008] Initialize logger
+
         self._routing_service = None
 
     def _get_routing_service(self) -> OpenRouteServiceAdapter:
@@ -143,6 +160,8 @@ class ToolExecutor:
             LocateEmployeeTool,
             CheckETATool,
             AutorouteTool,
+            GetWorkflowSettingsTool,
+            UpdateWorkflowSettingsTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
 
@@ -229,6 +248,10 @@ class ToolExecutor:
             return "Exit data management is handled by the service layer.", None
         elif isinstance(tool_call, GetBillingStatusTool):
             return await self._execute_get_billing_status(tool_call)
+        elif isinstance(tool_call, GetWorkflowSettingsTool):
+            return await self._execute_get_workflow_settings(tool_call)
+        elif isinstance(tool_call, UpdateWorkflowSettingsTool):
+            return await self._execute_update_workflow_settings(tool_call)
         elif isinstance(tool_call, RequestUpgradeTool):
             return await self._execute_request_upgrade(tool_call)
         elif isinstance(tool_call, ShowScheduleTool):
@@ -1199,3 +1222,55 @@ class ToolExecutor:
             "date": tool.date or datetime.today().date().isoformat(),
             "preview": result
         }
+
+    async def _execute_get_workflow_settings(
+        self, tool: GetWorkflowSettingsTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        settings = await self.workflow_service.get_settings(self.business_id)
+        
+        # Format the output for the LLM
+        output = "Current Workflow Settings:\n"
+        output += f"- Invoicing: {settings['workflow_invoicing']}\n"
+        output += f"- Quoting: {settings['workflow_quoting']}\n"
+        output += f"- Payment Timing: {settings['workflow_payment_timing'].replace('_', ' ')}\n"
+        output += f"- Tax Inclusive: {'Yes' if settings['workflow_tax_inclusive'] else 'No'}\n"
+        output += f"- Include Payment Terms: {'Yes' if settings['workflow_include_payment_terms'] else 'No'}\n"
+        output += f"- Enable Reminders: {'Yes' if settings['workflow_enable_reminders'] else 'No'}"
+        
+        return output, {"action": "get_workflow_settings", "settings": settings}
+
+    async def _execute_update_workflow_settings(
+        self, tool: UpdateWorkflowSettingsTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        # Validate enums if provided
+        updates = {}
+        if tool.invoicing:
+            try:
+                updates["workflow_invoicing"] = InvoicingWorkflow(tool.invoicing.lower())
+            except ValueError:
+                return f"Error: Invalid invoicing value '{tool.invoicing}'. Use: never, manual, automatic.", None
+        
+        if tool.quoting:
+            try:
+                updates["workflow_quoting"] = QuotingWorkflow(tool.quoting.lower())
+            except ValueError:
+                return f"Error: Invalid quoting value '{tool.quoting}'. Use: never, manual, automatic.", None
+        
+        if tool.payment_timing:
+            try:
+                updates["workflow_payment_timing"] = PaymentTiming(tool.payment_timing.lower())
+            except ValueError:
+                return f"Error: Invalid payment_timing value '{tool.payment_timing}'. Use: always_paid_on_spot, usually_paid_on_spot, paid_later.", None
+        
+        if tool.tax_inclusive is not None:
+            updates["workflow_tax_inclusive"] = tool.tax_inclusive
+        if tool.include_payment_terms is not None:
+            updates["workflow_include_payment_terms"] = tool.include_payment_terms
+        if tool.enable_reminders is not None:
+            updates["workflow_enable_reminders"] = tool.enable_reminders
+            
+        if not updates:
+            return "No updates provided.", None
+            
+        new_settings = await self.workflow_service.update_settings(self.business_id, **updates)
+        return "Workflow settings updated successfully.", {"action": "update_workflow_settings", "settings": new_settings}
