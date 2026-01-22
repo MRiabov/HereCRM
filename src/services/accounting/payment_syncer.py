@@ -3,7 +3,7 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
-from src.models import Payment, Invoice, Job, Customer
+from src.models import Payment, Invoice, Job
 from .syncer_base import AbstractSyncer, QBClientError, DependencyError
 from .sync_mappers import validate_required_fields
 

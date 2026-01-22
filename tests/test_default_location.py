@@ -6,8 +6,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from src.database import Base
 from src.tool_executor import ToolExecutor
 from src.uimodels import AddLeadTool, AddJobTool
-from src.models import User, Customer, Business
-from src.services.geocoding import GeocodingService
+from src.models import User, Business
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 

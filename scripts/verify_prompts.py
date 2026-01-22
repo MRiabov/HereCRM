@@ -269,7 +269,7 @@ async def verify_prompts():
     
     report = []
     report.append("="*30)
-    report.append(f"VERIFICATION COMPLETE")
+    report.append("VERIFICATION COMPLETE")
     report.append(f"Total: {len(test_cases)}")
     report.append(f"Passed: {passed}")
     report.append(f"Failed: {failed}")

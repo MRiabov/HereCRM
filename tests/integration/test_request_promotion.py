@@ -1,8 +1,6 @@
 import pytest
-from src.models import Business, Customer, Request, Quote, QuoteStatus, User
+from src.models import Business, Customer, Request, Quote, QuoteStatus
 from src.services.crm_service import CRMService
-from src.services.quote_service import QuoteService
-from src.uimodels import ConvertRequestTool
 
 @pytest.mark.asyncio
 async def test_request_to_quote_promotion(async_session):

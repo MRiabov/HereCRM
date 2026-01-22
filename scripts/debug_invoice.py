@@ -1,5 +1,3 @@
-import os
-from datetime import datetime
 from unittest.mock import MagicMock
 from src.services.pdf_generator import InvoicePDFGenerator
 from src.models import Job, Customer, LineItem

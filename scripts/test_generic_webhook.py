@@ -1,6 +1,5 @@
 import httpx
 import asyncio
-import sys
 
 async def test_webhook():
     url = "http://localhost:8000/webhooks/generic"

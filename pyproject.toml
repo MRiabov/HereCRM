@@ -29,6 +29,7 @@ dependencies = [
     "spec-kitty-cli>=0.11.1",
     "stripe>=14.2.0",
     "python-quickbooks>=0.9.1",
+    "apscheduler",
 ]
 
 # Optional dependencies for QuickBooks integration:
@@ -43,6 +44,8 @@ build-backend = "setuptools.build_meta"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+addopts = "--ignore=tests/reproduce_issue.py --ignore=tests/reproduce_spatial_filtering_behavior.py --ignore=scripts/"
+testpaths = ["tests"]
 
 [tool.pyrefly]
 import-roots = ["."]

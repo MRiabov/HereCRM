@@ -1,7 +1,7 @@
 """Unit tests for LocationService."""
 
 import pytest
-from datetime import datetime, timezone
+from datetime import datetime
 from src.services.location_service import LocationService
 from src.models import User, Business
 from src.database import AsyncSessionLocal

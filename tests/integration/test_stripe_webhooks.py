@@ -1,9 +1,7 @@
 import pytest
-import os
 from unittest.mock import MagicMock, patch
 from httpx import AsyncClient, ASGITransport
 from src.models import Business
-from sqlalchemy import select
 from src.main import app
 from src.database import get_db
 

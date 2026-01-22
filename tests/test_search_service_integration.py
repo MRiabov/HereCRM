@@ -2,7 +2,6 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from unittest.mock import AsyncMock, MagicMock
-from datetime import datetime, timezone, timedelta
 from src.database import Base
 from src.services.search_service import SearchService
 from src.services.geocoding import GeocodingService

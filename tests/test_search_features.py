@@ -1,18 +1,11 @@
 import pytest
 from datetime import datetime, timedelta, timezone
-from src.repositories import (
-    JobRepository,
-    CustomerRepository,
-    RequestRepository,
-    UserRepository,
-)
 from src.models import Job, Customer, Request, User, Business
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from src.tool_executor import ToolExecutor
 from src.uimodels import SearchTool
 from src.database import Base
 from src.services.template_service import TemplateService
-from src.services.geocoding import GeocodingService
 from unittest.mock import AsyncMock
 import pytest_asyncio
 

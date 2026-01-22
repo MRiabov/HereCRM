@@ -35,7 +35,7 @@ class TemplateService:
 
         try:
             return normalized_template.format(**kwargs)
-        except KeyError as e:
+        except KeyError:
             # If a key is missing, return the template as is or with placeholders
             return normalized_template
         except Exception:

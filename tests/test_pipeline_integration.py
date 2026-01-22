@@ -1,11 +1,9 @@
 import pytest
 import pytest_asyncio
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
 from src.models import Business, Customer, PipelineStage
 from src.services.crm_service import CRMService
-from src.events import event_bus
 from src.services.pipeline_handlers import handle_job_created
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"

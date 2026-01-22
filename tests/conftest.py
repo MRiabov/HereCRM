@@ -1,14 +1,12 @@
 import os
 import pytest
-import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
-from src.models import Base
-from src.database import engine
 
 # Inject dummy keys BEFORE standard imports can fail
+# This must happen before importing src.database or src.config which read env vars at module level
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 os.environ["GOOGLE_API_KEY"] = "dummy_test_key"
 os.environ["WHATSAPP_APP_SECRET"] = "dummy_secret"
+os.environ["OPENROUTER_API_KEY"] = "dummy_openrouter_key"
 os.environ["WA_TOKEN"] = "dummy_token"
 os.environ["WA_PHONE_ID"] = "dummy_phone_id"
 os.environ["ALLOW_LOCAL_IMPORT"] = "true"
@@ -16,6 +14,11 @@ os.environ["QB_CLIENT_ID"] = "dummy_qb_client_id"
 os.environ["QB_CLIENT_SECRET"] = "dummy_qb_client_secret"
 os.environ["QB_REDIRECT_URI"] = "http://localhost:8000/callback"
 os.environ["CREDENTIALS_DB_KEY"] = "dummy_key_for_testing_only_12345"
+
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+from src.models import Base
+from src.database import engine
 
 
 @pytest.fixture(scope="session", autouse=True)

@@ -1,5 +1,4 @@
 import pytest
-import pytest_asyncio
 from datetime import datetime, timezone
 from src.models import Business, User, Job, UserRole
 from src.services.assignment_service import AssignmentService

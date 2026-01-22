@@ -1,9 +1,9 @@
 import pytest
 import pytest_asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Customer, User, Job, Service, CustomerAvailability
+from src.models import Business, Customer, User, Job, Service
 from src.services.availability_service import AvailabilityService
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"

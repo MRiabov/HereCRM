@@ -1,7 +1,6 @@
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy import select
 from src.database import Base
 from src.models import Business, Service, LineItem, Job, Customer
 from src.repositories import ServiceRepository, JobRepository

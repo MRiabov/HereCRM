@@ -1,18 +1,16 @@
 import logging
 import pandas as pd
 import io
-import json
 import httpx
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from src.models import Business, Customer, Job, ImportJob, ExportRequest, PipelineStage
+from src.models import Customer, Job, ImportJob, ExportRequest, PipelineStage
 from src.repositories import BusinessRepository, CustomerRepository, JobRepository
+from src.services.storage import storage_service
 
 logger = logging.getLogger(__name__)
 
-from src.services.storage import storage_service
 
 class DataManagementService:
     def __init__(self, session: AsyncSession):
@@ -276,7 +274,7 @@ class DataManagementService:
             export_req.public_url = public_url
             export_req.status = "completed"
 
-        except Exception as e:
+        except Exception:
             logger.exception("Export failed")
             export_req.status = "failed"
             # Log error somewhere? ExportRequest doesn't have error_log field in model currently, 

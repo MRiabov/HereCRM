@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import User, Job, Customer, Business
 from src.tools.routing_tools import AutorouteToolExecutor
 from src.uimodels import AutorouteTool
-from src.services.routing.mock import MockRoutingService
 
 @pytest.mark.asyncio
 async def test_autoroute_preview_basic(async_session: AsyncSession):

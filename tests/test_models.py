@@ -106,7 +106,6 @@ async def test_invoice_relationship(test_session: AsyncSession):
 
 @pytest.mark.asyncio
 async def test_message_log_creation(test_session: AsyncSession):
-    from src.models import MessageLog, MessageType, MessageStatus
 
     log = MessageLog(
         recipient_phone="1234567890",

@@ -1,13 +1,11 @@
 import pytest
 import pytest_asyncio
 import pandas as pd
-import io
 import os
-from unittest.mock import patch, MagicMock
-from datetime import datetime, timezone
+from unittest.mock import patch
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Customer, Job, ImportJob, ExportRequest, PipelineStage
+from src.models import Business, Customer, Job, PipelineStage
 from src.services.data_management import DataManagementService
 from src.repositories import CustomerRepository, JobRepository
 

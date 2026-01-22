@@ -1,4 +1,3 @@
-import pytest
 from src.services.chat_utils import format_line_items
 from src.uimodels import LineItemInfo
 

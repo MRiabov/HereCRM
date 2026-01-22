@@ -4,7 +4,7 @@ import logging
 from src.models import Customer
 from src.repositories import CustomerRepository
 from .syncer_base import AbstractSyncer, QBClientError
-from .sync_mappers import map_address_to_qb, validate_required_fields, clean_phone_number, clean_email
+from .sync_mappers import map_address_to_qb, validate_required_fields, clean_phone_number
 
 logger = logging.getLogger(__name__)
 

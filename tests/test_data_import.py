@@ -1,12 +1,9 @@
 import pytest
 import os
-import pandas as pd
-import io
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text
+from sqlalchemy import select
 from src.services.data_management import DataManagementService
 from src.models import Business, Customer, Job, ImportJob
-from datetime import datetime
 
 @pytest.fixture
 def mock_file_content():
