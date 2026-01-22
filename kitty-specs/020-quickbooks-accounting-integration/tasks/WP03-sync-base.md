@@ -1,15 +1,15 @@
 ---
 work_package_id: WP03
 title: Sync Logic - Base & Dependencies
-lane: "for_review"
+lane: "doing"
 dependencies: []
 subtasks:
 - T011
 - T012
 - T013
 - T014
-agent: "gemini"
-shell_pid: "118693"
+agent: "gemini-cli"
+shell_pid: "136968"
 review_status: "has_feedback"
 reviewed_by: "MRiabov"
 ---
@@ -112,3 +112,4 @@ Synchronization is one-way (HereCRM -> QuickBooks). It follows a specific order:
 - 2026-01-22T10:12:53Z – gemini – shell_pid=118693 – lane=planned – Moved to planned
 - 2026-01-22T10:19:26Z – gemini – shell_pid=118693 – lane=doing – Implementing fixes from review
 - 2026-01-22T10:20:59Z – gemini – shell_pid=118693 – lane=for_review – Implemented review fixes: added model fields, dependency, init file, and optimized syncer.
+- 2026-01-22T10:23:38Z – gemini-cli – shell_pid=136968 – lane=doing – Started review via workflow command
