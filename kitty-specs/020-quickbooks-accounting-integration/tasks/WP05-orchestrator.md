@@ -1,7 +1,7 @@
 ---
 work_package_id: WP05
 title: Orchestration & Scheduler
-lane: "doing"
+lane: "for_review"
 dependencies: []
 subtasks:
 - T019
@@ -97,3 +97,4 @@ This is the "engine" that runs every hour. It connects WP01-WP04 together. It ne
 ## Activity Log
 
 - 2026-01-22T07:36:57Z – Cascade – shell_pid=26412 – lane=doing – Started implementation via workflow command
+- 2026-01-22T09:55:59Z – Cascade – shell_pid=26412 – lane=for_review – Ready for review: Implemented QuickBooksSyncManager for orchestrating entity sync (Customers, Services), configured hourly APScheduler job, and implemented manual sync trigger. Added integration tests.
