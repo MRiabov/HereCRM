@@ -34,7 +34,7 @@
 - **Dependencies**: WP02
 - **Status**: Todo
 - **Subtasks**:
-  - [ ] T011: Define `QuickBooksSyncer` base class and mapper interfaces
+  - [x] T011: Define `QuickBooksSyncer` base class and mapper interfaces
   - [ ] T012: Implement `CustomerSyncer` and data mapper (HereCRM -> QB Customer)
   - [ ] T013: Implement `ServiceSyncer` and data mapper (HereCRM Service -> QB Item)
   - [ ] T014: Add unit tests for Customer and Service mapping/sync logic
