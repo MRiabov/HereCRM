@@ -22,11 +22,11 @@
 - **Dependencies**: WP01
 - **Status**: Todo
 - **Subtasks**:
-  - [ ] T006: Create `QuickBooksClient` wrapper using `python-quickbooks` SDK
-  - [ ] T007: Implement `QuickBooksAuth` service (Auth URL generation, callback handling)
-  - [ ] T008: Implement secure token storage and retrieval logic using `QuickBooksCredential`
-  - [ ] T009: Implement proactive token refresh logic
-  - [ ] T010: Add integration tests for OAuth flow (mocking external API)
+  - [x] T006: Create `QuickBooksClient` wrapper using `python-quickbooks` SDK
+  - [x] T007: Implement `QuickBooksAuth` service (Auth URL generation, callback handling)
+  - [x] T008: Implement secure token storage and retrieval logic using `QuickBooksCredential`
+  - [x] T009: Implement proactive token refresh logic
+  - [x] T010: Add integration tests for OAuth flow (mocking external API)
 
 ### WP03: Sync Logic - Base & Dependencies
 
