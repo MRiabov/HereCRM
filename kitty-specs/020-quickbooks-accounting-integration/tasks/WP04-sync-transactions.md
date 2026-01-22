@@ -1,13 +1,15 @@
 ---
 work_package_id: WP04
 title: Sync Logic - Invoices & Payments
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks:
 - T015
 - T016
 - T017
 - T018
+agent: "Gemini"
+shell_pid: "107184"
 ---
 
 ## Objective
@@ -82,3 +84,7 @@ These entities depend on `quickbooks_id`s from the entities synced in WP03. If a
 ## Verification
 
 - Run `pytest tests/unit/test_sync_transactions.py`.
+
+## Activity Log
+
+- 2026-01-22T09:59:29Z – Gemini – shell_pid=107184 – lane=doing – Started implementation via workflow command
