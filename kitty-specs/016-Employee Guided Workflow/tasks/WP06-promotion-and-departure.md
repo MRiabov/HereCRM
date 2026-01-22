@@ -1,3 +1,8 @@
+---
+lane: "doing"
+agent: "Antigravity"
+shell_pid: "284006"
+---
 # WP06: Promotion and Departure
 
 ## Goal
@@ -19,3 +24,7 @@ Implement role-based promotion (to manager) and the ability for employees to lea
 - Owner can promote or dismiss an employee via the management settings.
 - Employee can leave the business via text.
 - Changes are reflected in the database and access is revoked immediately for dismissed users.
+
+## Activity Log
+
+- 2026-01-22T20:37:03Z – Antigravity – shell_pid=284006 – lane=doing – Started implementation via workflow command
