@@ -28,6 +28,9 @@ The planner will not begin until all planning questions have been answered—cap
 - **Job Completion**: We will implement a new LLM tool `CompleteJobTool` (triggered by "done #123") that updates the job status and triggers the "Next Job Guide" logic.
 - **Service Reminders**: We will extend the `Service` entity (and `ServiceRepository`) to include a `reminder_text` field. We will update the `EditServiceTool` to allow business owners to configure this field (e.g., "Set reminder for Window Cleaning to 'Ask about interiors'").
 - **State Management**: The "Guided Workflow" is state-dependent. We will rely on the `Job` status ("scheduled" -> "in_progress" -> "completed") and the `User` (employee) context to determine the "next job".
+- **Employee Management Context**: We will implement an `EmployeeManagementTool` that shifts the conversation context to a "Settings" mode (similar to Workflow Settings in Spec 019). This tool will list current employees and surface management-specific tools.
+- **Invitation Flow**: Restricted to the Management Context. We will introduce an `Invitation` entity. A `InviteUserTool` will allow owners to send invites. A `JoinBusinessTool` (keyword responder) will handle-acceptance.
+- **Role Management & Dismissal**: Restricted to the Management Context. `PromoteUserTool` for role upgrades and `DismissUserTool` (Forceful Departure) to remove employees from the business.
 - **Messaging**: Leveraging the existing `MessagingService` (WhatsApp/Twilio) to send the push notifications.
 
 ## Constitution Check
@@ -63,11 +66,15 @@ The planner will not begin until all planning questions have been answered—cap
 - [ ] **Data Model (`data-model.md`)**:
   - Add `reminder_text` (Text, nullable) to `Service` model.
   - Check/Add `timezone` to `User` or `Business`.
+  - Add `role` (String, default='employee') to `User` model.
+  - [NEW] Add `Invitation` entity (inviter_id, invitee_identifier, business_id, status, token).
 - [ ] **Contracts (`contracts/`)**:
   - **Tools**: Define `CompleteJobTool` schema.
   - **Tools**: Update `AddServiceTool` / `EditServiceTool` schemas to include `reminder_text`.
+  - **Tools**: Define `EmployeeManagementTool` (for entering the management context).
+  - **Tools**: Define `InviteUserTool`, `JoinBusinessTool`, `PromoteUserTool`, `DismissUserTool`.
   - **Events**: Define `SHIFT_STARTED` event payload.
-- [ ] **Agent Context**: Update `system_prompt` to understand "done" commands and the concept of "active shift".
+- [ ] **Agent Context**: Update `system_prompt` to understand the Employee Management context and restrict tools appropriately.
 
 ## Project Structure
 

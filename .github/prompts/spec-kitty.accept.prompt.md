@@ -1,4 +1,4 @@
----
+ ---
 description: Validate feature readiness and guide final acceptance steps.
 ---
 
