@@ -1,7 +1,7 @@
 ---
 work_package_id: "WP02"
 title: "OAuth Infrastructure"
-lane: "planned"
+lane: "doing"
 dependencies: ["WP01"]
 subtasks:
   - "T006"
@@ -10,7 +10,7 @@ subtasks:
   - "T009"
   - "T010"
 agent: "Cascade"
-shell_pid: "34972"
+shell_pid: "35736"
 review_status: "has_feedback"
 reviewed_by: "MRiabov"
 ---
@@ -114,3 +114,4 @@ We need to obtain access to the user's QuickBooks data via standard OAuth 2.0. T
 - 2026-01-22T07:51:08Z – Cascade – shell_pid=34972 – lane=doing – Started review via workflow command
 - 2026-01-22T07:55:03Z – Cascade – shell_pid=34972 – lane=planned – Moved to planned
 - 2026-01-22T07:58:27Z – Cascade – shell_pid=34972 – lane=planned – Moved to planned
+- 2026-01-22T08:01:16Z – Cascade – shell_pid=35736 – lane=doing – Started implementation via workflow command
