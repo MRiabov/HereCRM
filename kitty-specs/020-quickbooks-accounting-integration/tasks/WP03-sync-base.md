@@ -1,7 +1,7 @@
 ---
 work_package_id: WP03
 title: Sync Logic - Base & Dependencies
-lane: "doing"
+lane: "for_review"
 dependencies: []
 subtasks:
 - T011
@@ -107,3 +107,4 @@ Synchronization is one-way (HereCRM -> QuickBooks). It follows a specific order:
 - 2026-01-22T09:58:25Z – gemini-cli – shell_pid=106031 – lane=doing – Started review via workflow command
 - 2026-01-22T10:01:47Z – gemini-cli – shell_pid=106031 – lane=planned – Moved to planned
 - 2026-01-22T10:03:45Z – gemini-cli – shell_pid=112998 – lane=doing – Started implementation via workflow command
+- 2026-01-22T10:07:02Z – gemini-cli – shell_pid=112998 – lane=for_review – Ready for review: Implemented base sync architecture with non-blocking I/O, added Customer/Service syncers with email mapping, and created Alembic migration.
