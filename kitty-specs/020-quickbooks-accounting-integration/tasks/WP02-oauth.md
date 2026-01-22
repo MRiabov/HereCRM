@@ -1,7 +1,7 @@
 ---
 work_package_id: WP02
 title: OAuth Infrastructure
-lane: "doing"
+lane: "for_review"
 dependencies: []
 subtasks:
 - T006
@@ -117,3 +117,4 @@ We need to obtain access to the user's QuickBooks data via standard OAuth 2.0. T
 - 2026-01-22T08:01:16Z – Cascade – shell_pid=35736 – lane=doing – Started implementation via workflow command
 - 2026-01-22T09:31:42Z – Cascade – shell_pid=35736 – lane=for_review – Ready for review: Implementation of QuickBooks OAuth flow, secure credential storage, and proactive token refresh with integration tests.
 - 2026-01-22T09:50:55Z – gemini-cli – shell_pid=97985 – lane=doing – Started implementation via workflow command
+- 2026-01-22T09:53:28Z – gemini-cli – shell_pid=97985 – lane=for_review – Implemented UpdateWorkflowSettingsTool, WorkflowSettingsService, and updated Business model with migrations. Added unit tests and documentation.
