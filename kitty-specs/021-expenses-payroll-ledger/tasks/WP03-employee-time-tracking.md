@@ -1,7 +1,7 @@
 ---
 work_package_id: WP03
 title: Employee Time Tracking
-lane: planned
+lane: "for_review"
 dependencies: []
 subtasks: [T010, T011, T012, T013, T014]
 ---
@@ -85,3 +85,7 @@ We need to capture the `start_time` for both shifts and jobs so that later (in W
 - Tools are ready to be registered.
 - Service handles state transitions correctly.
 - Database records state changes.
+
+## Activity Log
+
+- 2026-01-22T12:05:25Z – unknown – lane=for_review – Completed Webhook Dispatcher implementation. Added event constants and decorator-based subscription. Verified with unit tests.
