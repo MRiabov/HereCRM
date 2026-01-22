@@ -1,9 +1,11 @@
 ---
 work_package_id: WP04
 title: Ledger & Payouts
-lane: planned
+lane: "planned"
 dependencies: []
 subtasks: [T015, T016, T017, T018, T019]
+review_status: "has_feedback"
+reviewed_by: "MRiabov"
 ---
 
 # Work Package: Ledger & Payouts
@@ -105,3 +107,7 @@ This is the integration point.
 - "Working for money" works.
 - Payouts work.
 - Balances are accurate.
+
+## Activity Log
+
+- 2026-01-22T12:25:15Z – unknown – lane=planned – Moved to planned
