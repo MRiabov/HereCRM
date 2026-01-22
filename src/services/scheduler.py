@@ -39,6 +39,45 @@ class SchedulerService:
         self.scheduler.add_job(func, trigger)
         logger.info(f"Added daily job '{func.__name__}' at {hour:02d}:{minute:02d} UTC")
 
+    def add_hourly_job(self, func: Callable):
+        """Add a job to run every hour at the start of the hour."""
+        trigger = CronTrigger(minute=0, timezone=timezone.utc)
+        self.scheduler.add_job(func, trigger)
+        logger.info(f"Added hourly job '{func.__name__}'")
+
+    async def run_hourly_quickbooks_sync(self):
+        """
+        Orchestrate QuickBooks sync for all connected businesses.
+        Runs every hour.
+        """
+        logger.info("Running hourly QuickBooks sync...")
+        from src.models import Business, SyncType
+        from src.services.accounting.quickbooks_sync import QuickBooksSyncManager
+
+        async with AsyncSessionLocal() as session:
+            try:
+                # Find all businesses with QuickBooks connected
+                stmt = select(Business).where(Business.quickbooks_connected == True)
+                result = await session.execute(stmt)
+                businesses = result.scalars().all()
+
+                if not businesses:
+                    logger.info("No businesses connected to QuickBooks found.")
+                    return
+
+                sync_manager = QuickBooksSyncManager(session)
+                for business in businesses:
+                    try:
+                        logger.info(f"Starting scheduled sync for business {business.id}")
+                        await sync_manager.run_sync(business.id, SyncType.SCHEDULED)
+                    except Exception as e:
+                        logger.error(f"Scheduled sync failed for business {business.id}: {str(e)}")
+                        # Continue with next business
+                        continue
+
+            except Exception as e:
+                logger.error(f"Error in hourly QuickBooks sync task: {str(e)}")
+
     async def check_shifts(self):
         """
         Check for employees starting their shift and send them a summary.
