@@ -80,7 +80,7 @@
 
 - [x] T008 Implement "soft-blocking" interceptor in `src/tool_executor.py` for restricted tool calls
 - [x] T009 Update Job creation logic in `src/services/crm.py` to respect `workflow_payment_timing`
-- [ ] T010 Add integration tests for enforcement logic in `tests/integration/test_workflow_enforcement.py`
+- [x] T010 Add integration tests for enforcement logic in `tests/integration/test_workflow_enforcement.py`
 
 ### Implementation Notes
 
