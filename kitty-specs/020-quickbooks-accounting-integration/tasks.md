@@ -69,7 +69,7 @@
 - **Status**: Todo
 - **Subtasks**:
   - [x] T024: Create `ACCOUNTING` conversation state in `whatsapp_service.py`
-  - [ ] T025: Create tools: `ConnectQB`, `DisconnectQB`, `SyncQB`, `QBStatus`
+  - [x] T025: Create tools: `ConnectQB`, `DisconnectQB`, `SyncQB`, `QBStatus`
   - [ ] T026: Implement "Connect" flow (Send Auth Link -> Wait for Callback -> Notify)
   - [ ] T027: Implement status reporting tool (Format `SyncLog` data for users)
   - [ ] T028: Add tests for `ACCOUNTING` state transitions and tool usage
