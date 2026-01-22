@@ -1,7 +1,7 @@
 ---
 type: work-package
 id: WP03
-lane: "doing"
+lane: "done"
 review_status: "approved"
 reviewed_by: "gemini-cli"
 subtasks:
