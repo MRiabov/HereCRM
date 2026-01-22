@@ -840,14 +840,19 @@ class ToolExecutor:
              return f"Failed to generate invoice: {str(e)}", None
 
         # 4. Return result
+        message = f"Here is the invoice for {customer.name} (Job #{job.id}): {invoice.public_url}"
+        if invoice.payment_link:
+            message += f"\n\nPay here: {invoice.payment_link}"
+
         return (
-            f"Here is the invoice for {customer.name} (Job #{job.id}): {invoice.public_url}",
+            message,
             {
                 "action": "invoice_generated",
                 "entity": "invoice",
                 "id": invoice.id,
                 "job_id": job.id,
                 "url": invoice.public_url,
+                "payment_link": invoice.payment_link,
                 "customer": customer.name
             },
         )
