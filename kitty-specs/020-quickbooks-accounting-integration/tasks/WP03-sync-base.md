@@ -1,15 +1,15 @@
 ---
 work_package_id: WP03
 title: Sync Logic - Base & Dependencies
-lane: "for_review"
+lane: "doing"
 dependencies: []
 subtasks:
 - T011
 - T012
 - T013
 - T014
-agent: "gemini"
-shell_pid: "101152"
+agent: "gemini-cli"
+shell_pid: "106031"
 review_status: "has_feedback"
 reviewed_by: "MRiabov"
 ---
@@ -104,3 +104,4 @@ Synchronization is one-way (HereCRM -> QuickBooks). It follows a specific order:
 - 2026-01-22T09:51:49Z – gemini – shell_pid=96079 – lane=planned – Changes requested: Sync/Async mismatch and missing repo methods
 - 2026-01-22T09:53:18Z – gemini – shell_pid=101152 – lane=doing – Started implementation via workflow command
 - 2026-01-22T09:55:40Z – gemini – shell_pid=101152 – lane=for_review – Ready for review: Refactored syncers to be asynchronous, fixed repository method calls, and added QuickBooks query escaping.
+- 2026-01-22T09:58:25Z – gemini-cli – shell_pid=106031 – lane=doing – Started review via workflow command
