@@ -1,12 +1,14 @@
 ---
 work_package_id: WP07
 title: Documentation & Final Polish
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks:
 - T029
 - T030
 - T031
+agent: "gemini-agent"
+shell_pid: "147632"
 ---
 
 ## Objective
@@ -64,3 +66,7 @@ The feature is coded, but if the "Product Assistant" doesn't know about it, user
 
 - Check `src/assets/manual.md`.
 - Run full test suite.
+
+## Activity Log
+
+- 2026-01-22T10:30:19Z – gemini-agent – shell_pid=147632 – lane=doing – Started implementation via workflow command
