@@ -1,11 +1,11 @@
 ---
 work_package_id: "WP04"
 title: "Daily Shift Scheduler"
-lane: "for_review"
+lane: "doing"
 subtasks: ["T013", "T014", "T015", "T018"]
 dependencies: ["WP03"]
 agent: "Antigravity"
-shell_pid: "4186310"
+shell_pid: "215012"
 ---
 
 ## Objective
@@ -80,3 +80,4 @@ This requires `apscheduler` (installed in WP01) running in the background.
 - 2026-01-21T18:10:40Z – Antigravity – shell_pid=4186310 – lane=for_review – Ready for review: Implemented SchedulerService, background task for daily job summary, integration in main.py, and added integration tests.
 - 2026-01-21T18:12:41Z – Antigravity – shell_pid=4186310 – lane=doing – Started implementation via workflow command
 - 2026-01-21T18:19:20Z – Antigravity – shell_pid=4186310 – lane=for_review – Ready for review: Implemented SchedulerService, background task for daily job summary, integration in main.py, and added integration tests.
+- 2026-01-22T12:03:32Z – Antigravity – shell_pid=215012 – lane=doing – Started review via workflow command
