@@ -108,10 +108,42 @@ settings_menu: |
   ⚙️ *Settings Mode*
   
   Options:
-  - *Services/Products*: 'List', 'Add Service [Name] [Price]', 'Delete Service [Name]' [e.g.: Add Service Exterior Window Cleaning 5$]
-  - *Preferences*: 'Set default city [City]', 'Confirm by default [true/false]'
-  - *Localization*: 'Set timezone [Zone]', 'Set language [Lang]'
+  - *Workflow*: 'Workflow settings'
+  - *Accounting*: 'Accounting settings'
+  - *Payroll*: 'Payroll settings'
+  - *Services*: 'List', 'Add Service [Name] [Price]'
+  - *Preferences*: 'Confirm by default [true/false]'
   - *Exit*: 'Exit' or 'Back'
+
+settings_workflow_menu: |
+  📋 *Workflow Settings*
+  
+  Options:
+  - *Invoicing*: 'Set invoicing [never/manual/automatic]'
+  - *Quoting*: 'Set quoting [never/manual/automatic]'
+  - *Payments*: 'Set payment timing [on_spot/usually_on_spot/later]'
+  - *Tax*: 'Include tax [true/false]'
+  - *Terms*: 'Show terms [true/false]'
+  - *Reminders*: 'Reminders [true/false]'
+  - *Back*: 'Back'
+
+settings_accounting_menu: |
+  📊 *Accounting Settings*
+  
+  Options:
+  - *QuickBooks*: 'Connect QuickBooks', 'Disconnect QuickBooks'
+  - *Sync*: 'Sync QuickBooks now'
+  - *Status*: 'QuickBooks status'
+  - *Back*: 'Back'
+
+settings_payroll_menu: |
+  💰 *Payroll & Expenses*
+  
+  Options:
+  - *Expenses*: 'Add expense [amount] [desc]'
+  - *Wages*: 'Check balance', 'Record payout [amount]'
+  - *Tracking*: 'Check in', 'Start job #123'
+  - *Back*: 'Back'
 service_list: |
   *Service Catalog*:
   {services}
@@ -190,7 +222,7 @@ billing_status_body: |
   *Available Upgrades*:
   {available_upgrades}
   
-  Type 'upgrade [item]' to get a payment link and purchase.
+  To *buy seats*, *add users*, *purchase addons*, or *upgrade seats*, type 'upgrade [item]' to get a payment link and purchase.
 
 upgrade_link_message: "🔗 Here is your secure link to {action}: {url}\n(Link expires in 24 hours)"
 billing_error: "❌ Billing error: {error}"
@@ -236,3 +268,46 @@ qb_status: |
   
 qb_not_connected: "❌ Not connected to QuickBooks."
 qb_sync_error: "⚠️ QuickBooks sync error: {error}"
+
+# Quotations
+quote_proposal: "Hi {name}, here is your quote for {total}: {link}. Reply 'Confirm' to book."
+quote_summary: |
+  Quote details:
+  {client_details}
+  - Description: {description}
+  - Value: {total}
+confirm_quote_prompt: "Review Quote: {summary}\n(Reply 'Confirm' to accept, 'No' to cancel)"
+quote_accepted: "✅ Quote accepted! Job #{job_id} created for {customer_name}."
+
+# Routing & Efficiency
+autoroute_preview: |
+  🚛 *Route Preview ({date})*:
+  {routes}
+  
+  (Type 'Apply' to confirm these assignments)
+autoroute_applied: "✅ Route optimization applied. {count} jobs assigned."
+tracking_started: "📍 Tracking started for {name}."
+eta_response: "⏱️ ETA: {name} is approximately {minutes} minutes away from {location}."
+employee_location: "📍 {name} is currently at {location} (updated {time} ago)."
+
+# Security & Access
+rbac_denied: "⛔ *Access Denied*: You do not have permission to use the '{tool}' tool."
+
+# Financials & Labor
+expense_added: "✅ Expense recorded: {amount} for '{description}'."
+payout_recorded: "💸 Payout recorded: {amount} to {employee_name}."
+balance_report: |
+  💰 *Payroll Balance*:
+  - Employee: {name}
+  - Owed: {currency}{balance}
+  - Last Payout: {last_payout_date}
+  
+job_completed: "✅ Job #{job_id} marked as COMPLETED."
+next_job_guide: "➡️ Next Job: {name} at {location}. Type 'Start' when you arrive."
+shift_started: "🏁 Shift started at {time} for {name}."
+workflow_blocked: "⚠️ This action is currently disabled by your business workflow settings ({setting})."
+
+# Stripe Payments
+stripe_setup_prompt: "🔗 Click here to connect your Stripe account and start accepting payments: {url}"
+stripe_connected: "✅ Stripe connected successfully! You can now send invoices with payment links."
+stripe_payment_received: "💰 Payment received! {customer_name} paid {amount} for Job #{job_id}."
