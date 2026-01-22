@@ -7,10 +7,10 @@ from typing import Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import Customer, Job, ImportJob, ExportRequest, PipelineStage
 from src.repositories import BusinessRepository, CustomerRepository, JobRepository
+from src.services.storage import storage_service
 
 logger = logging.getLogger(__name__)
 
-from src.services.storage import storage_service
 
 class DataManagementService:
     def __init__(self, session: AsyncSession):
