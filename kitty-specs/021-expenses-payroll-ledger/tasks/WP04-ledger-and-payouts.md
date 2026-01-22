@@ -1,7 +1,7 @@
 ---
 work_package_id: WP04
 title: Ledger & Payouts
-lane: "doing"
+lane: "for_review"
 dependencies: []
 subtasks: [T015, T016, T017, T018, T019]
 review_status: "has_feedback"
@@ -114,3 +114,4 @@ This is the integration point.
 
 - 2026-01-22T12:25:15Z – unknown – lane=planned – Moved to planned
 - 2026-01-22T17:56:14Z – Antigravity – shell_pid=284006 – lane=doing – Started implementation via workflow command
+- 2026-01-22T18:18:26Z – Antigravity – shell_pid=284006 – lane=for_review – Ready for review: Ledger implemented, time tracking wired to wages, payout and balance tools added.
