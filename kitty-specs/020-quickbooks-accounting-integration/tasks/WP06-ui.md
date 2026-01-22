@@ -1,7 +1,7 @@
 ---
 work_package_id: WP06
 title: User Interface (Accounting State)
-lane: "doing"
+lane: "for_review"
 dependencies: []
 subtasks:
 - T024
@@ -91,3 +91,4 @@ Users interact via chat. They can enter "Accounting Mode" (state), and then say 
 ## Activity Log
 
 - 2026-01-22T08:03:10Z – Cascade – shell_pid=41484 – lane=doing – Started implementation via workflow command
+- 2026-01-22T10:10:38Z – Cascade – shell_pid=41484 – lane=for_review – Ready for review: Implemented ACCOUNTING state, QuickBooks tools, integrated QuickBooksAuthService, and added API callback route. All integration tests passing.
