@@ -1,9 +1,11 @@
 ---
 work_package_id: WP02
 title: Wage Calculation Logic
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks: [T006, T007, T008, T009]
+agent: "Antigravity"
+shell_pid: "215012"
 ---
 
 # Work Package: Wage Calculation Logic
@@ -79,3 +81,7 @@ This code fits in `src/services/wages/`.
 - All strategies implemented.
 - Calculator service routes correctly.
 - Tests pass.
+
+## Activity Log
+
+- 2026-01-22T12:04:03Z – Antigravity – shell_pid=215012 – lane=doing – Started implementation via workflow command
