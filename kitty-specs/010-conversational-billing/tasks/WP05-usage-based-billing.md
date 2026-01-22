@@ -8,7 +8,7 @@ subtasks:
   - "T024"
 title: "Usage-Based Billing"
 phase: "Phase 5 - Security & Monetization"
-lane: "doing"
+lane: "for_review"
 dependencies: ["WP00", "WP01", "WP02", "WP03", "WP04"]
 agent: "antigravity"
 shell_pid: "3980068"
@@ -108,3 +108,4 @@ history:
 ## Activity Log
 
 - 2026-01-21T09:33:32Z – antigravity – shell_pid=3980068 – lane=doing – Started implementation via workflow command
+- 2026-01-22T11:13:21Z – antigravity – shell_pid=3980068 – lane=for_review – Implemented usage-based billing with Stripe metered billing. Added usage tracking to WhatsappService and BillingService. Updated conversational UI to display usage statistics. Verified with tests.
