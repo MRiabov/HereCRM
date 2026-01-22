@@ -1,11 +1,13 @@
 ---
 work_package_id: "WP03"
 title: "Webhook Dispatcher"
-lane: "doing"
+lane: "done"
 subtasks: ["T012", "T013", "T014", "T015"]
 dependencies: ["WP01"]
 agent: "Antigravity"
 shell_pid: "63157"
+reviewed_by: "MRiabov"
+review_status: "approved"
 ---
 
 ## Objective
@@ -76,3 +78,4 @@ Integrators need to know when a Job is booked.
 ## Activity Log
 
 - 2026-01-22T10:45:58Z – Antigravity – shell_pid=63157 – lane=doing – Started implementation via workflow command
+- 2026-01-22T12:18:22Z – Antigravity – shell_pid=63157 – lane=done – Review passed: Implemented Job Booked event emission, IntegrationEventHandler, and generic Webhook dispatch logic with HMAC signing. Added unit tests covering the dispatch flow.
