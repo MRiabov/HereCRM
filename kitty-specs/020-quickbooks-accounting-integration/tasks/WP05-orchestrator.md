@@ -1,7 +1,7 @@
 ---
 work_package_id: WP05
 title: Orchestration & Scheduler
-lane: "planned"
+lane: "doing"
 dependencies: []
 subtasks:
 - T019
@@ -9,8 +9,8 @@ subtasks:
 - T021
 - T022
 - T023
-agent: "gemini-agent"
-shell_pid: "109108"
+agent: "Gemini"
+shell_pid: "127390"
 review_status: "has_feedback"
 reviewed_by: "MRiabov"
 ---
@@ -102,3 +102,4 @@ This is the "engine" that runs every hour. It connects WP01-WP04 together. It ne
 - 2026-01-22T09:55:59Z – Cascade – shell_pid=26412 – lane=for_review – Ready for review: Implemented QuickBooksSyncManager for orchestrating entity sync (Customers, Services), configured hourly APScheduler job, and implemented manual sync trigger. Added integration tests.
 - 2026-01-22T10:01:08Z – gemini-agent – shell_pid=109108 – lane=doing – Started review via workflow command
 - 2026-01-22T10:03:14Z – gemini-agent – shell_pid=109108 – lane=planned – Moved to planned
+- 2026-01-22T10:16:27Z – Gemini – shell_pid=127390 – lane=doing – Started implementation via workflow command
