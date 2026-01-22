@@ -22,9 +22,12 @@ error_unclear_input: |
   - *Promote*: Want to convert request to job? 'Promote request for High Street 34 to job'
   - *Pipeline*: 'Show pipeline', 'Show Lost customers' or 'Mark John as Not Interested'
   - *Invoice*: 'Send invoice to John'
+  - *Quotes*: 'Send a quote to John for window cleaning'
   - *Status*: 'On my way to John'
   - *Teams*: 'Show schedule' or 'Where are my employees?'
   - *Assign*: 'Assign job 123 to John'
+  - *Accounting*: 'Connect QuickBooks', 'Sync QuickBooks', 'QuickBooks Status'
+  - *Workflow*: 'Show workflow settings', 'Set invoicing to automatic'
   - *Edit*: 'Edit Job, Lead or Request: John on High Street 34, call 0871235678 tomorrow at 12:00'
   - *Settings*: 'Update settings'
 
@@ -143,7 +146,10 @@ help_message: |
   - *Promote to Job*: Convert a request into a job: 'Promote request for High Street 34 to job'
   - *Sales Pipeline*: View sales funnel or update customer status: 'Show sales pipeline', 'Show Lost customers', 'Mark John as Not Interested'
   - *Invoice*: Generate and send an invoice: 'Send invoice to John'
+  - *Quotes*: Create and send a quote: 'Send a quote to John'
   - *Send Status*: Notify customer you are on the way: 'On my way to John'. The client receives "Hello, I'm on my way to you. Will be there soon." (configurable)
+  - *Accounting*: Manage QuickBooks integration: 'Connect QuickBooks', 'QuickBooks Status'
+  - *Workflow*: Configure business logic: 'Show workflow settings', 'Set invoicing to automatic'
   - *Edit*: Modify an entry: 'Edit Job, Lead or Request: John on High Street 34...'
   - *Settings*: Configure preferences: 'Update settings'
   

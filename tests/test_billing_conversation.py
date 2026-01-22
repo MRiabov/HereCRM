@@ -43,32 +43,11 @@ async def test_billing_entry(whatsapp_service):
         MockExecutor.return_value = mock_exec_instance
         mock_exec_instance.execute.return_value = ("Billing Status: Free", None)
         
-        response = await whatsapp_service.handle_message("billing", user_id=1, user_phone="123")
-        
-        # Should transition to BILLING
-        # Note: handle_message logic for "billing" keyword updates state
-        # But wait, handle_message calls _handle_idle which checks keywords
-        # Let's verify _handle_idle logic or the flow through handle_message
-        
-        # We need to ensure state_repo returns our state
+        # Setup dependencies for _handle_idle
         whatsapp_service.state_repo.get_by_user_id.return_value = state
         whatsapp_service.user_repo.get_by_id.return_value = user
-
-        # Since we are mocking handle_message's internal calls, we actually need to test _handle_idle directly
-        # or ensure handle_message calls it.
-        # But handle_message does complex logic. 
-        # For simplicity in this mock test, let's call _handle_idle directly for the keyword check part
-        # OR better: run handle_message and trust the mock state repo.
         
-        # Re-run logic for "billing" which is handled in _handle_idle (which is called by handle_message if state is IDLE)
-        # However, handle_message logic:
-        # 1. Get user -> ok
-        # 2. Get state -> ok (IDLE)
-        # 3. Call _handle_idle
-        
-        # Inside _handle_idle:
-        # if "billing" in text -> state=BILLING, ToolExecutor.execute(GetBillingStatusTool)
-        
+        # Call _handle_idle directly to test state transition and response
         response = await whatsapp_service._handle_idle(user, state, "billing")
         
         assert state.state == ConversationStatus.BILLING

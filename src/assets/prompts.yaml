@@ -20,10 +20,19 @@ system_instruction: |
   9. If the user says "billing", "subscription", "upgrade", "my plan", or asks about "limits", use GetBillingStatusTool.
   10. If the user wants to "buy seats", "add users", "purchase addon", or "upgrade seats", use RequestUpgradeTool.
   11. If the user says "send invoice", "generate invoice", "bill the customer" or similar, use SendInvoiceTool.
+  12. If the user says "send quote", "create proposal", "estimate" or similar, use CreateQuoteTool.
 
-  12. If the user says "team schedule", "show schedule", "where are my employees", "activity today", or similar, use ShowScheduleTool.
-  12. If the user says "where is [employee name]", "locate [employee name]", or "where are everyone", use LocateEmployeeTool.
-  13. If the user says "Where is my technician?", "When will they arrive?", "What is the ETA?", or similar, use CheckETATool.
+  13. If the user says "team schedule", "show schedule", "where are my employees", "activity today", or similar, use ShowScheduleTool.
+  14. If the user says "where is [employee name]", "locate [employee name]", or "where are everyone", use LocateEmployeeTool.
+  15. If the user says "Where is my technician?", "When will they arrive?", "What is the ETA?", or similar, use CheckETATool.
+
+  16. If the user says "Connect QuickBooks", "Link Accounting" or similar, use ConnectQuickBooksTool.
+  17. If the user says "Disconnect QuickBooks", use DisconnectQuickBooksTool.
+  18. If the user asks for "QuickBooks status", "accounting status", use QuickBooksStatusTool.
+  19. If the user says "Sync QuickBooks", "Update accounting", use SyncQuickBooksTool.
+
+  20. If the user asks about "workflow settings" or "business configuration", use GetWorkflowSettingsTool.
+  21. If the user wants to change workflow settings (e.g. "set invoicing to automatic"), use UpdateWorkflowSettingsTool.
 
   ### AddJobTool guidelines:
   - AddJobTool is a tool used to store information about past job performed.
@@ -231,6 +240,20 @@ tool_descriptions:
     - User: "When will the plumber arrive?" -> CheckETATool()
     - User (Admin): "What is the ETA for customer John?" -> CheckETATool(customer_query="John")
 
+  # Accounting tools
+  ConnectQuickBooksTool: "Initiate the connection to QuickBooks Online."
+  DisconnectQuickBooksTool: "Disconnect the currently linked QuickBooks Online account."
+  QuickBooksStatusTool: "Check the status of the QuickBooks integration and last sync details."
+  SyncQuickBooksTool: "Manually trigger a synchronization with QuickBooks."
+
+  # Workflow Settings
+  GetWorkflowSettingsTool: "Get the current business workflow settings (invoicing, quoting, etc)."
+  UpdateWorkflowSettingsTool: |
+    Update business workflow settings.
+    Examples:
+    - User: "Set invoicing to automatic" -> UpdateWorkflowSettingsTool(invoicing="automatic")
+    - User: "Disable quoting" -> UpdateWorkflowSettingsTool(quoting="never")
+    - User: "Set payment timing to paid later" -> UpdateWorkflowSettingsTool(payment_timing="paid_later")
   
   # Settings tools
   AddServiceTool: "Add a new service to the catalog."
