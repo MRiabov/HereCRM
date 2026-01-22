@@ -6,6 +6,8 @@ dependencies: []
 subtasks: [T010, T011, T012, T013, T014]
 agent: "Antigravity"
 shell_pid: "230585"
+review_status: "has_feedback"
+reviewed_by: "MRiabov"
 ---
 
 # Work Package: Employee Time Tracking
@@ -92,3 +94,13 @@ We need to capture the `start_time` for both shifts and jobs so that later (in W
 
 - 2026-01-22T12:05:25Z – unknown – lane=for_review – Completed Webhook Dispatcher implementation. Added event constants and decorator-based subscription. Verified with unit tests.
 - 2026-01-22T14:06:27Z – Antigravity – shell_pid=230585 – lane=doing – Started review via workflow command
+- 2026-01-22T14:11:09Z – Antigravity – shell_pid=230585 – lane=planned – Moved to planned
+- 2026-01-22T14:17:05Z – Antigravity – shell_pid=230585 – lane=doing – Started implementation via workflow command
+
+## Review Feedback
+
+**Implementation Missing**: The work package "WP03 - Employee Time Tracking" has not been implemented. Investigating the source code and worktree reveals that none of the files specified (e.g., `src/services/time_tracking.py`) exist.
+
+**Metadata Error**: The activity log for this WP erroneously contains an entry from a different feature ("Completed Webhook Dispatcher implementation" from Spec 015). It appears this WP was marked as `for_review` by mistake or due to a script error.
+
+**Action Required**: Move this back to `planned` and assign an agent to implement the actual requirements (Check In/Out, Job Start/Finish tools, and state transitions).
