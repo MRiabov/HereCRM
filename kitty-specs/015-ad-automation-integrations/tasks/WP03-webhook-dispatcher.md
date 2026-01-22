@@ -1,9 +1,11 @@
 ---
 work_package_id: "WP03"
 title: "Webhook Dispatcher"
-lane: "planned"
+lane: "doing"
 subtasks: ["T012", "T013", "T014", "T015"]
 dependencies: ["WP01"]
+agent: "Antigravity"
+shell_pid: "63157"
 ---
 
 ## Objective
@@ -70,3 +72,7 @@ Integrators need to know when a Job is booked.
 - `IntegrationEventHandler` successfully receives the event.
 - Webhooks are sent to external URLs with valid signatures.
 - Tests pass with mocked network calls.
+
+## Activity Log
+
+- 2026-01-22T10:45:58Z – Antigravity – shell_pid=63157 – lane=doing – Started implementation via workflow command
