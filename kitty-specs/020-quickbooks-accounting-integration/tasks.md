@@ -48,7 +48,7 @@
   - [x] T015: Implement `InvoiceSyncer` and mapper (Including line items & tax references)
   - [x] T016: Implement `PaymentSyncer` and mapper (Linking to Invoices)
   - [x] T017: Implement linked transaction logic (Ensure parent Customer/Invoice exists before sync)
-  - [ ] T018: Add unit tests for Invoice and Payment sync logic
+  - [x] T018: Add unit tests for Invoice and Payment sync logic
 
 ### WP05: Orchestration & Scheduler
 
