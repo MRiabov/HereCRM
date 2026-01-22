@@ -467,3 +467,24 @@ class UpdateWorkflowSettingsTool(BaseModel):
     tax_inclusive: Optional[bool] = Field(None, description="Whether prices include tax")
     include_payment_terms: Optional[bool] = Field(None, description="Whether to show net terms on invoices")
     enable_reminders: Optional[bool] = Field(None, description="Whether to send auto-reminders")
+
+
+class CheckInTool(BaseModel):
+    """Check in for the day/shift. 
+    Triggered when user says 'Start shift', 'Check in', 'I am here'."""
+    pass
+
+class CheckOutTool(BaseModel):
+    """Check out for the day/shift.
+    Triggered when user says 'End shift', 'Check out', 'I am leaving'."""
+    pass
+
+class StartJobTool(BaseModel):
+    """Start tracking time for a specific job.
+    Triggered when user says 'Start job', 'I am arriving at [customer]', 'Begin work'."""
+    job_id: int = Field(..., description="ID of the job to start.")
+
+class FinishJobTool(BaseModel):
+    """Finish tracking time for a specific job.
+    Triggered when user says 'Finish job', 'Job done', 'Work complete'."""
+    job_id: int = Field(..., description="ID of the job to finish.")
