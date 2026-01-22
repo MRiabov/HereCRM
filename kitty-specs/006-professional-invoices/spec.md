@@ -51,6 +51,21 @@ As a business owner, I want the invoices to look professional (clean layout, log
 
 ---
 
+### User Story 4 - Custom Payment Link (Priority: P2)
+
+As a business owner, I want to add my own payment link (Stripe, PayPal, etc.) to my invoices so that my customers can pay me easily online.
+
+**Why this priority**: Improves cash flow for the business and convenience for the customer.
+
+**Independent Test**: Configure a payment link for a business, generate an invoice, and verify the link appears in the PDF and message.
+
+**Acceptance Scenarios**:
+
+1. **Given** a business with a configured payment link "https://stripe.com/pay/abc", **When** an invoice is generated, **Then** the PDF contains a "Pay Now" button/link and the WhatsApp message includes the link.
+2. **Given** a business with NO payment link configured, **When** an invoice is generated, **Then** no payment button appears in the PDF and no link is sent in the message.
+
+---
+
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
@@ -62,6 +77,10 @@ As a business owner, I want the invoices to look professional (clean layout, log
 - **FR-005**: System MUST store the generated PDF using a persistent storage mechanism.
 - **FR-006**: System MUST Create an `Invoice` entity linked to the Job upon successful generation.
 - **FR-007**: System MUST be able to return a "Send" action (returning the link/file path to the chat interface).
+- **FR-008**: System MUST allow a Business to store a `payment_link` in their settings.
+- **FR-009**: System MUST include a prominent "Pay Now" button in the PDF invoice if `payment_link` is configured.
+- **FR-010**: System MUST include the `payment_link` in the WhatsApp/SMS message sent along with the invoice.
+- **FR-011**: System MUST allow configuring the `payment_link` via the conversational Settings interface.
 
 ### Key Entities
 
@@ -71,7 +90,10 @@ As a business owner, I want the invoices to look professional (clean layout, log
   - `created_at`: Timestamp
   - `file_location`: Location/Link to the file
   - `status`: Status of the invoice (e.g., DRAFT, SENT)
+  - `payment_link`: Snapshot of the payment link used for this invoice.
 - **Job**: Existing entity.
+- **Business**: Existing entity.
+  - `payment_link`: URL for customer payments.
 
 ## Success Criteria *(mandatory)*
 

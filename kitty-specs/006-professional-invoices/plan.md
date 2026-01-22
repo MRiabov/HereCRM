@@ -51,7 +51,9 @@
 
 - Add `Invoice` SQLModel/SQLAlchemy model.
 - Add tax fields to `Invoice`: `subtotal`, `tax_amount`, `tax_rate`, `total_amount`.
+- Add `payment_link` field to `Invoice` (string, snapshot of business link).
 - Add `tax_mode` field to `Business` model (Enum: "tax_included", "tax_added").
+- Add `payment_link` field to `Business` model (string, optional).
 - Update `Job` model with relationship.
 
 ### Core Logic
@@ -63,11 +65,17 @@
   - Check for duplicates.
   - Orchestrate: Data Fetch -> Tax Calculation -> PDF Gen -> S3 Upload -> DB Save.
   - Integrate with `StripeTaxService` for tax calculation.
+  - Fetch `payment_link` from `Business` and pass to `PDFGenerator` and include in metadata.
 
-#### [NEW] src/tools/invoice_tools.py
+#### [MODIFY] src/tools/invoice_tools.py
 
 - Define `SendInvoiceTool`.
 - Logic: Find Customer -> Find Last Job -> Call `invoice_service`.
+- Return a structured response that includes the PDF URL and the `payment_link`.
+
+#### [MODIFY] src/uimodels.py
+
+- Add `payment_link` to `ALLOWED_SETTING_KEYS` to enable configuration via conversational settings.
 
 #### [MODIFY] src/llm_client.py
 
@@ -75,10 +83,12 @@
 
 ### Integration
 
-#### [MODIFY] src/whatsapp_service.py
+#### [MODIFY] src/whatsapp_service.py or src/services/messaging_service.py
 
-- Handle the response from `SendInvoiceTool`.
-- If response contains file path/URL, send appropriate message type (document + text).
+- Programmatically handle the response from `SendInvoiceTool`.
+- When an invoice is sent, the system MUST automatically construct the message to include the `payment_link` if available.
+- Example logic: `message = f"Your invoice is attached. {f'Pay here: {payment_link}' if payment_link else ''}"`.
+- This ensures the link is sent reliably alongside the file without relying on LLM text generation.
 
 ## Verification Plan
 

@@ -8,6 +8,7 @@
 | WP02 | Invoice PDF Generation | [ ] | |
 | WP03 | Logic, Tools & Integration | [ ] | |
 | WP04 | Tax Calculation Integration | [ ] | |
+| WP05 | Payment Link Integration | [ ] | |
 
 ## Work Packages
 
@@ -63,3 +64,17 @@
 - [ ] T023: Add unit tests for `StripeTaxService` (mocking Stripe API).
 - [ ] T024: Add integration tests for invoice generation with tax calculation.
 - [ ] T025: Implement tax calculation caching to reduce API calls.
+
+### WP05: Payment Link Integration
+
+**Goal**: Allow businesses to add a payment link that appears on the PDF and in messages.
+**Priority**: P1
+**Prompt**: [tasks/WP05-payment-link-integration.md](tasks/WP05-payment-link-integration.md)
+
+- [ ] T026: Add `payment_link` field to `Business` model.
+- [ ] T027: Add `payment_link` (snapshot) field to `Invoice` model.
+- [ ] T028: Create Alembic migration for payment link fields.
+- [ ] T029: Update `src/templates/invoice.html` to include a "Pay Now" button if payment link is present.
+- [ ] T030: Update `InvoiceService` to include the business's payment link when generating and saving an invoice.
+- [ ] T031: Update `SendInvoiceTool` and `WhatsAppService` to include the payment link in the outgoing message.
+- [ ] T032: Add unit and integration tests for payment link presence in PDF and messages.
