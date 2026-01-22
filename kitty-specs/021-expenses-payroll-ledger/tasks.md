@@ -9,11 +9,11 @@
 **Priority**: Critical path
 **Tests**: `tests/unit/test_models_021.py` verify schema and relationships.
 
-- [ ] **T001**: Create migration for `WageModel` enum, `Expense`, `LedgerEntry`, `WageConfiguration` tables.
-- [ ] **T002**: Create SQLAlchemy models in `src/models/` matching the schema.
-- [ ] **T003**: Update `User` model with `wage_config` relationship and `current_shift_start` (datetime) field.
-- [ ] **T004**: Update `Job` model with `expenses` relationship and `started_at` (datetime) field.
-- [ ] **T005**: Create factory seed data to verify relationships can be populated.
+- [x] T001: Create migration for `WageModel` enum, `Expense`, `LedgerEntry`, `WageConfiguration` tables.
+- [x] T002: Create SQLAlchemy models in `src/models/` matching the schema.
+- [x] T003: Update `User` model with `wage_config` relationship and `current_shift_start` (datetime) field.
+- [x] T004: Update `Job` model with `expenses` relationship and `started_at` (datetime) field.
+- [x] T005: Create factory seed data to verify relationships can be populated.
 
 **Implementation**:
 
