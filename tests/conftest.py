@@ -9,6 +9,7 @@ from src.database import engine
 # Inject dummy keys BEFORE standard imports can fail
 os.environ["GOOGLE_API_KEY"] = "dummy_test_key"
 os.environ["WHATSAPP_APP_SECRET"] = "dummy_secret"
+os.environ["OPENROUTER_API_KEY"] = "dummy_openrouter_key"
 os.environ["WA_TOKEN"] = "dummy_token"
 os.environ["WA_PHONE_ID"] = "dummy_phone_id"
 os.environ["ALLOW_LOCAL_IMPORT"] = "true"
