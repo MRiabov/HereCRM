@@ -1,7 +1,7 @@
 ---
 work_package_id: WP05
 title: Orchestration & Scheduler
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks:
 - T019
@@ -9,6 +9,8 @@ subtasks:
 - T021
 - T022
 - T023
+agent: "Cascade"
+shell_pid: "26412"
 ---
 
 ## Objective
@@ -91,3 +93,7 @@ This is the "engine" that runs every hour. It connects WP01-WP04 together. It ne
 ## Verification
 
 - Run `pytest tests/integration/test_sync_orchestration.py`.
+
+## Activity Log
+
+- 2026-01-22T07:36:57Z – Cascade – shell_pid=26412 – lane=doing – Started implementation via workflow command
