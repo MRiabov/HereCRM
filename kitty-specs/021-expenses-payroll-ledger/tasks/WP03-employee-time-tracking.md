@@ -1,7 +1,7 @@
 ---
 work_package_id: WP03
 title: Employee Time Tracking
-lane: "doing"
+lane: "done"
 dependencies: []
 subtasks: [T010, T011, T012, T013, T014]
 agent: "Antigravity"
@@ -81,8 +81,8 @@ We need to capture the `start_time` for both shifts and jobs so that later (in W
 
 ## Validation
 
-- [ ] Tests pass.
-- [ ] Logic correctly handles timezone awareness (use `datetime.now(timezone.utc)` everywhere!).
+- [x] Tests pass.
+- [x] Logic correctly handles timezone awareness (use `datetime.now(timezone.utc)` everywhere!).
 
 ## Definition of Done
 
@@ -98,6 +98,7 @@ We need to capture the `start_time` for both shifts and jobs so that later (in W
 - 2026-01-22T14:17:05Z – Antigravity – shell_pid=230585 – lane=doing – Started implementation via workflow command
 - 2026-01-22T14:54:39Z – Antigravity – shell_pid=230585 – lane=for_review – Implementation complete
 - 2026-01-22T17:57:36Z – Antigravity – shell_pid=310764 – lane=doing – Started review via workflow command
+- 2026-01-22T18:00:50Z – Antigravity – shell_pid=310764 – lane=done – Review passed: Employee time tracking (Check In/Out, Job Start/Finish) implemented with Service, Tools, and UI models. Integration tests pass. RBAC config updated.
 
 ## Review Feedback
 
