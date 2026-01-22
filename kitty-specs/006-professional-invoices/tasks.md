@@ -5,8 +5,8 @@
 | ID | Work Package | Status | Owner |
 |---|---|---|---|
 | WP01 | Infrastructure & Data Model | [x] | antigravity |
-| WP02 | Invoice PDF Generation | [ ] | |
-| WP03 | Logic, Tools & Integration | [ ] | |
+| WP02 | Invoice PDF Generation | [x] | Antigravity |
+| WP03 | Logic, Tools & Integration | [x] | gemini-cli |
 | WP04 | Tax Calculation Integration | [ ] | |
 | WP05 | Payment Link Integration | [ ] | |
 
@@ -18,12 +18,12 @@
 **Priority**: P0 (Foundational)
 **Prompt**: [tasks/WP01-infrastructure-and-models.md](tasks/WP01-infrastructure-and-models.md)
 
-- [ ] T001: Install Python dependencies (`boto3`, `weasyprint`, `jinja2`).
-- [ ] T002: Update `.env` and `config` to support S3.
-- [ ] T003: Implement `S3Service` in `src/services/storage.py` with mockable interface.
-- [ ] T004: Create `Invoice` model in `src/database/models.py`.
-- [ ] T005: Update `Job` model relationship.
-- [ ] T006: Create and run Alembic migration.
+- [x] T001: Install Python dependencies (`boto3`, `weasyprint`, `jinja2`).
+- [x] T002: Update `.env` and `config` to support S3.
+- [x] T003: Implement `S3Service` in `src/services/storage.py` with mockable interface.
+- [x] T004: Create `Invoice` model in `src/database/models.py`.
+- [x] T005: Update `Job` model relationship.
+- [x] T006: Create and run Alembic migration.
 
 ### WP02: Invoice PDF Generation
 
