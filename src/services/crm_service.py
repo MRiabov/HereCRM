@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from src.models import Job, Customer, PipelineStage, Business, PaymentTiming
 from src.repositories import JobRepository, CustomerRepository, RequestRepository
-from src.events import event_bus
+from src.events import event_bus, JOB_CREATED, JOB_BOOKED, JOB_SCHEDULED
 from datetime import datetime, timedelta, timezone
 from src.services.quote_service import QuoteService
 
@@ -49,11 +49,16 @@ class CRMService:
         self.job_repo.add(job)
         await self.session.commit() # Must commit for other sessions (handlers) to see it
 
-        # Emit event
+        # Emit events
         await event_bus.emit(
-            "JOB_CREATED",
+            JOB_CREATED,
             {"job_id": job.id, "customer_id": customer_id, "business_id": self.business_id},
         )
+        if status == "booked":
+            await event_bus.emit(
+                JOB_BOOKED,
+                {"job_id": job.id, "customer_id": customer_id, "business_id": self.business_id, "value": job.value},
+            )
         return job
 
     async def get_active_job_for_customer(self, phone_number: str) -> Optional[Job]:
@@ -262,6 +267,7 @@ class CRMService:
             raise ValueError(f"Job with ID {job_id} not found.")
 
         old_scheduled_at = job.scheduled_at
+        old_status = job.status
 
         if description is not None:
             job.description = description
@@ -276,12 +282,24 @@ class CRMService:
         # Emit JOB_SCHEDULED if scheduled_at changed and is now set
         if scheduled_at and scheduled_at != old_scheduled_at:
             await event_bus.emit(
-                "JOB_SCHEDULED",
+                JOB_SCHEDULED,
                 {
                     "job_id": job.id,
                     "customer_id": job.customer_id,
                     "business_id": self.business_id,
                     "scheduled_at": scheduled_at.isoformat(),
+                },
+            )
+
+        # Emit JOB_BOOKED if status changed to 'booked'
+        if status == "booked" and old_status != "booked":
+            await event_bus.emit(
+                JOB_BOOKED,
+                {
+                    "job_id": job.id,
+                    "customer_id": job.customer_id,
+                    "business_id": self.business_id,
+                    "value": job.value,
                 },
             )
 

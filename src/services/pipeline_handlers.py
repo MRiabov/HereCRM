@@ -2,9 +2,11 @@ import logging
 from src.repositories import CustomerRepository, JobRepository
 from src.models import PipelineStage
 import src.database
+from src.events import event_bus, JOB_CREATED, CONTACT_EVENT
 
 logger = logging.getLogger(__name__)
 
+@event_bus.on(JOB_CREATED)
 async def handle_job_created(data: dict) -> None:
     """
     Handle JOB_CREATED event.
@@ -41,6 +43,7 @@ async def handle_job_created(data: dict) -> None:
             await session.commit()
             logger.info(f"Updated customer {customer_id} stage: {old_stage} -> {new_stage} (Jobs: {count})")
 
+@event_bus.on(CONTACT_EVENT)
 async def handle_contact_event(data: dict) -> None:
     """
     Handle CONTACT_EVENT.

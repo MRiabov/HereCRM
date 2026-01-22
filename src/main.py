@@ -16,10 +16,9 @@ async def lifespan(app: FastAPI):
     
     # Register Event Listeners
     app.state.event_bus = event_bus
-    from src.services.pipeline_handlers import handle_job_created, handle_contact_event
-    
-    event_bus.subscribe("JOB_CREATED", handle_job_created)
-    event_bus.subscribe("CONTACT_EVENT", handle_contact_event)
+    # Import handlers to register them via decorators
+    import src.services.pipeline_handlers  # noqa: F401
+    import src.handlers.integration_handlers  # noqa: F401
     
     # Register MessagingService event handlers
     messaging_service.register_handlers()

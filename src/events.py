@@ -1,6 +1,14 @@
 import asyncio
-from typing import Callable, Dict, List, Any, Awaitable, Union, Optional
+from typing import Callable, Dict, List, Any, Awaitable, Union
 import logging
+
+# Event Names
+JOB_CREATED = "JOB_CREATED"
+JOB_SCHEDULED = "JOB_SCHEDULED"
+JOB_BOOKED = "JOB_BOOKED"
+JOB_COMPLETED = "JOB_COMPLETED"
+JOB_CANCELLED = "JOB_CANCELLED"
+CONTACT_EVENT = "CONTACT_EVENT"
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +22,13 @@ class EventBus:
             self._subscribers[event_name] = []
         self._subscribers[event_name].append(callback)
         logger.debug(f"Subscribed to {event_name}")
+
+    def on(self, event_name: str):
+        """Decorator to subscribe a function to an event."""
+        def decorator(func):
+            self.subscribe(event_name, func)
+            return func
+        return decorator
 
     async def emit(self, event_name: str, data: Any = None):
         """Emit an event to all subscribers."""

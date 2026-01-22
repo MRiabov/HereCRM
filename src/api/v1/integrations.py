@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+
 from pydantic import BaseModel
 from typing import Optional
 
@@ -33,6 +34,7 @@ class ServiceRequest(BaseModel):
     notes: Optional[str] = None
 
 @router.post("/provision", status_code=status.HTTP_201_CREATED)
+
 async def provision_integration(
     payload: ProvisionRequest,
     db: AsyncSession = Depends(get_db)
@@ -71,6 +73,7 @@ async def provision_integration(
     return {"status": "success", "config_id": str(config.id)}
 
 @router.post("/leads", status_code=status.HTTP_201_CREATED)
+
 async def create_lead(
     payload: LeadRequest,
     config: IntegrationConfig = Depends(get_api_key_auth),
@@ -101,6 +104,7 @@ async def create_lead(
     return {"customer_id": customer.id, "is_existing": is_existing}
 
 @router.post("/requests", status_code=status.HTTP_201_CREATED)
+
 async def create_request(
     payload: ServiceRequest,
     config: IntegrationConfig = Depends(get_api_key_auth),

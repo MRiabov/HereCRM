@@ -36,6 +36,7 @@ async def test_provisioning_flow(client, async_session):
         
         response = client.post("/api/v1/integrations/provision", json=payload)
         assert response.status_code == 201
+
         assert "config_id" in response.json()
 
         # 3. Invalid signature
@@ -74,6 +75,7 @@ async def test_leads_ingestion_api_key(client, async_session):
         
         response = client.post("/api/v1/integrations/leads", json=payload, headers=headers)
         assert response.status_code == 201
+
         data = response.json()
         assert "customer_id" in data
         assert not data["is_existing"]
@@ -117,6 +119,7 @@ async def test_requests_ingestion(client, async_session):
         
         response = client.post("/api/v1/integrations/requests", json=payload, headers=headers)
         assert response.status_code == 201
+
         data = response.json()
         assert "request_id" in data
         assert "customer_id" in data
