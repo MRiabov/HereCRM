@@ -10,12 +10,22 @@
       "validation_commands": [
         "pytest tests/"
       ]
+    },
+    {
+      "accepted_at": "2026-01-22T14:39:46Z",
+      "accepted_by": "Antigravity",
+      "accepted_from_commit": "8764817b56945753f135d9b244ab0c0a6906f648",
+      "branch": "main",
+      "mode": "local",
+      "validation_commands": [
+        "pytest tests/"
+      ]
     }
   ],
   "acceptance_mode": "local",
-  "accepted_at": "2026-01-22T14:01:08Z",
+  "accepted_at": "2026-01-22T14:39:46Z",
   "accepted_by": "Antigravity",
-  "accepted_from_commit": "93b1f12c5ed75fe2553d1bbe6fdd5785d246b9a3",
+  "accepted_from_commit": "8764817b56945753f135d9b244ab0c0a6906f648",
   "created_at": "2026-01-21T19:54:07Z",
   "feature_number": "020",
   "friendly_name": "QuickBooks Accounting Integration",
