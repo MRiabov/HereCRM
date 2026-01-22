@@ -66,7 +66,14 @@ from src.uimodels import (
     DisconnectQuickBooksTool,
     QuickBooksStatusTool,
     SyncQuickBooksTool,
+    CheckInTool,
+    CheckOutTool,
+    StartJobTool,
+    FinishJobTool,
 )
+from src.services.time_tracking import TimeTrackingService
+from src.tools.shifts import ShiftTools
+from src.tools.jobs_time import JobTimeTools
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.quote_tools import CreateQuoteTool
 from src.tools.routing_tools import AutorouteToolExecutor
@@ -113,6 +120,9 @@ class ToolExecutor:
         self.assignment_service = AssignmentService(session, self.business_id)
         self.quote_service = QuoteService(session)
         self.rbac_service = RBACService()
+        self.time_tracking_service = TimeTrackingService(session)
+        self.shift_tools = ShiftTools(self.time_tracking_service)
+        self.job_time_tools = JobTimeTools(self.time_tracking_service)
         self._routing_service = None
 
     def _get_routing_service(self) -> OpenRouteServiceAdapter:
@@ -161,6 +171,10 @@ class ToolExecutor:
             LocateEmployeeTool,
             CheckETATool,
             AutorouteTool,
+            CheckInTool,
+            CheckOutTool,
+            StartJobTool,
+            FinishJobTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
 
@@ -287,6 +301,14 @@ class ToolExecutor:
             return await self._execute_quickbooks_status(tool_call)
         elif isinstance(tool_call, SyncQuickBooksTool):
             return await self._execute_sync_quickbooks(tool_call)
+        elif isinstance(tool_call, CheckInTool):
+             return await self.shift_tools.check_in(tool_call, self.user_id), None
+        elif isinstance(tool_call, CheckOutTool):
+             return await self.shift_tools.check_out(tool_call, self.user_id), None
+        elif isinstance(tool_call, StartJobTool):
+             return await self.job_time_tools.start_job(tool_call, self.user_id), None
+        elif isinstance(tool_call, FinishJobTool):
+             return await self.job_time_tools.finish_job(tool_call), None
         return "Unknown tool call", None
 
     # ... (other methods unchanged)
