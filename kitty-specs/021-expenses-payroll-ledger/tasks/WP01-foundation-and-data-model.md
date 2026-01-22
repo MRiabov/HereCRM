@@ -1,9 +1,11 @@
 ---
 work_package_id: "WP01"
 title: "Foundation & Data Model"
-lane: "planned"
+lane: "doing"
 dependencies: []
 subtasks: ["T001", "T002", "T003", "T004", "T005"]
+agent: "Antigravity"
+shell_pid: "195966"
 ---
 
 # Work Package: Foundation & Data Model
@@ -109,3 +111,7 @@ The data model strategy is "Append Only" for financial records (LedgerEntry) to 
 
 - **Naming Conflicts**: Check if `Expense` or `Ledger` names conflict with any existing system reserved words or models (unlikely in this codebase).
 - **Circular Imports**: Be careful importing User/Job into `financial.py` and vice versa. Use string forward references `"User"` if needed.
+
+## Activity Log
+
+- 2026-01-22T11:40:32Z – Antigravity – shell_pid=195966 – lane=doing – Started implementation via workflow command
