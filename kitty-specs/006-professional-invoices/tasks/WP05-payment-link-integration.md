@@ -1,7 +1,7 @@
 ---
 type: work-package
 id: WP05
-lane: "todo"
+lane: "doing"
 subtasks:
   - T026
   - T027
@@ -10,6 +10,8 @@ subtasks:
   - T030
   - T031
   - T032
+agent: "gemini"
+shell_pid: "158263"
 ---
 
 # Work Package 05: Payment Link Integration
@@ -71,3 +73,7 @@ To streamline the payment process, businesses need a way to direct customers to 
 - Manually set a `payment_link` for a test business.
 - Trigger "Send invoice to [Customer]".
 - Verify the link is in the message and the PDF.
+
+## Activity Log
+
+- 2026-01-22T10:42:17Z – gemini – shell_pid=158263 – lane=doing – Started implementation via workflow command
