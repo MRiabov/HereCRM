@@ -20,7 +20,9 @@ Enable automated customer messaging via WhatsApp/SMS triggered by business event
 - **Architecture**: Event-driven architecture using the shared internal `EventBus` (`src/events.py`).
 - **Queue**: Python `asyncio.Queue` for non-persistent message dispatching.
 - **Provider**: Meta Cloud API for WhatsApp messaging.
-- **Scope**: "On My Way", "Job Booked" (via `JOB_CREATED`), "Job Scheduled" (via new `JOB_SCHEDULED` event), "Daily Schedule".
+- **Scope**: "On My Way", "Job Booked", "Job Scheduled", "Daily Schedule", "Smart Follow-up" (Quote 48h), "Review Request" (Job Paid 2h).
+- **Automation**: Use a background task or scheduler (e.g., `asyncio` sleep or a more robust scheduler if available) to handle delayed triggers.
+- **LLM**: Use the existing OpenAI/LLM service to draft follow-up messages.
 
 ## Technical Context
 
@@ -44,7 +46,7 @@ Enable automated customer messaging via WhatsApp/SMS triggered by business event
 
 ### Documentation (this feature)
 
-```
+```markdown
 kitty-specs/[###-feature]/
 ├── plan.md              # This file (/spec-kitty.plan command output)
 ├── research.md          # Phase 0 output (/spec-kitty.plan command)
@@ -56,7 +58,7 @@ kitty-specs/[###-feature]/
 
 ### Source Code (repository root)
 
-```
+```markdown
 src/
 ├── services/            # MessagingService (updates), CRMService (add JOB_SCHEDULED)
 ├── models/              # (Updates if needed, though likely minimal for this phase)
@@ -76,6 +78,6 @@ tests/
 *Fill ONLY if Constitution Check has violations that must be justified*
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
+| :--- | :--- | :--- |
 | [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
 | [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |

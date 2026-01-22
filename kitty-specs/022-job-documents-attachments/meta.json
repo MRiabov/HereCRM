@@ -1,0 +1,8 @@
+{
+  "feature_number": "022",
+  "slug": "022-job-documents-attachments",
+  "friendly_name": "Job Documents & Attachments",
+  "mission": "software-dev",
+  "source_description": "Job documents. Customers can upload a document and attach it to a job. When requested, they will get the links/documents back.\n\nSee how the application structure is in @[kitty-specs/001-whatsapp-ai-crm] .\n\nSecurity measures must be taken here. Use best practices.",
+  "created_at": "2026-01-22T19:08:00Z"
+}

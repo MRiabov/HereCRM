@@ -1,0 +1,8 @@
+{
+  "feature_number": "023",
+  "slug": "023-broadcast-marketing-campaigns",
+  "friendly_name": "Broadcast Marketing Campaigns",
+  "mission": "software-dev",
+  "source_description": "Broadcast Marketing (Customer Campaigns). Feature: Allow owners to send a blast to specific segments. Input: 'Broadcast to all Converted Once customers in Dublin: We're doing a 20% discount on Gutter Cleaning this Friday.' User Value: Shifts the CRM from a reactive tool to a proactive tool. Support Whatsapp and Email. Safety precaution: double-check the user before sending the blast.",
+  "created_at": "2026-01-22T19:15:01Z"
+}

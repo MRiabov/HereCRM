@@ -28,3 +28,16 @@
 - [ ] WP04: Manual & Scheduled Triggers @[WP04-triggers] <!-- id: 14 -->
   - [ ] T011: Implement "On My Way" trigger <!-- id: 15 -->
   - [ ] T012: Implement Daily Schedule runner <!-- id: 16 -->
+
+## AI & Reputation
+
+- [ ] WP05: Smart Follow-up Engine @[WP05-smart-followup] <!-- id: 18 -->
+  - [ ] T014: Implement Quote Sent reminder logic (48h delay) <!-- id: 19 -->
+  - [ ] T015: Integrate LLM for personalized follow-up drafting <!-- id: 20 -->
+  - [ ] T016: Implement approval flow for follow-ups <!-- id: 21 -->
+  - [ ] T017: Add configuration settings for follow-ups <!-- id: 22 -->
+
+- [ ] WP06: Review & Reputation Management @[WP06-review-management] <!-- id: 23 -->
+  - [ ] T018: Implement Job Paid review request logic (2h delay) <!-- id: 24 -->
+  - [ ] T019: Create review request template with configurable links <!-- id: 25 -->
+  - [ ] T020: Add configuration settings for review requests <!-- id: 26 -->

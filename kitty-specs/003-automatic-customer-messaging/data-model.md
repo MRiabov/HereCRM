@@ -19,6 +19,19 @@ Tracks the history of automated messages sent to customers.
   - `sent_at`: DateTime (Nullable, UTC)
   - `error_message`: String (Nullable)
 
+### `FollowUpDraft` (Proposed)
+
+Stores AI-generated follow-up messages awaiting approval.
+
+- **Table**: `followup_drafts`
+- **Fields**:
+  - `id`: Integer (PK)
+  - `quote_id`: Integer (FK to quotes)
+  - `customer_id`: Integer (FK)
+  - `content`: String (The AI-generated draft)
+  - `status`: Enum (`PENDING`, `APPROVED`, `REJECTED`, `SENT`)
+  - `created_at`: DateTime (UTC)
+
 ## Events (Shared Event Bus)
 
 The messaging system listens for strings emitted via `src.events.event_bus`.
@@ -51,9 +64,26 @@ Ad-hoc event triggered by user.
   - `eta_minutes`: Integer (Optional)
   - `business_id`: Integer
 
+### `QUOTE_SENT`
+
+Triggered when a quote is successfully sent to a customer.
+
+- **Payload**:
+  - `quote_id`: Integer
+  - `customer_id`: Integer
+
+### `JOB_PAID`
+
+Triggered when a job is marked as paid (Spec 018).
+
+- **Payload**:
+  - `job_id`: Integer
+  - `customer_id`: Integer
+
 ## API Contracts (Internal)
 
 ### `MessagingService` Interface
 
 - `send_message(recipient: str, content: str, channel: str = "whatsapp") -> MessageLog`
+- `schedule_delayed_message(recipient: str, content: str, delay_hours: int, trigger_source: str)`
 - `process_queue()`: Background task to consume from `asyncio.Queue`
