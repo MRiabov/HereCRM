@@ -29,6 +29,7 @@ dependencies = [
     "spec-kitty-cli>=0.11.1",
     "stripe>=14.2.0",
     "python-quickbooks>=0.9.1",
+    "apscheduler",
 ]
 
 # Optional dependencies for QuickBooks integration:

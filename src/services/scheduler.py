@@ -6,9 +6,8 @@ from typing import Callable, List, Dict
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select
-
 from src.database import AsyncSessionLocal
-from src.models import User, Job
+from src.models import User, UserRole, Job
 from src.services.messaging_service import messaging_service
 
 logger = logging.getLogger(__name__)
@@ -25,93 +24,82 @@ class SchedulerService:
         """Start the scheduler."""
         if not self.scheduler.running:
             self.scheduler.start()
-            logger.info("Scheduler service started.")
+            logger.info("SchedulerService started.")
 
     def stop(self):
         """Stop the scheduler."""
         if self.scheduler.running:
             self.scheduler.shutdown()
-            logger.info("Scheduler service stopped.")
+            logger.info("SchedulerService stopped.")
 
-    def add_daily_job(self, func: Callable, hour: int = 6, minute: int = 30):
-        """Add a job to run daily at a specific time (UTC)."""
+    def add_daily_job(self, func, hour=6, minute=30, id="daily_shift_check"):
+        """Add a job to run daily at a specific UTC time."""
         trigger = CronTrigger(hour=hour, minute=minute, timezone=timezone.utc)
-        self.scheduler.add_job(func, trigger)
-        logger.info(f"Added daily job '{func.__name__}' at {hour:02d}:{minute:02d} UTC")
+        self.scheduler.add_job(func, trigger, id=id, replace_existing=True)
+        logger.info(f"Added daily job '{id}' at {hour}:{minute} UTC")
 
     async def check_shifts(self):
         """
-        Check for employees starting their shift and send them a summary.
-        This function identifies users with jobs scheduled for the current day
-        and sends them a formatted summary via the MessagingService.
+        Daily check to notify employees about their jobs.
         """
-        logger.info("Running check_shifts task...")
-        
-        async with AsyncSessionLocal() as session:
-            try:
-                # Fetch all users with jobs scheduled for 'today'
-                # We define 'today' based on UTC for now (MVP).
-                # In a production app, we would process per-user timezone.
-                now = datetime.now(timezone.utc)
-                start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
-                end_of_day = start_of_day + timedelta(days=1)
-
-                # Query jobs in range with an assigned employee
-                stmt = select(Job).where(
-                    Job.scheduled_at >= start_of_day,
-                    Job.scheduled_at < end_of_day,
-                    Job.employee_id.is_not(None)
-                )
+        logger.info("Running check_shifts...")
+        try:
+            async with AsyncSessionLocal() as session:
+                # 1. Find all EMPLOYEES
+                stmt = select(User).where(User.role == UserRole.EMPLOYEE)
                 result = await session.execute(stmt)
-                jobs = result.scalars().all()
+                employees = result.scalars().all()
 
-                # Group by employee
-                jobs_by_employee: Dict[int, List[Job]] = {}
-                for job in jobs:
-                    if job.employee_id is not None:
-                        if job.employee_id not in jobs_by_employee:
-                            jobs_by_employee[job.employee_id] = []
-                        jobs_by_employee[job.employee_id].append(job)
-
-                if not jobs_by_employee:
-                    logger.info("No jobs found for today.")
+                if not employees:
+                    logger.info("No employees found for shift notification.")
                     return
 
-                # Fetch users corresponding to these jobs
-                user_ids = list(jobs_by_employee.keys())
-                user_stmt = select(User).where(User.id.in_(user_ids))
-                user_result = await session.execute(user_stmt)
-                users = {u.id: u for u in user_result.scalars().all()}
+                # 2. For each employee, check for jobs today
+                today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+                today_end = today_start + timedelta(days=1)
 
-                # Send notifications
-                for emp_id, emp_jobs in jobs_by_employee.items():
-                    user = users.get(emp_id)
-                    if not user or not user.phone_number:
+                logger.info(f"Checking shifts for {len(employees)} employees for date {today_start.date()}")
+
+                for employee in employees:
+                    if not employee.phone_number:
                         continue
-                    
-                    # Sort jobs by time
-                    emp_jobs.sort(key=lambda x: x.scheduled_at or datetime.max.replace(tzinfo=timezone.utc))
 
-                    summary_lines = [f"📅 *Your Schedule for {now.strftime('%A, %b %d')}*"]
-                    for job in emp_jobs:
+                    # Find jobs assigned to this employee scheduled for today
+                    stmt_jobs = select(Job).where(
+                        Job.employee_id == employee.id,
+                        Job.scheduled_at >= today_start,
+                        Job.scheduled_at < today_end,
+                        Job.status != 'completed'
+                    ).order_by(Job.scheduled_at)
+                    
+                    result_jobs = await session.execute(stmt_jobs)
+                    jobs = result_jobs.scalars().all()
+
+                    if not jobs:
+                        continue
+
+                    # 3. Generate Summary
+                    summary_lines = [f"🌅 Morning Overview for {employee.name or 'Employee'}:"]
+                    summary_lines.append(f"You have {len(jobs)} jobs scheduled for today.")
+                    
+                    for job in jobs:
                         time_str = job.scheduled_at.strftime("%H:%M") if job.scheduled_at else "Time TBD"
-                        description = job.description or "No description"
-                        location = job.location or "No location provided"
-                        summary_lines.append(f"• {time_str}: {description} @ {location}")
-                    
-                    summary_msg = "\n".join(summary_lines)
-                    
-                    # Enqueue message
+                        loc = job.location or "No location"
+                        desc = job.description or "No description"
+                        summary_lines.append(f"- {time_str}: {desc} @ {loc}")
+
+                    summary_lines.append("\nReply 'Start shift' when you are ready to begin.")
+
+                    # 4. Enqueue Message
+                    summary_text = "\n".join(summary_lines)
                     await messaging_service.enqueue_message(
-                        recipient_phone=user.phone_number,
-                        content=summary_msg,
-                        channel="whatsapp", # enforcing whatsapp for rich text
-                        trigger_source="scheduler_shift_start"
+                        recipient_phone=employee.phone_number,
+                        content=summary_text,
+                        channel="whatsapp",
+                        trigger_source="scheduler"
                     )
-                    logger.info(f"Sent schedule summary to user {user.id} ({user.phone_number})")
+                    logger.info(f"Enqueued shift summary for {employee.id}")
 
-            except Exception as e:
-                logger.error(f"Error in check_shifts: {e}", exc_info=True)
-
-# Global instance
+        except Exception as e:
+            logger.error(f"Error in check_shifts: {e}")
 scheduler_service = SchedulerService()

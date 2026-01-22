@@ -1,77 +1,90 @@
 import pytest
+import pytest_asyncio
 from unittest.mock import AsyncMock, patch
 from datetime import datetime, timezone, timedelta
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from src.database import Base
+from src.models import Business, User, UserRole, Job, Customer
 from src.services.scheduler import scheduler_service
-from src.models import User, Job, Business, UserRole, Customer
+from src.services.messaging_service import messaging_service
+
+TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 @pytest.mark.asyncio
-async def test_scheduler_check_shifts(async_session):
-    # Setup data
-    business = Business(name="Test Biz", created_at=datetime.now(timezone.utc))
-    async_session.add(business)
-    await async_session.flush()
-
-    user = User(
-        name="Test Employee",
-        phone_number="+15551234567",
-        business_id=business.id,
-        role=UserRole.EMPLOYEE
-    )
-    async_session.add(user)
-    await async_session.flush()
+async def test_check_shifts_sends_notification():
+    # Setup In-Memory DB
+    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     
-    customer = Customer(name="Test Customer", business_id=business.id, created_at=datetime.now(timezone.utc))
-    async_session.add(customer)
-    await async_session.flush()
-
-    now = datetime.now(timezone.utc)
-    # Job today (should be included)
-    job_today = Job(
-        business_id=business.id,
-        customer_id=customer.id,
-        employee_id=user.id,
-        description="Job Today",
-        scheduled_at=now,
-        created_at=now
-    )
-    async_session.add(job_today)
+    SessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
     
-    # Job tomorrow (should be excluded)
-    job_tomorrow = Job(
-        business_id=business.id,
-        customer_id=customer.id,
-        employee_id=user.id,
-        description="Job Tomorrow",
-        scheduled_at=now + timedelta(days=2),
-        created_at=now
-    )
-    async_session.add(job_tomorrow)
-    
-    await async_session.commit()
+    # Seed Data
+    async with SessionLocal() as session:
+        biz = Business(name="Test Biz")
+        session.add(biz)
+        await session.flush()
+        
+        # 1. Employee
+        emp = User(
+            name="Alice",
+            phone_number="12345",
+            business_id=biz.id,
+            role=UserRole.EMPLOYEE
+        )
+        session.add(emp)
+        
+        # 2. Customer
+        cust = Customer(name="Bob", business_id=biz.id)
+        session.add(cust)
+        await session.flush()
+        
+        # 3. Job Scheduled Today
+        now = datetime.now(timezone.utc)
+        
+        job_today = Job(
+            business_id=biz.id,
+            customer_id=cust.id,
+            description="Morning Job",
+            scheduled_at=now,
+            employee_id=emp.id,
+            status="scheduled",
+            location="123 Main St"
+        )
+        session.add(job_today)
+        
+        # 4. Job Tomorrow (Should NOT be picked up)
+        job_tomorrow = Job(
+            business_id=biz.id,
+            customer_id=cust.id,
+            description="Tomorrow Job",
+            scheduled_at=now + timedelta(days=1, hours=1),
+            employee_id=emp.id,
+            status="scheduled"
+        )
+        session.add(job_tomorrow)
+        
+        await session.commit()
 
-    # Mock context manager for AsyncSessionLocal
-    class MockSessionContext:
-        def __init__(self, session):
-            self.session = session
-        async def __aenter__(self):
-            return self.session
-        async def __aexit__(self, exc_type, exc_val, exc_tb):
-            pass
-
-    # Patch messaging_service
-    with patch("src.services.scheduler.messaging_service", new_callable=AsyncMock) as mock_msg_service:
-        # Patch AsyncSessionLocal to use our test session
-        with patch("src.services.scheduler.AsyncSessionLocal", side_effect=lambda: MockSessionContext(async_session)):
+    # Match the patching logic from the WP04 version but clean it up
+    with patch("src.services.scheduler.AsyncSessionLocal", side_effect=SessionLocal):
+        with patch.object(messaging_service, "enqueue_message", new_callable=AsyncMock) as mock_send:
             
+            # Execute
             await scheduler_service.check_shifts()
             
-            # Assertions
-            assert mock_msg_service.enqueue_message.called, "enqueue_message should be called"
-            call_args = mock_msg_service.enqueue_message.call_args
-            assert call_args, "Call args should exist"
-            kwargs = call_args.kwargs
+            # Verify
+            assert mock_send.called
+            assert mock_send.call_count == 1 # Only Alice, only today's job
             
-            assert kwargs['recipient_phone'] == "+15551234567"
-            assert "Job Today" in kwargs['content']
-            assert "Job Tomorrow" not in kwargs['content']
-            assert kwargs['trigger_source'] == "scheduler_shift_start"
+            args, kwargs = mock_send.call_args
+            assert kwargs['recipient_phone'] == "12345"
+            content = kwargs['content']
+            
+            print(f"DEBUG CONTENT: {content}")
+            
+            assert "Morning Overview for Alice" in content
+            assert "Morning Job" in content
+            assert "Tomorrow Job" not in content
+            assert "123 Main St" in content
+            assert "Reply 'Start shift'" in content
