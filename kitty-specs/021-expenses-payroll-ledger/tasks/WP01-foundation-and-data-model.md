@@ -1,7 +1,7 @@
 ---
 work_package_id: "WP01"
 title: "Foundation & Data Model"
-lane: "for_review"
+lane: "doing"
 dependencies: []
 subtasks: ["T001", "T002", "T003", "T004", "T005"]
 agent: "Antigravity"
@@ -116,3 +116,4 @@ The data model strategy is "Append Only" for financial records (LedgerEntry) to 
 
 - 2026-01-22T11:40:32Z – Antigravity – shell_pid=195966 – lane=doing – Started implementation via workflow command
 - 2026-01-22T11:44:45Z – Antigravity – shell_pid=195966 – lane=for_review – Ready for review: Established foundation schema and models for expenses and payroll ledger. Added migrations (including head merge), updated User/Job models, and added Expense, LedgerEntry, and WageConfiguration models. Verified with unit tests.
+- 2026-01-22T11:48:09Z – Antigravity – shell_pid=195966 – lane=doing – Started review via workflow command
