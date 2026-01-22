@@ -24,10 +24,17 @@ async def lifespan(app: FastAPI):
     
     # Start MessagingService background worker
     await messaging_service.start()
+
+    # Start Scheduler Service
+    from src.services.scheduler import scheduler_service
+    # Schedule the daily shift check for 6:30 AM UTC
+    scheduler_service.add_daily_job(scheduler_service.check_shifts, hour=6, minute=30)
+    scheduler_service.start()
     
     yield
     
     # Shutdown
+    scheduler_service.stop()
     await messaging_service.stop()
     from src.services.geocoding import GeocodingService
     await GeocodingService.close_client()
