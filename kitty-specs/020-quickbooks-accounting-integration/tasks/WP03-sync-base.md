@@ -117,3 +117,4 @@ Synchronization is one-way (HereCRM -> QuickBooks). It follows a specific order:
 - 2026-01-22T10:27:12Z – gemini-cli – shell_pid=136968 – lane=done – Review passed: Implemented base sync architecture with AbstractSyncer, CustomerSyncer, and ServiceSyncer. Added sync fields to models and migrations. Verified with unit tests.
 - 2026-01-22T10:27:25Z – gemini-cli – shell_pid=136968 – lane=done – Review passed: Fixed file organization, broad exception handlers, and integration tests.
 - 2026-01-22T10:51:55Z – gemini-cli – shell_pid=136968 – lane=for_review – Ready for review: Implemented soft-blocking for invoice/quote tools and auto-paid job status. Added Job.paid column via migration. Integration tests passed.
+- 2026-01-22T10:52:45Z – gemini-cli – shell_pid=136968 – lane=for_review – Ready for review: Implemented JOB_BOOKED event emission and generic Webhook dispatcher with HMAC-SHA256 signatures.
