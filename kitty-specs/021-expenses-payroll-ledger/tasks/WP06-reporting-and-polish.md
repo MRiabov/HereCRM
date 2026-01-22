@@ -1,9 +1,11 @@
 ---
 work_package_id: WP06
 title: Reporting & Polish
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks: [T024, T025, T026, T027]
+agent: "Antigravity"
+shell_pid: "284006"
 ---
 
 # Work Package: Reporting & Polish
@@ -72,3 +74,7 @@ We have the data (Expenses, Ledger). Now we need to expose it nicely.
 - Feature is documented.
 - AI knows how to use it.
 - Exports work.
+
+## Activity Log
+
+- 2026-01-22T19:27:26Z – Antigravity – shell_pid=284006 – lane=doing – Started implementation via workflow command
