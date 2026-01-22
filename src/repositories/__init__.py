@@ -16,11 +16,11 @@ from src.models import (
     Service,
     LineItem,
     CustomerAvailability,
-    IntegrationConfig,
-    IntegrationType
+    IntegrationConfig as IntegrationConfig,
+    IntegrationType as IntegrationType
 )
 from .base import BaseRepository, normalize_phone, haversine_distance
-from src.repositories.integration_repository import IntegrationRepository
+from src.repositories.integration_repository import IntegrationRepository as IntegrationRepository
 from src.services.cache import ServiceCatalogCache
 
 
