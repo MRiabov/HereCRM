@@ -30,6 +30,7 @@ class MessagingService:
         content: str,
         channel: str = "whatsapp",
         trigger_source: str = "manual",
+        business_id: Optional[int] = None,
     ) -> MessageLog:
         """
         Send a message to a recipient via the specified channel.
@@ -49,6 +50,7 @@ class MessagingService:
         # Create MessageLog entry with PENDING status
         async with AsyncSessionLocal() as db:
             message_log = MessageLog(
+                business_id=business_id,
                 recipient_phone=recipient_phone,
                 content=content,
                 message_type=message_type,
@@ -82,12 +84,21 @@ class MessagingService:
                     msg_log.sent_at = datetime.now(timezone.utc)
                     if external_id:
                         msg_log.external_id = external_id
+                    
+                    await db.commit()
+
+                    # Track usage if business_id is known
+                    if business_id:
+                        from src.services.billing_service import BillingService
+                        billing_service = BillingService(db)
+                        await billing_service.track_message_sent(business_id)
+                    
                     logger.info(f"Message {message_log.id} sent successfully via {channel}")
                 else:
                     msg_log.status = MessageStatus.FAILED
                     msg_log.error_message = "Provider request failed"
-                
-                await db.commit()
+                    await db.commit()
+
                 
         except Exception as e:
             logger.error(f"Failed to send message {message_log.id}: {e}")
@@ -170,6 +181,7 @@ class MessagingService:
         content: str,
         channel: str = "whatsapp",
         trigger_source: str = "event",
+        business_id: Optional[int] = None,
     ):
         """
         Add a message to the queue for async processing.
@@ -179,12 +191,14 @@ class MessagingService:
             content: Message content to send
             channel: Channel to use ("whatsapp" or "sms")
             trigger_source: Source that triggered this message
+            business_id: ID of the business for billing
         """
         await self._queue.put({
             "recipient_phone": recipient_phone,
             "content": content,
             "channel": channel,
             "trigger_source": trigger_source,
+            "business_id": business_id,
         })
         logger.debug(f"Enqueued message for {recipient_phone}")
 
@@ -261,6 +275,7 @@ class MessagingService:
                 recipient_phone=customer.phone,
                 content=content,
                 trigger_source="job_booked",
+                business_id=business_id,
             )
 
     async def handle_job_scheduled(self, data: dict):
@@ -292,6 +307,7 @@ class MessagingService:
                 recipient_phone=customer.phone,
                 content=content,
                 trigger_source="job_scheduled",
+                business_id=business_id,
             )
 
     async def handle_on_my_way(self, data: dict):
@@ -323,6 +339,7 @@ class MessagingService:
                 recipient_phone=customer.phone,
                 content=content,
                 trigger_source="on_my_way",
+                business_id=business_id,
             )
 
     def register_handlers(self):

@@ -26,6 +26,7 @@ async def test_get_billing_status(billing_service):
     mock_business.seat_limit = 5
     mock_business.active_addons = ["campaigns"]
     mock_business.stripe_customer_id = "cus_123"
+    mock_business.message_count_current_period = 0  # Initialize with integer
     
     mock_repo.get_by_id_global.return_value = mock_business
     

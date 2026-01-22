@@ -97,6 +97,10 @@ class Business(Base):
     workflow_include_payment_terms: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     workflow_enable_reminders: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
 
+    # T020 - Usage-Based Billing
+    message_count_current_period: Mapped[int] = mapped_column(Integer, default=0)
+    billing_cycle_anchor: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
     # Relationships
     users: Mapped[List["User"]] = relationship(back_populates="business")
     customers: Mapped[List["Customer"]] = relationship(back_populates="business")
@@ -464,6 +468,7 @@ class MessageLog(Base):
     __tablename__ = "message_logs"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[Optional[int]] = mapped_column(ForeignKey("businesses.id"), index=True)
     recipient_phone: Mapped[str] = mapped_column(String, index=True)
     content: Mapped[str] = mapped_column(Text)
     message_type: Mapped[MessageType] = mapped_column(SAEnum(MessageType))

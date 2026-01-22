@@ -1,8 +1,11 @@
 import asyncio
+from typing import Optional
+
 import os
 import yaml
 import stripe
 import logging
+import httpx
 from src.repositories import BusinessRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -38,12 +41,75 @@ class BillingService:
         if not business:
             return {"error": "Business not found"}
         
+        # Calculate messaging stats
+        msg_usage_config = self.config.get("products", {}).get("messaging", {})
+        free_tier = msg_usage_config.get("free_limit", 1000)
+        overage_rate = msg_usage_config.get("overage_rate", 0.02)
+        
+        msg_count = business.message_count_current_period
+        overage = max(0, msg_count - free_tier)
+        overage_cost = overage * overage_rate
+        
         return {
             "status": business.subscription_status,
             "seat_limit": business.seat_limit,
             "active_addons": business.active_addons,
-            "stripe_customer_id": business.stripe_customer_id
+            "stripe_customer_id": business.stripe_customer_id,
+            "usage": {
+                "messages": msg_count,
+                "free_limit": free_tier,
+                "overage": overage,
+                "estimated_cost": overage_cost
+            }
         }
+
+    async def track_message_sent(self, business_id: int):
+        """Increments usage counter and reports to Stripe."""
+        business = await self.business_repo.get_by_id_global(business_id)
+        if not business:
+            return
+
+        business.message_count_current_period += 1
+        
+        # Report usage to Stripe if active subscription exists
+        if business.stripe_subscription_id:
+            try:
+                price_id = self.config.get("products", {}).get("messaging", {}).get("price_id")
+                if price_id:
+                    si_id = await self._get_subscription_item_by_price(business.stripe_subscription_id, price_id)
+                    if si_id:
+                        await self._report_usage_raw(si_id, 1)
+            except Exception as e:
+                self.logger.error(f"Stripe usage report failed: {e}")
+
+        await self.session.commit()
+
+    async def _get_subscription_item_by_price(self, subscription_id: str, price_id: str) -> Optional[str]:
+        try:
+            subscription = await asyncio.to_thread(stripe.Subscription.retrieve, subscription_id)
+            for item in subscription.get("items", {}).get("data", []):
+                if item.get("price", {}).get("id") == price_id:
+                    return item.get("id")
+        except Exception as e:
+            self.logger.error(f"Failed to retrieve subscription items: {e}")
+        return None
+
+    async def _report_usage_raw(self, subscription_item_id: str, quantity: int):
+        """Reports usage to Stripe using raw HTTP request due to SDK limitations."""
+        url = f"https://api.stripe.com/v1/subscription_items/{subscription_item_id}/usage_records"
+        headers = {
+            "Authorization": f"Bearer {stripe.api_key}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+        data = {
+            "quantity": str(quantity),
+            "action": "increment",
+            "timestamp": "now"
+        }
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, headers=headers, data=data)
+            response.raise_for_status()
 
     async def create_checkout_session(self, business_id: int, price_id: str, success_url: str, cancel_url: str) -> str:
         """Creates a new subscription checkout session."""
@@ -131,6 +197,23 @@ class BillingService:
             await self._handle_subscription_updated(data)
         elif event_type == "customer.subscription.deleted":
              await self._handle_subscription_deleted(data)
+        elif event_type == "invoice.created":
+            await self._handle_invoice_created(data)
+
+    async def _handle_invoice_created(self, invoice: dict):
+        customer_id = invoice.get("customer")
+        if not customer_id:
+            return
+            
+        result = await self.session.execute(select(Business).where(Business.stripe_customer_id == customer_id))
+        business = result.scalar_one_or_none()
+        
+        if business:
+            self.logger.info(f"Resetting message count for business {business.id} due to new invoice")
+            business.message_count_current_period = 0
+            from datetime import datetime, timezone
+            business.billing_cycle_anchor = datetime.now(timezone.utc)
+            await self.session.commit()
 
     async def _handle_checkout_completed(self, session: dict):
         metadata = session.get("metadata", {})
