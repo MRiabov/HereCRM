@@ -1,15 +1,15 @@
 ---
-work_package_id: "WP03"
-title: "Sync Logic - Base & Dependencies"
-lane: "for_review"
-dependencies: ["WP02"]
+work_package_id: WP03
+title: Sync Logic - Base & Dependencies
+lane: for_review
+dependencies: []
 subtasks:
-  - "T011"
-  - "T012"
-  - "T013"
-  - "T014"
-agent: "Cascade"
-shell_pid: "31544"
+- T011
+- T012
+- T013
+- T014
+agent: Cascade
+shell_pid: '31544'
 ---
 
 ## Objective

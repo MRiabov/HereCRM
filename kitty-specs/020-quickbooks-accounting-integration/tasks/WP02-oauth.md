@@ -1,18 +1,18 @@
 ---
-work_package_id: "WP02"
-title: "OAuth Infrastructure"
-lane: "doing"
-dependencies: ["WP01"]
+work_package_id: WP02
+title: OAuth Infrastructure
+lane: doing
+dependencies: []
 subtasks:
-  - "T006"
-  - "T007"
-  - "T008"
-  - "T009"
-  - "T010"
-agent: "Cascade"
-shell_pid: "35736"
-review_status: "has_feedback"
-reviewed_by: "MRiabov"
+- T006
+- T007
+- T008
+- T009
+- T010
+agent: Cascade
+shell_pid: '35736'
+review_status: has_feedback
+reviewed_by: MRiabov
 ---
 
 ## Objective
