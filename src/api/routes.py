@@ -51,6 +51,32 @@ class GenericWebhookPayload(BaseModel):
     source: str = Field("generic", max_length=100)
 
 
+async def verify_admin_access(x_admin_key: str = Header(None, alias="X-Admin-Key")):
+    """
+    Verifies the Admin Key for sensitive endpoints.
+    """
+    if not settings.secret_key:
+         # Should not happen as it has default, but good practice
+        logger.error("SECRET_KEY is not configured.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Configuration Error"
+        )
+
+    if not x_admin_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing Admin Key"
+        )
+
+    if not hmac.compare_digest(x_admin_key, settings.secret_key):
+        logger.warning("Invalid Admin Key attempt.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Admin Key"
+        )
+
+
 async def verify_signature(request: Request, x_hub_signature_256: str = Header(None)):
     """
     Verifies the HMAC SHA256 signature from WhatsApp.
@@ -235,7 +261,7 @@ async def webhook(
         )
 
 
-@router.get("/history/{phone_number}")
+@router.get("/history/{phone_number}", dependencies=[Depends(verify_admin_access)])
 async def get_history(
     phone_number: str,
     db: AsyncSession = Depends(get_db),
