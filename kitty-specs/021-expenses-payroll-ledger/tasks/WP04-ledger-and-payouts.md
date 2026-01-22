@@ -1,11 +1,13 @@
 ---
 work_package_id: WP04
 title: Ledger & Payouts
-lane: "planned"
+lane: "doing"
 dependencies: []
 subtasks: [T015, T016, T017, T018, T019]
 review_status: "has_feedback"
 reviewed_by: "MRiabov"
+agent: "Antigravity"
+shell_pid: "284006"
 ---
 
 # Work Package: Ledger & Payouts
@@ -111,3 +113,4 @@ This is the integration point.
 ## Activity Log
 
 - 2026-01-22T12:25:15Z – unknown – lane=planned – Moved to planned
+- 2026-01-22T17:56:14Z – Antigravity – shell_pid=284006 – lane=doing – Started implementation via workflow command
