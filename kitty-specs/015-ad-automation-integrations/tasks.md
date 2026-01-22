@@ -27,12 +27,12 @@ This feature adds an integration layer for inbound lead ingestion and outbound e
 - **Dependencies**: WP01
 - **Tests**: Integration tests for all endpoints.
 - **Subtasks**:
-  - [x] **T006**: Implement `ApiKeyAuth` dependency for secure API access.
-  - [x] **T007**: Implement `Signer` utility for URL signature verification.
-  - [x] **T008**: Implement `POST /provision` endpoint for saving configs.
-  - [x] **T009**: Implement `POST /leads` endpoint (Lead ingestion).
-  - [x] **T010**: Implement `POST /requests` endpoint (Service Request ingestion).
-  - [x] **T011**: Add integration tests for API endpoints.
+  - [x] T006: Implement `ApiKeyAuth` dependency for secure API access.
+  - [x] T007: Implement `Signer` utility for URL signature verification.
+  - [x] T008: Implement `POST /provision` endpoint for saving configs.
+  - [x] T009: Implement `POST /leads` endpoint (Lead ingestion).
+  - [x] T010: Implement `POST /requests` endpoint (Service Request ingestion).
+  - [x] T011: Add integration tests for API endpoints.
 
 ### WP03: Webhook Dispatcher
 
@@ -41,10 +41,10 @@ This feature adds an integration layer for inbound lead ingestion and outbound e
 - **Dependencies**: WP01, WP02
 - **Tests**: Unit tests for dispatcher (mocked HTTP).
 - **Subtasks**:
-  - [ ] **T012**: Verify and hook into `job.booked` event in `events.py`.
-  - [ ] **T013**: Create `IntegrationEventHandler` framework.
-  - [ ] **T014**: Implement generic Webhook dispatch logic (Signature, HTTP POST).
-  - [ ] **T015**: Add unit tests for Webhook dispatching.
+  - [x] T012: Verify and hook into `job.booked` event in `events.py`.
+  - [x] T013: Create `IntegrationEventHandler` framework.
+  - [x] T014: Implement generic Webhook dispatch logic (Signature, HTTP POST).
+  - [x] T015: Add unit tests for Webhook dispatching.
 
 ### WP04: Meta CAPI Integration
 
