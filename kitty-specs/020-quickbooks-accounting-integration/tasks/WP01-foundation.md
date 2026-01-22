@@ -1,7 +1,7 @@
 ---
 work_package_id: "WP01"
 title: "Foundation & Data Model"
-lane: "for_review"
+lane: "doing"
 dependencies: []
 subtasks:
   - "T001"
@@ -10,7 +10,7 @@ subtasks:
   - "T004"
   - "T005"
 agent: "Cascade"
-shell_pid: "28864"
+shell_pid: "41019"
 review_status: "has_feedback"
 reviewed_by: "MRiabov"
 ---
@@ -114,3 +114,4 @@ This Work Package lays the groundwork by implementing these models and ensuring 
 - 2026-01-22T07:55:11Z – Cascade – shell_pid=28864 – lane=planned – Moved to planned
 - 2026-01-22T07:59:53Z – Cascade – shell_pid=28864 – lane=done – Review passed: Complete implementation of integration_configs table, models, repositories, services, and comprehensive unit tests. All requirements met and tests passing.
 - 2026-01-22T07:59:54Z – Cascade – shell_pid=28864 – lane=for_review – Ready for review: Foundation & Data Model implementation complete. Added QuickBooks sync fields to all relevant models (Business, Customer, Service, Invoice, Payment, Quote), created SyncLog model, set up encrypted credentials database with graceful fallback for missing pysqlcipher3 dependency, created Alembic migration, and comprehensive tests. Database migration applied successfully and all tests pass.
+- 2026-01-22T08:01:29Z – Cascade – shell_pid=41019 – lane=doing – Started review via workflow command
