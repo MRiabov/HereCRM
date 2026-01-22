@@ -21,6 +21,7 @@ from src.models import (
 )
 from .base import BaseRepository, normalize_phone, haversine_distance
 from src.repositories.integration_repository import IntegrationRepository
+from src.services.cache import ServiceCatalogCache
 
 
 
@@ -94,7 +95,35 @@ class ServiceRepository(BaseRepository[Service]):
         super().__init__(session, Service)
 
     async def get_all_for_business(self, business_id: int) -> List[Service]:
-        return await self.get_all(business_id)
+        cache = ServiceCatalogCache.get_instance()
+        cached_data = cache.get_services_data(business_id)
+        if cached_data is not None:
+            # Return transient instances reconstructed from cache
+            return [Service(**data) for data in cached_data]
+
+        # Cache miss
+        services = await self.get_all(business_id)
+
+        # Serialize to dicts for safe caching (avoiding shared mutable state)
+        data_to_cache = [self._service_to_dict(s) for s in services]
+        cache.set_services_data(business_id, data_to_cache)
+
+        return services
+
+    def _service_to_dict(self, service: Service) -> dict:
+        return {
+            "id": service.id,
+            "business_id": service.business_id,
+            "name": service.name,
+            "description": service.description,
+            "default_price": service.default_price,
+            "created_at": service.created_at,
+            "estimated_duration": service.estimated_duration,
+            "quickbooks_id": service.quickbooks_id,
+            "quickbooks_synced_at": service.quickbooks_synced_at,
+            "quickbooks_sync_status": service.quickbooks_sync_status,
+            "quickbooks_sync_error": service.quickbooks_sync_error,
+        }
 
     async def get_by_name(self, name: str, business_id: int) -> Optional[Service]:
         query = select(Service).where(
@@ -538,3 +567,13 @@ def update_job_value(mapper, connection, target):
 event.listen(LineItem, "after_insert", update_job_value)
 event.listen(LineItem, "after_update", update_job_value)
 event.listen(LineItem, "after_delete", update_job_value)
+
+
+# Event Listeners for Service Cache Invalidation
+def invalidate_service_cache(mapper, connection, target):
+    if target.business_id:
+        ServiceCatalogCache.get_instance().invalidate(target.business_id)
+
+event.listen(Service, "after_insert", invalidate_service_cache)
+event.listen(Service, "after_update", invalidate_service_cache)
+event.listen(Service, "after_delete", invalidate_service_cache)
