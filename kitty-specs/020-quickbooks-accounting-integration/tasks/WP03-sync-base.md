@@ -1,7 +1,7 @@
 ---
 work_package_id: WP03
 title: Sync Logic - Base & Dependencies
-lane: "doing"
+lane: "planned"
 dependencies: []
 subtasks:
 - T011
@@ -10,6 +10,8 @@ subtasks:
 - T014
 agent: "gemini"
 shell_pid: "96079"
+review_status: "has_feedback"
+reviewed_by: "MRiabov"
 ---
 
 ## Objective
@@ -99,3 +101,4 @@ Synchronization is one-way (HereCRM -> QuickBooks). It follows a specific order:
 - 2026-01-22T07:50:59Z – Cascade – shell_pid=31544 – lane=doing – Started implementation via workflow command
 - 2026-01-22T08:02:36Z – Cascade – shell_pid=31544 – lane=for_review – Ready for review: Implemented base sync architecture with AbstractSyncer class, CustomerSyncer, ServiceSyncer, comprehensive unit tests, and sync status fields in models
 - 2026-01-22T09:49:33Z – gemini – shell_pid=96079 – lane=doing – Started review via workflow command
+- 2026-01-22T09:51:49Z – gemini – shell_pid=96079 – lane=planned – Changes requested: Sync/Async mismatch and missing repo methods
