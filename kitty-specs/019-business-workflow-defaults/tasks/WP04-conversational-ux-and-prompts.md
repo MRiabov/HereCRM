@@ -5,11 +5,11 @@ subtasks:
   - "T012"
 title: "Conversational UX & Prompts"
 phase: "Phase 4 - Conversational Polish"
-lane: "planned"
+lane: "doing"
 dependencies: ["WP01", "WP03"]
 assignee: ""
-agent: ""
-shell_pid: ""
+agent: "Antigravity"
+shell_pid: "230585"
 review_status: ""
 reviewed_by: ""
 history:
@@ -89,3 +89,4 @@ history:
 ## Activity Log
 
 - 2026-01-22T08:25:20Z – system – lane=planned – Prompt generated via /spec-kitty.tasks
+- 2026-01-22T14:01:39Z – Antigravity – shell_pid=230585 – lane=doing – Started implementation via workflow command
