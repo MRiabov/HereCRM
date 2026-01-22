@@ -1,7 +1,7 @@
 ---
 work_package_id: WP02
 title: Wage Calculation Logic
-lane: "doing"
+lane: "for_review"
 dependencies: []
 subtasks: [T006, T007, T008, T009]
 agent: "Antigravity"
@@ -85,3 +85,4 @@ This code fits in `src/services/wages/`.
 ## Activity Log
 
 - 2026-01-22T12:04:03Z – Antigravity – shell_pid=215012 – lane=doing – Started implementation via workflow command
+- 2026-01-22T12:14:26Z – Antigravity – shell_pid=215012 – lane=for_review – Implemented WageCalculator and strategies (Commission, Hourly, Fixed). Restored required financial models (WageConfiguration, Expense, LedgerEntry) to src/models.py. All unit tests pass.
