@@ -72,7 +72,7 @@
   - [x] T025: Create tools: `ConnectQB`, `DisconnectQB`, `SyncQB`, `QBStatus`
   - [x] T026: Implement "Connect" flow (Send Auth Link -> Wait for Callback -> Notify)
   - [x] T027: Implement status reporting tool (Format `SyncLog` data for users)
-  - [ ] T028: Add tests for `ACCOUNTING` state transitions and tool usage
+  - [x] T028: Add tests for `ACCOUNTING` state transitions and tool usage
 
 ### WP07: Documentation & Final Polish
 
