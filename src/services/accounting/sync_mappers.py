@@ -103,19 +103,3 @@ def clean_email(email: Optional[str]) -> Optional[str]:
         return None
     
     return email
-
-
-def escape_qb_query(value: str) -> str:
-    """
-    Escape single quotes for QuickBooks Online API queries.
-    QuickBooks uses two single quotes to represent one single quote.
-    
-    Args:
-        value: The string value to escape
-        
-    Returns:
-        Escaped string
-    """
-    if not value:
-        return ""
-    return value.replace("'", "''")

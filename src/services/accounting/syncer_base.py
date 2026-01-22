@@ -2,18 +2,12 @@ from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any
 from datetime import datetime, timezone
 import logging
-import asyncio
 
 logger = logging.getLogger(__name__)
 
 
 class QBClientError(Exception):
     """Custom exception for QuickBooks API errors."""
-    pass
-
-
-class DependencyError(Exception):
-    """Raised when a dependency (like Customer or Service) is not yet synced."""
     pass
 
 
@@ -30,7 +24,6 @@ class AbstractSyncer(ABC):
         """
         self.db_session = db_session
         self.qb_client = qb_client
-        self.logger = logging.getLogger(self.__class__.__name__)
     
     async def sync(self, business_id: int, record_id: int) -> bool:
         """
@@ -43,12 +36,13 @@ class AbstractSyncer(ABC):
         Returns:
             bool: True if sync was successful, False otherwise
         """
-        record = await self._get_record(business_id, record_id)
-        if not record:
-            self.logger.error(f"Record not found: business_id={business_id}, record_id={record_id}")
-            return False
-            
         try:
+            # Get the record from database
+            record = await self._get_record(business_id, record_id)
+            if not record:
+                logger.error(f"Record not found: business_id={business_id}, record_id={record_id}")
+                return False
+            
             # Map the record to QuickBooks format
             qb_data = self._map_record(record)
             
@@ -58,25 +52,27 @@ class AbstractSyncer(ABC):
                 await self._update_status(record, 'failed', error=validation_error)
                 return False
             
-            # Push to QuickBooks - Use to_thread as _push_to_qb is synchronous and does network I/O
-            qb_id = await asyncio.to_thread(self._push_to_qb, self.qb_client, qb_data)
+            # Push to QuickBooks (synchronous call to library)
+            qb_id = self._push_to_qb(self.qb_client, qb_data)
             
             # Update status on success
             await self._update_status(record, 'synced', qb_id=qb_id)
-            self.logger.info(f"Successfully synced record {record_id} to QuickBooks ID {qb_id}")
+            logger.info(f"Successfully synced record {record_id} to QuickBooks ID {qb_id}")
             return True
             
-        except DependencyError as e:
-            self.logger.warning(f"Dependency missing for record {record_id}: {e}")
-            await self._update_status(record, 'failed', error=str(e))
-            return False
         except QBClientError as e:
-            self.logger.error(f"QuickBooks API error syncing record {record_id}: {str(e)}")
-            await self._update_status(record, 'failed', error=str(e))
+            logger.error(f"QuickBooks API error syncing record {record_id}: {str(e)}")
+            # We need to get the record again to update its status
+            record = await self._get_record(business_id, record_id)
+            if record:
+                await self._update_status(record, 'failed', error=str(e))
             return False
         except Exception as e:
-            self.logger.error(f"Unexpected error syncing record {record_id}: {str(e)}", exc_info=True)
-            await self._update_status(record, 'failed', error=str(e))
+            logger.error(f"Unexpected error syncing record {record_id}: {str(e)}")
+            # We need to get the record again to update its status
+            record = await self._get_record(business_id, record_id)
+            if record:
+                await self._update_status(record, 'failed', error=str(e))
             return False
     
     @abstractmethod
@@ -140,26 +136,20 @@ class AbstractSyncer(ABC):
             # Update sync status fields
             if hasattr(record, 'quickbooks_sync_status'):
                 record.quickbooks_sync_status = status
-            elif hasattr(record, 'sync_status'): # Support both naming conventions if needed
-                record.sync_status = status
-                
             if hasattr(record, 'quickbooks_id') and qb_id:
                 record.quickbooks_id = qb_id
-                
             if hasattr(record, 'quickbooks_sync_error'):
                 record.quickbooks_sync_error = error
-            elif hasattr(record, 'sync_error'):
-                record.sync_error = error
-                
             if hasattr(record, 'quickbooks_synced_at') and status == 'synced':
                 record.quickbooks_synced_at = datetime.now(timezone.utc)
-            elif hasattr(record, 'synced_at') and status == 'synced':
-                record.synced_at = datetime.now(timezone.utc)
             
             # Commit the changes
+            # Note: Orchestrator might want to handle commits, 
+            # but base syncer does it per-record for safety
+            self.db_session.add(record)
             await self.db_session.commit()
             
         except Exception as e:
-            self.logger.error(f"Failed to update sync status for record {record.id}: {str(e)}")
+            logger.error(f"Failed to update sync status for record {record.id}: {str(e)}")
             await self.db_session.rollback()
             raise
