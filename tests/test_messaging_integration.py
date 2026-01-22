@@ -6,6 +6,14 @@ from src.services.messaging_service import MessagingService
 from src.models import MessageLog, MessageStatus, Business, Customer
 from src.database import get_db
 from datetime import datetime, timezone
+from unittest.mock import patch
+
+
+@pytest.fixture(autouse=True)
+def mock_messaging_api():
+    with patch.object(MessagingService, "_send_whatsapp", return_value=(True, "mock_id")), \
+         patch.object(MessagingService, "_send_sms", return_value=(True, "mock_sms_id")):
+        yield
 
 
 @pytest.mark.asyncio

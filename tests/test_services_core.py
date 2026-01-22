@@ -42,9 +42,9 @@ async def test_assignment_service(test_session: AsyncSession):
 
     # Test assign_job
     assignment_service = AssignmentService(test_session, biz.id)
-    updated_job = await assignment_service.assign_job(job.id, user.id)
+    result = await assignment_service.assign_job(job.id, user.id)
     
-    assert updated_job.employee_id == user.id
+    assert result.job.employee_id == user.id
     
     # Verify persistence
     await test_session.refresh(job)
@@ -88,7 +88,7 @@ async def test_dashboard_service_schedules(test_session: AsyncSession):
     test_session.add_all([job1, job2])
     await test_session.commit()
 
-    dashboard_service = DashboardService(test_session, biz.id)
+    dashboard_service = DashboardService(test_session)
     schedules = await dashboard_service.get_employee_schedules(biz.id, today)
     
     assert len(schedules) == 2
@@ -122,7 +122,7 @@ async def test_dashboard_service_unscheduled(test_session: AsyncSession):
     test_session.add_all([job1, job2])
     await test_session.commit()
 
-    dashboard_service = DashboardService(test_session, biz.id)
+    dashboard_service = DashboardService(test_session)
     unscheduled = await dashboard_service.get_unscheduled_jobs(biz.id)
     
     assert len(unscheduled) == 1

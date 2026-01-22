@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Customer, User, PipelineStage
+from src.models import Business, Customer, User, PipelineStage, UserRole
 from src.services.crm_service import CRMService
 from src.tool_executor import ToolExecutor
 from src.services.template_service import TemplateService
@@ -73,7 +73,7 @@ async def test_tool_executor_search_with_stage(test_session: AsyncSession):
     test_session.add(biz)
     await test_session.flush()
 
-    user = User(phone_number="123456", business_id=biz.id)
+    user = User(phone_number="123456", business_id=biz.id, role=UserRole.OWNER)
     test_session.add(user)
     await test_session.flush()
 
@@ -100,7 +100,7 @@ async def test_tool_executor_update_stage(test_session: AsyncSession):
     test_session.add(biz)
     await test_session.flush()
 
-    user = User(phone_number="123456", business_id=biz.id)
+    user = User(phone_number="123456", business_id=biz.id, role=UserRole.OWNER)
     test_session.add(user)
     await test_session.flush()
 

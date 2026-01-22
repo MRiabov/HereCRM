@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from src.database import Base
 from src.tool_executor import ToolExecutor
 from src.uimodels import AddJobTool, ScheduleJobTool
-from src.models import Customer, Job, Business
+from src.models import Customer, Job, Business, User, UserRole
 from src.services.template_service import TemplateService
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -31,11 +31,15 @@ async def test_add_job_emits_event(test_session):
     test_session.add(business)
     await test_session.flush()
     
+    user_id = 999
+    user = User(id=user_id, business_id=business.id, role=UserRole.OWNER, phone_number="+1234567890")
+    test_session.add(user)
+    await test_session.flush()
+    
     user_phone = "+1234567890"
     template_service = AsyncMock(spec=TemplateService)
     template_service.render.return_value = "Mocked Template"
     
-    user_id = 999
     executor = ToolExecutor(test_session, business.id, user_id, user_phone, template_service)
     
     # Mock event bus
@@ -53,7 +57,6 @@ async def test_add_job_emits_event(test_session):
         await executor.execute(tool)
         
         # Verify JOB_CREATED was emitted (from CRMService)
-        # Note: it might be called multiple times if there are other events, but we check for JOB_CREATED
         found = False
         for call in mock_emit.call_args_list:
             if call[0][0] == "JOB_CREATED":
@@ -70,11 +73,15 @@ async def test_schedule_job_emits_event(test_session):
     test_session.add(business)
     await test_session.flush()
 
+    user_id = 999
+    user = User(id=user_id, business_id=business.id, role=UserRole.OWNER, phone_number="+1234567890")
+    test_session.add(user)
+    await test_session.flush()
+    
     user_phone = "+1234567890"
     template_service = AsyncMock(spec=TemplateService)
     template_service.render.return_value = "Mocked Template"
     
-    user_id = 999
     executor = ToolExecutor(test_session, business.id, user_id, user_phone, template_service)
     
     # Create existing job and customer

@@ -76,12 +76,22 @@ async def test_location_and_eta_flow(async_session):
     assert "Live" in resp  # since location_updated_at is NOW
     assert "www.google.com/maps" in resp
 
+    # Customer User (needed for RBAC check in ToolExecutor)
+    alice_user = User(
+        business_id=1,
+        name="Alice Client",
+        phone_number="1234567890",
+        role=UserRole.EMPLOYEE # Customers acting as users need a role
+    )
+    async_session.add(alice_user)
+    await async_session.flush()
+
     # 2. Test CheckETATool (Customer usage)
     # Re-init executor simulating customer call
     executor_customer = ToolExecutor(
         async_session, 
         business_id=1, 
-        user_id=0, # Unknown user ID? Or just use phone identification
+        user_id=alice_user.id, 
         user_phone="1234567890", 
         template_service=template_service_mock
     )

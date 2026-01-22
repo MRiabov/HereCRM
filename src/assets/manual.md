@@ -52,6 +52,7 @@ Configure how the CRM handles automation and billing. Only users with the **OWNE
 - **Enable Reminders**: Toggle automatic customer follow-ups.
 
 Use phrases like:
+
 - "Show my workflow settings"
 - "Set invoicing to automatic"
 - "Update payment timing to always paid on spot"
@@ -63,6 +64,7 @@ Connect HereCRM to your QuickBooks Online account to automatically sync your cus
 ### 1. How to Connect
 
 To start the integration, simply say:
+
 - "Connect QuickBooks"
 
 You will receive a link to authorize HereCRM to access your QuickBooks account. Once authorized, the integration will be active.
@@ -70,6 +72,7 @@ You will receive a link to authorize HereCRM to access your QuickBooks account. 
 ### 2. What is Synced
 
 The integration performs a **one-way sync** from HereCRM to QuickBooks for the following entities:
+
 - **Customers**: Synced when created or updated.
 - **Services**: Your service catalog items are synced as QuickBooks Items.
 - **Invoices**: Sent to QuickBooks once they are created in HereCRM.
@@ -78,11 +81,13 @@ The integration performs a **one-way sync** from HereCRM to QuickBooks for the f
 ### 3. Sync Frequency
 
 Data is automatically synchronized **HOURLY**. If you need to push changes immediately, you can say:
+
 - "Sync QuickBooks now"
 
 ### 4. Viewing Status and Errors
 
 To check the health of your integration, use:
+
 - "QuickBooks status"
 
 This will show you the last sync time and any records that failed to sync.
@@ -94,6 +99,7 @@ This will show you the last sync time and any records that failed to sync.
 - **Duplicates**: HereCRM tries to match existing customers and services by name to avoid duplicates, but it is recommended to keep names consistent across both systems.
 
 To stop the integration, say:
+
 - "Disconnect QuickBooks"
 
 ## Troubleshooting Tips

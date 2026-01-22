@@ -14,13 +14,15 @@ async def test_send_message_creates_message_log():
     """Test that send_message creates a MessageLog entry in the database."""
     service = MessagingService()
     
-    # Send a message
-    message_log = await service.send_message(
-        recipient_phone="+1234567890",
-        content="Test message",
-        channel="whatsapp",
-        trigger_source="test",
-    )
+    # Mock _send_whatsapp to avoid hitting API
+    with patch.object(MessagingService, "_send_whatsapp", return_value=(True, "mock_id")):
+        # Send a message
+        message_log = await service.send_message(
+            recipient_phone="+1234567890",
+            content="Test message",
+            channel="whatsapp",
+            trigger_source="test",
+        )
     
     # Verify MessageLog was created
     assert message_log is not None
@@ -30,11 +32,6 @@ async def test_send_message_creates_message_log():
     assert message_log.message_type == MessageType.WHATSAPP
     assert message_log.trigger_source == "test"
     
-    # Verify status was updated to SENT (mock implementation)
-    # Note: status update happens in a background block, we might need to refresh or check carefully
-    # In the current implementation, it's updated in the same method but different session blocks may exist.
-    # Actually, I changed send_message to use its own session blocks.
-    
     async with AsyncSessionLocal() as db:
         from sqlalchemy import select
         stmt = select(MessageLog).where(MessageLog.id == message_log.id)
@@ -42,7 +39,7 @@ async def test_send_message_creates_message_log():
         msg = result.scalar_one()
         assert msg.status == MessageStatus.SENT
         assert msg.sent_at is not None
-        assert msg.external_id is not None
+        assert msg.external_id == "mock_id"
 
 
 @pytest.mark.asyncio
@@ -50,13 +47,15 @@ async def test_send_message_sms_channel():
     """Test that send_message works with SMS channel."""
     service = MessagingService()
     
-    # Send an SMS message
-    message_log = await service.send_message(
-        recipient_phone="+1234567890",
-        content="Test SMS",
-        channel="sms",
-        trigger_source="test",
-    )
+    # Mock _send_sms to avoid hitting API
+    with patch.object(MessagingService, "_send_sms", return_value=(True, "mock_sms_id")):
+        # Send an SMS message
+        message_log = await service.send_message(
+            recipient_phone="+1234567890",
+            content="Test SMS",
+            channel="sms",
+            trigger_source="test",
+        )
     
     async with AsyncSessionLocal() as db:
         from sqlalchemy import select
@@ -72,8 +71,8 @@ async def test_send_message_handles_errors():
     """Test that send_message handles errors gracefully."""
     service = MessagingService()
     
-    # Mock the asyncio.sleep to raise an exception
-    with patch("asyncio.sleep", side_effect=Exception("API Error")):
+    # Mock _send_whatsapp to raise an exception
+    with patch.object(MessagingService, "_send_whatsapp", side_effect=Exception("API Error")):
         message_log = await service.send_message(
             recipient_phone="+1234567890",
             content="Test message",

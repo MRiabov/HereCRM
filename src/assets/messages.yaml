@@ -218,3 +218,21 @@ quickbooks_status: |
   Type 'Sync QuickBooks now' to force a sync.
 quickbooks_error: "❌ QuickBooks Error: {error}"
 
+# Accounting (Legacy/Alternative keys)
+qb_connect_link: |
+  🔗 *Connect QuickBooks*
+  
+  Please click this link to authorize the connection:
+  {url}
+  
+  (Link expires in 5 minutes)
+
+qb_connected: "✅ QuickBooks account connected successfully."
+qb_disconnected: "✅ QuickBooks account disconnected."
+qb_status: |
+  **QuickBooks Status**
+  {status}
+  Realm ID: {realm_id}
+  
+qb_not_connected: "❌ Not connected to QuickBooks."
+qb_sync_error: "⚠️ QuickBooks sync error: {error}"

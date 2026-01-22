@@ -3,12 +3,12 @@ import pytest
 from unittest.mock import MagicMock
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, User, UserRole, InvoicingWorkflow, QuotingWorkflow, PaymentTiming
+from src.models import Business, User, UserRole, InvoicingWorkflow
 from src.services.workflow import WorkflowSettingsService
 from src.services.template_service import TemplateService
 from src.uimodels import GetWorkflowSettingsTool, UpdateWorkflowSettingsTool
 from src.tool_executor import ToolExecutor
-from sqlalchemy import select
+from src.services.rbac_service import RBACService
 
 # Use a separate test database
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -20,6 +20,7 @@ TestAsyncSessionLocal = async_sessionmaker(
 )
 
 async def setup_db():
+    RBACService._config = None  # Force reload of RBAC config
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)

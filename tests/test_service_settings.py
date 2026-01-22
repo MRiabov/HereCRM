@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, User, ConversationState, ConversationStatus
+from src.models import Business, User, ConversationState, ConversationStatus, UserRole
 from src.services.whatsapp_service import WhatsappService
 from src.services.template_service import TemplateService
 from src.llm_client import LLMParser
@@ -41,7 +41,7 @@ async def test_settings_flow(test_session, mock_parser, mock_template_service):
     test_session.add(biz)
     await test_session.flush()
     
-    user = User(phone_number="123", business_id=biz.id)
+    user = User(phone_number="123", business_id=biz.id, role=UserRole.OWNER)
     test_session.add(user)
     await test_session.commit()
     

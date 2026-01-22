@@ -194,7 +194,12 @@ async def webhook(
 
         # 2. Fallback: Stub/Simulator Payload (Flat JSON)
         elif "from_number" in body:
-            # Reconstruct WebhookPayload-like object manually to reuse logic or just parse directly
+            # Validate using WebhookPayload to enforce constraints (max length, regex)
+            try:
+                WebhookPayload(**body)
+            except Exception as e:
+                raise HTTPException(status_code=422, detail=str(e))
+
             from_number = body.get("from_number")
             text_body = body.get("body", "")
             media_url = body.get("media_url")
@@ -231,7 +236,7 @@ async def webhook(
         logger.exception("Webhook processing failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An internal error occurred."
+            detail="An internal error occurred. Our team has been notified."
         )
 
 
@@ -600,4 +605,31 @@ async def confirm_quote(
     # Notify business owner / customer about confirmation?
     # For now just return success JSON
     return {"status": "success", "message": "Quote accepted", "quote_id": quote.id, "job_id": quote.job_id}
+
+
+@router.get("/webhooks/quickbooks/callback")
+async def quickbooks_callback(
+    code: str = Query(...),
+    state: str = Query(...),
+    realmId: str = Query(None), # QuickBooks passes 'realmId' param
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Handle OAuth callback from QuickBooks.
+    Exchanges code for tokens and updates DB.
+    """
+    try:
+        from src.services.accounting.quickbooks_auth import QuickBooksAuthService
+        auth_service = QuickBooksAuthService(db)
+        
+        # realmId is mandatory for QB Online but optional for Payments API (though we use Online)
+        if not realmId:
+             raise HTTPException(status_code=400, detail="Missing realmId")
+
+        await auth_service.handle_callback(code, realmId, state)
+        
+        return {"status": "success", "message": "QuickBooks connected successfully! You can close this window."}
+    except Exception as e:
+        logger.error(f"QuickBooks callback failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Connection failed: {str(e)}")
 

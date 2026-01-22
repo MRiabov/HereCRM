@@ -15,7 +15,7 @@ async def test_scheduler_check_shifts(async_session):
         name="Test Employee",
         phone_number="+15551234567",
         business_id=business.id,
-        role=UserRole.MEMBER
+        role=UserRole.EMPLOYEE
     )
     async_session.add(user)
     await async_session.flush()

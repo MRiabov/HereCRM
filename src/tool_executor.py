@@ -31,6 +31,7 @@ from src.services.billing_service import BillingService
 from src.services.dashboard_service import DashboardService
 from src.services.assignment_service import AssignmentService
 from src.services.rbac_service import RBACService
+from src.services.workflow import WorkflowSettingsService
 from src.lib.text_formatter import render_employee_dashboard
 from src.uimodels import (
     AddJobTool,
@@ -67,6 +68,8 @@ from src.uimodels import (
     QuickBooksStatusTool,
     SyncQuickBooksTool,
 )
+
+from src.services.accounting.accounting_tools import AccountingToolsHandler
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.quote_tools import CreateQuoteTool
 from src.tools.routing_tools import AutorouteToolExecutor
@@ -113,6 +116,9 @@ class ToolExecutor:
         self.assignment_service = AssignmentService(session, self.business_id)
         self.quote_service = QuoteService(session)
         self.rbac_service = RBACService()
+        self.workflow_service = WorkflowSettingsService(session)
+
+        # [T008] Initialize logger
         self._routing_service = None
 
     def _get_routing_service(self) -> OpenRouteServiceAdapter:
@@ -161,6 +167,12 @@ class ToolExecutor:
             LocateEmployeeTool,
             CheckETATool,
             AutorouteTool,
+            GetWorkflowSettingsTool,
+            UpdateWorkflowSettingsTool,
+            ConnectQuickBooksTool,
+            DisconnectQuickBooksTool,
+            QuickBooksStatusTool,
+            SyncQuickBooksTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
 
@@ -178,7 +190,7 @@ class ToolExecutor:
             # [T007] Return friendly permission denied message
             tool_config = self.rbac_service.get_tool_config(tool_name)
             friendly_name = tool_config.get("friendly_name", "perform this action") if tool_config else "perform this action"
-            return f"It seems you are trying to {friendly_name}. Sorry, you don't have permission for that.", None
+            return f"Error: It seems you are trying to {friendly_name}. Sorry, you don't have permission for that.", None
 
         # [T018] Scope Enforcement
         # Check if the tool requires a specific scope
@@ -287,6 +299,15 @@ class ToolExecutor:
             return await self._execute_quickbooks_status(tool_call)
         elif isinstance(tool_call, SyncQuickBooksTool):
             return await self._execute_sync_quickbooks(tool_call)
+        elif isinstance(tool_call, GetWorkflowSettingsTool):
+             # Just return a message, the details are in the prompt or help usually
+             # But let's check if we have a handler for it?
+             # No direct handler method in the diff, usually handled by checking settings.
+             # Wait, the tool is for RETRIEVING settings.
+             settings = await self.workflow_service.get_settings(self.business_id)
+             return f"Current Workflow Settings:\n{settings}", {"action": "get_workflow_settings", "settings": settings}
+        elif isinstance(tool_call, UpdateWorkflowSettingsTool):
+            return await self._execute_update_workflow_settings(tool_call)
         return "Unknown tool call", None
 
     # ... (other methods unchanged)

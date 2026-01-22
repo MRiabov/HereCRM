@@ -92,3 +92,18 @@ tools:
   ExitDataManagementTool:
     role: owner
     friendly_name: "manage data"
+  GetWorkflowSettingsTool:
+    role: owner
+    friendly_name: "view workflow settings"
+  UpdateWorkflowSettingsTool:
+    role: owner
+    friendly_name: "update workflow settings"
+  ConnectQuickBooksTool:
+    role: owner
+    friendly_name: "connect QuickBooks"
+  DisconnectQuickBooksTool:
+    role: owner
+    friendly_name: "disconnect QuickBooks"
+  GetSyncStatusTool:
+    role: owner
+    friendly_name: "view sync status"

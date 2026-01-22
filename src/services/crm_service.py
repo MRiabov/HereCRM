@@ -168,6 +168,16 @@ class CRMService:
                 "old_status": old_status,
             }
 
+        elif action == "log":
+             old_status = req.status
+             req.status = "logged"
+             return f"✔ Request logged: {req.content[:30]}", {
+                 "action": "update",
+                 "entity": "request",
+                 "id": req.id,
+                 "old_status": old_status,
+             }
+
         elif action == "quote":
             # Promotion logic: Request -> Quote
             customers = await self.customer_repo.search(query, self.business_id)
