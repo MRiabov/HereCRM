@@ -63,17 +63,12 @@ class PaymentTiming(str, enum.Enum):
     PAID_LATER = "paid_later"
 
 
-class QuickBooksSyncStatus(str, enum.Enum):
-    PENDING = "pending"
-    SYNCED = "synced"
-    FAILED = "failed"
-
-
 class Business(Base):
     __tablename__ = "businesses"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String, index=True)
+    payment_link: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
@@ -319,6 +314,7 @@ class Invoice(Base):
     job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id"), index=True)
     s3_key: Mapped[str] = mapped_column(String)
     public_url: Mapped[str] = mapped_column(String)
+    payment_link: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     status: Mapped[str] = mapped_column(String, default="SENT")
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)

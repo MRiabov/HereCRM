@@ -37,9 +37,12 @@ class InvoiceService:
 
         logger.info(f"Generating new invoice for job {job.id}")
         
+        # 0. Fetch payment link snapshot from business
+        payment_link = job.business.payment_link if job.business else None
+
         # 1. Generate PDF
         try:
-            pdf_bytes = self.pdf_generator.generate(job)
+            pdf_bytes = self.pdf_generator.generate(job, payment_link=payment_link)
         except (ValueError, RuntimeError) as e:
             logger.error(f"Failed to generate PDF for job {job.id}: {e}")
             raise RuntimeError(f"PDF generation failed: {e}") from e
@@ -62,6 +65,7 @@ class InvoiceService:
             job_id=job.id,
             s3_key=filename,
             public_url=public_url,
+            payment_link=payment_link,
             status="GENERATED"
         )
         self.session.add(invoice)

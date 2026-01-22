@@ -18,13 +18,14 @@ class InvoicePDFGenerator:
         )
         self.template_name = "invoice.html"
 
-    def generate(self, job: Job, invoice_date: Optional[datetime] = None) -> bytes:
+    def generate(self, job: Job, invoice_date: Optional[datetime] = None, payment_link: Optional[str] = None) -> bytes:
         """
         Generates a PDF invoice for a given job.
         
         Args:
             job: The Job object containing customer and line items.
             invoice_date: Optional date to display on the invoice. Defaults to now.
+            payment_link: Optional payment link to display on the invoice.
             
         Returns:
             The generated PDF as bytes.
@@ -42,7 +43,8 @@ class InvoicePDFGenerator:
             # Prepare context
             context = {
                 "job": job,
-                "invoice_date": invoice_date.strftime("%Y-%m-%d")
+                "invoice_date": invoice_date.strftime("%Y-%m-%d"),
+                "payment_link": payment_link
             }
             
             # Render HTML
