@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     # OpenRouteService
     openrouteservice_api_key: Optional[str] = None
 
+    # Security
+    secret_key: str = "dev_secret_key_change_me_in_production"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

@@ -2,6 +2,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from src.database import engine, Base
 from src.api.routes import router as webhook_router
+from src.api.webhooks.stripe_webhook import router as stripe_router
+from src.api.v1.integrations import router as integrations_v1
 from src.events import event_bus
 from src.services.messaging_service import messaging_service
 
@@ -43,8 +45,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(webhook_router)
-from src.api.webhooks.stripe_webhook import router as stripe_router
 app.include_router(stripe_router, prefix="/webhooks", tags=["webhooks"])
+app.include_router(integrations_v1)
 
 
 @app.get("/health")
