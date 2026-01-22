@@ -1,7 +1,7 @@
 ---
 work_package_id: "WP01"
 title: "Foundation & Data Model"
-lane: "done"
+lane: "for_review"
 dependencies: []
 subtasks:
   - "T001"
@@ -117,3 +117,4 @@ This Work Package lays the groundwork by implementing these models and ensuring 
 - 2026-01-22T08:01:29Z – Cascade – shell_pid=41019 – lane=doing – Started review via workflow command
 - 2026-01-22T08:03:17Z – Cascade – shell_pid=41019 – lane=planned – Moved to planned
 - 2026-01-22T08:20:10Z – Cascade – shell_pid=41019 – lane=done – Review passed: RBAC foundation implemented, UserRole updated, RBACService created with hierarchy logic and verified with tests. DB migration for roles included.
+- 2026-01-22T10:12:27Z – Cascade – shell_pid=41019 – lane=for_review – Ready for review: Implemented foundation for business workflow defaults, including model updates, migration, service layer, and tools.
