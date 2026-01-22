@@ -1,11 +1,11 @@
 ---
 work_package_id: WP03
 title: Employee Time Tracking
-lane: "for_review"
+lane: "doing"
 dependencies: []
 subtasks: [T010, T011, T012, T013, T014]
 agent: "Antigravity"
-shell_pid: "230585"
+shell_pid: "310764"
 review_status: "has_feedback"
 reviewed_by: "MRiabov"
 ---
@@ -97,6 +97,7 @@ We need to capture the `start_time` for both shifts and jobs so that later (in W
 - 2026-01-22T14:11:09Z – Antigravity – shell_pid=230585 – lane=planned – Moved to planned
 - 2026-01-22T14:17:05Z – Antigravity – shell_pid=230585 – lane=doing – Started implementation via workflow command
 - 2026-01-22T14:54:39Z – Antigravity – shell_pid=230585 – lane=for_review – Implementation complete
+- 2026-01-22T17:57:36Z – Antigravity – shell_pid=310764 – lane=doing – Started review via workflow command
 
 ## Review Feedback
 
