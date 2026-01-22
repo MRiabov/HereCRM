@@ -37,7 +37,7 @@
   - [x] T011: Define `QuickBooksSyncer` base class and mapper interfaces
   - [x] T012: Implement `CustomerSyncer` and data mapper (HereCRM -> QB Customer)
   - [x] T013: Implement `ServiceSyncer` and data mapper (HereCRM Service -> QB Item)
-  - [ ] T014: Add unit tests for Customer and Service mapping/sync logic
+  - [x] T014: Add unit tests for Customer and Service mapping/sync logic
 
 ### WP04: Sync Logic - Invoices & Payments
 
