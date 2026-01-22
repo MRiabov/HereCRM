@@ -5,6 +5,7 @@ import os
 import yaml
 import stripe
 import logging
+import httpx
 from src.repositories import BusinessRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -41,10 +42,13 @@ class BillingService:
             return {"error": "Business not found"}
         
         # Calculate messaging stats
+        msg_usage_config = self.config.get("products", {}).get("messaging", {})
+        free_tier = msg_usage_config.get("free_limit", 1000)
+        overage_rate = msg_usage_config.get("overage_rate", 0.02)
+        
         msg_count = business.message_count_current_period
-        free_tier = 1000
         overage = max(0, msg_count - free_tier)
-        overage_cost = overage * 0.02
+        overage_cost = overage * overage_rate
         
         return {
             "status": business.subscription_status,
@@ -74,12 +78,7 @@ class BillingService:
                 if price_id:
                     si_id = await self._get_subscription_item_by_price(business.stripe_subscription_id, price_id)
                     if si_id:
-                        await asyncio.to_thread(
-                            stripe.SubscriptionItem.create_usage_record,
-                            si_id,
-                            quantity=1,
-                            action="increment"
-                        )
+                        await self._report_usage_raw(si_id, 1)
             except Exception as e:
                 self.logger.error(f"Stripe usage report failed: {e}")
 
@@ -90,10 +89,27 @@ class BillingService:
             subscription = await asyncio.to_thread(stripe.Subscription.retrieve, subscription_id)
             for item in subscription.get("items", {}).get("data", []):
                 if item.get("price", {}).get("id") == price_id:
-                    return item.id
+                    return item.get("id")
         except Exception as e:
             self.logger.error(f"Failed to retrieve subscription items: {e}")
         return None
+
+    async def _report_usage_raw(self, subscription_item_id: str, quantity: int):
+        """Reports usage to Stripe using raw HTTP request due to SDK limitations."""
+        url = f"https://api.stripe.com/v1/subscription_items/{subscription_item_id}/usage_records"
+        headers = {
+            "Authorization": f"Bearer {stripe.api_key}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+        data = {
+            "quantity": str(quantity),
+            "action": "increment",
+            "timestamp": "now"
+        }
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, headers=headers, data=data)
+            response.raise_for_status()
 
     async def create_checkout_session(self, business_id: int, price_id: str, success_url: str, cancel_url: str) -> str:
         """Creates a new subscription checkout session."""

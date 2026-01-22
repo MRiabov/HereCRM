@@ -1,7 +1,7 @@
 
 import os
 import sys
-from sqlalchemy import create_all
+
 
 # Add src to path
 sys.path.append(os.getcwd())

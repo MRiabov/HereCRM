@@ -10,6 +10,9 @@ products:
     name: "Usage-Based Messaging"
     description: "1000 free, then €0.02 per message"
     price_id: "price_msg_usage_placeholder"
+    free_limit: 1000
+    overage_rate: 0.02
+    currency: "eur"
 
 
 addons:

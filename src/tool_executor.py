@@ -829,11 +829,20 @@ class ToolExecutor:
 
         # Use the richer templates (header + body)
         header = self.template_service.render("billing_status_header")
+        # Extract usage data
+        usage = status_info.get("usage", {})
+        msg_count = usage.get("messages", 0)
+        free_limit = usage.get("free_limit", 1000)
+        est_cost = usage.get("estimated_cost", 0.0)
+
         body = self.template_service.render(
             "billing_status_body",
             status=status_info.get("status", "free").title(),
             seats_used=seats_used,
             seat_limit=status_info.get("seat_limit", 1),
+            message_usage=msg_count,
+            free_limit=free_limit,
+            estimated_cost=est_cost,
             addons=addons_str,
             available_upgrades=upgrades_str
         )

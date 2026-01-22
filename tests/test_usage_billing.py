@@ -16,7 +16,11 @@ def billing_service(mock_session):
         service.business_repo = mock_repo
         service.config = {
             "products": {
-                "messaging": {"price_id": "price_msg_123"}
+                "messaging": {
+                    "price_id": "price_msg_123",
+                    "free_limit": 1000,
+                    "overage_rate": 0.02
+                }
             }
         }
         return service, mock_repo
@@ -31,7 +35,7 @@ async def test_track_message_sent(billing_service):
     mock_repo.get_by_id_global.return_value = mock_business
     
     with patch("stripe.Subscription.retrieve") as mock_retrieve, \
-         patch("stripe.SubscriptionItem.create_usage_record", create=True) as mock_usage:
+         patch("httpx.AsyncClient") as mock_client_cls:
         
         mock_retrieve.return_value = {
             "items": {
@@ -41,14 +45,20 @@ async def test_track_message_sent(billing_service):
             }
         }
         
+        mock_client = AsyncMock()
+        mock_client.post.return_value = MagicMock(raise_for_status=MagicMock())
+        
+        mock_instance = mock_client_cls.return_value
+        mock_instance.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_instance.__aexit__ = AsyncMock(return_value=None)
+
         await service.track_message_sent(1)
         
         assert mock_business.message_count_current_period == 11
-        mock_usage.assert_called_once_with(
-            "si_123",
-            quantity=1,
-            action="increment"
-        )
+        mock_client.post.assert_called_once()
+        args, kwargs = mock_client.post.call_args
+        assert kwargs["data"]["quantity"] == "1"
+        assert kwargs["data"]["action"] == "increment"
         service.session.commit.assert_called()
 
 @pytest.mark.asyncio
@@ -77,8 +87,10 @@ async def test_handle_invoice_created_resets_count(billing_service):
     mock_business.id = 1
     mock_business.message_count_current_period = 500
     
-    service.session.execute = AsyncMock()
-    service.session.execute.return_value.scalar_one_or_none = AsyncMock(return_value=mock_business)
+    # Mock session.execute to return a result that has scalar_one_or_none
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = mock_business
+    service.session.execute = AsyncMock(return_value=mock_result)
     
     await service.process_webhook({
         "type": "invoice.created",

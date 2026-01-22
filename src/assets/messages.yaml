@@ -181,7 +181,8 @@ billing_status_header: "💳 *Billing & Subscription*"
 billing_status_body: |
   Status: {status}
   Seats: {seats_used}/{seat_limit}
-  Messages: 1000/mo included (then $0.02/msg)
+  Messages: {message_usage} used (Free limit: {free_limit})
+  Est. Cost: €{estimated_cost:.2f}
   
   *Active Addons*:
   {addons}
