@@ -1,7 +1,7 @@
 ---
 work_package_id: WP05
 title: Orchestration & Scheduler
-lane: "for_review"
+lane: "done"
 dependencies: []
 subtasks:
 - T019
@@ -109,3 +109,4 @@ This is the "engine" that runs every hour. It connects WP01-WP04 together. It ne
 - 2026-01-22T10:34:32Z – Gemini – shell_pid=140601 – lane=doing – Moved to doing
 - 2026-01-22T10:37:02Z – Gemini – shell_pid=140601 – lane=done – Review passed: Fixed scope bug, added missing dependencies, and implemented background sync for manual trigger.
 - 2026-01-22T10:51:11Z – Gemini – shell_pid=140601 – lane=for_review – Implemented payment link integration in PDF invoices and notification messages. Fixed broken migrations and missing imports in the process.
+- 2026-01-22T13:45:20Z – Gemini – shell_pid=140601 – lane=done – Review passed: Merging feature per user request.
