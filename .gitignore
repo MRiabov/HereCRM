@@ -133,10 +133,6 @@ cython_debug/
 *.db
 *.pyc
 crm.db
+
 # Prevent worktree-local kitty-specs/ (status managed in main repo)
 .worktrees/*/kitty-specs/
-<<<<<<< HEAD
-
-=======
-kitty-specs/
->>>>>>> 015-ad-automation-integrations-WP03

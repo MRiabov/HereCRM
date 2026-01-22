@@ -2,6 +2,7 @@
 work_package_id: WP05
 title: Orchestration & Scheduler
 lane: "done"
+assignee: "Antigravity"
 dependencies: []
 subtasks:
 - T019

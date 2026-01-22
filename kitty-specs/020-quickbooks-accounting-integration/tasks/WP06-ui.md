@@ -2,6 +2,7 @@
 work_package_id: WP06
 title: User Interface (Accounting State)
 lane: "done"
+assignee: "Antigravity"
 dependencies: []
 subtasks:
 - T024

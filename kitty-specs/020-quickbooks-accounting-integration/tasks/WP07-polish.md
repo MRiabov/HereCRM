@@ -2,6 +2,7 @@
 work_package_id: WP07
 title: Documentation & Final Polish
 lane: "done"
+assignee: "Antigravity"
 dependencies: []
 subtasks:
 - T029

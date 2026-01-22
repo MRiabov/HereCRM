@@ -2,6 +2,7 @@
 work_package_id: "WP01"
 title: "Foundation & Data Model"
 lane: "done"
+assignee: "Antigravity"
 dependencies: []
 subtasks:
   - "T001"

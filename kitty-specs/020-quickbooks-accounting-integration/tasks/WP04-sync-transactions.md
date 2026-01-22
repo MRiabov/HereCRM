@@ -2,6 +2,7 @@
 work_package_id: WP04
 title: Sync Logic - Invoices & Payments
 lane: "done"
+assignee: "Antigravity"
 dependencies: []
 subtasks:
 - T015
