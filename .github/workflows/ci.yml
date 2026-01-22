@@ -1,10 +1,14 @@
 name: CI
 
 on:
-  push:
-    branches: [ "main" ]
+  schedule:
+    - cron: "0 * * * *"
   pull_request:
     branches: [ "main" ]
+    paths-ignore:
+      - "kitty-specs/**"
+      - "**.md"
+  workflow_dispatch:
 
 jobs:
   test:
