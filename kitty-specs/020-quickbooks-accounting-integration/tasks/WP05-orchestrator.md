@@ -1,7 +1,7 @@
 ---
 work_package_id: WP05
 title: Orchestration & Scheduler
-lane: "doing"
+lane: "for_review"
 dependencies: []
 subtasks:
 - T019
@@ -103,3 +103,4 @@ This is the "engine" that runs every hour. It connects WP01-WP04 together. It ne
 - 2026-01-22T10:01:08Z – gemini-agent – shell_pid=109108 – lane=doing – Started review via workflow command
 - 2026-01-22T10:03:14Z – gemini-agent – shell_pid=109108 – lane=planned – Moved to planned
 - 2026-01-22T10:16:27Z – Gemini – shell_pid=127390 – lane=doing – Started implementation via workflow command
+- 2026-01-22T10:24:35Z – Gemini – shell_pid=127390 – lane=for_review – Ready for review: Implemented QuickBooksSyncManager for orchestration, configured hourly APScheduler job, and implemented manual sync trigger. Refactored to use QuickBooksAuthService and QuickBooksCredential for security. Added integration tests.
