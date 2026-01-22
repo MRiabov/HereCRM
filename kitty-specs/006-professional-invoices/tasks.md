@@ -31,9 +31,9 @@
 **Priority**: P1
 **Prompt**: [tasks/WP02-invoice-generation.md](tasks/WP02-invoice-generation.md)
 
-- [ ] T007: Create professional HTML template `src/templates/invoice.html` (Jinja2).
-- [ ] T008: Implement `InvoicePDFGenerator` in `src/services/pdf_generator.py`.
-- [ ] T009: Add unit tests for PDF generation (mocking data, checking output bytes).
+- [x] T007: Create professional HTML template `src/templates/invoice.html` (Jinja2).
+- [x] T008: Implement `InvoicePDFGenerator` in `src/services/pdf_generator.py`.
+- [x] T009: Add unit tests for PDF generation (mocking data, checking output bytes).
 
 ### WP03: Logic, Tools & Integration
 
@@ -41,11 +41,11 @@
 **Priority**: P1
 **Prompt**: [tasks/WP03-invoice-logic-and-tools.md](tasks/WP03-invoice-logic-and-tools.md)
 
-- [ ] T010: Implement `InvoiceService` (orchestrates `PDFGenerator` + `S3Service` + DB).
-- [ ] T011: Implement `SendInvoiceTool` (Customer Lookup -> Last Job -> InvoiceService).
-- [ ] T012: Register `SendInvoiceTool` in `LLMClient`.
-- [ ] T013: Update `WhatsAppService` to handle `SendInvoiceTool` output (send file/link).
-- [ ] T014: Add integration tests for the full flow (mocking S3).
+- [x] T010: Implement `InvoiceService` (orchestrates `PDFGenerator` + `S3Service` + DB).
+- [x] T011: Implement `SendInvoiceTool` (Customer Lookup -> Last Job -> InvoiceService).
+- [x] T012: Register `SendInvoiceTool` in `LLMClient`.
+- [x] T013: Update `WhatsAppService` to handle `SendInvoiceTool` output (send file/link).
+- [x] T014: Add integration tests for the full flow (mocking S3).
 
 ### WP04: Tax Calculation Integration
 
