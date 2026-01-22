@@ -424,3 +424,46 @@ class AutorouteTool(BaseModel):
     date: Optional[str] = Field(None, description="The date to optimize for (YYYY-MM-DD). Defaults to today.")
     apply: bool = Field(False, description="If True, applies the schedule and assigns jobs to technicians.")
     notify: bool = Field(True, description="If True (and apply is True), notifies technicians and customers.")
+
+
+class ConnectQuickBooksTool(BaseModel):
+    """Initiate the connection to QuickBooks Online.
+    Triggered when user says 'Connect QuickBooks' or 'Link Accounting'."""
+    pass
+
+
+class DisconnectQuickBooksTool(BaseModel):
+    """Disconnect the currently linked QuickBooks Online account.
+    Triggered when user says 'Disconnect QuickBooks'."""
+    pass
+
+
+class QuickBooksStatusTool(BaseModel):
+    """Check the status of the QuickBooks integration and last sync details.
+    Triggered when user says 'QuickBooks status', 'Accounting status', or 'Check sync'."""
+    pass
+
+
+class SyncQuickBooksTool(BaseModel):
+    """Manually trigger a synchronization with QuickBooks.
+    Triggered when user says 'Sync QuickBooks now', 'Push to QuickBooks', or 'Update accounting'."""
+    pass
+
+
+class GetWorkflowSettingsTool(BaseModel):
+    """Retrieve the current business workflow configuration (invoicing, quoting, payments).
+    Triggered when user asks 'what are my workflow settings', 'how is my quoting set up', etc."""
+    pass
+
+
+class UpdateWorkflowSettingsTool(BaseModel):
+    """Update the business workflow configuration.
+    Allowed values for invoicing/quoting: 'never', 'manual', 'automatic'.
+    Allowed values for payment_timing: 'always_paid_on_spot', 'usually_paid_on_spot', 'paid_later'."""
+
+    invoicing: Optional[str] = Field(None, description="Invoicing workflow: 'never', 'manual', 'automatic'")
+    quoting: Optional[str] = Field(None, description="Quoting workflow: 'never', 'manual', 'automatic'")
+    payment_timing: Optional[str] = Field(None, description="Payment timing: 'always_paid_on_spot', 'usually_paid_on_spot', 'paid_later'")
+    tax_inclusive: Optional[bool] = Field(None, description="Whether prices include tax")
+    include_payment_terms: Optional[bool] = Field(None, description="Whether to show net terms on invoices")
+    enable_reminders: Optional[bool] = Field(None, description="Whether to send auto-reminders")

@@ -12,6 +12,10 @@ os.environ["WHATSAPP_APP_SECRET"] = "dummy_secret"
 os.environ["WA_TOKEN"] = "dummy_token"
 os.environ["WA_PHONE_ID"] = "dummy_phone_id"
 os.environ["ALLOW_LOCAL_IMPORT"] = "true"
+os.environ["QB_CLIENT_ID"] = "dummy_qb_client_id"
+os.environ["QB_CLIENT_SECRET"] = "dummy_qb_client_secret"
+os.environ["QB_REDIRECT_URI"] = "http://localhost:8000/callback"
+os.environ["CREDENTIALS_DB_KEY"] = "dummy_key_for_testing_only_12345"
 
 
 @pytest.fixture(scope="session", autouse=True)

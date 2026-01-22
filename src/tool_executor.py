@@ -1,7 +1,17 @@
 from typing import Union, Optional, Tuple, Dict, Any
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import Customer, Request, Business, Service, Job, UserRole
+from src.models import (
+    Customer,
+    Request,
+    Business,
+    Service,
+    Job,
+    UserRole,
+    InvoicingWorkflow,
+    QuotingWorkflow,
+    PaymentTiming,
+)
 from src.events import event_bus
 from src.repositories import (
     JobRepository,
@@ -50,6 +60,12 @@ from src.uimodels import (
     LocateEmployeeTool,
     CheckETATool,
     AutorouteTool,
+    GetWorkflowSettingsTool,
+    UpdateWorkflowSettingsTool,
+    ConnectQuickBooksTool,
+    DisconnectQuickBooksTool,
+    QuickBooksStatusTool,
+    SyncQuickBooksTool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.quote_tools import CreateQuoteTool
@@ -61,6 +77,8 @@ from datetime import datetime, timedelta, timezone
 from src.tools.employee_management import ShowScheduleTool, AssignJobTool
 from src.services.location_service import LocationService
 from src.services.routing.ors import OpenRouteServiceAdapter
+from src.services.accounting.quickbooks_auth import QuickBooksAuthService
+from src.services.accounting.quickbooks_sync import QuickBooksSyncManager
 from src.config import settings
 
 class ToolExecutor:
@@ -179,6 +197,24 @@ class ToolExecutor:
                     None
                 )
 
+        # [T008] Workflow Enforcement
+        business = await self.session.get(Business, self.business_id)
+        if business:
+            # Soft-block Invoicing
+            if isinstance(tool_call, SendInvoiceTool):
+                if business.workflow_invoicing == InvoicingWorkflow.NEVER:
+                    return "Invoicing is currently disabled in your business settings. (Owner can re-enable this by saying 'update workflow settings').", None
+                
+                # Block invoice if 'always paid on spot' (as per "Payment Tools" blocking rule)
+                if business.workflow_payment_timing == PaymentTiming.ALWAYS_PAID_ON_SPOT:
+                     return "Invoicing is disabled because your business is set to 'Always paid on spot'.", None
+
+            # Soft-block Quoting
+            if isinstance(tool_call, CreateQuoteInput):
+                if business.workflow_quoting == QuotingWorkflow.NEVER:
+                    return "Quoting is currently disabled in your business settings. (Owner can re-enable this by saying 'update workflow settings').", None
+
+
         if isinstance(tool_call, AddJobTool):
             return await self._execute_add_job(tool_call)
         elif isinstance(
@@ -243,6 +279,14 @@ class ToolExecutor:
             return await self._execute_check_eta(tool_call)
         elif isinstance(tool_call, AutorouteTool):
             return await self._execute_autoroute(tool_call)
+        elif isinstance(tool_call, ConnectQuickBooksTool):
+            return await self._execute_connect_quickbooks(tool_call)
+        elif isinstance(tool_call, DisconnectQuickBooksTool):
+            return await self._execute_disconnect_quickbooks(tool_call)
+        elif isinstance(tool_call, QuickBooksStatusTool):
+            return await self._execute_quickbooks_status(tool_call)
+        elif isinstance(tool_call, SyncQuickBooksTool):
+            return await self._execute_sync_quickbooks(tool_call)
         return "Unknown tool call", None
 
     # ... (other methods unchanged)
@@ -1208,3 +1252,115 @@ class ToolExecutor:
             "date": tool.date or datetime.today().date().isoformat(),
             "preview": result
         }
+
+    async def _execute_update_workflow_settings(
+        self, tool: UpdateWorkflowSettingsTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        # Validate enums if provided
+        updates = {}
+        if tool.invoicing:
+            try:
+                updates["workflow_invoicing"] = InvoicingWorkflow(tool.invoicing.lower())
+            except ValueError:
+                return f"Error: Invalid invoicing value '{tool.invoicing}'. Use: never, manual, automatic.", None
+        
+        if tool.quoting:
+            try:
+                updates["workflow_quoting"] = QuotingWorkflow(tool.quoting.lower())
+            except ValueError:
+                return f"Error: Invalid quoting value '{tool.quoting}'. Use: never, manual, automatic.", None
+        
+        if tool.payment_timing:
+            try:
+                updates["workflow_payment_timing"] = PaymentTiming(tool.payment_timing.lower())
+            except ValueError:
+                return f"Error: Invalid payment_timing value '{tool.payment_timing}'. Use: always_paid_on_spot, usually_paid_on_spot, paid_later.", None
+        
+        if tool.tax_inclusive is not None:
+            updates["workflow_tax_inclusive"] = tool.tax_inclusive
+        if tool.include_payment_terms is not None:
+            updates["workflow_include_payment_terms"] = tool.include_payment_terms
+        if tool.enable_reminders is not None:
+            updates["workflow_enable_reminders"] = tool.enable_reminders
+            
+        if not updates:
+            return "No updates provided.", None
+            
+        new_settings = await self.workflow_service.update_settings(self.business_id, **updates)
+        return "Workflow settings updated successfully.", {"action": "update_workflow_settings", "settings": new_settings}
+
+    async def _execute_connect_quickbooks(
+        self, tool: ConnectQuickBooksTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        qb_auth = QuickBooksAuthService(self.session)
+        # Generate OAuth URL
+        auth_url = await qb_auth.get_auth_url(self.business_id)
+        
+        return self.template_service.render("quickbooks_connect_prompt", url=auth_url), {
+            "action": "connect_quickbooks",
+            "url": auth_url
+        }
+
+    async def _execute_disconnect_quickbooks(
+        self, tool: DisconnectQuickBooksTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        qb_auth = QuickBooksAuthService(self.session)
+        await qb_auth.disconnect(self.business_id)
+        
+        return self.template_service.render("quickbooks_disconnected"), {
+            "action": "disconnect_quickbooks"
+        }
+
+    async def _execute_quickbooks_status(
+        self, tool: QuickBooksStatusTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        # Get business status
+        business = await self.session.get(Business, self.business_id)
+        
+        # Get last sync logs/stats from SyncManager or similar
+        # For MVP, we use business fields and basic check
+        connected = "Yes" if business.quickbooks_connected else "No"
+        last_sync = business.quickbooks_last_sync.strftime("%Y-%m-%d %H:%M") if business.quickbooks_last_sync else "Never"
+        
+        # We could query SyncLog for errors
+        errors = "None"
+        # TODO: Implement deeper error reporting from SyncLog table if needed
+        
+        return self.template_service.render(
+            "quickbooks_status",
+            connected=connected,
+            last_sync=last_sync,
+            sync_status="Idle", # Placeholder
+            errors=errors
+        ), {
+            "action": "quickbooks_status",
+            "connected": business.quickbooks_connected,
+            "last_sync": business.quickbooks_last_sync
+        }
+
+    async def _execute_sync_quickbooks(
+        self, tool: SyncQuickBooksTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        # Check connection first
+        business = await self.session.get(Business, self.business_id)
+        if not business.quickbooks_connected:
+            return "❌ QuickBooks is not connected. Say 'Connect QuickBooks' first.", None
+
+        # Trigger sync in background (or foreground if fast enough, but batch is slow)
+        # For tool response, we trigger it properly
+        sync_manager = QuickBooksSyncManager(self.session)
+        
+        # We run this in background typically, but here we might await if we want immediate feedback
+        # or just kick it off.
+        # Let's await it for the "Sync Now" command to give definitive result
+        try:
+            results = await sync_manager.run_sync(self.business_id, trigger="manual")
+            count = sum(len(ids) for ids in results.values())
+            
+            return self.template_service.render("quickbooks_sync_complete", count=count), {
+                "action": "sync_quickbooks",
+                "results": results,
+                "count": count
+            }
+        except Exception as e:
+            return self.template_service.render("quickbooks_error", error=str(e)), None

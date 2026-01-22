@@ -1,7 +1,7 @@
 ---
 type: work-package
 id: WP05
-lane: "doing"
+lane: "done"
 subtasks:
   - T026
   - T027

@@ -36,8 +36,8 @@
 
 ## WP05: Usage-Based Billing
 
-- [ ] **T020**: Update `Business` model to include `message_count_current_period` (int) and `billing_cycle_anchor` (datetime). <!-- id: 19 -->
-- [ ] **T021**: Update `BillingService` to support usage tracking: `track_message_sent(business_id)` and logic to report to Stripe Metered Billing (tiered price: 0-1000 free, >1000 $0.02) ensuring charges are added to the period-end invoice. <!-- id: 20 -->
-- [ ] **T022**: Update `get_billing_status` to formatting to include "Messages: X/1000" and estimated overage cost. <!-- id: 21 -->
-- [ ] **T023**: Connect `WhatsAppService` (or message sender) to `BillingService.track_message_sent` to increment usage on every outbound message. <!-- id: 22 -->
-- [ ] **T024**: Verify usage tracking and cost calculation with new tests in `tests/test_usage_billing.py`. <!-- id: 23 -->
+- [x] **T020**: Update `Business` model to include `message_count_current_period` (int) and `billing_cycle_anchor` (datetime). <!-- id: 19 -->
+- [x] **T021**: Update `BillingService` to support usage tracking: `track_message_sent(business_id)` and logic to report to Stripe Metered Billing (tiered price: 0-1000 free, >1000 $0.02) ensuring charges are added to the period-end invoice. <!-- id: 20 -->
+- [x] **T022**: Update `get_billing_status` to formatting to include "Messages: X/1000" and estimated overage cost. <!-- id: 21 -->
+- [x] **T023**: Connect `WhatsAppService` (or message sender) to `BillingService.track_message_sent` to increment usage on every outbound message. <!-- id: 22 -->
+- [x] **T024**: Verify usage tracking and cost calculation with new tests in `tests/test_usage_billing.py`. <!-- id: 23 -->

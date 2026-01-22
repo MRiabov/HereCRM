@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import Customer, Job, Invoice
+from src.models import Customer, Job, Invoice, Business, User, UserRole
 from src.services.invoice_service import InvoiceService
 from src.tool_executor import ToolExecutor
 from src.tools.invoice_tools import SendInvoiceTool
@@ -36,11 +36,15 @@ def template_service():
 @pytest.mark.asyncio
 async def test_create_invoice_success(session: AsyncSession, mock_s3_service, mock_pdf_generator):
     # Setup
-    customer = Customer(name="Test Client", business_id=1)
+    biz = Business(name="Test Biz")
+    session.add(biz)
+    await session.flush()
+    
+    customer = Customer(name="Test Client", business_id=biz.id)
     session.add(customer)
     await session.flush()
     
-    job = Job(customer_id=customer.id, business_id=1, description="Test Job", value=100.0, status="done")
+    job = Job(customer_id=customer.id, business_id=biz.id, description="Test Job", value=100.0, status="done")
     session.add(job)
     await session.commit()
     
@@ -61,15 +65,24 @@ async def test_create_invoice_success(session: AsyncSession, mock_s3_service, mo
 
 @pytest.mark.asyncio
 async def test_send_invoice_tool_success(session: AsyncSession, mock_s3_service, mock_pdf_generator, template_service):
+    # Setup
+    biz = Business(name="Test Biz")
+    session.add(biz)
+    await session.flush()
+    
+    user = User(business_id=biz.id, name="Admin", role=UserRole.OWNER, phone_number="123")
+    session.add(user)
+    await session.flush()
+
     # Setup ToolExecutor
-    executor = ToolExecutor(session, business_id=1, user_id=1, user_phone="123", template_service=template_service)
+    executor = ToolExecutor(session, business_id=biz.id, user_id=user.id, user_phone="123", template_service=template_service)
     
     # Setup Data
-    customer = Customer(name="John Doe", business_id=1, phone="555-1234")
+    customer = Customer(name="John Doe", business_id=biz.id, phone="555-1234")
     session.add(customer)
     await session.flush()
     
-    job = Job(customer_id=customer.id, business_id=1, description="Roof Repair", value=500.0, status="done")
+    job = Job(customer_id=customer.id, business_id=biz.id, description="Roof Repair", value=500.0, status="done")
     session.add(job)
     await session.commit()
     
@@ -85,11 +98,20 @@ async def test_send_invoice_tool_success(session: AsyncSession, mock_s3_service,
 
 @pytest.mark.asyncio
 async def test_send_invoice_tool_no_job(session: AsyncSession, mock_s3_service, mock_pdf_generator, template_service):
+    # Setup
+    biz = Business(name="Test Biz")
+    session.add(biz)
+    await session.flush()
+    
+    user = User(business_id=biz.id, name="Admin", role=UserRole.OWNER, phone_number="123")
+    session.add(user)
+    await session.flush()
+
     # Setup ToolExecutor
-    executor = ToolExecutor(session, business_id=1, user_id=1, user_phone="123", template_service=template_service)
+    executor = ToolExecutor(session, business_id=biz.id, user_id=user.id, user_phone="123", template_service=template_service)
     
     # Setup Data (Customer but no job)
-    customer = Customer(name="Jane Doe", business_id=1)
+    customer = Customer(name="Jane Doe", business_id=biz.id)
     session.add(customer)
     await session.commit()
     
@@ -103,15 +125,24 @@ async def test_send_invoice_tool_no_job(session: AsyncSession, mock_s3_service, 
 
 @pytest.mark.asyncio
 async def test_existing_invoice_warning(session: AsyncSession, mock_s3_service, mock_pdf_generator, template_service):
+    # Setup
+    biz = Business(name="Test Biz")
+    session.add(biz)
+    await session.flush()
+    
+    user = User(business_id=biz.id, name="Admin", role=UserRole.OWNER, phone_number="123")
+    session.add(user)
+    await session.flush()
+
     # Setup ToolExecutor
-    executor = ToolExecutor(session, business_id=1, user_id=1, user_phone="123", template_service=template_service)
+    executor = ToolExecutor(session, business_id=biz.id, user_id=user.id, user_phone="123", template_service=template_service)
     
     # Setup Data
-    customer = Customer(name="Bob Smith", business_id=1)
+    customer = Customer(name="Bob Smith", business_id=biz.id)
     session.add(customer)
     await session.flush()
     
-    job = Job(customer_id=customer.id, business_id=1, description="Plumbing", value=200.0, status="done")
+    job = Job(customer_id=customer.id, business_id=biz.id, description="Plumbing", value=200.0, status="done")
     session.add(job)
     await session.flush()
     

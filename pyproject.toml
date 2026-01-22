@@ -28,7 +28,13 @@ dependencies = [
     "jinja2",
     "spec-kitty-cli>=0.11.1",
     "stripe>=14.2.0",
+    "python-quickbooks>=0.9.1",
 ]
+
+# Optional dependencies for QuickBooks integration:
+# pysqlcipher3: Requires system sqlcipher library
+# Ubuntu/Debian: sudo apt-get install sqlcipher
+# Then: pip install pysqlcipher3
 
 [build-system]
 requires = ["setuptools>=61.0"]

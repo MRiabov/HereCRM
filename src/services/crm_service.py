@@ -1,7 +1,7 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from src.models import Job, Customer, PipelineStage
+from src.models import Job, Customer, PipelineStage, Business, PaymentTiming
 from src.repositories import JobRepository, CustomerRepository, RequestRepository
 from src.events import event_bus
 from datetime import datetime, timedelta, timezone
@@ -28,6 +28,12 @@ class CRMService:
         line_items: Optional[list] = None,
         postal_code: Optional[str] = None,
     ) -> Job:
+        # [T009] Check payment timing
+        paid = False
+        business = await self.session.get(Business, self.business_id)
+        if business and business.workflow_payment_timing == PaymentTiming.ALWAYS_PAID_ON_SPOT:
+            paid = True
+
         job = Job(
             business_id=self.business_id,
             customer_id=customer_id,
@@ -38,6 +44,7 @@ class CRMService:
             scheduled_at=scheduled_at,
             line_items=line_items or [],
             postal_code=postal_code,
+            paid=paid,
         )
         self.job_repo.add(job)
         await self.session.commit() # Must commit for other sessions (handlers) to see it

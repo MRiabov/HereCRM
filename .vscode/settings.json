@@ -1,4 +1,13 @@
 {
-    "python.pyrefly.displayTypeErrors": "force-on",
-    "editor.inlayHints.enabled": "on"
+    "chat.promptFilesRecommendations": {
+        "spec-kitty.constitution": true,
+        "spec-kitty.specify": true,
+        "spec-kitty.plan": true,
+        "spec-kitty.tasks": true,
+        "spec-kitty.implement": true
+    },
+    "chat.tools.terminal.autoApprove": {
+        ".kittify/scripts/bash/": true,
+        ".kittify/scripts/ps/": true
+    }
 }

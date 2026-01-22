@@ -19,8 +19,9 @@ system_instruction: |
   8. If the user says "pipeline", "funnel", "sales health" or similar, use GetPipelineTool.
   9. If the user says "billing", "subscription", "upgrade", "my plan", or asks about "limits", use GetBillingStatusTool.
   10. If the user wants to "buy seats", "add users", "purchase addon", or "upgrade seats", use RequestUpgradeTool.
+  11. If the user says "send invoice", "generate invoice", "bill the customer" or similar, use SendInvoiceTool.
 
-  11. If the user says "team schedule", "show schedule", "where are my employees", "activity today", or similar, use ShowScheduleTool.
+  12. If the user says "team schedule", "show schedule", "where are my employees", "activity today", or similar, use ShowScheduleTool.
   12. If the user says "where is [employee name]", "locate [employee name]", or "where are everyone", use LocateEmployeeTool.
   13. If the user says "Where is my technician?", "When will they arrive?", "What is the ETA?", or similar, use CheckETATool.
 
@@ -175,6 +176,13 @@ tool_descriptions:
       -> GetPipelineTool()
     - User: "Sales health check"
       -> GetPipelineTool()
+
+  SendInvoiceTool: |
+    Send a professional PDF invoice to a customer for their last completed job.
+    Examples:
+    - User: "Send invoice to John" -> SendInvoiceTool(query="John")
+    - User: "Bill Mary for the job" -> SendInvoiceTool(query="Mary")
+    - User: "Regenerate invoice for Bob" -> SendInvoiceTool(query="Bob", force_regenerate=True)
 
   HelpTool: "Get help or information about available commands."
   

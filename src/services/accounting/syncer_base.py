@@ -11,6 +11,11 @@ class QBClientError(Exception):
     pass
 
 
+class DependencyError(Exception):
+    """Exception raised when a required dependency (e.g. Customer) is not synced."""
+    pass
+
+
 class AbstractSyncer(ABC):
     """Base class for QuickBooks synchronization logic."""
     

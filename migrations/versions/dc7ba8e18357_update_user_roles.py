@@ -29,14 +29,16 @@ def upgrade() -> None:
     # But to be safe, we can use `op.execute` with `execution_options={"isolation_level": "AUTOCOMMIT"}` if needed.
     # But usually simple op.execute works if PG is modern.
     
-    # Rename member to employee
-    op.execute("ALTER TYPE userrole RENAME VALUE 'member' TO 'employee'")
-    # Add manager
-    op.execute("ALTER TYPE userrole ADD VALUE 'manager'")
+    if op.get_bind().dialect.name == 'postgresql':
+        # Rename member to employee
+        op.execute("ALTER TYPE userrole RENAME VALUE 'member' TO 'employee'")
+        # Add manager
+        op.execute("ALTER TYPE userrole ADD VALUE 'manager'")
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.execute("ALTER TYPE userrole RENAME VALUE 'employee' TO 'member'")
-    # Cannot remove 'manager'
+    if op.get_bind().dialect.name == 'postgresql':
+        op.execute("ALTER TYPE userrole RENAME VALUE 'employee' TO 'member'")
+        # Cannot remove 'manager'
 

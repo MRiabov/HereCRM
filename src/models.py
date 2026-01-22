@@ -45,6 +45,18 @@ class QuickBooksSyncStatus(str, enum.Enum):
     SKIPPED = "skipped"
 
 
+class SyncType(str, enum.Enum):
+    SCHEDULED = "scheduled"
+    MANUAL = "manual"
+
+
+class SyncLogStatus(str, enum.Enum):
+    PROCESSING = "processing"
+    SUCCESS = "success"
+    PARTIAL_SUCCESS = "partial_success"
+    FAILED = "failed"
+
+
 class InvoicingWorkflow(str, enum.Enum):
     NEVER = "never"
     MANUAL = "manual"
@@ -61,12 +73,6 @@ class PaymentTiming(str, enum.Enum):
     ALWAYS_PAID_ON_SPOT = "always_paid_on_spot"
     USUALLY_PAID_ON_SPOT = "usually_paid_on_spot"
     PAID_LATER = "paid_later"
-
-
-class QuickBooksSyncStatus(str, enum.Enum):
-    PENDING = "pending"
-    SYNCED = "synced"
-    FAILED = "failed"
 
 
 class Business(Base):
@@ -258,6 +264,7 @@ class Job(Base):
     latitude: Mapped[Optional[float]] = mapped_column(Float)
     longitude: Mapped[Optional[float]] = mapped_column(Float)
     postal_code: Mapped[Optional[str]] = mapped_column(String)
+    paid: Mapped[bool] = mapped_column(Boolean, default=False)
     scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
@@ -518,8 +525,8 @@ class SyncLog(Base):
         DateTime,
         default=lambda: datetime.now(timezone.utc)
     )
-    sync_type: Mapped[str] = mapped_column(
-        SAEnum("scheduled", "manual", name="sync_type"),
+    sync_type: Mapped[SyncType] = mapped_column(
+        SAEnum(SyncType),
         nullable=False
     )
     
@@ -529,8 +536,8 @@ class SyncLog(Base):
     records_failed: Mapped[int] = mapped_column(Integer, default=0)
     
     # Status and errors
-    status: Mapped[str] = mapped_column(
-        SAEnum("success", "partial_success", "failed", name="sync_log_status"),
+    status: Mapped[SyncLogStatus] = mapped_column(
+        SAEnum(SyncLogStatus),
         nullable=False
     )
     error_details: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)

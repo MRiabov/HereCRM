@@ -194,3 +194,27 @@ billing_status_body: |
 
 upgrade_link_message: "🔗 Here is your secure link to {action}: {url}\n(Link expires in 24 hours)"
 billing_error: "❌ Billing error: {error}"
+
+# QuickBooks Integration
+quickbooks_connect_prompt: |
+  To connect your QuickBooks Online account, please use this secure link:
+  {url}
+  
+  (Link expires in 15 minutes)
+
+quickbooks_connected: "✅ QuickBooks connected successfully! Your data will now sync automatically every hour."
+quickbooks_disconnected: "✅ QuickBooks account has been disconnected. Synchronization has stopped."
+quickbooks_sync_started: "🔄 Sync started. This may take a few moments..."
+quickbooks_sync_complete: "✅ QuickBooks sync completed. {count} records synced."
+quickbooks_status: |
+  📊 *QuickBooks Status*:
+  - Connected: {connected}
+  - Last Sync: {last_sync}
+  - Status: {sync_status}
+  
+  Errors:
+  {errors}
+  
+  Type 'Sync QuickBooks now' to force a sync.
+quickbooks_error: "❌ QuickBooks Error: {error}"
+

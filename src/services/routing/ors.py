@@ -1,6 +1,6 @@
 import requests
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from src.models import Job, User
 from src.config import settings
 from .base import RoutingServiceProvider, RoutingSolution, RoutingException, RoutingStep
