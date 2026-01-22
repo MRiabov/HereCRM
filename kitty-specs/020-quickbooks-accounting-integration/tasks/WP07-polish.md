@@ -1,14 +1,14 @@
 ---
 work_package_id: WP07
 title: Documentation & Final Polish
-lane: "for_review"
+lane: "doing"
 dependencies: []
 subtasks:
 - T029
 - T030
 - T031
-agent: "antigravity"
-shell_pid: "187330"
+agent: "Antigravity"
+shell_pid: "215012"
 review_status: "has_feedback"
 reviewed_by: "MRiabov"
 ---
@@ -77,3 +77,4 @@ The feature is coded, but if the "Product Assistant" doesn't know about it, user
 - 2026-01-22T11:24:35Z – Antigravity – shell_pid=164053 – lane=planned – Moved to planned
 - 2026-01-22T11:26:55Z – antigravity – shell_pid=187330 – lane=doing – Started implementation via workflow command
 - 2026-01-22T12:03:11Z – antigravity – shell_pid=187330 – lane=for_review – Ready for review: Updated manual.md with QB details, centralized messages in messages.yaml, fixed RBAC missing tools, corrected UserRole in tests, and fixed flaky tool executor test.
+- 2026-01-22T12:16:54Z – Antigravity – shell_pid=215012 – lane=doing – Started review via workflow command
