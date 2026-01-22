@@ -20,6 +20,7 @@ from src.services.chat_utils import format_line_items
 from src.services.billing_service import BillingService
 from src.services.dashboard_service import DashboardService
 from src.services.assignment_service import AssignmentService
+from src.services.rbac_service import RBACService
 from src.lib.text_formatter import render_employee_dashboard
 from src.uimodels import (
     AddJobTool,
@@ -93,6 +94,7 @@ class ToolExecutor:
         self.dashboard_service = DashboardService(session)
         self.assignment_service = AssignmentService(session, self.business_id)
         self.quote_service = QuoteService(session)
+        self.rbac_service = RBACService()
         self._routing_service = None
 
     def _get_routing_service(self) -> OpenRouteServiceAdapter:
@@ -143,6 +145,22 @@ class ToolExecutor:
             AutorouteTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
+
+        # [T006] RBAC Permission Check
+        # Get the tool class name for permission checking
+        tool_name = type(tool_call).__name__
+        
+        # Fetch user to get their role
+        user = await self.user_repo.get_by_id(self.user_id)
+        if not user:
+            return "Error: User not found.", None
+        
+        # Check permission using RBACService
+        if not self.rbac_service.check_permission(user.role, tool_name):
+            # [T007] Return friendly permission denied message
+            tool_config = self.rbac_service.get_tool_config(tool_name)
+            friendly_name = tool_config.get("friendly_name", "perform this action") if tool_config else "perform this action"
+            return f"It seems you are trying to {friendly_name}. Sorry, you don't have permission for that.", None
 
         # [T018] Scope Enforcement
         # Check if the tool requires a specific scope
