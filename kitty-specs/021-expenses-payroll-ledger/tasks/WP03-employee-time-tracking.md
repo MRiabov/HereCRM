@@ -1,9 +1,11 @@
 ---
 work_package_id: WP03
 title: Employee Time Tracking
-lane: "for_review"
+lane: "doing"
 dependencies: []
 subtasks: [T010, T011, T012, T013, T014]
+agent: "Antigravity"
+shell_pid: "230585"
 ---
 
 # Work Package: Employee Time Tracking
@@ -89,3 +91,4 @@ We need to capture the `start_time` for both shifts and jobs so that later (in W
 ## Activity Log
 
 - 2026-01-22T12:05:25Z – unknown – lane=for_review – Completed Webhook Dispatcher implementation. Added event constants and decorator-based subscription. Verified with unit tests.
+- 2026-01-22T14:06:27Z – Antigravity – shell_pid=230585 – lane=doing – Started review via workflow command
