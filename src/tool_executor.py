@@ -788,7 +788,7 @@ class ToolExecutor:
         old_data = {"name": target.name, "default_price": target.default_price}
         
         # Use repo.update which handles attached/detached objects correctly via ID
-        updates = {}
+        updates: Dict[str, Any] = {}
         if tool.new_name:
             updates["name"] = tool.new_name
         if tool.new_price is not None:
