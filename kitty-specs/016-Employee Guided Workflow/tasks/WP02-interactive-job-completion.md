@@ -1,11 +1,11 @@
 ---
 work_package_id: "WP02"
 title: "Interactive Job Completion"
-lane: "planned"
+lane: "doing"
 subtasks: ["T007", "T008", "T009", "T010"]
 dependencies: ["WP01"]
 agent: "Antigravity"
-shell_pid: "4176707"
+shell_pid: "4186310"
 review_status: "has_feedback"
 reviewed_by: "MRiabov"
 ---
@@ -81,6 +81,7 @@ The core interaction of the "Guided Workflow" is the employee simply typing "don
 - 2026-01-21T17:10:33Z – antigravity – shell_pid=4166443 – lane=for_review – Ready for review: Implemented CompleteJobTool with 'done #123' command, permission checks, and system prompt updates. All implementation complete and tested.
 - 2026-01-21T17:15:21Z – Antigravity – shell_pid=4176707 – lane=doing – Started review via workflow command
 - 2026-01-21T17:53:53Z – Antigravity – shell_pid=4176707 – lane=planned – Moved to planned
+- 2026-01-22T06:54:41Z – Antigravity – shell_pid=4186310 – lane=doing – Started implementation via workflow command
 
 ## Review Feedback
 
