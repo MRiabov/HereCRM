@@ -1,0 +1,8 @@
+{
+  "feature_number": "018",
+  "slug": "018-stripe-payment-integration",
+  "friendly_name": "Stripe Payment Integration",
+  "mission": "software-dev",
+  "source_description": "A payment system for businesses using Stripe Connect. Businesses can send payment links automatically. Links should be on invoices and lead to Stripe Hosted Checkout.",
+  "created_at": "2026-01-21T18:29:01Z"
+}

@@ -16,6 +16,8 @@
 
 - Add `S3_ENDPOINT_URL`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET_NAME`.
 - Add `S3_REGION_NAME` (optional).
+- Add `STRIPE_SECRET_KEY` for Stripe Tax API integration.
+- Add `STRIPE_TAX_ENABLED` (boolean flag, default: true).
 
 ### Infrastructure -> Services
 
@@ -35,11 +37,21 @@
 
 - Professional HTML/CSS template for invoices.
 
+#### [NEW] src/services/tax_service.py
+
+- Implement `StripeTaxService` class.
+- Methods: `calculate_tax(line_items, customer_location, business_location, tax_mode)`.
+- Handle both "Tax Included" and "Tax Added" modes.
+- Implement caching for tax calculations.
+- Graceful error handling with fallback to 0% tax.
+
 ### Data Model
 
 #### [MODIFY] src/database/models.py
 
 - Add `Invoice` SQLModel/SQLAlchemy model.
+- Add tax fields to `Invoice`: `subtotal`, `tax_amount`, `tax_rate`, `total_amount`.
+- Add `tax_mode` field to `Business` model (Enum: "tax_included", "tax_added").
 - Update `Job` model with relationship.
 
 ### Core Logic
@@ -49,7 +61,8 @@
 - Business logic:
   - `create_invoice_for_job(job_id)`
   - Check for duplicates.
-  - Orchestrate: Data Fetch -> PDF Gen -> S3 Upload -> DB Save.
+  - Orchestrate: Data Fetch -> Tax Calculation -> PDF Gen -> S3 Upload -> DB Save.
+  - Integrate with `StripeTaxService` for tax calculation.
 
 #### [NEW] src/tools/invoice_tools.py
 

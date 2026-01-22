@@ -95,6 +95,41 @@ As a business owner, I want to satisfy a customer request by sending them a form
 
 ---
 
+## 4. Tax Calculation
+
+### Overview
+
+Quotes must accurately calculate and display applicable taxes using the Stripe Tax API. The system will query Stripe Tax to determine the correct tax rates based on the business location, customer location, and service type.
+
+### Business Settings
+
+Businesses can configure how taxes are applied to their pricing:
+
+- **Tax Application Mode**: Toggle between "Tax Included" and "Tax Added"
+  - **Tax Included**: The price shown to customers already includes tax (tax is calculated backwards from the total)
+  - **Tax Added**: Tax is calculated and added on top of the stated price
+  - This setting is stored in the `Business` model as `tax_mode` field
+
+### Tax Functional Requirements
+
+- **FR-TAX-001**: System MUST integrate with Stripe Tax API to calculate accurate tax amounts for quotes
+- **FR-TAX-002**: System MUST respect the business's `tax_mode` setting when calculating quote totals
+- **FR-TAX-003**: System MUST display tax breakdown on quote PDFs (tax rate, tax amount, subtotal, total)
+- **FR-TAX-004**: System MUST handle tax calculation errors gracefully (fallback to 0% tax with warning)
+- **FR-TAX-005**: System MUST preserve tax calculation when converting accepted Quote to Job
+- **FR-TAX-006**: System MUST recalculate taxes if quote line items are modified before sending
+
+### Tax Display
+
+Quotes must clearly show:
+
+- Subtotal (before tax for "Tax Added" mode, or net amount for "Tax Included" mode)
+- Tax rate(s) applied
+- Tax amount
+- Grand total
+
+---
+
 ## 5. Assumptions & Risks
 
 - **Assumption**: The external website for quote confirmation will communicate back to this CRM via an API endpoint or webhook to be defined.

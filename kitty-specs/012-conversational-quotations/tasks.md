@@ -61,3 +61,20 @@
 - [x] T021: Add "Promote to Quote" action to `ConvertRequestTool`
 - [x] T022: Update `WhatsAppService` to handle "Promote to Quote" intent/flow
 - [x] T023: Write tests for Request -> Quote promotion
+
+### WP06: Tax Calculation Integration
+
+**Goal**: Integrate Stripe Tax API for accurate tax calculation on quotes.
+**Priority**: P1
+**Test Criteria**: Quotes display accurate tax calculations and preserve tax data when converting to Jobs.
+
+- [ ] T024: Reuse `StripeTaxService` from spec 006 for quote tax calculations
+- [ ] T025: Add tax fields to `Quote` model (`subtotal`, `tax_amount`, `tax_rate`, `total_amount`)
+- [ ] T026: Create Alembic migration for Quote model tax fields
+- [ ] T027: Update `QuoteService.create_quote` to integrate tax calculation
+- [ ] T028: Update `QuoteService.confirm_quote` to preserve tax data when creating Job
+- [ ] T029: Update quote HTML template to display tax breakdown
+- [ ] T030: Implement tax recalculation when quote line items are modified
+- [ ] T031: Add unit tests for quote tax calculation
+- [ ] T032: Add integration tests for quote-to-job tax preservation
+- [ ] T033: Handle tax calculation errors gracefully with fallback to 0% tax

@@ -82,7 +82,41 @@ As a business owner, I want the invoices to look professional (clean layout, log
 - **SC-003**: Quality: Generated PDF allows for clear reading of line items and totals (Visual check).
 - **SC-004**: Performance: PDF generation and delivery action takes under **60 seconds**.
 
-## Assumptions
+## Tax Calculation
+
+### Overview
+
+Invoices must accurately calculate and display applicable taxes using the Stripe Tax API. The system will query Stripe Tax to determine the correct tax rates based on the business location, customer location, and service type.
+
+### Business Settings
+
+Businesses can configure how taxes are applied to their pricing:
+
+- **Tax Application Mode**: Toggle between "Tax Included" and "Tax Added"
+  - **Tax Included**: The price shown to customers already includes tax (tax is calculated backwards from the total)
+  - **Tax Added**: Tax is calculated and added on top of the stated price
+  - This setting is stored in the `Business` model as `tax_mode` field
+
+### Tax Functional Requirements
+
+- **FR-TAX-001**: System MUST integrate with Stripe Tax API to calculate accurate tax amounts
+- **FR-TAX-002**: System MUST respect the business's `tax_mode` setting when calculating totals
+- **FR-TAX-003**: System MUST display tax breakdown on invoices (tax rate, tax amount, subtotal, total)
+- **FR-TAX-004**: System MUST handle tax calculation errors gracefully (fallback to 0% tax with warning)
+- **FR-TAX-005**: System MUST cache tax calculations to avoid redundant API calls for identical line items
+
+### Tax Display
+
+Invoices must clearly show:
+
+- Subtotal (before tax for "Tax Added" mode, or net amount for "Tax Included" mode)
+- Tax rate(s) applied
+- Tax amount
+- Grand total
+
+## Assumptions & Dependencies
 
 - "Sending" initially means returning the link/file to the chat context.
 - The system will use a storage provider capable of retaining files permanently.
+- Stripe Tax API credentials are configured and valid.
+- Business and customer location data is accurate for tax calculation purposes.

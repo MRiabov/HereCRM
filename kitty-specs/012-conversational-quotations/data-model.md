@@ -12,7 +12,10 @@ Represents a price proposal sent to a customer.
 | `customer_id` | UUID | FK to Customer |
 | `business_id` | UUID | FK to Business |
 | `status` | Enum | `DRAFT`, `SENT`, `ACCEPTED`, `REJECTED`, `EXPIRED` |
-| `total_amount` | Decimal | Total value of the quote |
+| `subtotal` | Decimal | Amount before tax |
+| `tax_amount` | Decimal | Calculated tax amount |
+| `tax_rate` | Decimal | Tax rate applied (percentage) |
+| `total_amount` | Decimal | Total value of the quote (final amount) |
 | `external_token` | String | Secure token for external confirmation |
 | `blob_url` | String | S3 URL to the generated PDF |
 | `job_id` | UUID | FK to Job (null until accepted) |

@@ -1,108 +1,72 @@
-# Implementation Plan: [FEATURE]
-*Path: [templates/plan-template.md](templates/plan-template.md)*
+# Implementation Plan: 019-business-workflow-defaults
 
+Path: kitty-specs/019-business-workflow-defaults/plan.md
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/kitty-specs/[###-feature-name]/spec.md`
-
-**Note**: This template is filled in by the `/spec-kitty.plan` command. See `.kittify/templates/commands/plan.md` for the execution workflow.
-
-The planner will not begin until all planning questions have been answered—capture those answers in this document before progressing to later phases.
+**Branch**: `019-business-workflow-defaults` | **Date**: 2026-01-22 | **Spec**: [kitty-specs/019-business-workflow-defaults/spec.md](spec.md)
+**Input**: Feature specification from `/kitty-specs/019-business-workflow-defaults/spec.md`
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+This feature introduces configurable workflow defaults for businesses to tailor HereCRM to their operational needs. Key settings include invoicing, quoting, and payment timing. The technical approach involves a centralized `WorkflowSettingsService`, dynamic help text filtering in `messages.yaml`, and "soft-blocking" with owner overrides in the tool executor.
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
-
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: Python 3.12  
+**Primary Dependencies**: SQLAlchemy, Pydantic, FastAPI  
+**Storage**: SQLite with SQLAlchemy ORM  
+**Testing**: pytest  
+**Target Platform**: Linux server
+**Project Type**: Single project (Conversational Backend)  
+**Performance Goals**: Low latency for tool execution and help text rendering (< 100ms)  
+**Constraints**: Settings must be persisted as **strict columns** in the `Business` table (SQLite); RBAC enforcement for settings modification. Avoid JSON fields for core settings.  
+**Scale/Scope**: ~6-10 workflow toggles, applied globally per business.
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+1. **LLM-First Text Processing**: PASSED. Settings management is conversational; LLM interprets user intent for updates.
+2. **Intent Transparency and Control**: PASSED. "Soft-blocking" pattern provides transparency (warning user feature is disabled) and control (owner override).
+3. **Progressive Documentation**: PASSED. Plan includes updating `messages.yaml` for dynamic help and `manual.md` for assistant knowledge.
 
 ## Project Structure
 
 ### Documentation (this feature)
 
-```
-kitty-specs/[###-feature]/
-├── plan.md              # This file (/spec-kitty.plan command output)
-├── research.md          # Phase 0 output (/spec-kitty.plan command)
-├── data-model.md        # Phase 1 output (/spec-kitty.plan command)
-├── quickstart.md        # Phase 1 output (/spec-kitty.plan command)
-├── contracts/           # Phase 1 output (/spec-kitty.plan command)
-└── tasks.md             # Phase 2 output (/spec-kitty.tasks command - NOT created by /spec-kitty.plan)
+```markdown
+kitty-specs/019-business-workflow-defaults/
+├── plan.md              # This file
+├── research.md          # Phase 0 output
+├── data-model.md        # Phase 1 output
+├── quickstart.md        # Phase 1 output
+├── contracts/           # Phase 1 output
+└── tasks.md             # Phase 2 output (generated via /spec-kitty.tasks)
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 
-```
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
+```bash
 src/
-├── models/
+├── models.py            # Update Business model with settings
+├── database.py          # Migration handling (implicit via SQLAlchemy or Alembic)
 ├── services/
-├── cli/
-└── lib/
+│   ├── workflow.py      # New WorkflowSettingsService
+│   └── crm.py           # Integrity checks and default values
+├── tool_executor.py     # Soft-blocking logic
+└── assets/
+    └── messages.yaml    # Dynamic help templates
 
 tests/
-├── contract/
-├── integration/
-└── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
-
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+├── integration/         # Workflow enforcement tests
+└── unit/                # Settings service tests
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Option 1: Single project. All business logic and models reside in `src/`.
 
 ## Complexity Tracking
 
-*Fill ONLY if Constitution Check has violations that must be justified*
+### Gates Justification
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+|:----------|:-----------|:-------------------------------------|
+| N/A       |            |                                      |

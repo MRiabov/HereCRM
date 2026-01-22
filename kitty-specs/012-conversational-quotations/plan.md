@@ -55,10 +55,11 @@ kitty-specs/[###-feature]/
 
 ```bash
 src/
-├── models.py            # Quote, QuoteLineItem models
+├── models.py            # Quote, QuoteLineItem models (with tax fields)
 ├── services/
-│   ├── quote_service.py # Core logic for quotes
+│   ├── quote_service.py # Core logic for quotes (with tax integration)
 │   ├── pdf_generator.py # Refactored common logic + Quote spec
+│   ├── tax_service.py   # Shared Stripe Tax service (from spec 006)
 │   └── storage.py       # Reused S3 service
 ├── tools/
 │   └── quote_tools.py   # LLM tools for creating quotes

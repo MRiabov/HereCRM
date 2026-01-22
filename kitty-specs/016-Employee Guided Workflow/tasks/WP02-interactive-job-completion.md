@@ -81,3 +81,19 @@ The core interaction of the "Guided Workflow" is the employee simply typing "don
 - 2026-01-21T17:10:33Z – antigravity – shell_pid=4166443 – lane=for_review – Ready for review: Implemented CompleteJobTool with 'done #123' command, permission checks, and system prompt updates. All implementation complete and tested.
 - 2026-01-21T17:15:21Z – Antigravity – shell_pid=4176707 – lane=doing – Started review via workflow command
 - 2026-01-21T17:53:53Z – Antigravity – shell_pid=4176707 – lane=planned – Moved to planned
+
+## Review Feedback
+
+**Issue 1**: Codebase Inconsistency / Missing Implementation
+The `WP02` branch appears to be missing. Reviewing the state in `WP03` worktree (which depends on WP02) reveals:
+- `src/uimodels.py`: `CompleteJobTool` class IS present.
+- `src/tool_executor.py`: `_execute_complete_job` is CALLED in the execute dispatcher, but the method definition is MISSING.
+- `src/llm_client.py`: `CompleteJobTool` is NOT imported and NOT registered in `self.tools` or `model_map`.
+
+**Issue 2**: Task Completion
+Subtasks T008 (Implementation), T009 (Permission Check), and T010 (System Prompt) are effectively incomplete.
+
+**Action Required**:
+1. Re-implement `_execute_complete_job` in `src/tool_executor.py` with permission checks.
+2. Update `src/llm_client.py` to register the new tool.
+3. Ensure the branch `016-employee-guided-workflow-WP02` (or correct slug) matches this state.

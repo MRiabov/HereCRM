@@ -7,6 +7,7 @@
 | WP01 | Infrastructure & Data Model | [x] | antigravity |
 | WP02 | Invoice PDF Generation | [ ] | |
 | WP03 | Logic, Tools & Integration | [ ] | |
+| WP04 | Tax Calculation Integration | [ ] | |
 
 ## Work Packages
 
@@ -44,3 +45,21 @@
 - [ ] T012: Register `SendInvoiceTool` in `LLMClient`.
 - [ ] T013: Update `WhatsAppService` to handle `SendInvoiceTool` output (send file/link).
 - [ ] T014: Add integration tests for the full flow (mocking S3).
+
+### WP04: Tax Calculation Integration
+
+**Goal**: Integrate Stripe Tax API for accurate tax calculation on invoices.
+**Priority**: P1
+**Prompt**: [tasks/WP04-tax-calculation.md](tasks/WP04-tax-calculation.md)
+
+- [ ] T015: Install `stripe` Python SDK and add to dependencies.
+- [ ] T016: Add Stripe configuration to `.env` (`STRIPE_SECRET_KEY`, `STRIPE_TAX_ENABLED`).
+- [ ] T017: Implement `StripeTaxService` in `src/services/tax_service.py` with tax calculation methods.
+- [ ] T018: Add `tax_mode` field to `Business` model (Enum: `tax_included`, `tax_added`).
+- [ ] T019: Add tax fields to `Invoice` model (`subtotal`, `tax_amount`, `tax_rate`, `total_amount`).
+- [ ] T020: Create Alembic migration for Business and Invoice model changes.
+- [ ] T021: Update `InvoiceService` to integrate tax calculation before PDF generation.
+- [ ] T022: Update invoice HTML template to display tax breakdown.
+- [ ] T023: Add unit tests for `StripeTaxService` (mocking Stripe API).
+- [ ] T024: Add integration tests for invoice generation with tax calculation.
+- [ ] T025: Implement tax calculation caching to reduce API calls.

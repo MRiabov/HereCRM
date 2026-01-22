@@ -125,20 +125,16 @@ Controls whether the system sends automatic reminders for scheduled jobs and fol
 
 ### 2.2. Settings Storage
 
-All workflow settings must be stored in the `Business.settings` JSON field with the following structure:
+All workflow settings must be stored as **columns** on the `Business` model.
 
-```json
-{
-  "workflow": {
-    "invoicing": "never" | "manual" | "automatic",
-    "quoting": "never" | "manual" | "automatic",
-    "payment_timing": "always_paid_on_spot" | "usually_paid_on_spot" | "paid_later",
-    "tax_inclusive": true | false,
-    "include_payment_terms": true | false,
-    "enable_reminders": true | false
-  }
-}
-```
+**Fields**:
+
+- `workflow_invoicing` (`never` | `manual` | `automatic`)
+- `workflow_quoting` (`never` | `manual` | `automatic`)
+- `workflow_payment_timing` (`always_paid_on_spot` | `usually_paid_on_spot` | `paid_later`)
+- `workflow_tax_inclusive` (boolean)
+- `workflow_include_payment_terms` (boolean)
+- `workflow_enable_reminders` (boolean)
 
 ### 2.3. Settings Management Interface
 
@@ -198,24 +194,16 @@ For existing businesses without workflow settings:
 
 ### 3.1. Business Entity
 
-The `Business.settings` JSON field must support the new `workflow` key:
+ The `Business` entity will be updated with the following columns:
 
-```json
-{
-  "workflow": {
-    "invoicing": "manual",
-    "quoting": "manual",
-    "payment_timing": "usually_paid_on_spot",
-    "tax_inclusive": true,
-    "include_payment_terms": false,
-    "enable_reminders": false
-  },
-  "default_city": "...",
-  "default_country": "..."
-}
-```
+- `workflow_invoicing`
+- `workflow_quoting`
+- `workflow_payment_timing`
+- `workflow_tax_inclusive`
+- `workflow_include_payment_terms`
+- `workflow_enable_reminders`
 
-No database schema changes are required (using existing JSON field).
+**Note**: Database migration is required to add these columns.
 
 ## 4. User Scenarios
 
