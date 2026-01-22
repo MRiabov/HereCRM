@@ -20,6 +20,7 @@ class ConversationStatus(str, enum.Enum):
     SETTINGS = "settings"
     DATA_MANAGEMENT = "data_management"
     BILLING = "billing"
+    EMPLOYEE_MANAGEMENT = "employee_management"
 
 
 class PipelineStage(str, enum.Enum):
@@ -119,6 +120,7 @@ class Business(Base):
     export_requests: Mapped[List["ExportRequest"]] = relationship(back_populates="business")
     quotes: Mapped[List["Quote"]] = relationship(back_populates="business")
     sync_logs: Mapped[List["SyncLog"]] = relationship(back_populates="business")
+    invitations: Mapped[List["Invitation"]] = relationship(back_populates="business")
 
 
 
@@ -550,4 +552,32 @@ class SyncLog(Base):
     
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="sync_logs")
+
+
+class InvitationStatus(str, enum.Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    EXPIRED = "expired"
+
+
+class Invitation(Base):
+    __tablename__ = "invitations"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
+    inviter_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    invitee_identifier: Mapped[str] = mapped_column(String, index=True)  # phone or email
+    token: Mapped[str] = mapped_column(String, unique=True, index=True)
+    status: Mapped[InvitationStatus] = mapped_column(
+        SAEnum(InvitationStatus), default=InvitationStatus.PENDING
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    # Relationships
+    business: Mapped["Business"] = relationship(back_populates="invitations")
+    inviter: Mapped["User"] = relationship()
 

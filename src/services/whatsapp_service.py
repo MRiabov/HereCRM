@@ -15,6 +15,7 @@ from src.services.template_service import TemplateService
 from src.services.data_management import DataManagementService
 from src.services.location_service import LocationService
 from src.services.billing_service import BillingService
+from src.services.invitation import InvitationService
 
 from src.config.loader import get_channel_config_loader
 from src.database import AsyncSessionLocal
@@ -42,8 +43,14 @@ from src.uimodels import (
     SendStatusTool,
     LocateEmployeeTool,
     CheckETATool,
+    CheckETATool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
+from src.tools.employee_management import (
+    InviteUserTool,
+    JoinBusinessTool,
+    ExitEmployeeManagementTool,
+)
 
 
 
@@ -57,14 +64,17 @@ class WhatsappService:
     ):
         self.session = session
         self.parser = parser
+        self.parser = parser
         self.template_service = template_service
         self.billing_service = billing_service or BillingService(session)
         self.logger = logging.getLogger(__name__)
         self.state_repo = ConversationStateRepository(session)
         self.user_repo = UserRepository(session)
         self.business_repo = BusinessRepository(session)
+        self.business_repo = BusinessRepository(session)
         self._current_metadata = {}
         self.data_service = DataManagementService(session)
+        self.invitation_service = InvitationService(session)
 
     async def handle_message(
         self,
@@ -86,7 +96,20 @@ class WhatsappService:
             return self.template_service.render("error_user_required")
 
         if not user:
-            return self.template_service.render("error_user_required")
+            # Handle "Join" for new users
+            if message_text.strip().lower().startswith("join"):
+                active_identity = user_phone or "unknown"
+                success, msg, new_user = await self.invitation_service.process_join(active_identity)
+                if success and new_user:
+                    # User created, let's proceed to log the message and set up state
+                    user = new_user
+                    is_new_user = True
+                    reply = msg # The process_join returns the welcome message
+                    # We continue down to log the message properly linked to this new user
+                else:
+                    return self.template_service.render("error_user_required")
+            else:
+                return self.template_service.render("error_user_required")
 
         # Use the identity they chose for this message as the "from_number" 
         # (could be their email if via generic webhook)
@@ -168,6 +191,9 @@ class WhatsappService:
             elif state_record.state == ConversationStatus.BILLING:
                 self.logger.info(f"User {user.id} in BILLING mode")
                 reply = await self._handle_billing(user, state_record, message_text)
+            elif state_record.state == ConversationStatus.EMPLOYEE_MANAGEMENT:
+                self.logger.info(f"User {user.id} in EMPLOYEE_MANAGEMENT mode")
+                reply = await self._handle_employee_management(user, state_record, message_text)
             else:
                 reply = await self._handle_idle(user, state_record, message_text)
 
@@ -244,6 +270,20 @@ class WhatsappService:
             except Exception as e:
                 self.logger.error(f"Failed to auto-show billing status: {e}")
                 return "You are now in Billing mode. Type 'status', 'upgrade', or 'back' to exit."
+
+        # Handle Employee Management Entry
+        if lower_text in ["employee management", "manage employees", "employees"]:
+            # Basic RBAC check (Owner/Manager only)
+            if user.role not in ["owner", "manager"]:
+                 return "Access denied: Employee Management is restricted to authorized roles."
+            
+            state_record.state = ConversationStatus.EMPLOYEE_MANAGEMENT
+            return "You are now in Employee Management mode. You can 'Invite <phone>'. Type 'exit' to return."
+
+        # Handle Join (for existing users)
+        if lower_text.startswith("join"):
+             success, msg, _ = await self.invitation_service.process_join(user.phone_number or "")
+             return msg
 
         # Parse with LLM
         from datetime import datetime, timezone
@@ -856,6 +896,37 @@ class WhatsappService:
             return self.template_service.render("confirm_prompt", summary=summary)
 
         return "Unknown command. Try 'status', 'buy seat', or 'back'."
+
+    async def _handle_employee_management(
+        self, user: User, state_record: ConversationState, text: str
+    ) -> str:
+        # Check manual exit just in case parser fails or as fast path
+        if text.lower().strip() in ["exit", "quit", "back", "done"]:
+            state_record.state = ConversationStatus.IDLE
+            return self.template_service.render("welcome_back")
+
+        tool_call = await self.parser.parse_employee_management(text)
+        
+        if not tool_call:
+            return "I didn't understand. You can 'Invite +123456789'. Type 'exit' to quit."
+            
+        if isinstance(tool_call, ExitEmployeeManagementTool):
+            state_record.state = ConversationStatus.IDLE
+            return self.template_service.render("welcome_back")
+            
+        if isinstance(tool_call, InviteUserTool):
+            # Execute Invite logic
+            try:
+                # Basic context check again? already in state.
+                invitation = await self.invitation_service.create_invitation(
+                    user.business_id, user.id, tool_call.identifier
+                )
+                return f"Invitation sent to {tool_call.identifier}."
+            except Exception as e:
+                self.logger.error(f"Invite failed: {e}")
+                return f"Failed to send invitation: {e}"
+                
+        return "Tool not implemented yet."
 
     async def _handle_pending_auto_confirm(
         self, user: User, state_record: ConversationState, text: str

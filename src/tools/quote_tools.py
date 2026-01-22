@@ -3,14 +3,16 @@ from typing import Optional, Tuple, Dict, Any
 from src.uimodels import CreateQuoteInput
 from src.services.quote_service import QuoteService
 from src.repositories import CustomerRepository
+from src.services.template_service import TemplateService
 
 logger = logging.getLogger(__name__)
 
 class CreateQuoteTool:
-    def __init__(self, quote_service: QuoteService, customer_repo: CustomerRepository, business_id: int):
+    def __init__(self, quote_service: QuoteService, customer_repo: CustomerRepository, business_id: int, template_service: TemplateService):
         self.quote_service = quote_service
         self.customer_repo = customer_repo
         self.business_id = business_id
+        self.template_service = template_service
 
     async def run(self, input: CreateQuoteInput) -> Tuple[str, Optional[Dict[str, Any]]]:
         # 1. Resolve Customer
@@ -45,9 +47,21 @@ class CreateQuoteTool:
             # Note: This relies on WP02 implementation of QuoteService.send_quote
             if hasattr(self.quote_service, 'send_quote'):
                 await self.quote_service.send_quote(quote.id)
-                msg = f"Quote #{quote.id} created and sent to {customer.name} via WhatsApp."
+                msg = self.template_service.render(
+                    "job_added", 
+                    category="Quote", 
+                    name=customer.name, 
+                    location="", 
+                    price_info=f" (Total: {quote.total_amount})"
+                )
             else:
-                 msg = f"Quote #{quote.id} created for {customer.name}. (Note: PDF sending not enabled)"
+                 msg = self.template_service.render(
+                    "job_added", 
+                    category="Quote", 
+                    name=customer.name, 
+                    location="", 
+                    price_info=f" (Total: {quote.total_amount}) - PDF sending not enabled"
+                )
                  
         except Exception as e:
             logger.error(f"Failed to send quote: {e}")

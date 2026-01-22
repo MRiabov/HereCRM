@@ -15,3 +15,19 @@ class AssignJobTool(BaseModel):
 
     job_id: int = Field(..., description="The ID of the job to assign")
     assign_to_name: str = Field(..., description="The name of the employee to assign the job to")
+
+class InviteUserTool(BaseModel):
+    """Invite a new person to join the business as an employee.
+    Use this when the user says 'Invite +123456789'."""
+    
+    identifier: str = Field(..., description="The phone number or email of the person to invite")
+
+class JoinBusinessTool(BaseModel):
+    """Join a business from an invitation.
+    Use this when the user says 'Join' or 'Accept invitation'."""
+    pass
+
+class ExitEmployeeManagementTool(BaseModel):
+    """Exit the employee management mode.
+    Use this when the user says 'exit', 'quit', 'back', or 'done'."""
+    pass

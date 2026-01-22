@@ -1013,7 +1013,7 @@ class ToolExecutor:
             return f"System error generating upgrade link: {str(e)}", None
 
     async def _execute_create_quote(self, tool: CreateQuoteInput) -> Tuple[str, Optional[Dict[str, Any]]]:
-        quote_tool = CreateQuoteTool(self.quote_service, self.customer_repo, self.business_id)
+        quote_tool = CreateQuoteTool(self.quote_service, self.customer_repo, self.business_id, self.template_service)
         return await quote_tool.run(tool)
 
     async def _execute_send_status(
@@ -1273,7 +1273,7 @@ class ToolExecutor:
     async def _execute_autoroute(
         self, tool: AutorouteTool
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
-        executor = AutorouteToolExecutor(self.session, self.business_id)
+        executor = AutorouteToolExecutor(self.session, self.business_id, self.template_service)
         result = await executor.run(tool)
         
         action = "apply_route" if tool.apply else "preview_route"

@@ -2,8 +2,9 @@ from sqlalchemy import select, or_, and_, event, func
 from sqlalchemy.orm import joinedload, contains_eager
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List, Any
-from datetime import datetime
+from datetime import datetime, timezone
 import math
+import sqlalchemy as sa
 from src.models import (
     Business,
     User,
@@ -17,7 +18,9 @@ from src.models import (
     LineItem,
     CustomerAvailability,
     IntegrationConfig as IntegrationConfig,
-    IntegrationType as IntegrationType
+    IntegrationType as IntegrationType,
+    Invitation,
+    InvitationStatus,
 )
 from .base import BaseRepository, normalize_phone, haversine_distance
 from src.repositories.integration_repository import IntegrationRepository as IntegrationRepository
@@ -577,3 +580,36 @@ def invalidate_service_cache(mapper, connection, target):
 event.listen(Service, "after_insert", invalidate_service_cache)
 event.listen(Service, "after_update", invalidate_service_cache)
 event.listen(Service, "after_delete", invalidate_service_cache)
+
+
+class InvitationRepository(BaseRepository[Invitation]):
+    def __init__(self, session: AsyncSession):
+        super().__init__(session, Invitation)
+
+    async def get_by_token(self, token: str) -> Optional[Invitation]:
+        query = select(Invitation).where(Invitation.token == token)
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def get_pending_by_identifier(self, identifier: str) -> List[Invitation]:
+        # Identifier comes normalized or we normalize it
+        identifier = normalize_phone(identifier)
+        query = select(Invitation).where(
+            Invitation.invitee_identifier == identifier,
+            Invitation.status == InvitationStatus.PENDING
+        )
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def expire_old_invitations(self):
+        # Optional maintenance method
+        now = datetime.now(timezone.utc)
+        stmt = (
+            sa.update(Invitation)
+            .where(
+                Invitation.status == InvitationStatus.PENDING,
+                Invitation.expires_at < now
+            )
+            .values(status=InvitationStatus.EXPIRED)
+        )
+        await self.session.execute(stmt)

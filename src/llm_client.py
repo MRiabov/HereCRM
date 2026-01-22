@@ -33,7 +33,13 @@ from src.uimodels import (
     AutorouteTool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
-from src.tools.employee_management import ShowScheduleTool, AssignJobTool
+from src.tools.invoice_tools import SendInvoiceTool
+from src.tools.employee_management import (
+    ShowScheduleTool,
+    AssignJobTool,
+    InviteUserTool,
+    ExitEmployeeManagementTool,
+)
 from src.services.template_service import TemplateService
 from src.config.loader import get_channel_config_loader
 
@@ -294,6 +300,25 @@ class LLMParser:
             },
         ]
 
+        self.employee_mgmt_tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "InviteUserTool",
+                    "description": "Invite a new person to join the business as an employee.",
+                    "parameters": InviteUserTool.schema(),
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "ExitEmployeeManagementTool",
+                    "description": "Exit the employee management mode.",
+                    "parameters": ExitEmployeeManagementTool.schema(),
+                },
+            },
+        ]
+
     async def _chat_with_retry(
         self, messages: list[dict], tools: list[dict], model_map: dict[str, Any]
     ) -> Optional[Any]:
@@ -467,6 +492,30 @@ class LLMParser:
         }
         
         return await self._chat_with_retry(messages, self.settings_tools, model_map)
+
+    async def parse_employee_management(
+        self, text: str
+    ) -> Optional[Union[InviteUserTool, ExitEmployeeManagementTool]]:
+        lower_text = text.lower().strip()
+        if lower_text in ["exit", "quit", "back", "done"]:
+            return ExitEmployeeManagementTool()
+
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant for Employee Management. "
+                "The user wants to invite new employees or manage existing ones. "
+                "Map their request to the appropriate tool.",
+            },
+            {"role": "user", "content": text},
+        ]
+
+        model_map = {
+            "InviteUserTool": InviteUserTool,
+            "ExitEmployeeManagementTool": ExitEmployeeManagementTool,
+        }
+
+        return await self._chat_with_retry(messages, self.employee_mgmt_tools, model_map)
 
     async def parse(
         self, 

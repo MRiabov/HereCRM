@@ -13,13 +13,15 @@ from src.services.routing.ors import OpenRouteServiceAdapter
 from src.services.routing.mock import MockRoutingService
 from src.uimodels import AutorouteTool
 from src.config import settings
+from src.services.template_service import TemplateService
 
 logger = logging.getLogger(__name__)
 
 class AutorouteToolExecutor:
-    def __init__(self, session: AsyncSession, business_id: int):
+    def __init__(self, session: AsyncSession, business_id: int, template_service: TemplateService):
         self.session = session
         self.business_id = business_id
+        self.template_service = template_service
         self.job_repo = JobRepository(session)
         self.user_repo = UserRepository(session)
         
@@ -87,7 +89,9 @@ class AutorouteToolExecutor:
             return await self.apply_schedule(solution, input.notify)
         
         # 4. Format Output
-        return await self._format_solution(solution, target_date, employees)
+        # Convert output to body only, let template handle header
+        routes_body = await self._format_solution_body(solution, employees)
+        return self.template_service.render("autoroute_preview", date=target_date, routes=routes_body)
 
     async def apply_schedule(self, solution: RoutingSolution, notify: bool) -> str:
         count = 0
@@ -125,16 +129,16 @@ class AutorouteToolExecutor:
                             logger.info(f"Notification hook: Customer {job.customer.name} would be notified about job {job.id}")
             
             await self.session.commit()
-            return f"Successfully applied schedule. {count} jobs assigned and technicians notified."
+            return self.template_service.render("autoroute_applied", count=count)
             
         except Exception as e:
             await self.session.rollback()
             logger.exception("Failed to apply routing schedule")
             return f"Failed to apply schedule: {str(e)}"
 
-    async def _format_solution(self, solution: RoutingSolution, date: date_cls, employees: List[User]) -> str:
+    async def _format_solution_body(self, solution: RoutingSolution, employees: List[User]) -> str:
         lines = []
-        lines.append(f"Proposed Schedule for {date.isoformat()}")
+        # Header is handled by template
         
         # Metrics
         total_distance = solution.metrics.get("distance", 0) # meters
@@ -147,7 +151,16 @@ class AutorouteToolExecutor:
         lines.append(f"Total Distance: {dist_km:.1f} km, Est. Time: {dur_hrs:.1f} hrs")
         lines.append("")
         
-        start_time_base = datetime.combine(date, datetime.min.time()).replace(hour=9, minute=0)
+        # Start time base is no longer needed to be calculated here for header, 
+        # but is used for simulation below.
+        # We need 'date' or we assume today/target date passed in?
+        # The original method took 'date'.
+        # Let's derive date from solution or just use a default since it's just for time calcs?
+        # Actually, the original code used 'date' to set start_time_base.
+        # I removed 'date' from args in my previous call.
+        # I should restore 'date' access or pass it.
+        # Or, I can just use datetime.today() if it's just for setting the hour to 9am.
+        start_time_base = datetime.today().replace(hour=9, minute=0, second=0, microsecond=0)
         
         # Create map for employee names
         emp_map = {e.id: e.name or e.email or f"Employee {e.id}" for e in employees}
