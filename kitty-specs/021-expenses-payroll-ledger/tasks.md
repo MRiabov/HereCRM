@@ -49,11 +49,11 @@
 **Priority**: High
 **Tests**: `tests/integration/test_time_tracking.py` verifying state transitions.
 
-- [ ] **T010**: Implement `TimeTrackingService` methods: `start_shift`, `end_shift`, `start_job`, `finish_job`.
-- [ ] **T011**: Implement `CheckInTool` and `CheckOutTool` connecting to the service.
-- [ ] **T012**: Implement `JobStartTool` and `JobFinishTool`.
-- [ ] **T013**: Handle state persistence (updating `current_shift_start` on User, `started_at` on Job).
-- [ ] **T014**: Integration tests ensuring valid state transitions (can't start job if not checked in, etc. - optionally).
+- [x] **T010**: Implement `TimeTrackingService` methods: `start_shift`, `end_shift`, `start_job`, `finish_job`.
+- [x] **T011**: Implement `CheckInTool` and `CheckOutTool` connecting to the service.
+- [x] **T012**: Implement `JobStartTool` and `JobFinishTool`.
+- [x] **T013**: Handle state persistence (updating `current_shift_start` on User, `started_at` on Job).
+- [x] **T014**: Integration tests ensuring valid state transitions (can't start job if not checked in, etc. - optionally).
 
 **Implementation**:
 
@@ -70,11 +70,11 @@
 **Priority**: High
 **Tests**: `tests/integration/test_ledger_flow.py` full cycle test.
 
-- [ ] **T015**: Implement `LedgerService` with `add_entry` (credit/debit), `get_balance`.
-- [ ] **T016**: Wire `TimeTrackingService` to call `WageCalculator` then `LedgerService` on "Finish Job" and "Check Out".
-- [ ] **T017**: Implement `PayoutTool` (Create debit entry).
-- [ ] **T018**: Implement `GetBalanceTool` (Read balance).
-- [ ] **T019**: End-to-end tests: Check In -> Wait -> Check Out -> Verify Ledger Balance -> Payout -> Verify Zero.
+- [x] T015: Implement `LedgerService` with `add_entry` (credit/debit), `get_balance`.
+- [x] T016: Wire `TimeTrackingService` to call `WageCalculator` then `LedgerService` on "Finish Job" and "Check Out".
+- [x] T017: Implement `PayoutTool` (Create debit entry).
+- [x] T018: Implement `GetBalanceTool` (Read balance).
+- [x] T019: End-to-end tests: Check In -> Wait -> Check Out -> Verify Ledger Balance -> Payout -> Verify Zero.
 
 **Implementation**:
 
