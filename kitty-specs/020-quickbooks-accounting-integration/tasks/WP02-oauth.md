@@ -1,7 +1,7 @@
 ---
 work_package_id: WP02
 title: OAuth Infrastructure
-lane: "for_review"
+lane: "done"
 dependencies: []
 subtasks:
 - T006
@@ -122,3 +122,4 @@ We need to obtain access to the user's QuickBooks data via standard OAuth 2.0. T
 - 2026-01-22T09:57:50Z – gemini-agent – shell_pid=105534 – lane=doing – Started review via workflow command
 - 2026-01-22T10:00:54Z – gemini-agent – shell_pid=105534 – lane=done – Review passed: Implemented QuickBooks OAuth flow with secure SQLCipher storage, proactive token refresh, and comprehensive integration tests. Verified implementation and test results in the worktree.
 - 2026-01-22T10:32:48Z – gemini-agent – shell_pid=105534 – lane=for_review – Ready for review: Implemented workflow settings tools, updated RBAC config, added manual documentation, and verified with unit tests.
+- 2026-01-22T13:45:19Z – gemini-agent – shell_pid=105534 – lane=done – Review passed: Merging feature per user request.
