@@ -1,9 +1,11 @@
 ---
 work_package_id: WP05
 title: Expense Management
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks: [T020, T021, T022, T023]
+agent: "Antigravity"
+shell_pid: "260428"
 ---
 
 # Work Package: Expense Management
@@ -66,3 +68,7 @@ Simple CRUD for the `Expense` entity, but exposed via an LLM Tool.
 
 - `AddExpenseTool` works.
 - Expenses are saved to DB.
+
+## Activity Log
+
+- 2026-01-22T14:47:57Z – Antigravity – shell_pid=260428 – lane=doing – Started implementation via workflow command
