@@ -1,7 +1,7 @@
 ---
 work_package_id: WP07
 title: Documentation & Final Polish
-lane: "doing"
+lane: "done"
 dependencies: []
 subtasks:
 - T029
@@ -78,3 +78,4 @@ The feature is coded, but if the "Product Assistant" doesn't know about it, user
 - 2026-01-22T11:26:55Z – antigravity – shell_pid=187330 – lane=doing – Started implementation via workflow command
 - 2026-01-22T12:03:11Z – antigravity – shell_pid=187330 – lane=for_review – Ready for review: Updated manual.md with QB details, centralized messages in messages.yaml, fixed RBAC missing tools, corrected UserRole in tests, and fixed flaky tool executor test.
 - 2026-01-22T12:16:54Z – Antigravity – shell_pid=215012 – lane=doing – Started review via workflow command
+- 2026-01-22T12:27:21Z – Antigravity – shell_pid=215012 – lane=done – Review passed: Updated manual.md and messages.yaml as required. Fixed RBAC test contamination issue in test_workflow_settings.py. All 300 tests passed.
