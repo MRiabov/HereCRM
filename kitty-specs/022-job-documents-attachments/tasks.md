@@ -10,10 +10,11 @@
 **Priority**: High
 **Dependencies**: None
 
-- [ ] T001: Add `Document` model and migration [P]
+- [ ] T001: Add `Document` model & Refactor Quote/Invoice [P]
 - [ ] T002: Add `boto3` dependency and config
 - [ ] T003: Implement `StorageService` (upload, presign)
 - [ ] T004: Test `StorageService` (mocked S3)
+- [ ] T017: Create Data Migration (Legacy Quote/Invoice -> Document)
 
 ## Work Package 02: Document Service Core
 

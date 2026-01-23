@@ -17,13 +17,15 @@ This feature adds the ability for customers and business owners to upload, store
 
 * **Database**: SQLite (via SQLAlchemy) for metadata (`Document` model).
 * **Object Storage**: Backblaze B2 (S3-compatible) for file content.
-**Testing**: pytest (integration tests for webhook flow and storage service).
+* **Architecture Note**: `Document` serves as the unified registry for all files. `Quote` and `Invoice` models will be refactored to remove direct file columns (`blob_url`, `s3_key`) and instead link to a `Document` record. This allows a single query to retrieve all collateral for a job (User uploads + System generated files).
+**Testing**: pytest (integration tests for webhook flow and storage service), plus migration tests.
 **Target Platform**: Linux server.
 **Project Type**: Web Application (Backend).
 **Constraints**:
 * Secure Time-Limited (Presigned) URLs for retrieval.
 * Tenant isolation (Business ID enforcement).
 * Async I/O for file operations.
+* **Migration**: Must migrate existing `Quote.blob_url` and `Invoice.s3_key` data to new `Document` rows.
 
 ## Constitution Check
 
