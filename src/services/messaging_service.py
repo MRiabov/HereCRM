@@ -34,15 +34,6 @@ class MessagingService:
     ) -> MessageLog:
         """
         Send a message to a recipient via the specified channel.
-        
-        Args:
-            recipient_phone: Phone number of the recipient
-            content: Message content to send
-            channel: Channel to use ("whatsapp" or "sms")
-            trigger_source: Source that triggered this message
-            
-        Returns:
-            MessageLog: The created message log entry
         """
         # Determine message type
         message_type = MessageType.WHATSAPP if channel == "whatsapp" else MessageType.SMS
@@ -52,8 +43,10 @@ class MessagingService:
             from src.services.channels.sms_utils import normalize_to_gsm7
             content = normalize_to_gsm7(content)
             
-        # Create MessageLog entry with PENDING status
+        # Use a single session for the entire message sending process to avoid detachment issues
         async with AsyncSessionLocal() as db:
+            db.sync_session.expire_on_commit = False
+            # 1. Create MessageLog entry with PENDING status
             message_log = MessageLog(
                 business_id=business_id,
                 recipient_phone=recipient_phone,
@@ -62,37 +55,31 @@ class MessagingService:
                 status=MessageStatus.PENDING,
                 trigger_source=trigger_source,
             )
-            db.add(message_log)
-            await db.commit()
-            await db.refresh(message_log)
-            print(f"DEBUG: Created MessageLog id={message_log.id}")
-        
-        # Process sending
-        try:
-            success = False
-            external_id = None
+            try:
+                db.add(message_log)
+                await db.commit()
+            except Exception as e:
+                logger.error(f"Failed to create initial MessageLog (session id: {id(db)}): {e}")
+                raise
+            # await db.refresh(message_log) - Removed to avoid "Could not refresh instance" error
             
-            if channel == "whatsapp":
-                success, external_id = await self._send_whatsapp(recipient_phone, content)
-            elif channel == "sms":
-                success, external_id = await self._send_sms(recipient_phone, content)
-            
-            # Update status
-            async with AsyncSessionLocal() as db:
-                # Reload message_log
-                from sqlalchemy import select
-                stmt = select(MessageLog).where(MessageLog.id == message_log.id)
-                result = await db.execute(stmt)
-                msg_log = result.scalar_one()
+            # 2. Process sending
+            try:
+                success = False
+                external_id = None
                 
+                if channel == "whatsapp":
+                    success, external_id = await self._send_whatsapp(recipient_phone, content)
+                elif channel == "sms":
+                    success, external_id = await self._send_sms(recipient_phone, content)
+                
+                # 3. Update status and track usage
                 if success:
-                    msg_log.status = MessageStatus.SENT
-                    msg_log.sent_at = datetime.now(timezone.utc)
+                    message_log.status = MessageStatus.SENT
+                    message_log.sent_at = datetime.now(timezone.utc)
                     if external_id:
-                        msg_log.external_id = external_id
+                        message_log.external_id = external_id
                     
-                    await db.commit()
-
                     # Track usage if business_id is known
                     if business_id:
                         from src.services.billing_service import BillingService
@@ -107,21 +94,21 @@ class MessagingService:
                     
                     logger.info(f"Message {message_log.id} sent successfully via {channel}")
                 else:
-                    msg_log.status = MessageStatus.FAILED
-                    msg_log.error_message = "Provider request failed"
-                    await db.commit()
-
+                    message_log.status = MessageStatus.FAILED
+                    message_log.error_message = "Provider request failed"
                 
-        except Exception as e:
-            logger.error(f"Failed to send message {message_log.id}: {e}")
-            async with AsyncSessionLocal() as db:
-                from sqlalchemy import select
-                stmt = select(MessageLog).where(MessageLog.id == message_log.id)
-                result = await db.execute(stmt)
-                msg_log = result.scalar_one()
-                msg_log.status = MessageStatus.FAILED
-                msg_log.error_message = str(e)
                 await db.commit()
+                    
+            except Exception as e:
+                logger.error(f"Failed to send message {message_log.id}: {e}")
+                # Try to log failure in the same session
+                try:
+                    message_log.status = MessageStatus.FAILED
+                    message_log.error_message = str(e)
+                    await db.commit()
+                except Exception as db_err:
+                    logger.error(f"Could not even log failure to DB: {db_err}")
+                    await db.rollback()
         
         return message_log
 
@@ -272,7 +259,6 @@ class MessagingService:
             return
             
         logger.info(f"Handling JOB_CREATED for job {job_id}")
-        print(f"DEBUG: handle_job_created job_id={job_id} customer_id={customer_id}")
         
         async with AsyncSessionLocal() as db:
             customer_repo = CustomerRepository(db)

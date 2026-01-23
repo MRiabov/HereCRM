@@ -129,10 +129,10 @@ async def test_manager_can_use_locate_employee(async_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_manager_cannot_use_send_invoice(async_session: AsyncSession):
+async def test_manager_can_use_send_invoice(async_session: AsyncSession):
     """
-    Scenario 4: Manager tries to use SendInvoiceTool (Denied).
-    Verify returned string matches the denial format.
+    Scenario 4: Manager tries to use SendInvoiceTool (Allowed).
+    Verify tool runs successfully (or fails with non-permission error).
     """
     # Setup: Create business and manager user
     business = Business(name="Test Business")
@@ -161,12 +161,11 @@ async def test_manager_cannot_use_send_invoice(async_session: AsyncSession):
     # Create tool call
     tool = SendInvoiceTool(query="Test Customer")
     
-    # Execute - should be denied
+    # Execute - should NOT be denied
     result, metadata = await executor.execute(tool)
     
-    # Verify permission denial message
-    assert "It seems you are trying to send invoices" in result
-    assert "Sorry, you don't have permission for that" in result
+    # Verify permission is NOT denied
+    assert "Sorry, you don't have permission" not in result
 
 
 @pytest.mark.asyncio

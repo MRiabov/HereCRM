@@ -46,19 +46,18 @@ async def test_event_bus_integration_job_created():
         await db.commit()
         await db.refresh(customer)
         
-        # Emit a JOB_CREATED event
-        event_name = "JOB_CREATED"
-        data = {
+        event_data = {
             "job_id": 123,
             "customer_id": customer.id,
             "business_id": business.id,
         }
-        
-        await event_bus.emit(event_name, data)
         break
     
+    # Emit a JOB_CREATED event
+    await event_bus.emit("JOB_CREATED", event_data)
+    
     # Wait for async processing
-    await asyncio.sleep(0.5)
+    await service._queue.join()
     
     # Verify message was enqueued and processed
     # The queue should be empty after processing
@@ -112,20 +111,19 @@ async def test_event_bus_integration_job_scheduled():
         await db.commit()
         await db.refresh(customer)
         
-        # Emit a JOB_SCHEDULED event
-        event_name = "JOB_SCHEDULED"
-        data = {
+        event_data = {
             "job_id": 123,
             "customer_id": customer.id,
             "business_id": business.id,
             "scheduled_at": datetime(2026, 1, 15, 14, 30, tzinfo=timezone.utc).isoformat(),
         }
-        
-        await event_bus.emit(event_name, data)
         break
     
+    # Emit a JOB_SCHEDULED event
+    await event_bus.emit("JOB_SCHEDULED", event_data)
+    
     # Wait for async processing
-    await asyncio.sleep(0.5)
+    await service._queue.join()
     
     # Verify queue is empty (message was processed)
     assert service._queue.qsize() == 0
@@ -174,19 +172,18 @@ async def test_event_bus_integration_on_my_way():
         await db.commit()
         await db.refresh(customer)
         
-        # Emit an ON_MY_WAY event
-        event_name = "ON_MY_WAY"
-        data = {
+        event_data = {
             "customer_id": customer.id,
             "business_id": business.id,
             "eta_minutes": 20,
         }
-        
-        await event_bus.emit(event_name, data)
         break
     
+    # Emit an ON_MY_WAY event
+    await event_bus.emit("ON_MY_WAY", event_data)
+    
     # Wait for async processing
-    await asyncio.sleep(0.5)
+    await service._queue.join()
     
     # Verify queue is empty (message was processed)
     assert service._queue.qsize() == 0
@@ -240,19 +237,24 @@ async def test_multiple_events_concurrent_processing():
         for c in customers:
             await db.refresh(c)
             
-        # Emit multiple events
-        await event_bus.emit("JOB_CREATED", {"job_id": 1, "customer_id": customers[0].id, "business_id": business.id})
-        await event_bus.emit("JOB_SCHEDULED", {
+        # Prepare events data
+        event1 = ("JOB_CREATED", {"job_id": 1, "customer_id": customers[0].id, "business_id": business.id})
+        event2 = ("JOB_SCHEDULED", {
                 "job_id": 2,
                 "customer_id": customers[1].id,
                 "business_id": business.id,
                 "scheduled_at": datetime.now(timezone.utc).isoformat(),
             })
-        await event_bus.emit("ON_MY_WAY", {"customer_id": customers[2].id, "business_id": business.id, "eta_minutes": 10})
+        event3 = ("ON_MY_WAY", {"customer_id": customers[2].id, "business_id": business.id, "eta_minutes": 10})
         break
     
+    # Emit multiple events
+    await event_bus.emit(*event1)
+    await event_bus.emit(*event2)
+    await event_bus.emit(*event3)
+    
     # Wait for all messages to be processed
-    await asyncio.sleep(1.0)
+    await service._queue.join()
     
     # Verify queue is empty
     assert service._queue.qsize() == 0
