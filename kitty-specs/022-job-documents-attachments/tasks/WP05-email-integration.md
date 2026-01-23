@@ -1,7 +1,7 @@
 ---
 work_package_id: "WP05"
 title: "Email Integration"
-lane: "planned"
+lane: "doing"
 dependencies: ["WP02"]
 subtasks: ["T015", "T016"]
 agent: "Antigravity"
@@ -64,3 +64,4 @@ Postmark can POST JSON webhooks for inbound emails. We need to handle this paylo
 - 2026-01-23T16:04:00Z – Antigravity – shell_pid=106664 – lane=for_review – Implemented Postmark Email Integration with Attachment processing. Added Document model/service and Customer email field.
 - 2026-01-23T16:53:53Z – Antigravity – shell_pid=140703 – lane=doing – Started review via workflow command
 - 2026-01-23T17:02:49Z – Antigravity – shell_pid=140703 – lane=planned – Moved to planned
+- 2026-01-23T17:03:24Z – Antigravity – shell_pid=140703 – lane=doing – Moved to doing
