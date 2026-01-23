@@ -423,7 +423,7 @@ class WhatsappService:
             "SendInvoiceTool": SendInvoiceTool,
             "GetBillingStatusTool": GetBillingStatusTool,
             "RequestUpgradeTool": RequestUpgradeTool,
-            "CreateQuoteTool": CreateQuoteInput,
+            "CreateQuoteInput": CreateQuoteInput,
             "SendStatusTool": SendStatusTool,
             "LocateEmployeeTool": LocateEmployeeTool,
             "CheckETATool": CheckETATool,
