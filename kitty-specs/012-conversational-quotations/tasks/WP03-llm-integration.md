@@ -28,7 +28,7 @@ The system uses `llm_client.py` and `tools/*.py` to map intentions to functions.
 
 1. Edit `src/uimodels.py`.
 2. Define `QuoteLineItemInput(BaseModel)`: description, quantity, price.
-3. Define `CreateQuoteTool(BaseModel)`:
+3. Define `CreateQuoteInput(BaseModel)`:
    - `customer_identifier`: Name or Phone to lookup.
    - `items`: List[QuoteLineItemInput].
 
@@ -39,7 +39,7 @@ The system uses `llm_client.py` and `tools/*.py` to map intentions to functions.
 
 1. Create/Edit `src/tools/quote_tools.py`.
 2. Create `CreateQuoteTool` class.
-3. Implement `run(input: CreateQuoteTool)`:
+3. Implement `run(input: CreateQuoteInput)`:
    - Resolve `customer_identifier` using `SearchService` or similar.
    - If ambiguous or not found, return error string asking for clarification.
    - If found, call `QuoteService.create_quote` then `QuoteService.send_quote`.
