@@ -34,6 +34,9 @@ tools:
   AutorouteTool:
     role: employee
     friendly_name: "optimize route"
+  LeaveBusinessTool:
+    role: employee
+    friendly_name: "leave the business"
 
   # Manager Level (Mid tier - Oversight)
   LocateEmployeeTool:
@@ -60,6 +63,9 @@ tools:
   MassEmailTool:
     role: manager
     friendly_name: "send mass emails"
+  SendInvoiceTool:
+    role: manager
+    friendly_name: "send invoices"
 
   # Owner Level (Top tier - Admin/Finance/Risk)
   UpdateSettingsTool:
@@ -80,9 +86,6 @@ tools:
   RequestUpgradeTool:
     role: owner
     friendly_name: "request upgrades"
-  SendInvoiceTool:
-    role: owner
-    friendly_name: "send invoices"
   ExportQueryTool:
     role: owner
     friendly_name: "export data"
@@ -113,6 +116,4 @@ tools:
   DismissUserTool:
     role: owner
     friendly_name: "dismiss an employee"
-  LeaveBusinessTool:
-    role: employee
-    friendly_name: "leave the business"
+
