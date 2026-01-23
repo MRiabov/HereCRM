@@ -53,7 +53,7 @@ tools:
   CheckETATool:
     role: employee
     friendly_name: "check ETA"
-  CreateQuoteInput:
+  CreateQuoteTool:
     role: employee
     friendly_name: "create a quote"
 

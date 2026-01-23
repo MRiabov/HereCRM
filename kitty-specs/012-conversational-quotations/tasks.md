@@ -34,7 +34,7 @@
 **Priority**: P1
 **Test Criteria**: "Send quote..." request triggers `CreateQuoteTool` and produces a valid quote.
 
-- [x] T011: Define `CreateQuoteInput` schema in `src/uimodels.py`
+- [x] T011: Define `CreateQuoteTool` schema in `src/uimodels.py`
 - [x] T012: Implement `CreateQuoteTool` wrapper
 - [x] T013: Register tool in `src/llm_client.py`
 - [x] T014: Add test for tool execution with mock service
