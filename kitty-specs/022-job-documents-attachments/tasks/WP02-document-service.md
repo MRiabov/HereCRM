@@ -1,9 +1,10 @@
 ---
 work_package_id: "WP02"
 title: "Document Service Core"
-lane: "planned"
+lane: "doing"
 dependencies: ["WP01"]
 subtasks: ["T005", "T006", "T007"]
+shell_pid: "15223"
 ---
 # Work Package 02: Document Service Core
 
