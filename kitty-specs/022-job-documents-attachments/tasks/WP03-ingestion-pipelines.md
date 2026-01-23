@@ -1,9 +1,10 @@
 ---
 work_package_id: "WP03"
 title: "Ingestion Pipelines (WhatsApp & Links)"
-lane: "planned"
+lane: "doing"
 dependencies: ["WP02"]
 subtasks: ["T008", "T009", "T010", "T011"]
+shell_pid: "31834"
 ---
 # Work Package 03: Ingestion Pipelines (Media & Links)
 
