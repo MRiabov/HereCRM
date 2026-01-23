@@ -1,9 +1,11 @@
 from fastapi import Header, HTTPException, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
+import hmac
 from src.database import get_db
 from src.services.integration_service import IntegrationService
 from src.repositories.integration_repository import IntegrationRepository
 from src.models import IntegrationConfig
+from src.config import settings
 
 async def get_integration_service(session: AsyncSession = Depends(get_db)) -> IntegrationService:
     repository = IntegrationRepository(session)
@@ -31,3 +33,22 @@ async def get_api_key_auth(
         )
     
     return config
+
+async def verify_admin_access(
+    x_admin_key: str = Header(..., alias="X-Admin-Key")
+):
+    """
+    Verifies the Admin Key for sensitive endpoints.
+    """
+    if not settings.secret_key:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Configuration Error"
+        )
+
+    if not hmac.compare_digest(x_admin_key, settings.secret_key):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid Admin Key"
+        )
+    return x_admin_key
