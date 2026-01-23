@@ -1,12 +1,13 @@
 ---
 work_package_id: "WP03"
 title: "Ingestion Pipelines (WhatsApp & Links)"
-lane: "done"
+lane: "doing"
 dependencies: ["WP02"]
 subtasks: ["T008", "T009", "T010", "T011"]
-shell_pid: "31834"
+shell_pid: "16807"
 reviewed_by: "MRiabov"
 review_status: "approved"
+agent: "Antigravity"
 ---
 # Work Package 03: Ingestion Pipelines (Media & Links)
 
@@ -93,3 +94,4 @@ We need to hook into the messaging pipeline. When a user sends a photo or a Drop
 ## Activity Log
 
 - 2026-01-23T10:49:54Z – unknown – shell_pid=31834 – lane=done – WP03 - Ingestion Pipelines completed. All tests passed.
+- 2026-01-23T11:54:36Z – Antigravity – shell_pid=16807 – lane=doing – Started implementation via workflow command
