@@ -6,6 +6,7 @@ from src.repositories import (
     UserRepository,
     BusinessRepository,
     ServiceRepository,
+    CustomerRepository,
 )
 from src.models import ConversationState, ConversationStatus, User, Request, Message, MessageRole
 from src.services.chat_utils import format_service_list, format_line_items
@@ -342,7 +343,7 @@ class WhatsappService:
             timeout = channel_config.get("auto_confirm_timeout", 45)
 
             # Generate Summary
-            summary = self._generate_summary(tool_call)
+            summary = await self._generate_summary(tool_call, user)
             
             if auto_confirm and not isinstance(tool_call, (EditCustomerTool, UpdateSettingsTool)): 
                 # Note: We might want to EXCLUDE destructive tools from auto-confirm if needed.
@@ -577,7 +578,8 @@ class WhatsappService:
             details=details,
         )
 
-    def _generate_summary(self, tool_call: Any) -> str:
+    async def _generate_summary(self, tool_call: Any, user: User) -> str:
+        customer_repo = CustomerRepository(self.session)
         # Map tool class names to friendly display names
         friendly_names = {
             "AddJobTool": "Job",
@@ -603,9 +605,31 @@ class WhatsappService:
 
         # Use category if available (e.g. for AddJobTool)
         if isinstance(tool_call, CreateQuoteTool):
-            item_count = len(tool_call.items) if tool_call.items else 0
-            items_desc = f"{item_count} item{'s' if item_count != 1 else ''}"
-            return f"send quote to {tool_call.customer_identifier} ({items_desc})"
+            customers = await customer_repo.search(tool_call.customer_identifier, user.business_id)
+            customer = customers[0] if customers and len(customers) == 1 else None
+            
+            client_details = self.template_service.render(
+                "client_details",
+                name=customer.name if customer else tool_call.customer_identifier,
+                phone=customer.phone if customer else "Not supplied",
+                address=customer.street if customer else "Not supplied", # Assuming street for address
+            )
+
+            line_items_detail = ""
+            total_amount = 0.0
+            if tool_call.items:
+                line_items_detail = "\nItems:"
+                for item in tool_call.items:
+                    line_items_detail += f"\n- {item.description}: {item.quantity} x ${item.price:.2f}"
+                    total_amount += item.quantity * item.price
+
+            return self.template_service.render(
+                "quote_summary",
+                client_details=client_details,
+                description=f"{len(tool_call.items)} items",
+                total=f"${total_amount:.2f}",
+                line_items=line_items_detail,
+            )
 
         if isinstance(tool_call, AddJobTool):
             price_val = "Not supplied"
@@ -666,11 +690,14 @@ class WhatsappService:
             return f"Updating {tool_call.query}: {change_summary}"
 
         if isinstance(tool_call, ScheduleJobTool):
+            customers = await customer_repo.search(tool_call.customer_query, user.business_id) if tool_call.customer_query else []
+            customer = customers[0] if customers and len(customers) == 1 else None
+
             client_details = self.template_service.render(
                 "client_details",
-                name=tool_call.customer_query or "Unknown",
-                phone="Not supplied",
-                address="Not supplied",
+                name=customer.name if customer else (tool_call.customer_query or "Unknown"),
+                phone=customer.phone if customer else "Not supplied",
+                address=customer.street if customer else "Not supplied",
             )
             return self.template_service.render(
                 "schedule_summary",
@@ -679,11 +706,14 @@ class WhatsappService:
             )
 
         if isinstance(tool_call, AddRequestTool):
+            customers = await customer_repo.search(tool_call.customer_name, user.business_id) if tool_call.customer_name else []
+            customer = customers[0] if customers and len(customers) == 1 else None
+
             client_details = self.template_service.render(
                 "client_details",
-                name=tool_call.customer_name or "Not supplied",
-                phone=tool_call.customer_phone or "Not supplied",
-                address="Not supplied",
+                name=customer.name if customer else (tool_call.customer_name or "Not supplied"),
+                phone=customer.phone if customer else (tool_call.customer_phone or "Not supplied"),
+                address=customer.street if customer else "Not supplied",
             )
             return self.template_service.render(
                 "request_summary",
@@ -877,7 +907,7 @@ class WhatsappService:
             }
             # Go to confirmation
             state_record.state = ConversationStatus.WAITING_CONFIRM
-            summary = self._generate_summary(tool)
+            summary = await self._generate_summary(tool, user)
             return self.template_service.render("confirm_prompt", summary=summary)
 
         # Allow addons
@@ -893,7 +923,7 @@ class WhatsappService:
                 "arguments": tool.dict()
             }
             state_record.state = ConversationStatus.WAITING_CONFIRM
-            summary = self._generate_summary(tool)
+            summary = await self._generate_summary(tool, user)
             return self.template_service.render("confirm_prompt", summary=summary)
 
         return "Unknown command. Try 'status', 'buy seat', or 'back'."

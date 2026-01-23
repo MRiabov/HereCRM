@@ -275,7 +275,7 @@ quote_summary: |
   Quote details:
   {client_details}
   - Description: {description}
-  - Value: {total}
+  - Value: {total}{line_items}
 confirm_quote_prompt: "Review Quote: {summary}\n(Reply 'Confirm' to accept, 'No' to cancel)"
 quote_accepted: "✅ Quote accepted! Job #{job_id} created for {customer_name}."
 
