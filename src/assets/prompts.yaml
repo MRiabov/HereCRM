@@ -68,9 +68,9 @@ tool_descriptions:
       -> AddJobTool(customer_name="John", location="123 Main St", price=50.0, description="cleaned windows")
     - User: "John Doe, 086123123, gutter cleaning $100 done"
       -> AddJobTool(customer_name="John Doe", customer_phone="086123123", price=100.0, description="gutter cleaning", status="done")
-    - User: "Add window cleaning for Mary tomorrow at 2pm"
+    - User: "Add window cleaning for Mary tomorrow at 2pm in Dublin"
       (Current System time: 2025-06-04T10:00:00)
-      -> AddJobTool(customer_name="Mary", description="window cleaning", time="tomorrow at 2pm", iso_time="2025-06-05T14:00:00", status="scheduled")
+      -> AddJobTool(customer_name="Mary", description="window cleaning", time="tomorrow at 2pm", iso_time="2025-06-05T14:00:00", city="Dublin", status="scheduled")
     - User: "Add job for Tom: 5 windows and 1 door"
       (Catalog contains: ID 1: window ($10), ID 2: door ($50))
       -> AddJobTool(customer_name="Tom", line_items=[{"service_id": 1, "service_name": "window", "quantity": 5.0, "unit_price": 10.0, "description": "windows"}, {"service_id": 2, "service_name": "door", "quantity": 1.0, "unit_price": 50.0, "description": "door"}])
@@ -99,9 +99,9 @@ tool_descriptions:
     - User: "Schedule John for next Tuesday at 2pm"
       (Current System time: 2025-06-04T10:00:00)
       -> ScheduleJobTool(customer_query="John", time="next Tuesday at 2pm", iso_time="2025-06-10T14:00:00")
-    - User: "Book appointment for 123 Main St tomorrow morning"
+    - User: "Book appointment for 123 Main St in Waterford tomorrow morning"
       (Current System time: 2025-06-04T10:00:00)
-      -> ScheduleJobTool(customer_query="123 Main St", time="tomorrow morning", iso_time="2025-06-05T09:00:00")
+      -> ScheduleJobTool(customer_query="123 Main St", city="Waterford", time="tomorrow morning", iso_time="2025-06-05T09:00:00")
   
   AddRequestTool: |
     Store a general request or note.

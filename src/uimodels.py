@@ -33,7 +33,13 @@ class AddJobTool(BaseModel):
         None, description="Phone number of the customer", max_length=20
     )
     location: Optional[str] = Field(
-        None, description="Address or location of the job", max_length=200
+        None, description="Address or location of the job (e.g. 'High Street 44')", max_length=200
+    )
+    city: Optional[str] = Field(
+        None, description="City (e.g. 'Dublin')", max_length=100
+    )
+    country: Optional[str] = Field(
+        None, description="Country (e.g. 'Ireland')", max_length=100
     )
     price: Optional[float] = Field(None, description="Total price or value of the job")
     description: Optional[str] = Field(
@@ -111,6 +117,12 @@ class ScheduleJobTool(BaseModel):
     job_id: Optional[int] = Field(None, description="ID of the job if known")
     customer_query: Optional[str] = Field(
         None, description="Name or phone to find the customer/job", max_length=100
+    )
+    city: Optional[str] = Field(
+        None, description="City (e.g. 'Dublin')", max_length=100
+    )
+    country: Optional[str] = Field(
+        None, description="Country (e.g. 'Ireland')", max_length=100
     )
     time: str = Field(
         ...,
@@ -342,14 +354,14 @@ class RequestUpgradeTool(BaseModel):
     """Request an upgrade for seats or addons.
     Triggered when user wants to 'buy seats', 'add user limit', 'purchase addon', or 'upgrade plan'."""
     
-    item_type: str = Field(..., description="Type of item: 'seat' or 'addon'")
+    item_type: str = Field(..., description="Type of item: 'seat', 'addon', or 'messaging'")
     item_id: Optional[str] = Field(None, description="Specific addon ID if type is 'addon' (e.g., 'campaign_manager'). Leave empty for seats.")
     quantity: int = Field(1, description="Number of items to add")
 
     @validator("item_type")
     def validate_type(cls, v):
-        if v not in ["seat", "addon"]:
-            raise ValueError("item_type must be 'seat' or 'addon'")
+        if v not in ["seat", "addon", "messaging"]:
+            raise ValueError("item_type must be 'seat', 'addon', or 'messaging'")
         return v
 
 

@@ -354,10 +354,10 @@ class ToolExecutor:
         target_city = tool.city or default_city
         target_country = tool.country or default_country
 
-        lat, lon, street, city, country, postal_code = await self.geocoding_service.geocode(
+        lat, lon, street, city, country, postal_code, full_address = await self.geocoding_service.geocode(
             tool.location or "",
-            default_city=default_city,
-            default_country=default_country
+            default_city=tool.city or default_city,
+            default_country=tool.country or default_country
         )
         
         # If geocoding didn't return city/country (e.g. not found or not parsed), use the ones we have
@@ -386,7 +386,7 @@ class ToolExecutor:
             "client_details",
             name=customer.name,
             phone=customer.phone or "Not supplied",
-            address=tool.location or "Not supplied",
+            address=full_address or "Not supplied",
         )
 
         return (
@@ -435,9 +435,9 @@ class ToolExecutor:
             customer.original_address_input = tool.location
             # Re-geocode
             default_city, default_country = await self._get_user_defaults()
-            lat, lon, street, city, country, postal_code = await self.geocoding_service.geocode(
-                tool.location,
-                default_city=default_city,
+            lat, lon, street, city, country, postal_code, full_address = await self.geocoding_service.geocode(
+                tool.location, 
+                default_city=default_city, 
                 default_country=default_country
             )
             if lat and lon:
@@ -475,18 +475,19 @@ class ToolExecutor:
                 tool.customer_phone, self.business_id
             )
 
+        # Geocode the location if provided (used for new customer and/or job location)
+        lat, lon, street, city, country, postal_code, full_address = None, None, None, None, None, None, tool.location
+        if tool.location:
+            default_city, default_country = await self._get_user_defaults()
+            lat, lon, street, city, country, postal_code, full_address = await self.geocoding_service.geocode(
+                tool.location, 
+                default_city=tool.city or default_city, 
+                default_country=tool.country or default_country
+            )
+
         if not customer:
             # Create new customer
             default_city, default_country = await self._get_user_defaults()
-            
-            # Try to geocode the location if provided
-            lat, lon, street, city, country, postal_code = None, None, None, None, None, None
-            if tool.location:
-                lat, lon, street, city, country, postal_code = await self.geocoding_service.geocode(
-                    tool.location, 
-                    default_city=default_city, 
-                    default_country=default_country
-                )
             
             # Use defaults if geocoding didn't fill them
             final_city = city or default_city
@@ -546,7 +547,7 @@ class ToolExecutor:
             status=tool.status or ("scheduled" if tool.time else "pending"),
             scheduled_at=scheduled_at,
             line_items=inferred_items,
-            postal_code=postal_code if 'postal_code' in locals() else None,
+            postal_code=postal_code,
         )
         price_info = f" – €{job.value}" if job.value else " – No price"
         line_items_summary = ""
@@ -558,7 +559,7 @@ class ToolExecutor:
                 "job_added",
                 category="Job",
                 name=customer.name,
-                location=job.location or "No location",
+                location=full_address or job.location or "No location",
                 price_info=price_info,
             )
             + line_items_summary,
@@ -953,6 +954,11 @@ class ToolExecutor:
         upgrade_lines = []
         upgrade_lines.append("- Add Seat (€50/mo)")
         
+        # Add Messaging Package option
+        msg_config = self.billing_service.config.get("products", {}).get("messaging", {})
+        if msg_config:
+             upgrade_lines.append(f"- {msg_config.get('name', 'Messaging Package')} (€{msg_config.get('overage_rate', 0.02)}/msg overage or buy pack)")
+        
         for addon_id, defi in addon_definitions.items():
             if addon_id not in active_addons:
                 upgrade_lines.append(f"- {defi['name']} ({defi['price']}) - {defi['desc']}")
@@ -964,8 +970,13 @@ class ToolExecutor:
         # Extract usage data
         usage = status_info.get("usage", {})
         msg_count = usage.get("messages", 0)
-        free_limit = usage.get("free_limit", 1000)
+        credits = usage.get("credits", 0)
         est_cost = usage.get("estimated_cost", 0.0)
+        
+        if credits >= 0:
+            limit_display = f"{credits} credits remaining"
+        else:
+            limit_display = f"Overage: {-credits} msgs (Est. Cost: €{est_cost:.2f})"
 
         body = self.template_service.render(
             "billing_status_body",
@@ -973,7 +984,7 @@ class ToolExecutor:
             seats_used=seats_used,
             seat_limit=status_info.get("seat_limit", 1),
             message_usage=msg_count,
-            free_limit=free_limit,
+            free_limit=limit_display,
             estimated_cost=est_cost,
             addons=addons_str,
             available_upgrades=upgrades_str
@@ -1264,7 +1275,7 @@ class ToolExecutor:
         if job_lat is None or job_lng is None:
              if job.location:
                    # Geocode job.location
-                   j_lat, j_lon, _, _, _, _ = await self.geocoding_service.geocode(job.location)
+                   j_lat, j_lon, _, _, _, _, _ = await self.geocoding_service.geocode(job.location)
                    if j_lat and j_lon:
                         job_lat, job_lng = j_lat, j_lon
         

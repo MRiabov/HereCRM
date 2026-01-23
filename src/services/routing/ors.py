@@ -17,7 +17,7 @@ class OpenRouteServiceAdapter(RoutingServiceProvider):
 
     def calculate_routes(self, jobs: List[Job], employees: List[User]) -> RoutingSolution:
         if not self.api_key:
-            raise RoutingException("OpenRouteService API key is missing. Please configure OPENROUTESERVICE_API_KEY.")
+            return RoutingSolution({e.id: [] for e in employees}, jobs, {"status": "error", "message": "OpenRouteService API key is missing."})
 
         # Handle empty cases
         if not jobs:
@@ -207,9 +207,8 @@ class OpenRouteServiceAdapter(RoutingServiceProvider):
                     import math
                     rounded = math.ceil(minutes / 5) * 5
                     return rounded
-        except Exception as e:
-            # In production, log this error
-            print(f"ORS ETA Error: {e}")
+        except Exception:
+            # Silently fail if API key missing or request fails
             pass
             
         return None

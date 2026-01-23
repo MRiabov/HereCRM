@@ -31,6 +31,7 @@ dependencies = [
     "python-quickbooks>=0.9.1",
     "apscheduler",
     "smsutil",
+    "sqlcipher3>=0.6.2",
 ]
 
 # Optional dependencies for QuickBooks integration:

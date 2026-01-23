@@ -2,14 +2,14 @@ products:
   seat:
     name: "Additional Seat"
     description: "Add another user to your workspace"
-    price_id: "price_H5gg_placeholder"  # Stripe Price ID
+    price_id: "price_1SrkGWEWj96BiJElrDXGNpyz"  # Stripe Price ID
     unit_amount_decimal: 15.00
     currency: "eur"
 
   messaging:
-    name: "Usage-Based Messaging"
-    description: "1000 free, then €0.02 per message"
-    price_id: "price_msg_usage_placeholder"
+    name: "Additional Message (messenger/email) or Message Segments (SMS)"
+    description: "Additional 1000 Message Segments (SMS) or email/messenger tokens that you can use in conversations"
+    price_id: "prod_TqWgp7kNXldaPZ"
     free_limit: 1000
     overage_rate: 0.02
     currency: "eur"

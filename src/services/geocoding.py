@@ -67,10 +67,10 @@ class GeocodingService:
         default_city: Optional[str] = None,
         default_country: Optional[str] = None
     ) -> Tuple[
-        Optional[float], Optional[float], Optional[str], Optional[str], Optional[str], Optional[str]
+        Optional[float], Optional[float], Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]
     ]:
         """
-        Geocodes an address and returns (lat, lon, street, city, country, postal_code).
+        Geocodes an address and returns (lat, lon, street, city, country, postal_code, full_address).
         """
         query_address = address
         parts = []
@@ -89,7 +89,7 @@ class GeocodingService:
             lat, lon, details = await self.get_coordinates(address)
 
         if not details:
-            return lat, lon, None, default_city, default_country, None
+            return lat, lon, None, default_city, default_country, None, address
 
         # Parse address details
         street_name = details.get("road")
@@ -100,4 +100,8 @@ class GeocodingService:
         country = details.get("country") or default_country
         postcode = details.get("postcode")
 
-        return lat, lon, street, city, country, postcode
+        # Construct full address: "street, city, country, postcode"
+        addr_parts = [p for p in [street, city, country, postcode] if p]
+        full_address = ", ".join(addr_parts) if addr_parts else address
+
+        return lat, lon, street, city, country, postcode, full_address

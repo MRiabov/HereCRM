@@ -47,7 +47,10 @@ class BillingService:
         overage_rate = msg_usage_config.get("overage_rate", 0.02)
         
         msg_count = business.message_count_current_period
-        overage = max(0, msg_count - free_tier)
+        credits = business.message_credits
+        
+        # Overage is simply negative credits
+        overage = max(0, -credits)
         overage_cost = overage * overage_rate
         
         return {
@@ -57,28 +60,38 @@ class BillingService:
             "stripe_customer_id": business.stripe_customer_id,
             "usage": {
                 "messages": msg_count,
-                "free_limit": free_tier,
+                "free_limit": free_tier, # Static 1000/mo info
+                "credits": credits,
                 "overage": overage,
                 "estimated_cost": overage_cost
             }
         }
 
     async def track_message_sent(self, business_id: int, quantity: int = 1):
-        """Increments usage counter and reports to Stripe."""
+        """Decrements usage counter and reports to Stripe."""
         business = await self.business_repo.get_by_id_global(business_id)
         if not business:
             return
 
-        business.message_count_current_period += quantity
+        # New Logic: Simple Counter
+        old_credits = business.message_credits
+        business.message_credits -= quantity
+        business.message_count_current_period += quantity # Keep stats tracking
+
+        # Calculate billable usage
+        # We only report usage that exceeds the available positive credits
+        # If I had 2 credits and used 5, I pay for 3.
+        # If I had -2 credits and used 5, I pay for 5.
+        billable_quantity = max(0, quantity - max(0, old_credits))
         
-        # Report usage to Stripe if active subscription exists
-        if business.stripe_subscription_id:
+        # Report usage to Stripe if active subscription exists and we have billable usage
+        if billable_quantity > 0 and business.stripe_subscription_id:
             try:
                 price_id = self.config.get("products", {}).get("messaging", {}).get("price_id")
                 if price_id:
                     si_id = await self._get_subscription_item_by_price(business.stripe_subscription_id, price_id)
                     if si_id:
-                        await self._report_usage_raw(si_id, quantity)
+                        await self._report_usage_raw(si_id, billable_quantity)
             except Exception as e:
                 self.logger.error(f"Stripe usage report failed: {e}")
 
@@ -111,8 +124,8 @@ class BillingService:
             response = await client.post(url, headers=headers, data=data)
             response.raise_for_status()
 
-    async def create_checkout_session(self, business_id: int, price_id: str, success_url: str, cancel_url: str) -> str:
-        """Creates a new subscription checkout session."""
+    async def create_checkout_session(self, business_id: int, price_id: str, success_url: str, cancel_url: str, mode: str = "subscription") -> str:
+        """Creates a new checkout session (subscription or payment)."""
         business = await self.business_repo.get_by_id_global(business_id)
         if not business:
             raise ValueError("Business not found")
@@ -125,7 +138,7 @@ class BillingService:
                     "quantity": 1,
                 },
             ],
-            "mode": "subscription",
+            "mode": mode,
             "success_url": success_url,
             "cancel_url": cancel_url,
             "metadata": {
@@ -161,6 +174,10 @@ class BillingService:
             seat_config = self.config.get("products", {}).get("seat", {})
             price_id = seat_config.get("price_id")
             item_name = seat_config.get("name", "Additional Seat")
+        elif item_type == "messaging":
+            msg_config = self.config.get("products", {}).get("messaging", {})
+            price_id = msg_config.get("price_id")
+            item_name = msg_config.get("name", "Messaging Package")
         elif item_type == "addon":
             for addon in self.config.get("addons", []):
                 if addon.get("id") == item_id:
@@ -173,8 +190,12 @@ class BillingService:
 
         self.logger.info(f"Creating upgrade link for business {business_id}, item {item_name}")
         
+        mode = "subscription"
+        if item_type == "messaging":
+            mode = "payment"
+
         try:
-            url = await self.create_checkout_session(business_id, price_id, success_url, cancel_url)
+            url = await self.create_checkout_session(business_id, price_id, success_url, cancel_url, mode=mode)
             return {
                 "url": url,
                 "description": f"Upgrade: {item_name}"
@@ -209,8 +230,10 @@ class BillingService:
         business = result.scalar_one_or_none()
         
         if business:
-            self.logger.info(f"Resetting message count for business {business.id} due to new invoice")
-            business.message_count_current_period = 0
+            self.logger.info(f"Resetting message usage Stats and adding monthly credits for business {business.id}")
+            business.message_count_current_period = 0 # Reset stats
+            business.message_credits += 1000 # Add monthly allowance (Carry over)
+            
             from datetime import datetime, timezone
             business.billing_cycle_anchor = datetime.now(timezone.utc)
             await self.session.commit()
@@ -233,11 +256,48 @@ class BillingService:
             return
             
         business.stripe_customer_id = customer_id
-        business.stripe_subscription_id = subscription_id
-        business.subscription_status = "active"
         
+        # If subscription, store it and activate
+        if subscription_id:
+            business.stripe_subscription_id = subscription_id
+            business.subscription_status = "active"
+        
+        # Handle one-time payment for messaging credits
+        mode = session.get("mode")
+        if mode == "payment":
+            # Check if this was a messaging top-up
+            # We need to verify what was bought by expanding the session or checking line items
+            # But effectively we can check if the price ID matches our messaging config
+            # Or simpler: Is this a "payment" mode session for this business?
+            # We should probably fetch line items to be sure, but for MVP let's assume if it's payment it's credits
+            # or check the amount/price from session (requires fetching session line items)
+            
+            # Fetch line items to confirm product
+            try:
+                line_items = await asyncio.to_thread(
+                    stripe.checkout.Session.list_line_items,
+                    session.get("id"), limit=5
+                )
+                msg_price_id = self.config.get("products", {}).get("messaging", {}).get("price_id")
+                
+                is_messaging = False
+                for item in line_items.get("data", []):
+                    if item.get("price", {}).get("id") == msg_price_id:
+                        is_messaging = True
+                        break
+                
+                if is_messaging:
+                    # Grant 1000 credits
+                    # We use default 1000, or should we use quantity * 1000? 
+                    # Assuming quantity=1 means 1 pack = 1000 credits.
+                    credits_to_add = 1000 
+                    business.message_credits += credits_to_add
+                    self.logger.info(f"Added {credits_to_add} message credits to business {business.id}")
+            except Exception as e:
+                self.logger.error(f"Failed to process line items for session {session.get('id')}: {e}")
+
         await self.session.commit()
-        self.logger.info(f"Linked business {business_id} to customer {customer_id}")
+        self.logger.info(f"processed checkout for business {business_id} (customer {customer_id})")
 
     async def _handle_subscription_updated(self, subscription: dict):
         customer_id = subscription.get("customer")

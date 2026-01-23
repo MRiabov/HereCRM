@@ -1,118 +1,150 @@
-# HereCRM Product Manual
+# HereCRM Product Manual (Detailed LLM Reference)
 
-Welcome to HereCRM! This manual explains how to use our WhatsApp-based CRM.
+This manual defines the features, extraction logic, and operational states of HereCRM. It is optimized for LLM retrieval (RAG) to provide precise guidance to users.
 
-## Core Features
+---
 
-### 1. Adding Leads
+## 🟢 STATE: MAIN CRM (Core Daily Operations)
 
-To add a new lead without an immediate job, use phrases like:
+These actions are performed from the primary chat interface and represent 90% of user interaction.
 
-- "Add new lead: Mike, 089999999"
-- "Register client: Sarah in Cork"
+### 1. Customer & Lead Management
 
-### 2. Managing Jobs
+- **Concepts**:
+  - **Lead**: A customer with NO associated jobs.
+  - **Client/Customer**: A record with or without jobs.
+- **Extraction Logic**: When adding a customer, the system extracts:
+  - `Name` (Required)
+  - `Phone` (Required for communication)
+  - `Address` (Parsed into Street, City, Country. Defaults to Business City/Country if missing).
+  - `Description` (Any extra notes).
+- **Commands**:
+  - "Add lead John Smith, 0851234567, 12 High St, Dublin"
+  - "Register client: Sarah in Cork"
 
-You can add jobs for past work or schedule future jobs:
+### 2. Job & Request Management
 
-- **Add Past Job**: "Add job for John, cleaned windows for $50 done"
-- **Schedule Future Job**: "Schedule Mary for next Tuesday at 2pm for window cleaning"
+- **Extraction**: The system extracts `Description`, `Location`, `Value` (Price), and `Scheduled Time`.
+- **Inference**: If a service matches the **Service Catalog**, the system infers missing values ($Total / Default Price = Quantity).
+- **Requests**: If "add request:" is used, it stores the intent without creating a formal job yet.
+- **Commands**:
+  - "Add John, fix leaky faucet, 50eur" (Creates customer + job)
+  - "Schedule Mary for next Tuesday at 2pm for window cleaning"
+  - "Add request: John wants 12 windows cleaned"
 
-### 3. Searching
+### 3. Expense Tracking (NEW)
 
-Find your data quickly:
+- **Role**: Expenses are recorded from the main screen for quick entry.
+- **Linking**: Expenses can be general (Business overhead) or linked to a specific `Job` or `Line Item` to calculate job profitability.
+- **Commands**:
+  - "Add expense: Truck Diesel $80"
+  - "Link $50 expense to Sarah's window cleaning job"
 
-- "Search for John"
-- "Find jobs in Dublin"
-- "Show me pending jobs"
+### 4. Unified Search & Proximity
 
-### 4. Sales Pipeline
+- **Unified Search**: LLM identifies if the user is looking for a Job, Customer, or Request.
+- **Keywords**:
+  - `detailed`: Returns full record including history and line items (e.g., "Show Sarah detailed").
+  - `near [Location]`: Performs a Geo-search (requires OSM geocoding).
+- **Proximity**: "Search within 500m of High St" or "Jobs near me".
 
-Track your business health:
+---
 
-- "How is the pipeline looking?"
-- "Show me funnel status"
+## 🟠 STATE: SALES & COMMUNICATION
 
-### 5. Settings
+Logic for funnel movement and automated customer outreach.
 
-Customize your experience:
+### 1. Sales Pipeline Logic
 
-- "Settings" or "Config" to enter settings mode.
-- Change default city, language, or services.
+- **Automatic Transitions**:
+  - New Customer (No jobs) -> `Not Contacted`.
+  - First Message/Reply -> `Contacted`.
+  - 1st Job Created -> `Converted Once`.
+  - 2nd+ Job Created -> `Converted Recurrent`.
+- **Manual Overrides**: "Mark John as Lost" or "Move Sarah to Not Interested".
 
-### 6. Workflow Settings (Owner Only)
+### 2. Messaging & Reminders
 
-Configure how the CRM handles automation and billing. Only users with the **OWNER** role can change these:
+- **Triggers**:
+  - `On My Way`: Triggered via manual command.
+  - `Job Booked/Scheduled`: Automated confirmation sent to customer.
+- **Settings**: Owners can set messaging to `never`, `manual`, or `automatic`.
 
-- **Invoicing Workflow**: Set to `never`, `manual`, or `automatic`. Controls when and if invoices are sent.
-- **Quoting Workflow**: Set to `never`, `manual`, or `automatic`. Controls when and if quotes are sent.
-- **Payment Timing**: Options are `always_paid_on_spot`, `usually_paid_on_spot`, or `paid_later`.
-- **Tax Inclusive**: Whether your prices already include tax.
-- **Include Payment Terms**: Whether to show Net terms/due dates on documents.
-- **Enable Reminders**: Toggle automatic customer follow-ups.
+### 3. Professional Quotes
 
-Use phrases like:
+- **Purpose**: Generates a PDF quote for approval before a job is 'Booked'.
+- **Command**: "Send quote to John for $150".
 
-- "Show my workflow settings"
-- "Set invoicing to automatic"
-- "Update payment timing to always paid on spot"
+---
 
-## QuickBooks Integration
+## 💰 STATE: FINANCIALS & DOCUMENTS
 
-Connect HereCRM to your QuickBooks Online account to automatically sync your customers, services, invoices, and payments.
+Handles professional document generation and payment processing.
 
-### 1. How to Connect
+### 1. Professional Invoices (PDF)
 
-To start the integration, simply say:
+- **Selection**: By default, it finds the *last completed job* that hasn't been invoiced.
+- **Safety**: The system checks for existing `Invoice` records to prevent duplicates.
+- **Command**: "Send invoice to Sarah".
 
-- "Connect QuickBooks"
+### 2. Stripe Payment Integration
 
-You will receive a link to authorize HereCRM to access your QuickBooks account. Once authorized, the integration will be active.
+- **Onboarding**: "Setup payments" generates a Stripe Connect link.
+- **Payment Links**: Every PDF invoice contains a unique "Pay Now" link.
+- **Auto-Update**: Once paid, the `Invoice` and `Job` status automatically move to `PAID`.
 
-### 2. What is Synced
+### 3. Service Catalog (Settings)
 
-The integration performs a **one-way sync** from HereCRM to QuickBooks for the following entities:
+- **Management**: Managed ONLY via the **Settings** menu.
+- **Purpose**: Standardizes `Name`, `Default Price`, and `Description`.
+- **Logic**: Use "Update settings" to add or modify services.
 
-- **Customers**: Synced when created or updated.
-- **Services**: Your service catalog items are synced as QuickBooks Items.
-- **Invoices**: Sent to QuickBooks once they are created in HereCRM.
-- **Payments**: Recorded in QuickBooks and linked to their respective invoices.
+---
 
-### 3. Sync Frequency
+## 🏦 STATE: ACCOUNTING (Back-Office)
 
-Data is automatically synchronized **HOURLY**. If you need to push changes immediately, you can say:
+Specialized tools for financial health and payroll, distinct from daily field CRM work.
 
-- "Sync QuickBooks now"
+### 1. QuickBooks Integration
 
-### 4. Viewing Status and Errors
+- **Function**: One-way sync (HereCRM -> QuickBooks) occurring **Hourly**.
+- **Sync Entities**: Customers, Services, Invoices, and Payments.
+- **Constraints**: Duplicate names in QB will be updated, not duplicated.
+- **Commands**: "QuickBooks status", "Sync QuickBooks now".
 
-To check the health of your integration, use:
+### 2. Payroll & Employee Ledger
 
-- "QuickBooks status"
+- **Wage Models**:
+  - `Commission %`: Calculated on job revenue.
+  - `Hourly (Job)`: Time between "Start" and "Done".
+  - `Hourly (Shift)`: Time between "Check In" and "Check Out".
+  - `Fixed Daily`: Flat rate per day worked.
+- **Workflow**: Employees use "Check In", "Start #123", and "Check Out".
 
-This will show you the last sync time and any records that failed to sync.
+---
 
-### 5. Common Issues
+## 🛠️ ADMINISTRATION & PERMISSIONS
 
-- **Address Required**: QuickBooks requires at least a street and city for customers. If these are missing, the sync will fail for that customer and their invoices.
-- **Disconnected Account**: If you change your QuickBooks password or revoke access, you may need to reconnect by saying "Connect QuickBooks" again.
-- **Duplicates**: HereCRM tries to match existing customers and services by name to avoid duplicates, but it is recommended to keep names consistent across both systems.
+### 1. Tool-Level RBAC
 
-To stop the integration, say:
+- **OWNER**: Full access to all tools including Billing.
+- **MANAGER**: Access to all operations EXCEPT Billing/Subscription.
+- **EMPLOYEE**: Restricted to Job/Customer actions only. No data exports.
 
-- "Disconnect QuickBooks"
+### 2. Data Management (Bulk)
 
-## Troubleshooting Tips
+- **Import**: Atomic (all or nothing) CSV/Excel/JSON import with LLM-powered header mapping.
+- **Export**: "Export all Dublin jobs as CSV".
 
-- **Missing Information**: If I ask for a customer name, it's because I couldn't find one in your message.
-- **Ambiguous Queries**: If you have multiple customers with the same name, try using their phone number or address.
-- **Undo**: If you made a mistake, just say "Undo" to revert the last action.
+### 3. Workflow Configuration
 
-## Asking for Help
+- **Settings Keys**: `Invoicing Workflow`, `Quoting Workflow`, `Payment Timing` (e.g., "Paid on spot"), `Tax Inclusive`.
+- **Access**: "Show workflow settings".
 
-You can always ask me:
+---
 
-- "How do I add a lead?"
-- "What can I do?"
-- "Why did my last prompt fail?"
-- "What can I do to use you better?"
+## 🤖 ASSISTANT TIPS (LLM Context)
+
+- **History**: Use the last 5 turns to explain failures (e.g., "You didn't provide a price").
+- **Undo**: Any mutation (Add/Update) can be reverted by saying "Undo".
+- **Refinement**: Use "Edit Last" to fix the previous command's data.

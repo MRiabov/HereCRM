@@ -110,6 +110,7 @@ class Business(Base):
     # T020 - Usage-Based Billing
     message_count_current_period: Mapped[int] = mapped_column(Integer, default=0)
     billing_cycle_anchor: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    message_credits: Mapped[int] = mapped_column(Integer, default=0)
 
     # Relationships
     users: Mapped[List["User"]] = relationship(back_populates="business")

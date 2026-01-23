@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from src.services.whatsapp_service import WhatsappService
 from src.uimodels import CreateQuoteTool, QuoteLineItemInput, ScheduleJobTool, AddRequestTool
+from src.tools.invoice_tools import SendInvoiceTool
 from src.models import User, Customer
 from src.services.template_service import TemplateService
 
@@ -101,3 +102,52 @@ async def test_generate_summary_request(whatsapp_service, mock_session):
             assert "5551234" in summary
             # Street is not in request_summary by default, but check if it's there if we improved it
             assert "Call back later" in summary
+
+@pytest.mark.asyncio
+async def test_generate_summary_quote_no_contact(whatsapp_service, mock_session):
+    # Setup
+    user = User(id=1, business_id=10)
+    tool = CreateQuoteTool(
+        customer_identifier="Margaret",
+        items=[
+            QuoteLineItemInput(description="fixing leaky sink", quantity=1, price=50.0)
+        ]
+    )
+    
+    # Mock Customer lookup with NO phone and NO email
+    mock_customer = Customer(id=1, name="Margaret", phone=None, email=None, street="123 Main St")
+    
+    with MagicMock() as mock_repo_class:
+        with MagicMock() as mock_repo_instance:
+            import src.services.whatsapp_service
+            src.services.whatsapp_service.CustomerRepository = mock_repo_class
+            mock_repo_class.return_value = mock_repo_instance
+            mock_repo_instance.search = AsyncMock(return_value=[mock_customer])
+            
+            summary = await whatsapp_service._generate_summary(tool, user)
+            
+            assert "Warning: could not find a contact detail to send the quote" in summary
+            assert "Generate the quote without sending?" in summary
+
+@pytest.mark.asyncio
+async def test_generate_summary_invoice_no_contact(whatsapp_service, mock_session):
+    # Setup
+    user = User(id=1, business_id=10)
+    tool = SendInvoiceTool(
+        query="John Smith"
+    )
+    
+    mock_customer = Customer(id=4, name="John Smith", phone=None, email=None, street="789 Blvd")
+    
+    with MagicMock() as mock_repo_class:
+        with MagicMock() as mock_repo_instance:
+            import src.services.whatsapp_service
+            src.services.whatsapp_service.CustomerRepository = mock_repo_class
+            mock_repo_class.return_value = mock_repo_instance
+            mock_repo_instance.search = AsyncMock(return_value=[mock_customer])
+            
+            summary = await whatsapp_service._generate_summary(tool, user)
+            
+            assert "Generate and send invoice to John Smith" in summary
+            assert "789 Blvd" in summary
+            assert "Warning: could not find a contact detail to send the invoice" in summary

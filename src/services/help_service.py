@@ -1,7 +1,7 @@
 import os
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_, desc
+from sqlalchemy import select, desc
 from src.models import Message, MessageRole
 from src.config import channels_config
 from src.llm_client import LLMParser
@@ -36,20 +36,15 @@ class HelpService:
             self.logger.error(f"Error loading manual: {e}")
             return "Error loading manual."
 
-    async def get_chat_history(self, business_id: int, phone_number: str, limit: int = 5) -> List[Message]:
+    async def get_chat_history(self, business_id: int, user_id: int, limit: int = 5) -> List[Message]:
         """
-        Fetch the last X messages for a given phone number and business.
+        Fetch the last X messages for a given user and business.
         Order by created_at DESC, take limit, then reverse to chronological order.
         """
         stmt = (
             select(Message)
             .where(Message.business_id == business_id)
-            .where(
-                or_(
-                    Message.from_number == phone_number,
-                    Message.to_number == phone_number
-                )
-            )
+            .where(Message.user_id == user_id)
             .order_by(desc(Message.created_at))
             .limit(limit)
         )
@@ -102,14 +97,14 @@ class HelpService:
             
         return messages
 
-    async def generate_help_response(self, user_query: str, business_id: int, phone_number: str, channel: str = "whatsapp") -> str:
+    async def generate_help_response(self, user_query: str, business_id: int, user_id: int, channel: str = "whatsapp") -> str:
         """
         Main entry point for generating a help response:
         1. Fetch history
         2. Construct prompt
         3. Call LLM
         """
-        history = await self.get_chat_history(business_id, phone_number)
+        history = await self.get_chat_history(business_id, user_id)
         
         # Ensure the current user_query is the last message if not already in history
         # (Compare by body to avoid redundancy)

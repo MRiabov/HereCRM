@@ -86,6 +86,7 @@ class WhatsappService:
         media_type: Optional[str] = None,
     ) -> str:
         print(f"DEBUG: handle_message entered. user_id={user_id}, user_phone={user_phone}, channel={channel}")
+        self._current_metadata = {}
         # 1. Identify User
         if user_id:
             user = await self.user_repo.get_by_id(user_id)
@@ -326,8 +327,8 @@ class WhatsappService:
                 return await help_service.generate_help_response(
                     user_query=text,
                     business_id=user.business_id,
-                    phone_number=user.phone_number,
-                    channel="whatsapp"
+                    user_id=user.id,
+                    channel=channel_name
                 )
 
             # Prepare state record
@@ -623,13 +624,20 @@ class WhatsappService:
                     line_items_detail += f"\n- {item.description}: {item.quantity} x ${item.price:.2f}"
                     total_amount += item.quantity * item.price
 
-            return self.template_service.render(
+            summary = self.template_service.render(
                 "quote_summary",
                 client_details=client_details,
                 description=f"{len(tool_call.items)} items",
                 total=f"${total_amount:.2f}",
                 line_items=line_items_detail,
             )
+
+            # Check for contact details
+            if customer and not (customer.phone or customer.email):
+                warning = self.template_service.render("warning_no_contact_details", type="quote")
+                summary = f"{summary}\n\n{warning}"
+            
+            return summary
 
         if isinstance(tool_call, AddJobTool):
             price_val = "Not supplied"
@@ -729,7 +737,22 @@ class WhatsappService:
             return f"update {tool_call.query}'s stage to {tool_call.stage.replace('_', ' ').title()}"
 
         if isinstance(tool_call, SendInvoiceTool):
-            return f"generate and send invoice to {tool_call.query}"
+            customers = await customer_repo.search(tool_call.query, user.business_id)
+            customer = customers[0] if customers and len(customers) == 1 else None
+
+            client_details = self.template_service.render(
+                "client_details",
+                name=customer.name if customer else tool_call.query,
+                phone=customer.phone if customer else "Not supplied",
+                address=customer.street if customer else "Not supplied",
+            )
+            summary = f"Generate and send invoice to {customer.name if customer else tool_call.query}\n{client_details}"
+
+            if customer and not (customer.phone or customer.email):
+                warning = self.template_service.render("warning_no_contact_details", type="invoice")
+                summary = f"{summary}\n\n{warning}"
+            
+            return summary
 
         if isinstance(tool_call, GetBillingStatusTool):
             return "check billing status"
