@@ -25,7 +25,7 @@ class TwilioService(SMSMessagingService):
                 "Twilio credentials not configured. SMS functionality will be disabled."
             )
 
-    async def send_sms(self, to_number: str, body: str) -> bool:
+    async def _send_provider_sms(self, to_number: str, body: str) -> bool:
         """
         Send an SMS message via Twilio.
         
