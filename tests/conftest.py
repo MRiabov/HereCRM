@@ -1,12 +1,7 @@
 import os
-import pytest
-import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
-from src.models import Base
-from src.database import engine
 
-# Inject dummy keys BEFORE standard imports can fail
+# Inject dummy keys and FORCE in-memory database BEFORE any imports
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 os.environ["GOOGLE_API_KEY"] = "dummy_test_key"
 os.environ["WHATSAPP_APP_SECRET"] = "dummy_secret"
 os.environ["WA_TOKEN"] = "dummy_token"
@@ -17,6 +12,12 @@ os.environ["QB_CLIENT_SECRET"] = "dummy_qb_client_secret"
 os.environ["QB_REDIRECT_URI"] = "http://localhost:8000/callback"
 os.environ["CREDENTIALS_DB_KEY"] = "dummy_key_for_testing_only_12345"
 
+import pytest
+import asyncio
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+from src.models import Base
+from src.database import engine
 
 @pytest.fixture(scope="session", autouse=True)
 def set_test_env():
@@ -28,13 +29,13 @@ def set_test_env():
 @pytest.fixture(scope="function", autouse=True)
 async def setup_database():
     """Create database tables before each test."""
-    # Create all tables
+    # Create all tables using the global engine which is now in-memory
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
     yield
     
-    # Drop all tables after test
+    # Drop all tables after test to ensure isolation
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 

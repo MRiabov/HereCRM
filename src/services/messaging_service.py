@@ -90,8 +90,14 @@ class MessagingService:
                     # Track usage if business_id is known
                     if business_id:
                         from src.services.billing_service import BillingService
+                        from src.services.channels.sms_utils import get_sms_segment_count
+                        
+                        quantity = 1
+                        if channel == "sms":
+                            quantity = get_sms_segment_count(content)
+                            
                         billing_service = BillingService(db)
-                        await billing_service.track_message_sent(business_id)
+                        await billing_service.track_message_sent(business_id, quantity=quantity)
                     
                     logger.info(f"Message {message_log.id} sent successfully via {channel}")
                 else:

@@ -63,13 +63,13 @@ class BillingService:
             }
         }
 
-    async def track_message_sent(self, business_id: int):
+    async def track_message_sent(self, business_id: int, quantity: int = 1):
         """Increments usage counter and reports to Stripe."""
         business = await self.business_repo.get_by_id_global(business_id)
         if not business:
             return
 
-        business.message_count_current_period += 1
+        business.message_count_current_period += quantity
         
         # Report usage to Stripe if active subscription exists
         if business.stripe_subscription_id:
@@ -78,7 +78,7 @@ class BillingService:
                 if price_id:
                     si_id = await self._get_subscription_item_by_price(business.stripe_subscription_id, price_id)
                     if si_id:
-                        await self._report_usage_raw(si_id, 1)
+                        await self._report_usage_raw(si_id, quantity)
             except Exception as e:
                 self.logger.error(f"Stripe usage report failed: {e}")
 

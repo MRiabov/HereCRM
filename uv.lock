@@ -850,6 +850,15 @@ wheels = [
 ]
 
 [[package]]
+name = "future"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a7/b2/4140c69c6a66432916b26158687e821ba631a4c9273c474343badf84d3ba/future-1.0.0.tar.gz", hash = "sha256:bd2968309307861edae1458a4f8a4f3598c03be43b97521076aebf5d94c07b05", size = 1228490, upload-time = "2024-02-21T11:52:38.461Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl", hash = "sha256:929292d34f5872e70396626ef385ec22355a1fae8ad29e1a734c3e43f9fbc216", size = 491326, upload-time = "2024-02-21T11:52:35.956Z" },
+]
+
+[[package]]
 name = "gitdb"
 version = "4.0.12"
 source = { registry = "https://pypi.org/simple" }
@@ -945,6 +954,7 @@ dependencies = [
     { name = "python-quickbooks" },
     { name = "pyyaml" },
     { name = "requests" },
+    { name = "smsutil" },
     { name = "spec-kitty-cli" },
     { name = "sqlalchemy" },
     { name = "streamlit" },
@@ -975,6 +985,7 @@ requires-dist = [
     { name = "python-quickbooks", specifier = ">=0.9.1" },
     { name = "pyyaml" },
     { name = "requests" },
+    { name = "smsutil" },
     { name = "spec-kitty-cli", specifier = ">=0.11.1" },
     { name = "sqlalchemy" },
     { name = "streamlit", specifier = ">=1.53.0" },
@@ -2410,6 +2421,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/44/cd/a040c4b3119bbe532e5b0732286f805445375489fceaec1f48306068ee3b/smmap-5.0.2.tar.gz", hash = "sha256:26ea65a03958fa0c8a1c7e8c7a58fdc77221b8910f6be2131affade476898ad5", size = 22329, upload-time = "2025-01-02T07:14:40.909Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/04/be/d09147ad1ec7934636ad912901c5fd7667e1c858e19d355237db0d0cd5e4/smmap-5.0.2-py3-none-any.whl", hash = "sha256:b30115f0def7d7531d22a0fb6502488d879e75b260a9db4d0819cfb25403af5e", size = 24303, upload-time = "2025-01-02T07:14:38.724Z" },
+]
+
+[[package]]
+name = "smsutil"
+version = "1.1.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "future" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/83/ae/b5ebcfc33dfbb6d09d5072341c7629fdce9588e080615924c2a465923aa2/smsutil-1.1.3.tar.gz", hash = "sha256:b521a15c37680221133b33dc03430be09f1f2a765a7d74463f848a3cebbb3400", size = 4621, upload-time = "2020-07-22T04:44:47.544Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/77/bb/db54b4ff5defd96f7484924b4d2b27ee87c558ba13d781304a74a7aaa956/smsutil-1.1.3-py3-none-any.whl", hash = "sha256:d51e7da0563b2ce76476b974a6e990f5f04a47d2f8ee666fad3737a168841774", size = 5487, upload-time = "2020-07-22T04:44:46.347Z" },
 ]
 
 [[package]]

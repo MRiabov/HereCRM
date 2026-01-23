@@ -5,6 +5,7 @@ Standard SMS uses GSM-7 encoding. Non-GSM-7 characters force the message to UCS-
 significantly increasing costs (160 chars vs 70 chars per segment).
 """
 import unicodedata
+import smsutil
 
 # GSM 03.38 Basic Character Set (plus LF/CR)
 # Note: ASCII 0x00-0x7F is NOT fully GSM-7 compliant.
@@ -120,3 +121,15 @@ def normalize_to_gsm7(text: str) -> str:
         result.append('?')
         
     return "".join(result)
+
+def get_sms_segment_count(text: str) -> int:
+    """
+    Calculate the number of SMS segments for a given text.
+    Standard SMS (GSM-7) allows 160 chars per segment.
+    If it contains non-GSM-7 chars, it's 70 chars per segment (UCS-2).
+    Multi-segment messages have slightly less space per segment for headers (153 or 67).
+    We use smsutil to handle all these details correctly.
+    """
+    if not text:
+        return 0
+    return len(smsutil.split(text).parts)
