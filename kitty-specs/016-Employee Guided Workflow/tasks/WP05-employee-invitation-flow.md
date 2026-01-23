@@ -1,7 +1,9 @@
 ---
-lane: "doing"
+lane: "done"
 agent: "antigravity"
 shell_pid: "284006"
+reviewed_by: "MRiabov"
+review_status: "approved"
 ---
 # WP05: Employee Invitation Flow
 
@@ -27,3 +29,4 @@ Implement a chat-based invitation flow where owners can invite new employees.
 ## Activity Log
 
 - 2026-01-22T19:43:05Z – antigravity – shell_pid=284006 – lane=doing – Started implementation via workflow command
+- 2026-01-23T10:24:06Z – antigravity – shell_pid=284006 – lane=done – Review passed: Implementation verified in main and integration tests pass.

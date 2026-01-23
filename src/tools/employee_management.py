@@ -15,3 +15,22 @@ class AssignJobTool(BaseModel):
 
     job_id: int = Field(..., description="The ID of the job to assign")
     assign_to_name: str = Field(..., description="The name of the employee to assign the job to")
+
+class PromoteUserTool(BaseModel):
+    """Promote an employee to a manager role.
+    Use this when the owner says 'Make John a manager' or 'Promote Sarah'."""
+    
+    employee_query: str = Field(..., description="The name or phone number of the employee to promote")
+
+class DismissUserTool(BaseModel):
+    """Dismiss/Remove an employee from the business.
+    Use this when the owner says 'Fire John', 'Remove Sarah from the team', etc.
+    This revokes their access to the business."""
+    
+    employee_query: str = Field(..., description="The name or phone number of the employee to dismiss")
+
+class LeaveBusinessTool(BaseModel):
+    """Leave the current business.
+    Use this when an employee says 'I want to quit', 'Leave business', etc.
+    This removes the current user from the business."""
+    pass

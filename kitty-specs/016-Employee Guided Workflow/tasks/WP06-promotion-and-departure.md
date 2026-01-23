@@ -1,7 +1,9 @@
 ---
-lane: "doing"
-agent: "Antigravity"
+lane: "done"
+agent: "antigravity"
 shell_pid: "284006"
+reviewed_by: "MRiabov"
+review_status: "approved"
 ---
 # WP06: Promotion and Departure
 
@@ -28,3 +30,4 @@ Implement role-based promotion (to manager) and the ability for employees to lea
 ## Activity Log
 
 - 2026-01-22T20:37:03Z – Antigravity – shell_pid=284006 – lane=doing – Started implementation via workflow command
+- 2026-01-23T10:24:20Z – antigravity – shell_pid=284006 – lane=done – Review passed: Implementation verified in worktree with integration tests.
