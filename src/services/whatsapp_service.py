@@ -596,13 +596,16 @@ class WhatsappService:
             "RequestUpgradeTool": "Request Upgrade",
             "LocateEmployeeTool": "Locate",
             "CheckETATool": "ETA",
+            "CreateQuoteTool": "Quote",
         }
         model_name = tool_call.__class__.__name__
         name = friendly_names.get(model_name, model_name.replace("Tool", ""))
 
         # Use category if available (e.g. for AddJobTool)
-        if hasattr(tool_call, "category") and tool_call.category:
-            name = f"Add {tool_call.category.capitalize()}"
+        if isinstance(tool_call, CreateQuoteTool):
+            item_count = len(tool_call.items) if tool_call.items else 0
+            items_desc = f"{item_count} item{'s' if item_count != 1 else ''}"
+            return f"send quote to {tool_call.customer_identifier} ({items_desc})"
 
         if isinstance(tool_call, AddJobTool):
             price_val = "Not supplied"
