@@ -79,3 +79,19 @@
 - [X] T022: Final End-to-End verification of all 3 channels. <!-- id: 21 -->
 
 **Prompt**: [WP05-channel-logic.md](tasks/WP05-channel-logic.md)
+
+---
+
+### WP06 - TextGrid Integration & Refactor
+
+**Goal**: Integrate TextGrid as the primary SMS provider and refactor SMS logic to use an abstraction layer.
+**Priority**: P1
+**Dependencies**: WP02
+
+- [x] T023: Define `SMSMessagingService` interface (ABC) with methods for `send` and `receive` (normalization). <!-- id: 22 -->
+- [x] T024: Refactor existing `TwilioService` to implement `SMSMessagingService`. <!-- id: 23 -->
+- [x] T025: Implement `TextGridService` which implements `SMSMessagingService` using TextGrid API. <!-- id: 24 -->
+- [x] T026: Update `ChannelConfig` to support selecting `provider` for SMS (default: 'textgrid'). <!-- id: 25 -->
+- [x] T027: Update dependency injection/factory to instantiate the correct service based on config. <!-- id: 26 -->
+
+**Prompt**: [WP06-textgrid-integration.md](tasks/WP06-textgrid-integration.md)
