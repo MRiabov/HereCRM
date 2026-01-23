@@ -59,3 +59,4 @@ Postmark can POST JSON webhooks for inbound emails. We need to handle this paylo
 
 - 2026-01-23T15:44:31Z – Antigravity – shell_pid=106664 – lane=doing – Started implementation via workflow command
 - 2026-01-23T16:03:49Z – Antigravity – shell_pid=106664 – lane=for_review – Implemented Postmark Email Integration with Attachment processing. Added Document model/service and Customer email field.
+- 2026-01-23T16:04:00Z – Antigravity – shell_pid=106664 – lane=for_review – Implemented Postmark Email Integration with Attachment processing. Added Document model/service and Customer email field.
