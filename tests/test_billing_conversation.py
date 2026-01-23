@@ -21,15 +21,14 @@ def mock_template_service():
 
 @pytest.fixture
 def whatsapp_service(mock_session, mock_parser, mock_template_service):
-    service = WhatsappService(mock_session, mock_parser, mock_template_service)
+    # Mock BillingService
+    mock_billing = AsyncMock()
+    service = WhatsappService(mock_session, mock_parser, mock_template_service, billing_service=mock_billing)
     # Mock repositories internally
     service.user_repo = AsyncMock()
     service.state_repo = AsyncMock()
     service.business_repo = AsyncMock()
     
-    # Mock BillingService inside ToolExecutor
-    # Since ToolExecutor is instantiated inside methods, we might need to patch it or mock the execution flow.
-    # However, for unit testing _handle_billing directly, we can check logic.
     return service
 
 @pytest.mark.asyncio

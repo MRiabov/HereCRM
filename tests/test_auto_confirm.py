@@ -49,7 +49,12 @@ async def test_auto_confirm_initiation(mock_config_loader, mock_parser, mock_tem
     # Configure session.add to be MagicMock (sync)
     session.add = MagicMock()
     
-    service = WhatsappService(session, mock_parser, mock_template_service)
+    # Mock BillingService to avoid database/coroutine issues
+    with patch("src.services.whatsapp_service.BillingService") as MockBilling:
+        mock_billing = MockBilling.return_value
+        mock_billing.track_message_sent = AsyncMock()
+        
+        service = WhatsappService(session, mock_parser, mock_template_service, billing_service=mock_billing)
     
     # Mock repositories
     user = User(id=1, business_id=1, phone_number="+1234567890", preferred_channel="sms")
@@ -87,7 +92,10 @@ async def test_auto_confirm_initiation(mock_config_loader, mock_parser, mock_tem
 async def test_auto_confirm_cancellation(mock_config_loader, mock_parser, mock_template_service):
     session = AsyncMock()
     session.add = MagicMock() # Sync
-    service = WhatsappService(session, mock_parser, mock_template_service)
+    with patch("src.services.whatsapp_service.BillingService") as MockBilling:
+        mock_billing = MockBilling.return_value
+        mock_billing.track_message_sent = AsyncMock()
+        service = WhatsappService(session, mock_parser, mock_template_service, billing_service=mock_billing)
     
     user = User(id=1, business_id=1, phone_number="+1234567890")
     state = ConversationState(
@@ -111,7 +119,10 @@ async def test_auto_confirm_cancellation(mock_config_loader, mock_parser, mock_t
 async def test_auto_confirm_interruption_creates_new_command(mock_config_loader, mock_parser, mock_template_service):
     session = AsyncMock()
     session.add = MagicMock() # Sync
-    service = WhatsappService(session, mock_parser, mock_template_service)
+    with patch("src.services.whatsapp_service.BillingService") as MockBilling:
+        mock_billing = MockBilling.return_value
+        mock_billing.track_message_sent = AsyncMock()
+        service = WhatsappService(session, mock_parser, mock_template_service, billing_service=mock_billing)
     
     user = User(id=1, business_id=1, phone_number="+1234567890")
     state = ConversationState(
@@ -161,26 +172,26 @@ async def test_auto_confirm_task_execution(mock_template_service):
         
         with patch("src.services.whatsapp_service.ConversationStateRepository", return_value=mock_state_repo):
             with patch("src.services.whatsapp_service.UserRepository", return_value=mock_user_repo):
-                 # Mock WhatsappService inside the task
-                 with patch("src.services.whatsapp_service.WhatsappService") as MockServiceCls:
-                     mock_service_instance = MockServiceCls.return_value
-                     mock_service_instance._execute_draft = AsyncMock(return_value="Draft Executed")
+                 # Patch _execute_draft on the WhatsappService class directly for the duration of the task
+                 with patch("src.services.whatsapp_service.WhatsappService._execute_draft", new_callable=AsyncMock) as mock_execute_draft:
+                     mock_execute_draft.return_value = "Draft Executed"
                      
                      # Instantiate real service
+                     # We use a real instance but we'll mock its billing/etc if needed
+                     # Actually _auto_confirm_task doesn't use self.billing_service anyway
                      real_service = WhatsappService(AsyncMock(), MagicMock(), MagicMock())
                      
-                     # Mock TwilioService - it's imported locally in the method, so patching the source module is safest/correct
-                     # Assuming the code imports: from src.services.twilio_service import TwilioService
-                     with patch("src.services.twilio_service.TwilioService") as MockTwilio:
-                         mock_twilio = MockTwilio.return_value
-                         mock_twilio.send_sms = AsyncMock()
+                     # Mock SMS Service
+                     with patch("src.services.sms_factory.get_sms_service") as mock_get_sms:
+                         mock_sms = mock_get_sms.return_value
+                         mock_sms.send_sms = AsyncMock()
                          
                          # Run the task
                          await real_service._auto_confirm_task(user_id=1, timeout=0)
                          
                          # Verify execution
-                         mock_service_instance._execute_draft.assert_called_once()
-                         mock_twilio.send_sms.assert_called_with("+1234567890", "Draft Executed")
+                         mock_execute_draft.assert_called_once()
+                         mock_sms.send_sms.assert_called_with("+1234567890", "Draft Executed")
                          
                          # Verify system log message added
                          assert mock_session.add.call_count >= 1

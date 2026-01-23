@@ -476,13 +476,18 @@ class JobRepository(BaseRepository[Job]):
     ) -> Optional[Job]:
         stmt = (
             select(Job)
+            .options(
+                joinedload(Job.customer),
+                joinedload(Job.line_items),
+                joinedload(Job.business)
+            )
             .where(Job.customer_id == customer_id, Job.business_id == business_id)
             .order_by(Job.id.desc())
             .limit(1)
         )
         result = await self.session.execute(stmt)
 
-        return result.scalar_one_or_none()
+        return result.unique().scalar_one_or_none()
 
     async def get_count_by_customer(self, customer_id: int, business_id: int) -> int:
         from sqlalchemy import func

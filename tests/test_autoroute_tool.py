@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import MagicMock
 from datetime import date, datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import User, Job, Customer, Business
@@ -41,7 +42,10 @@ async def test_autoroute_preview_basic(async_session: AsyncSession):
     await async_session.commit()
     
     # 2. Run Tool
-    executor = AutorouteToolExecutor(async_session, business_id)
+    from unittest.mock import MagicMock
+    mock_ts = MagicMock()
+    mock_ts.render.return_value = "Proposed Schedule: Alice assigned to Customer 1 and Customer 2"
+    executor = AutorouteToolExecutor(async_session, business_id, mock_ts)
     tool_input = AutorouteTool(date=date.today().isoformat())
     
     report = await executor.run(tool_input)
@@ -63,7 +67,7 @@ async def test_autoroute_no_jobs(async_session: AsyncSession):
     async_session.add(emp)
     await async_session.commit()
     
-    executor = AutorouteToolExecutor(async_session, business.id)
+    executor = AutorouteToolExecutor(async_session, business.id, MagicMock())
     tool_input = AutorouteTool(date=date.today().isoformat())
     
     report = await executor.run(tool_input)

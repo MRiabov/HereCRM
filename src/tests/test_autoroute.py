@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import User, UserRole, Job, Customer
 from src.tool_executor import ToolExecutor
 from src.uimodels import AutorouteTool
-from src.services.routing.base import RoutingSolution
+from src.services.routing.base import RoutingSolution, RoutingStep
 from datetime import date, datetime
 
 @pytest.fixture
@@ -25,7 +25,7 @@ async def test_autoroute_preview_success(session: AsyncSession, mock_routing_ser
     # 1. Employee
     emp = User(
         email="tech@example.com", 
-        role=UserRole.MEMBER, 
+        role=UserRole.EMPLOYEE, 
         business_id=1, 
         phone_number="123456",
         default_start_location_lat=53.3,
@@ -66,22 +66,23 @@ async def test_autoroute_preview_success(session: AsyncSession, mock_routing_ser
     
     # Configure mock return value for `calculate_routes`
     solution = RoutingSolution(
-        routes={emp.id: [job]},
+        routes={emp.id: [RoutingStep(job=job)]},
         unassigned_jobs=[],
         metrics={"distance": 5000, "duration": 1800}
     )
     mock_routing_service.calculate_routes.return_value = solution
     
     # Act
-    tool = AutorouteTool(date=today.isoformat())
+    tool = AutorouteTool(date=today.isoformat(), apply=False, notify=True)
     result, metadata = await executor.execute(tool)
     
     # Assert
-    assert "Proposed Schedule" in result
+    assert "Rendered autoroute_preview" in result
     assert "Total Distance: 5.0 km" in result
     assert "Est. Time: 0.5 hrs" in result
     assert "Test Cust" in result
     assert "Fix sink" in result
+    assert metadata is not None
     assert metadata["action"] == "preview_route"
     
     # Verify service called

@@ -49,7 +49,7 @@ class CreateQuoteTool:
                 await self.quote_service.send_quote(quote.id)
                 msg = self.template_service.render(
                     "job_added", 
-                    category="Quote", 
+                    category=f"Quote #{quote.id}", 
                     name=customer.name, 
                     location="", 
                     price_info=f" (Total: {quote.total_amount})"

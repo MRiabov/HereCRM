@@ -1,6 +1,6 @@
 import pytest
 from datetime import date, datetime
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, patch, MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import User, Job, Customer, Business
 from src.tools.routing_tools import AutorouteToolExecutor
@@ -40,7 +40,9 @@ async def test_autoroute_apply_execution(async_session: AsyncSession):
     with patch("src.tools.routing_tools.messaging_service") as mock_msg_service:
         mock_msg_service.enqueue_message = AsyncMock()
         
-        executor = AutorouteToolExecutor(async_session, business_id)
+        mock_ts = MagicMock()
+        mock_ts.render.return_value = "Successfully applied schedule"
+        executor = AutorouteToolExecutor(async_session, business_id, mock_ts)
         # Force mock routing service to return a specific predictable solution?
         # The MockRoutingService used by default (if no API key) basically checks distance.
         # With 1 job and 1 employee nearby, it should assign it.
@@ -91,7 +93,8 @@ async def test_autoroute_apply_rollback_on_error(async_session: AsyncSession):
         # Ideally we'd mock the session.commit() but that's on self.session which is the async_session provided by pytest
         # Instead, let's mock user_repo or similar to raise an exception halfway
         
-        executor = AutorouteToolExecutor(async_session, bid)
+        mock_ts = MagicMock()
+        executor = AutorouteToolExecutor(async_session, bid, mock_ts)
         
         # Mocking user_repo.get_by_id to raise exception
         executor.user_repo.get_by_id = AsyncMock(side_effect=Exception("Database Boom"))
