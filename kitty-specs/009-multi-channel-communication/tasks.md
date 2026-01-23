@@ -95,3 +95,18 @@
 - [x] T027: Update dependency injection/factory to instantiate the correct service based on config. <!-- id: 26 -->
 
 **Prompt**: [WP06-textgrid-integration.md](tasks/WP06-textgrid-integration.md)
+
+---
+
+### WP07 - SMS Symbol Standardization
+
+**Goal**: Implement strict GSM-7 character set normalization/filtering to minimize SMS costs.
+**Priority**: P1
+**Dependencies**: WP06
+
+- [x] T028: Create `GSM7Validator` utility in `src/services/channels/utils.py`. <!-- id: 27 -->
+- [ ] T029: Implement normalization logic (replace smart quotes, emojis, accents, etc. with GSM-7 equivalents). <!-- id: 28 -->
+- [ ] T030: Integrate validator into `SMSMessagingService.send_sms` (before sending). <!-- id: 29 -->
+- [ ] T031: Add unit tests for character replacement and validation. <!-- id: 30 -->
+
+**Prompt**: [WP07-sms-symbol-normalization.md](tasks/WP07-sms-symbol-normalization.md)

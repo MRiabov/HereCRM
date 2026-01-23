@@ -71,6 +71,7 @@ External systems (e.g., Zapier, Contact Forms) can inject messages or leads into
 - **FR-006**: System MUST implement an **Auto-Confirmation Strategy** where pending actions on configured channels (SMS/Email) execute automatically after a configurable timeout (default 45s) if no cancellation is received.
 - **FR-007**: System MUST support **WhatsApp** via the existing Meta API integration (preserving current functionality).
 - **FR-008**: System MUST allow configuring the "Max Message Length" or "conciseness" per channel (e.g., compact for SMS, standard for Email).
+- **FR-009**: System MUST enforce **GSM-7 character set normalization** on all outbound SMS messages to prevent costly Unicode segmentation usage. Smart-replace emojis/special chars with ASCII equivalents where possible.
 
 ### Key Entities
 
