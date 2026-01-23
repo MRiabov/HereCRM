@@ -1,7 +1,7 @@
 ---
 work_package_id: "WP02"
 title: "Document Service Core"
-lane: "doing"
+lane: "done"
 dependencies: ["WP01"]
 subtasks: ["T005", "T006", "T007"]
 shell_pid: "76062"
@@ -83,3 +83,4 @@ With the data model and storage layer in place (WP01), we need the glue logic. T
 
 - 2026-01-23T10:21:19Z – unknown – shell_pid=15223 – lane=done – WP02 - Document Service Core completed. Tests passed.
 - 2026-01-23T13:45:40Z – Antigravity – shell_pid=76062 – lane=doing – Started review via workflow command
+- 2026-01-23T13:49:16Z – Antigravity – shell_pid=76062 – lane=done – Review passed: Implementation is correct and tests pass.
