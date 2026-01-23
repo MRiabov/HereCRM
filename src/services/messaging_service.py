@@ -65,6 +65,7 @@ class MessagingService:
             db.add(message_log)
             await db.commit()
             await db.refresh(message_log)
+            print(f"DEBUG: Created MessageLog id={message_log.id}")
         
         # Process sending
         try:
@@ -271,6 +272,7 @@ class MessagingService:
             return
             
         logger.info(f"Handling JOB_CREATED for job {job_id}")
+        print(f"DEBUG: handle_job_created job_id={job_id} customer_id={customer_id}")
         
         async with AsyncSessionLocal() as db:
             customer_repo = CustomerRepository(db)

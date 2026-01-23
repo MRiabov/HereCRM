@@ -1,20 +1,20 @@
 import logging
 from typing import Optional, Tuple, Dict, Any
-from src.uimodels import CreateQuoteInput
+from src.uimodels import CreateQuoteTool
 from src.services.quote_service import QuoteService
 from src.repositories import CustomerRepository
 from src.services.template_service import TemplateService
 
 logger = logging.getLogger(__name__)
 
-class CreateQuoteTool:
+class QuoteCreationHandler:
     def __init__(self, quote_service: QuoteService, customer_repo: CustomerRepository, business_id: int, template_service: TemplateService):
         self.quote_service = quote_service
         self.customer_repo = customer_repo
         self.business_id = business_id
         self.template_service = template_service
 
-    async def run(self, input: CreateQuoteInput) -> Tuple[str, Optional[Dict[str, Any]]]:
+    async def run(self, input: CreateQuoteTool) -> Tuple[str, Optional[Dict[str, Any]]]:
         # 1. Resolve Customer
         customers = await self.customer_repo.search(input.customer_identifier, self.business_id)
         if not customers:

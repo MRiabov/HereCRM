@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from src.tools.quote_tools import CreateQuoteTool
-from src.uimodels import CreateQuoteInput, QuoteLineItemInput
+from src.uimodels import CreateQuoteTool, QuoteLineItemInput
 from src.services.quote_service import QuoteService
 from src.models import Business, Customer, QuoteStatus, User
 from src.tool_executor import ToolExecutor
@@ -53,7 +53,7 @@ async def test_quote_full_conversational_flow(async_session):
 
     # 3. Step 1: LLM triggers Create Quote
     #   "Send a quote to John Doe for 2 hours of Cleaning at 50/hr"
-    input_data = CreateQuoteInput(
+    input_data = CreateQuoteTool(
         customer_identifier="John Doe",
         items=[
             QuoteLineItemInput(description="Cleaning", quantity=2, price=50.0)

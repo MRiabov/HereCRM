@@ -397,7 +397,7 @@ class QuoteLineItemInput(BaseModel):
         return v
 
 
-class CreateQuoteInput(BaseModel):
+class CreateQuoteTool(BaseModel):
     """Create and send a quote to a customer.
     Triggered when user wants to 'send a quote', 'create proposal', or 'give price'."""
     customer_identifier: str = Field(..., description="Name or Phone of the customer to find.")

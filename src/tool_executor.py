@@ -57,7 +57,7 @@ from src.uimodels import (
     ExitDataManagementTool,
     GetBillingStatusTool,
     RequestUpgradeTool,
-    CreateQuoteInput,
+    CreateQuoteTool,
     LocateEmployeeTool,
     CheckETATool,
     AutorouteTool,
@@ -70,7 +70,7 @@ from src.uimodels import (
 )
 
 from src.tools.invoice_tools import SendInvoiceTool
-from src.tools.quote_tools import CreateQuoteTool
+from src.tools.quote_tools import QuoteCreationHandler
 from src.tools.routing_tools import AutorouteToolExecutor
 from src.services.quote_service import QuoteService
 from sqlalchemy import select
@@ -168,7 +168,7 @@ class ToolExecutor:
             ShowScheduleTool,
             ShowScheduleTool,
             AssignJobTool,
-            CreateQuoteInput,
+            CreateQuoteTool,
             LocateEmployeeTool,
             CheckETATool,
             AutorouteTool,
@@ -230,7 +230,7 @@ class ToolExecutor:
                      return "Invoicing is disabled because your business is set to 'Always paid on spot'.", None
 
             # Soft-block Quoting
-            if isinstance(tool_call, CreateQuoteInput):
+            if isinstance(tool_call, CreateQuoteTool):
                 if business.workflow_quoting == QuotingWorkflow.NEVER:
                     return "Quoting is currently disabled in your business settings. (Owner can re-enable this by saying 'update workflow settings').", None
 
@@ -291,7 +291,7 @@ class ToolExecutor:
             return await self._execute_show_schedule(tool_call)
         elif isinstance(tool_call, AssignJobTool):
             return await self._execute_assign_job(tool_call)
-        elif isinstance(tool_call, CreateQuoteInput):
+        elif isinstance(tool_call, CreateQuoteTool):
             return await self._execute_create_quote(tool_call)
         elif isinstance(tool_call, LocateEmployeeTool):
             return await self._execute_locate_employee(tool_call)
@@ -1027,8 +1027,8 @@ class ToolExecutor:
         except Exception as e:
             return f"System error generating upgrade link: {str(e)}", None
 
-    async def _execute_create_quote(self, tool: CreateQuoteInput) -> Tuple[str, Optional[Dict[str, Any]]]:
-        quote_tool = CreateQuoteTool(self.quote_service, self.customer_repo, self.business_id, self.template_service)
+    async def _execute_create_quote(self, tool: CreateQuoteTool) -> Tuple[str, Optional[Dict[str, Any]]]:
+        quote_tool = QuoteCreationHandler(self.quote_service, self.customer_repo, self.business_id, self.template_service)
         return await quote_tool.run(tool)
 
     async def _execute_send_status(

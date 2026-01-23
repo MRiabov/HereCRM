@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from src.tools.quote_tools import CreateQuoteTool
-from src.uimodels import CreateQuoteInput, QuoteLineItemInput
+from src.uimodels import CreateQuoteTool, QuoteLineItemInput
 
 @pytest.mark.asyncio
 async def test_create_quote_tool_run():
@@ -32,7 +32,7 @@ async def test_create_quote_tool_run():
 
     tool = CreateQuoteTool(mock_quote_service, mock_customer_repo, business_id, mock_template_service)
 
-    input_data = CreateQuoteInput(
+    input_data = CreateQuoteTool(
         customer_identifier="Test Customer",
         items=[
             QuoteLineItemInput(description="Window Cleaning", quantity=1, price=100.0)
@@ -57,7 +57,7 @@ async def test_create_quote_tool_customer_not_found():
     mock_customer_repo.search.return_value = [] # No results
 
     tool = CreateQuoteTool(mock_quote_service, mock_customer_repo, 1, MagicMock())
-    input_data = CreateQuoteInput(customer_identifier="Unknown", items=[])
+    input_data = CreateQuoteTool(customer_identifier="Unknown", items=[])
 
     msg, data = await tool.run(input_data)
     assert "Could not find customer" in msg
@@ -70,7 +70,7 @@ async def test_create_quote_tool_ambiguous_customer():
     mock_customer_repo.search.return_value = [MagicMock(), MagicMock()] # Two results
 
     tool = CreateQuoteTool(mock_quote_service, mock_customer_repo, 1, MagicMock())
-    input_data = CreateQuoteInput(customer_identifier="Ambiguous", items=[])
+    input_data = CreateQuoteTool(customer_identifier="Ambiguous", items=[])
 
     msg, data = await tool.run(input_data)
     assert "Multiple customers found" in msg

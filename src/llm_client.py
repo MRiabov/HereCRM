@@ -27,7 +27,7 @@ from src.uimodels import (
     SendStatusTool,
     GetBillingStatusTool,
     RequestUpgradeTool,
-    CreateQuoteInput,
+    CreateQuoteTool,
     LocateEmployeeTool,
     CheckETATool,
     AutorouteTool,
@@ -168,7 +168,7 @@ class LLMParser:
             "function": {
                 "name": "CreateQuoteTool",
                 "description": tool_desc.get("CreateQuoteTool", "Create and send a quote to a customer"),
-                "parameters": CreateQuoteInput.schema(),
+                "parameters": CreateQuoteTool.schema(),
             },
         })
 
@@ -590,7 +590,7 @@ class LLMParser:
             "RequestUpgradeTool": RequestUpgradeTool,
             "ShowScheduleTool": ShowScheduleTool,
             "AssignJobTool": AssignJobTool,
-            "CreateQuoteTool": CreateQuoteInput,
+            "CreateQuoteTool": CreateQuoteTool,
             "LocateEmployeeTool": LocateEmployeeTool,
             "CheckETATool": CheckETATool,
             "AutorouteTool": AutorouteTool,
