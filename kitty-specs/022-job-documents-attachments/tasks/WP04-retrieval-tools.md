@@ -1,9 +1,11 @@
 ---
 work_package_id: "WP04"
 title: "Retrieval Tools"
-lane: "planned"
+lane: "doing"
 dependencies: ["WP02"]
 subtasks: ["T012", "T013", "T014"]
+agent: "Antigravity"
+shell_pid: "16807"
 ---
 # Work Package 04: Retrieval Tools
 
@@ -63,3 +65,7 @@ We need a tool that the Agent (or rule-based system) can use to list documents f
 **Validation**:
 * Tool returns formatted list.
 * URLs are present.
+
+## Activity Log
+
+- 2026-01-23T13:37:04Z – Antigravity – shell_pid=16807 – lane=doing – Started implementation via workflow command
