@@ -1,16 +1,15 @@
-import logging
-import re
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException, TwilioException
 
 from src.config import settings
+from src.services.channels.base import SMSMessagingService
 
 
-class TwilioService:
+class TwilioService(SMSMessagingService):
     """Service for sending and receiving SMS messages via Twilio."""
     
     def __init__(self):
-        self.logger = logging.getLogger(__name__)
+        super().__init__()
         
         # Initialize Twilio client if credentials are available
         if settings.twilio_account_sid and settings.twilio_auth_token:
@@ -25,12 +24,6 @@ class TwilioService:
             self.logger.warning(
                 "Twilio credentials not configured. SMS functionality will be disabled."
             )
-    
-    def validate_e164(self, phone: str) -> bool:
-        """Validate phone number is in E.164 format."""
-        if not phone:
-            return False
-        return bool(re.match(r'^\+[1-9]\d{1,14}$', phone))
 
     async def send_sms(self, to_number: str, body: str) -> bool:
         """

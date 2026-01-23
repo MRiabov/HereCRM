@@ -160,19 +160,19 @@ class MessagingService:
 
     async def _send_sms(self, recipient_phone: str, content: str) -> tuple[bool, Optional[str]]:
         """
-        Send SMS via TwilioService.
+        Send SMS via configured SMS provider.
         """
-        from src.services.twilio_service import TwilioService
+        from src.services.sms_factory import get_sms_service
         
         try:
-            # We need to modify TwilioService to return ID or just trust True/False
-            # The current TwilioService.send_sms returns bool.
-            # We'll instantiate it here.
-            service = TwilioService()
+            service = get_sms_service()
             success = await service.send_sms(recipient_phone, content)
-            return success, f"twilio_{int(datetime.now().timestamp())}" if success else None
+            
+            # Identify provider for external ID tagging
+            provider_name = service.__class__.__name__.lower().replace("service", "")
+            return success, f"{provider_name}_{int(datetime.now().timestamp())}" if success else None
         except Exception as e:
-            logger.error(f"Error calling TwilioService: {e}")
+            logger.error(f"Error calling SMS service: {e}")
             return False, None
 
     async def enqueue_message(

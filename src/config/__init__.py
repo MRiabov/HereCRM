@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     twilio_auth_token: Optional[str] = None
     twilio_phone_number: Optional[str] = None
 
+    # TextGrid Settings
+    textgrid_account_sid: Optional[str] = None
+    textgrid_auth_token: Optional[str] = None
+    textgrid_phone_number: Optional[str] = None
+
     # Postmark Settings
     postmark_server_token: Optional[str] = None
     from_email_address: Optional[str] = None
@@ -54,6 +59,7 @@ class Settings(BaseSettings):
 class ChannelSettings(BaseModel):
     max_length: int
     style: str
+    provider: Optional[str] = "textgrid"
 
 class ChannelsConfig(BaseModel):
     channels: Dict[str, ChannelSettings]
@@ -67,7 +73,8 @@ def load_channels_config() -> ChannelsConfig:
         # Default configuration if file is missing
         return ChannelsConfig(channels={
             "whatsapp": ChannelSettings(max_length=150, style="concise"),
-            "email": ChannelSettings(max_length=1000, style="detailed")
+            "email": ChannelSettings(max_length=1000, style="detailed"),
+            "sms": ChannelSettings(max_length=160, style="direct", provider="textgrid")
         })
         
     with open(config_path, "r") as f:
