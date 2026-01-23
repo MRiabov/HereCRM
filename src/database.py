@@ -31,7 +31,15 @@ if "sqlite" in DATABASE_URL:
 logging.basicConfig()
 logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
 
-engine = create_async_engine(DATABASE_URL, echo=False)
+# Detect if we are using in-memory SQLite (usually during tests)
+is_memory = "sqlite" in DATABASE_URL and ":memory:" in DATABASE_URL
+
+engine_args = {}
+if is_memory:
+    engine_args["poolclass"] = StaticPool
+    engine_args["connect_args"] = {"check_same_thread": False}
+
+engine = create_async_engine(DATABASE_URL, echo=False, **engine_args)
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,

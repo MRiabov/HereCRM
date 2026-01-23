@@ -68,6 +68,14 @@ class TestSMSSegmentBilling:
             
             mock_billing_service.track_message_sent.assert_called_with(123, quantity=2)
 
+            # 3. Test emoji message (should be normalized and billed as 1 segment)
+            # Re-mock execute to return a new log if needed, but let's just check the last call
+            content_emoji = "Hello 🚀"
+            await service.send_message("+123456789", content_emoji, channel="sms", business_id=123)
+            
+            # Check that it was billed as 1 segment (after normalization "Hello ?" is 7 chars)
+            mock_billing_service.track_message_sent.assert_called_with(123, quantity=1)
+
     @pytest.mark.asyncio
     async def test_billing_service_increments_correctly(self):
         mock_session = AsyncMock()

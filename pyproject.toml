@@ -30,6 +30,7 @@ dependencies = [
     "stripe>=14.2.0",
     "python-quickbooks>=0.9.1",
     "apscheduler",
+    "smsutil",
 ]
 
 # Optional dependencies for QuickBooks integration:

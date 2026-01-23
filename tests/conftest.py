@@ -18,12 +18,19 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from src.models import Base
 from src.database import engine
+from src.events import event_bus
 
 @pytest.fixture(scope="session", autouse=True)
 def set_test_env():
     # This fixture ensures these remain set, though the top-level
     # execution is what really saves us from import errors.
     os.environ["WA_PHONE_ID"] = "dummy_phone_id"
+    yield
+
+@pytest.fixture(autouse=True)
+def reset_event_bus():
+    """Reset EventBus subscribers before each test."""
+    event_bus._subscribers = {}
     yield
 
 @pytest.fixture(scope="function", autouse=True)
@@ -43,7 +50,6 @@ async def setup_database():
 async def async_session():
     # Create an in-memory SQLite database for specific session testing if needed
     # but usually we can just use the global engine if it's also in-memory
-    # For now, keeping the HEAD version of async_session
     engine_sqlite = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
     
     # Create tables

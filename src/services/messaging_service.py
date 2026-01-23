@@ -47,6 +47,11 @@ class MessagingService:
         # Determine message type
         message_type = MessageType.WHATSAPP if channel == "whatsapp" else MessageType.SMS
         
+        # Mandatory GSM-7 normalization for SMS to avoid high costs (UCS-2)
+        if channel == "sms":
+            from src.services.channels.sms_utils import normalize_to_gsm7
+            content = normalize_to_gsm7(content)
+            
         # Create MessageLog entry with PENDING status
         async with AsyncSessionLocal() as db:
             message_log = MessageLog(
