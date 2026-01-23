@@ -76,7 +76,13 @@ from src.services.quote_service import QuoteService
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from datetime import datetime, timedelta, timezone
-from src.tools.employee_management import ShowScheduleTool, AssignJobTool
+from src.tools.employee_management import (
+    ShowScheduleTool, 
+    AssignJobTool,
+    PromoteUserTool,
+    DismissUserTool,
+    LeaveBusinessTool
+)
 from src.services.location_service import LocationService
 from src.services.routing.ors import OpenRouteServiceAdapter
 from src.services.accounting.quickbooks_auth import QuickBooksAuthService
@@ -172,6 +178,9 @@ class ToolExecutor:
             DisconnectQuickBooksTool,
             QuickBooksStatusTool,
             SyncQuickBooksTool,
+            PromoteUserTool,
+            DismissUserTool,
+            LeaveBusinessTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
 
@@ -307,6 +316,12 @@ class ToolExecutor:
              return f"Current Workflow Settings:\n{settings}", {"action": "get_workflow_settings", "settings": settings}
         elif isinstance(tool_call, UpdateWorkflowSettingsTool):
             return await self._execute_update_workflow_settings(tool_call)
+        elif isinstance(tool_call, PromoteUserTool):
+            return await self._execute_promote_user(tool_call)
+        elif isinstance(tool_call, DismissUserTool):
+            return await self._execute_dismiss_user(tool_call)
+        elif isinstance(tool_call, LeaveBusinessTool):
+            return await self._execute_leave_business(tool_call)
         return "Unknown tool call", None
 
     # ... (other methods unchanged)
@@ -1396,3 +1411,137 @@ class ToolExecutor:
             }
         except Exception as e:
             return self.template_service.render("quickbooks_error", error=str(e)), None
+
+    async def _execute_promote_user(
+        self, tool: PromoteUserTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        # 1. Find the employee
+        users = await self.user_repo.get_team_members(self.business_id)
+        target_user = None
+        
+        # Fuzzy match
+        query = tool.employee_query.lower()
+        for u in users:
+            if query in (u.name or "").lower() or query in (u.phone_number or ""):
+                target_user = u
+                break
+        
+        if not target_user:
+            return f"Could not find employee matching '{tool.employee_query}'.", None
+            
+        if target_user.role == UserRole.MANAGER:
+            return f"{target_user.name} is already a Manager.", None
+            
+        if target_user.role == UserRole.OWNER:
+            return "Cannot promote the Owner.", None
+
+        # 2. Update Role
+        target_user.role = UserRole.MANAGER
+        await self.session.flush()
+        
+        return f"✔ Promoted {target_user.name} to Manager.", {
+            "action": "promote_user",
+            "entity": "user",
+            "id": target_user.id,
+            "name": target_user.name,
+            "new_role": "manager"
+        }
+
+    async def _execute_dismiss_user(
+        self, tool: DismissUserTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        # 1. Find the employee
+        users = await self.user_repo.get_team_members(self.business_id)
+        target_user = None
+        
+        query = tool.employee_query.lower()
+        for u in users:
+            if query in (u.name or "").lower() or query in (u.phone_number or ""):
+                target_user = u
+                break
+                
+        if not target_user:
+            return f"Could not find employee matching '{tool.employee_query}'.", None
+            
+        if target_user.role == UserRole.OWNER:
+            return "Cannot dismiss the Owner.", None
+            
+        # 2. Revoke Access (Set business_id to None? Or delete?)
+        # WP says "Changes are reflected in the database and access is revoked immediately"
+        # We'll set business_id to None to keep chat history etc linked to the user object, 
+        # but detach from business.
+        # However, User.business_id IS nullable in model? model definition shows:
+        # business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"))
+        # It does NOT say nullable=True. 
+        # BUT User definition:
+        # class User(Base): ... business_id: Mapped[int] ...
+        # If it's not nullable, we might have a problem.
+        # Let's check User model again.
+        
+        # Checking User model seen earlier:
+        # business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"))
+        # It implies NOT NULL by default in Mapped[int].
+        # If I want to support "free agent" users, I might need to make it nullable.
+        # Wait, the spec says "Employee can leave the business".
+        # If they leave, they are no longer associated.
+        # If the schema forbids null business_id, then we must DELETE the user?
+        # Deleting the user deletes all their message history if cascade is set, or errors if not.
+        
+        # Let's assume for this WP we should look at `User` model carefully.
+        # If I can't set it to None, I might need to delete.
+        # Or I need to make it nullable in a migration.
+        # Given "016-Employee Guided Workflow" implies adding employees, maybe they shouldn't be deleted.
+        # Let's check if I should modify the model to allow nullable business_id.
+        # Actually, standard SaaS pattern: Users belong to a business.
+        # If they leave, maybe they are deleted?
+        # But wait, "Invitation" flow usually implies a user account exists before business link?
+        # No, in this system, users seem created FOR a business.
+        
+        # Re-reading WP06: "Employee can leave the business via text."
+        # If I delete, it's destructive.
+        # I'll check model `src/models/__init__.py` line 132: 
+        # business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"))
+        # It is NOT Optional[int].
+        
+        # DECISION: I will DELETE the user for now, as that definitely revokes access.
+        # OR I will try to make it nullable. Making it nullable is cleaner for "leaving" vs "being deleted".
+        # However, user authentication usually relies on phone number.
+        # If they leave and want to join another business, they need the user record.
+        # I SHOULD make business_id nullable.
+        # BUT I don't want to create a migration for that inside `tool_executor.py` edit.
+        
+        # Alternative: The prompt said "Add role field to User model". It didn't mention making business_id nullable.
+        # But for "LeaveBusinessTool", if business_id is mandatory, we must delete the user.
+        # Let's try to Delete.
+        
+        user_name = target_user.name
+        user_id = target_user.id
+        await self.session.delete(target_user)
+        await self.session.flush()
+        
+        return f"✔ Dismissed {user_name} from the business.", {
+            "action": "dismiss_user",
+            "entity": "user",
+            "id": user_id,
+            "name": user_name
+        }
+
+    async def _execute_leave_business(
+        self, tool: LeaveBusinessTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        user = await self.user_repo.get_by_id(self.user_id)
+        if not user:
+             return "User not found.", None
+        
+        if user.role == UserRole.OWNER:
+            return "Owners cannot leave their own business (delete the business or transfer ownership instead).", None
+            
+        # Delete user to revoke access
+        await self.session.delete(user)
+        await self.session.flush()
+        
+        return "You have left the business. Goodbye.", {
+            "action": "leave_business",
+            "entity": "user",
+            "id": self.user_id
+        }

@@ -67,12 +67,59 @@ As a Field Employee, I want to complete jobs using a simple text command like "d
 
 ---
 
+### User Story 5 - Flexible Onboarding (Priority: P2)
+
+As a Business Owner, I want to invite new people to join my business from the **Employee Management settings**, so that I can easily expand my team via a controlled interface.
+
+**Why this priority**: Streamlines the growth of the business team.
+
+**Independent Test**: Business owner enters "Employee Management" and then sends "Invite [Phone/Email]".
+
+**Acceptance Scenarios**:
+
+1. **Given** I am in the Employee Management settings, **When** I send "invite +123456789", **Then** the system sends a message to that number: "You have been invited to join [Business Name]. Type 'Join' to accept."
+
+---
+
+### User Story 6 - Role Management (Promotion) (Priority: P2)
+
+As a Business Owner, I want to promote an employee to "manager" within the **Employee Management settings** so that they can assist with administrative tasks.
+
+**Why this priority**: Essential for growing businesses.
+
+**Independent Test**: Business owner sends "Promote [Employee Name/ID] to manager" while in the management context.
+
+---
+
+### User Story 7 - Voluntary Departure (Priority: P3)
+
+As an Employee, I want to be able to leave a business if I am no longer working there, so that I stop receiving shift notifications.
+
+**Why this priority**: Critical for user privacy.
+
+---
+
+### User Story 8 - Forceful Departure (Dismissal) (Priority: P2)
+
+As a Business Owner, I want to remove an employee from my business via the **Employee Management settings**, so that they lose access to business data and stop receiving jobs.
+
+**Why this priority**: Essential for security and staff turnover management.
+
+**Independent Test**: Owner identifies an employee in settings and triggers "Remove [Employee Name/ID]".
+
+**Acceptance Scenarios**:
+
+1. **Given** "John Doe" is an employee, **When** the owner says "Remove John Doe" in the management settings, **Then** John is dissociated from the business and notified.
+
+---
+
 ### Edge Cases
 
 - **Out-of-order Completion**: Employee forgets to finish Job #1 and tries to finish Job #2. System should handle this gracefully (perhaps asking if Job #1 is also done).
 - **Missing Geocodes**: If a job address isn't geocoded, the map link should fallback to a standard search link or notify the employee.
 - **Multiple Employees**: Ensuring "done #123" only works if the job is actually assigned to the sender.
 - **Re-routing**: If the schedule changes mid-day, the "Next Job" logic should reflect the updated sequence.
+- **Invite Expiration/Duplicate**: Handling cases where an invite is sent to someone already in the business or multiple invites are pending.
 
 ## Requirements *(mandatory)*
 
@@ -85,12 +132,18 @@ As a Field Employee, I want to complete jobs using a simple text command like "d
 - **FR-005**: The `Service` entity MUST be extended to store optional "Reminder Text" or "Upsell Prompts".
 - **FR-006**: Automated job detail messages MUST include: Customer Name, Address (with Map link), Phone Number (as a clickable tel: link), and all applicable Service Reminders.
 - **FR-007**: The system MUST verify that the sender has permission to mark a job as 'done' (i.e., they are the assigned employee or an owner).
+- **FR-008**: The system MUST allow any user to initiate a conversation via Email, SMS, or WhatsApp.
+- **FR-009**: The system MUST implement an **Employee Management Context** (settings screen) accessible only by Owners/Managers.
+- **FR-010**: The system MUST restrict Invitation, Promotion, and Removal tools to the Employee Management context.
+- **FR-011**: The system MUST support a "Join" confirmation that transitions an invited user into an "Employee" role.
+- **FR-012**: The system MUST allow Business Owners to promote Employees to "Manager" role and remove them (Forceful Departure) from the business.
 
 ### Key Entities
 
 - **Job**: Tracks status, assigned employee, and sequence in the daily route.
 - **Service**: Stores "Type" and associated "Reminder/Nudge" text.
-- **User (Employee)**: Stores shift start time and preferred communication channel (WhatsApp/SMS).
+- **User (Employee)**: Stores shift start time, preferred communication channel (WhatsApp/SMS), and role (Employee/Manager/Owner).
+- **Invitation**: (New) Tracks pending invitations, including inviter, invitee identifier, and status.
 
 ## Success Criteria *(mandatory)*
 
@@ -100,3 +153,4 @@ As a Field Employee, I want to complete jobs using a simple text command like "d
 - **SC-002**: Transition time (from "done" to "next job" details) is under 3 seconds in typical network conditions.
 - **SC-003**: Owners can configure or update a service reminder via the management interface and have it active for the next "push" message immediately.
 - **SC-004**: System correctly handles `done #[ID]` commands with 99% accuracy for valid IDs.
+- **SC-005**: 100% of invitation flows result in either an accepted "Join" or a clear pending status.

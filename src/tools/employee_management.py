@@ -27,6 +27,25 @@ class JoinBusinessTool(BaseModel):
     Use this when the user says 'Join' or 'Accept invitation'."""
     pass
 
+class PromoteUserTool(BaseModel):
+    """Promote an employee to a manager role.
+    Use this when the owner says 'Make John a manager' or 'Promote Sarah'."""
+    
+    employee_query: str = Field(..., description="The name or phone number of the employee to promote")
+
+class DismissUserTool(BaseModel):
+    """Dismiss/Remove an employee from the business.
+    Use this when the owner says 'Fire John', 'Remove Sarah from the team', etc.
+    This revokes their access to the business."""
+    
+    employee_query: str = Field(..., description="The name or phone number of the employee to dismiss")
+
+class LeaveBusinessTool(BaseModel):
+    """Leave the current business.
+    Use this when an employee says 'I want to quit', 'Leave business', etc.
+    This removes the current user from the business."""
+    pass
+
 class ExitEmployeeManagementTool(BaseModel):
     """Exit the employee management mode.
     Use this when the user says 'exit', 'quit', 'back', or 'done'."""

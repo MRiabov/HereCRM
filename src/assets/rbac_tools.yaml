@@ -107,3 +107,12 @@ tools:
   GetSyncStatusTool:
     role: owner
     friendly_name: "view sync status"
+  PromoteUserTool:
+    role: owner
+    friendly_name: "promote an employee"
+  DismissUserTool:
+    role: owner
+    friendly_name: "dismiss an employee"
+  LeaveBusinessTool:
+    role: employee
+    friendly_name: "leave the business"

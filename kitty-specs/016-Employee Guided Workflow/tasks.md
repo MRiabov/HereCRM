@@ -40,3 +40,22 @@ This feature provides a convenience layer for field employees, guiding them thro
   - [ ] **T008**: Add `apscheduler` to project dependencies and initialize basic `SchedulerService`.
   - [ ] **T009**: Implement "Shift Start" check and "Morning Overview" notification logic in `SchedulerService`.
   - [ ] **T010**: Register `SchedulerService` in `src/main.py` lifespan and update system prompts for workflow awareness.
+
+### WP04: Daily Shift Scheduler
+
+- **Goal**: Implement the actual scheduling logic for the daily start.
+- **Priority**: High
+- **Dependencies**: WP03
+- **Subtasks**: (See [WP04-daily-shift-scheduler.md](tasks/WP04-daily-shift-scheduler.md))
+
+### WP05: Employee Invitation Flow
+
+- **Goal**: Implement chat-based invitation and onboarding.
+- **Priority**: Medium
+- **Subtasks**: (See [WP05-employee-invitation-flow.md](tasks/WP05-employee-invitation-flow.md))
+
+### WP06: Promotion and Departure
+
+- **Goal**: Implement role-based promotion, dismissal, and self-departure within management settings.
+- **Priority**: Medium
+- **Subtasks**: (See [WP06-promotion-and-departure.md](tasks/WP06-promotion-and-departure.md))
