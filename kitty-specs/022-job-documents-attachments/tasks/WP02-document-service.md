@@ -1,10 +1,12 @@
 ---
 work_package_id: "WP02"
 title: "Document Service Core"
-lane: "doing"
+lane: "done"
 dependencies: ["WP01"]
 subtasks: ["T005", "T006", "T007"]
 shell_pid: "15223"
+reviewed_by: "MRiabov"
+review_status: "approved"
 ---
 # Work Package 02: Document Service Core
 
@@ -75,3 +77,7 @@ With the data model and storage layer in place (WP01), we need the glue logic. T
 **Validation**:
 * Auto-association logic correctly picks active job.
 * Documents are persisted.
+
+## Activity Log
+
+- 2026-01-23T10:21:19Z – unknown – shell_pid=15223 – lane=done – WP02 - Document Service Core completed. Tests passed.
