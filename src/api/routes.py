@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
 from src.models import Message
+from src.api.dependencies.auth import verify_admin_access
 from src.services.auth_service import AuthService
 from src.services.whatsapp_service import WhatsappService
 from src.services.quote_service import QuoteService
@@ -240,7 +241,7 @@ async def webhook(
         )
 
 
-@router.get("/history/{phone_number}")
+@router.get("/history/{phone_number}", dependencies=[Depends(verify_admin_access)])
 async def get_history(
     phone_number: str,
     db: AsyncSession = Depends(get_db),
