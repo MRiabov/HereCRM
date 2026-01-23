@@ -1,10 +1,12 @@
 ---
 work_package_id: "WP03"
 title: "Ingestion Pipelines (WhatsApp & Links)"
-lane: "doing"
+lane: "done"
 dependencies: ["WP02"]
 subtasks: ["T008", "T009", "T010", "T011"]
 shell_pid: "31834"
+reviewed_by: "MRiabov"
+review_status: "approved"
 ---
 # Work Package 03: Ingestion Pipelines (Media & Links)
 
@@ -87,3 +89,7 @@ We need to hook into the messaging pipeline. When a user sends a photo or a Drop
 * Media uploads trigger document creation.
 * Links triggers document creation.
 * Confirmation is sent.
+
+## Activity Log
+
+- 2026-01-23T10:49:54Z – unknown – shell_pid=31834 – lane=done – WP03 - Ingestion Pipelines completed. All tests passed.
