@@ -105,7 +105,7 @@
 **Dependencies**: WP06
 
 - [x] T028: Create `GSM7Validator` utility in `src/services/channels/utils.py`. <!-- id: 27 -->
-- [ ] T029: Implement normalization logic (replace smart quotes, emojis, accents, etc. with GSM-7 equivalents). <!-- id: 28 -->
+- [x] T029: Implement normalization logic (replace smart quotes, emojis, accents, etc. with GSM-7 equivalents). <!-- id: 28 -->
 - [ ] T030: Integrate validator into `SMSMessagingService.send_sms` (before sending). <!-- id: 29 -->
 - [ ] T031: Add unit tests for character replacement and validation. <!-- id: 30 -->
 
