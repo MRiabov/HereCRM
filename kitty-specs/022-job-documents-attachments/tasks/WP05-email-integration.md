@@ -1,9 +1,11 @@
 ---
 work_package_id: "WP05"
 title: "Email Integration"
-lane: "planned"
+lane: "doing"
 dependencies: ["WP02"]
 subtasks: ["T015", "T016"]
+agent: "Antigravity"
+shell_pid: "106664"
 ---
 # Work Package 05: Email Integration
 
@@ -52,3 +54,7 @@ Postmark can POST JSON webhooks for inbound emails. We need to handle this paylo
 **Validation**:
 * Send Mock Postmark JSON to endpoint.
 * Verify Document created.
+
+## Activity Log
+
+- 2026-01-23T15:44:31Z – Antigravity – shell_pid=106664 – lane=doing – Started implementation via workflow command
