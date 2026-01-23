@@ -222,6 +222,14 @@ class CustomerRepository(BaseRepository[Customer]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
+    async def get_by_email(self, email: str, business_id: int) -> Optional[Customer]:
+        query = select(Customer).where(
+            Customer.email.ilike(email), 
+            Customer.business_id == business_id
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
     def add(self, item: Customer):
         if item.name:
             item.name = item.name.title()

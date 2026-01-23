@@ -1,6 +1,8 @@
 import hmac
 import hashlib
 import logging
+import base64
+import email.utils
 
 from typing import Tuple
 from twilio.request_validator import RequestValidator
@@ -12,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
-from src.models import Message
+from src.models import Message, DocumentType, Customer
 from src.services.auth_service import AuthService
 from src.services.whatsapp_service import WhatsappService
 from src.services.quote_service import QuoteService
@@ -486,7 +488,8 @@ async def postmark_inbound_webhook(
         payload = await request.json()
         
         # Extract email fields
-        from_email = payload.get("From", "")
+        raw_from = payload.get("From", "")
+        _, from_email = email.utils.parseaddr(raw_from)
         subject = payload.get("Subject", "")
         text_body = payload.get("TextBody", "")
         
@@ -519,6 +522,62 @@ async def postmark_inbound_webhook(
         
         # Ensure user has an email (it should always have one at this point)
         user_identifier = user.email or from_email
+
+        # Handle Attachments (WP05)
+        attachments = payload.get("Attachments", [])
+        if attachments:
+            from src.services.document_service import DocumentService
+            from src.repositories import CustomerRepository
+            
+            customer_repo = CustomerRepository(auth_service.session)
+            # Try to find customer by email
+            customer = await customer_repo.get_by_email(from_email, user.business_id)
+            
+            if not customer:
+                # If no customer exists, we create one to attach documents to.
+                # Use name from email if possible, or fallback
+                # Postmark "From" might correspond to "Name <email>" but here we have parsed 'from_email' which is just email?
+                # Actually line 489: from_email = payload.get("From", "") 
+                # Postmark "From" is usually "Full Field". 
+                # The code used `auth_service.get_or_create_user_by_identity` which handles parsing maybe?
+                # Let's assume from_email is the address for now, or check if it needs parsing.
+                # `auth_service.get_or_create_user_by_identity` is robust.
+                
+                # We'll create a customer with available info
+                clean_name = from_email.split("<")[0].strip().replace('"','') if "<" in from_email else from_email.split("@")[0]
+                # If from_email has angle brackets, we should probably extract the email part for the field `email`.
+                # But let's assume `get_by_email` expects the actual email.
+                
+                # Simplified creation:
+                customer = Customer(
+                    business_id=user.business_id,
+                    name=clean_name or "New Customer",
+                    email=from_email if "@" in from_email else None, # Rough check
+                    pipeline_stage="contacted"
+                )
+                customer_repo.add(customer)
+                await auth_service.session.flush()
+            
+            document_service = DocumentService(auth_service.session)
+            for attachment in attachments:
+                name = attachment.get("Name")
+                content_b64 = attachment.get("Content")
+                content_type = attachment.get("ContentType")
+                
+                if name and content_b64:
+                    try:
+                        file_bytes = base64.b64decode(content_b64)
+                        await document_service.create_document(
+                            customer_id=customer.id,
+                            file_obj=file_bytes,
+                            filename=name,
+                            mime_type=content_type,
+                            doc_type=DocumentType.CUSTOMER_UPLOAD
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to process attachment {name}: {e}")
+                        # Continue with other attachments
+
         
         # Process message using WhatsappService (unified message handling)
         response_text = await whatsapp_service.handle_message(
