@@ -17,7 +17,7 @@ Implement a conversational billing system integrated with Stripe Subscriptions. 
 
 **Language/Version**: Python 3.12 (inferred)
 **Primary Dependencies**: Stripe Python SDK, SQLAlchemy (DB), FastAPI (Webhooks).
-**Storage**: PostgreSQL (existing `Business` table update, new `BusinessSubscription` logic/fields).
+**Storage**: SQLite (primary) + SQLCipher (credentials) (existing `Business` table update with `message_credits`, `billing_cycle_anchor`).
 **Testing**: pytest (mocking Stripe API).
 **Target Platform**: Linux server / Containerized.
 **Project Type**: Web Application + Background Services.

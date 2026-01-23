@@ -93,9 +93,24 @@ As a business owner, I want to know how many messages I've sent and be billed au
 
 **Acceptance Scenarios**:
 
-1. **Given** a business has sent 500 messages this month (under 1000 limit), **When** they check billing status, **Then** it shows "Messages: 500/1000 (Included)".
-2. **Given** a business has sent 1050 messages, **When** they check billing status, **Then** it shows "Messages: 1050 (50 overage). Estimated Overage Cost: $1.00".
-3. **Given** the billing cycle ends, **When** the invoice is generated, **Then** it includes the $1.00 overage charge.
+1. **Given** a business has a positive credit balance (e.g., 500 remaining), **When** they check billing status, **Then** it shows "500 credits remaining".
+2. **Given** a business has a negative balance (e.g., -50), **When** they check billing status, **Then** it shows "Overage: 50 msgs (Est. Cost: $1.00)".
+3. **Given** the invoice is generated, **When** the cycle renews, **Then** the overage is charged AND 1000 new credits are added to the balance.
+
+---
+
+### User Story 7 - Purchase Messaging Credits (Priority: P2)
+
+As a high-volume user, I want to pre-pay for message credits in bulk (top-ups), so that I can avoid overage charges and manage my budget.
+
+**Why this priority**: Allows users to manage costs proactively.
+
+**Independent Test**: Can be tested by requesting "upgrade messaging" or "buy message credits", paying, and verifying the `message_credits` balance increases by 1000.
+
+**Acceptance Scenarios**:
+
+1. **Given** I am in BILLING state, **When** I say "buy message credits", **Then** the system offers a 1000-credit pack and a payment link.
+2. **Given** I complete the payment, **When** I check billing status, **Then** my available credits have increased by 1000.
 
 ---
 
@@ -119,9 +134,11 @@ As a business owner, I want to know how many messages I've sent and be billed au
 - **FR-007**: System MUST allow adding "Seats" independently of "Addons".
 - **FR-008**: System MUST provide a clear confirmation message with the total amount before generating the payment link.
 - **FR-009**: System MUST track the number of outgoing messages per business per billing cycle.
-- **FR-010**: System MUST include the first 1000 messages per month in the base plan at no extra cost.
-- **FR-011**: System MUST accumulate usage and charge a set fee (e.g. $0.02) per message for every message exceeding the 1000 message limit, added to the invoice at the end of the billing cycle.
-- **FR-012**: System MUST display current message usage and estimated overage costs in the billing status response.
+- **FR-010**: System MUST add 1000 message credits to the business balance at the start of each billing cycle (or upon invoice creation), allowing unused credits to carry over.
+- **FR-011**: System MUST decrement the message credit balance for each message sent. If the balance is negative, the system considers it overage and charges a set fee (e.g. $0.02) per message on the next invoice.
+- FR-013: System MUST allow users to purchase one-time messaging credit packs (e.g. 1000 credits) which are immediately added to their balance.
+- FR-014: System SHOULD append a warning to message responses when the credit balance is low (e.g. < 50) or negative, instructing the user to top up.
+- FR-012: System MUST display current message usage and estimated overage costs in the billing status response.
 
 ### Key Entities
 

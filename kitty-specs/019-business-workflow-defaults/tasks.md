@@ -123,6 +123,35 @@
 
 ---
 
+## Work Package WP05: Geocoding Integration (Priority: P1)
+
+**Goal**: Integrate business defaults into address resolution.
+**Independent Test**: Adding a job with a street name only (e.g., "High Street 34") correctly resolves to the business's default city and country.
+**Prompt**: `tasks/WP05-geocoding-integration.md`
+
+### Included Subtasks
+
+- [ ] T013 Update `Business` model with `default_city` and `default_country` columns
+- [ ] T014 Update `WorkflowSettingsService` to handle geocoding defaults
+- [ ] T015 Integrate defaults into `ToolExecutor` (AddJob, AddLead, EditCustomer)
+- [ ] T016 Integrate defaults into `SearchService` for proximity searches
+- [ ] T017 Add integration test verifying address resolution with defaults
+
+### Implementation Notes
+
+- Use the existing `geocode` method arguments in `GeocodingService`.
+- Defaults should be fetched from the `Business` model at the start of tool execution.
+
+### Parallel Opportunities
+
+- T014 and T015 can proceed in parallel once the model is updated.
+
+### Dependencies
+
+- Depends on WP01.
+
+---
+
 ## Dependency & Execution Summary
 
 - **Sequence**: WP01 → WP02 & WP03 (parallel) → WP04.

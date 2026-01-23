@@ -19,7 +19,7 @@ This feature introduces configurable workflow defaults for businesses to tailor 
 **Project Type**: Single project (Conversational Backend)  
 **Performance Goals**: Low latency for tool execution and help text rendering (< 100ms)  
 **Constraints**: Settings must be persisted as **strict columns** in the `Business` table (SQLite); RBAC enforcement for settings modification. Avoid JSON fields for core settings.  
-**Scale/Scope**: ~6-10 workflow toggles, applied globally per business.
+**Scale/Scope**: ~8-12 workflow settings and defaults, applied globally per business.
 
 ## Constitution Check
 

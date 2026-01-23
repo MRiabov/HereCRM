@@ -25,7 +25,7 @@ history:
 
 ## Objectives & Success Criteria
 
-- Implement usage-based billing for messaging (1000 free, then $0.02/msg).
+- Implement usage-based billing for messaging (with extra cost per message).
 - Track message usage per billing period.
 - Report usage to Stripe (Metered Billing) or calculate locally and add to invoice.
 - Display usage stats to users.
@@ -44,7 +44,8 @@ history:
 - **Steps**:
   1. Add `message_count_current_period` (int, default 0) to `Business` model.
   2. Add `billing_cycle_anchor` (datetime, nullable) to `Business` model (to know when to reset count).
-  3. Generate and run Alembic migration.
+  3. Add `message_credits` (int, default 0) to `Business` model (for credit balance).
+  4. Generate and run Alembic migration.
 - **Files**: `src/models.py`, `src/repositories.py` (if needed)
 
 ### Subtask T021 – Update BillingService for usage tracking
@@ -52,12 +53,12 @@ history:
 - **Purpose**: Track messages and handle Stripe logic.
 - **Steps**:
   1. Implement `track_message_sent(business_id)`.
+     - Decrement `message_credits`.
      - Increment `message_count_current_period`.
-     - Logic to report to Stripe if using immediate reporting, or just track locally.
-     - *Note*: If using Stripe Metered Billing, we report usages. If using simple "add to next invoice", we might just calculate at cycle end. However, for real-time visibility and Stripe handling, reporting to a metered price ID on the subscription item is standard.
-     - Ensure logic handles the "1000 free" tier (either via Stripe Price configuration or application logic).
-     - *Decision*: Configure Stripe Price with tiered volume (Tier 1: 0-1000 free, Tier 2: Inf @ 0.02). Report *total* usage or *delta*? Usually delta.
-  2. Ensure `process_webhook_event` handles cycle reset (`invoice.created` or `subscription.updated`) to reset local `message_count_current_period`.
+     - If `message_credits` < 0, calculate overage and report to Stripe or track.
+  2. Ensure `process_webhook_event` handles cycle reset (`invoice.created`) to:
+     - Reset `message_count_current_period`.
+     - Add 1000 credits to `message_credits`.
 - **Files**: `src/services/billing_service.py`
 
 ### Subtask T022 – Update billing status display
@@ -87,6 +88,15 @@ history:
      - Cost calculation logic.
 - **Files**: `tests/test_usage_billing.py`
 
+### Subtask T025 – Implement Messaging Top-up
+
+- **Purpose**: Allow users to buy credits.
+- **Steps**:
+  1. Update `RequestUpgradeTool` to accept "messaging".
+  2. Update `BillingService.create_upgrade_link` to support one-time payment mode.
+  3. Handle `checkout.session.completed` (payment mode) to add credits.
+- **Files**: `src/uimodels.py`, `src/services/billing_service.py`
+
 ## Risks & Mitigations
 
 - **Double counting**: Ensure retries don't double count (idempotency).
@@ -95,11 +105,12 @@ history:
 
 ## Definition of Done Checklist
 
-- [ ] **T020**: Update `Business` model to include `message_count_current_period` (int) and `billing_cycle_anchor` (datetime). <!-- id: 19 -->
-- [ ] **T021**: Update `BillingService` to support usage tracking: `track_message_sent(business_id)` and logic to report to Stripe Metered Billing (tiered price: 0-1000 free, >1000 $0.02) ensuring charges are added to the period-end invoice. <!-- id: 20 -->
-- [ ] **T022**: Update `get_billing_status` to formatting to include "Messages: X/1000" and estimated overage cost. <!-- id: 21 -->
-- [ ] **T023**: Connect `WhatsAppService` (or message sender) to `BillingService.track_message_sent` to increment usage on every outbound message. <!-- id: 22 -->
-- [ ] **T024**: Verify usage tracking and cost calculation with new tests in `tests/test_usage_billing.py`. <!-- id: 23 -->
+- [x] **T020**: Update `Business` model to include `message_count_current_period` (int), `billing_cycle_anchor` (datetime), and `message_credits` (int). <!-- id: 19 -->
+- [x] **T021**: Update `BillingService` to support usage tracking: `track_message_sent` decrements credits, reports overage if negative. Reset logic adds 1000 credits/month. <!-- id: 20 -->
+- [x] **T022**: Update `get_billing_status` to formatting to include "X credits remaining" or "Overage: Y". <!-- id: 21 -->
+- [x] **T023**: Connect `WhatsAppService` (or message sender) to `BillingService.track_message_sent` to increment usage on every outbound message. <!-- id: 22 -->
+- [x] **T024**: Verify usage tracking and cost calculation with new tests in `tests/test_usage_billing.py` and `tests/test_billing_fixes.py`. <!-- id: 23 -->
+- [x] **T025**: Implement messaging top-up flow and payment handling. <!-- id: 24 -->
 
 ## Review Guidance
 

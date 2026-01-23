@@ -123,6 +123,22 @@ Controls whether the system sends automatic reminders for scheduled jobs and fol
 
 **Default**: false
 
+#### 2.1.7. Geocoding Context Defaults
+
+Controls the default geographical context used for resolving job and customer addresses when details are missing in the user input.
+
+**Options**:
+
+- **Default City**: The city where the business primarily operates (e.g., "Dublin").
+- **Default Country**: The country where the business primarily operates (e.g., "Ireland").
+
+**Behavior**:
+
+- If a user provides an address without a city/country (e.g., "High Street 34"), the system appends these defaults for geocoding.
+- If a user provides a city/country explicitly (e.g., "High Street 34, Waterford"), the defaults are bypassed or used only as a fallback.
+
+**Default**: Empty (context-aware geocoding relies on user input only).
+
 ### 2.2. Settings Storage
 
 All workflow settings must be stored as **columns** on the `Business` model.
@@ -135,6 +151,8 @@ All workflow settings must be stored as **columns** on the `Business` model.
 - `workflow_tax_inclusive` (boolean)
 - `workflow_include_payment_terms` (boolean)
 - `workflow_enable_reminders` (boolean)
+- `default_city` (string)
+- `default_country` (string)
 
 ### 2.3. Settings Management Interface
 
@@ -202,6 +220,8 @@ For existing businesses without workflow settings:
 - `workflow_tax_inclusive`
 - `workflow_include_payment_terms`
 - `workflow_enable_reminders`
+- `default_city`
+- `default_country`
 
 **Note**: Database migration is required to add these columns.
 
@@ -250,7 +270,7 @@ For existing businesses without workflow settings:
 1. **User** (Employee) sends: "show workflow settings"
 2. **System** replies:
 
-   ```
+   ```markdown
    📋 Workflow Settings:
    • Invoicing: Manual
    • Quoting: Never
@@ -262,7 +282,7 @@ For existing businesses without workflow settings:
 
 ## 5. Success Criteria
 
-- Business owners can configure all six workflow settings through a conversational interface
+- Business owners can configure all workflow settings, including geocoding defaults, through a conversational interface
 - Settings are persisted in `Business.settings` JSON field
 - UI elements (tabs, buttons, menus) are hidden when corresponding workflow is set to "Never"
 - Tool calls for disabled workflows return appropriate error messages

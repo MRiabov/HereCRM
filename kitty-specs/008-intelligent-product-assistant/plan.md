@@ -59,9 +59,9 @@ src/
 │   ├── help_service.py  # [NEW] RAG orchestration
 │   └── whatsapp_service.py # Integration point
 └── assets/
-    ├── prompts.yaml     # Prompt templates
-    ├── manual.md        # Product manual
-    └── channels.yaml    # [NEW] Channel-specific settings
+├── prompts.yaml     # Prompt templates
+├── manual.md        # Product manual
+└── channels.yaml    # [NEW] Channel-specific settings
 ```
 
 **Structure Decision**: Single Project (Standard). The logic is encapsulated in a new `HelpService` to maintain SRP.
