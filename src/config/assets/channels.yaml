@@ -1,0 +1,10 @@
+whatsapp:
+  max_length: 150
+  style: concise
+email:
+  max_length: 1000
+  style: detailed
+sms:
+  max_length: 160
+  style: direct
+  provider: twilio

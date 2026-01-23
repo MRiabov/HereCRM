@@ -62,7 +62,8 @@ External systems (e.g., Zapier, Contact Forms) can inject messages or leads into
 
 ### Functional Requirements
 
-- **FR-001**: System MUST support **Twilio** for inbound/outbound SMS.
+- **FR-001**: System MUST support **TextGrid** as the *default* SMS provider for outbound/inbound SMS.
+- **FR-001a**: System MUST maintain **Twilio** support as a configurable option (default disabled) using a common `SMSMessagingService` interface.
 - **FR-002**: System MUST support **Postmark** for inbound/outbound Email (including threading logic).
 - **FR-003**: System MUST provide a **Generic Webhook** endpoint accepting a standard JSON schema for inbound messages.
 - **FR-004**: System MUST refactor the `User` model to use an **Integer ID** as the primary key, supporting `phone_number` and `email` as optional, unique, indexable fields.
@@ -80,7 +81,8 @@ External systems (e.g., Zapier, Contact Forms) can inject messages or leads into
 
 ### Measurable Outcomes
 
-- **SC-001**: SMS messages are sent/received via Twilio with < 2s internal processing latency.
+- **SC-001**: SMS messages are sent/received via TextGrid (or Twilio) with < 2s internal processing latency.
+- **SC-001a**: Default SMS configuration uses TextGrid to achieve ~6x cost reduction compared to Twilio.
 - **SC-002**: Email messages are sent/received via Postmark with threading headers correctly maintained.
 - **SC-003**: "Auto-confirm" actions execute successfully after the timeout window (±5s accuracy) without user intervention.
 - **SC-004**: System handles concurrent inputs from different channels for the same user without data corruption.

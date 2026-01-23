@@ -43,12 +43,10 @@ from src.uimodels import (
     SendStatusTool,
     LocateEmployeeTool,
     CheckETATool,
-    CheckETATool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.employee_management import (
     InviteUserTool,
-    JoinBusinessTool,
     ExitEmployeeManagementTool,
 )
 
@@ -221,8 +219,8 @@ class WhatsappService:
         
         if effective_channel == "sms" and user.phone_number:
             try:
-                from src.services.twilio_service import TwilioService
-                await TwilioService().send_sms(user.phone_number, reply)
+                from src.services.sms_factory import get_sms_service
+                await get_sms_service().send_sms(user.phone_number, reply)
             except Exception as e:
                 self.logger.error(f"Failed to send SMS reply to {user.id}: {e}")
 
@@ -918,7 +916,7 @@ class WhatsappService:
             # Execute Invite logic
             try:
                 # Basic context check again? already in state.
-                invitation = await self.invitation_service.create_invitation(
+                await self.invitation_service.create_invitation(
                     user.business_id, user.id, tool_call.identifier
                 )
                 return f"Invitation sent to {tool_call.identifier}."
@@ -1009,8 +1007,8 @@ class WhatsappService:
                         recipient = user.phone_number if active_channel == "sms" else (user.email or user.phone_number)
                         
                         if active_channel == "sms" and user.phone_number:
-                            from src.services.twilio_service import TwilioService
-                            await TwilioService().send_sms(user.phone_number, result)
+                            from src.services.sms_factory import get_sms_service
+                            await get_sms_service().send_sms(user.phone_number, result)
                         elif active_channel == "email" and (user.email or user.phone_number): # Support email sending
                              from src.services.postmark_service import PostmarkService
                              # We need basic subject

@@ -11,12 +11,12 @@ The planner will not begin until all planning questions have been answered—cap
 
 ## Summary
 
-Implement multi-channel communication support including Twilio (SMS), Postmark (Email), and a detailed Generic Webhook. Refactor the `User` model to support multiple identities (email/phone) with an Integer ID. Introduce a configurable "Auto-Confirmation" state machine that processes pending actions after a timeout (default 45s) on expensive channels, utilizing both persistent state (for restart recovery) and async timers (for runtime responsiveness).
+Implement multi-channel communication support including TextGrid (default SMS), Twilio (optional SMS), Postmark (Email), and a detailed Generic Webhook. Refactor SMS logic behind an `SMSMessagingService` interface to support switching providers. Refactor the `User` model to support multiple identities (email/phone) with an Integer ID. Introduce a configurable "Auto-Confirmation" state machine.
 
 ## Technical Context
 
 **Language/Version**: Python 3.12 (inferred from environment)
-**Primary Dependencies**: Twilio SDK, Postmark SDK (or requests), FastAPI/Streamlit (existing stack), SqlAlchemy/Alembic (DB).
+**Primary Dependencies**: TextGrid SDK (or API), Twilio SDK, Postmark SDK (or requests), FastAPI/Streamlit (existing stack), SqlAlchemy/Alembic (DB).
 **Storage**: PostgreSQL (existing)
 **Testing**: pytest
 **Target Platform**: Linux server / Containerized
