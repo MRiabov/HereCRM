@@ -5,6 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 import enum
 from src.database import Base
 from src.models.integration_config import IntegrationConfig, IntegrationType
+from src.models.document import Document, DocumentType
 
 
 class UserRole(str, enum.Enum):
@@ -214,6 +215,7 @@ class Customer(Base):
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     name: Mapped[str] = mapped_column(String, index=True)
     phone: Mapped[Optional[str]] = mapped_column(String)
+    email: Mapped[Optional[str]] = mapped_column(String, index=True)
     details: Mapped[Optional[str]] = mapped_column(Text)
     street: Mapped[Optional[str]] = mapped_column(String)
     city: Mapped[Optional[str]] = mapped_column(String)
@@ -234,6 +236,7 @@ class Customer(Base):
     jobs: Mapped[List["Job"]] = relationship(back_populates="customer")
     quotes: Mapped[List["Quote"]] = relationship(back_populates="customer")
     availability: Mapped[List["CustomerAvailability"]] = relationship(back_populates="customer", cascade="all, delete-orphan")
+    documents: Mapped[List["Document"]] = relationship(back_populates="customer", cascade="all, delete-orphan")
     
     # QuickBooks sync tracking
     quickbooks_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
