@@ -17,7 +17,7 @@ class TextGridService(SMSMessagingService):
                 "TextGrid credentials not fully configured. SMS functionality may be limited."
             )
 
-    async def send_sms(self, to_number: str, body: str) -> bool:
+    async def _send_provider_sms(self, to_number: str, body: str) -> bool:
         """
         Send an SMS message via TextGrid API.
         
