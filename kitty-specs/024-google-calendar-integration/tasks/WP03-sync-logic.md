@@ -1,9 +1,11 @@
 ---
 work_package_id: WP03
 title: Calendar Sync Logic
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks: [T010, T011, T012, T013]
+agent: "Antigravity"
+shell_pid: "318543"
 ---
 
 # WP03 - Calendar Sync Logic (Service Layer)
@@ -81,3 +83,7 @@ Now that we have credentials, we need to actually create/update/delete events. T
 - **Timezones**: Critical. Ensure `job.scheduled_start` is timezone-aware or we know it's UTC. If native, `isoformat()` might look like `2023-01-01T10:00:00` (no Z). Google interprets this as "local time of the calendar".
   - *Mitigation*: Ensure we send correct timezone info. If CRM is UTC, suffix with 'Z'.
 - **Rate Limits**: `execute()` hooks are blocking.
+
+## Activity Log
+
+- 2026-01-24T11:03:45Z – Antigravity – shell_pid=318543 – lane=doing – Started implementation via workflow command
