@@ -777,11 +777,51 @@ async def google_callback(
         service = GoogleCalendarService()
         success = await service.process_auth_callback(code, user_id, db)
         if success:
+            # Notify User
+            from src.services.messaging_service import messaging_service
+            from src.repositories import UserRepository
+            
+            user_repo = UserRepository(db)
+            user = await user_repo.get(user_id)
+            
+            if user and user.phone_number:
+                # Send async notification
+                await messaging_service.send_message(
+                    recipient_phone=user.phone_number,
+                    content="✔ Google Calendar connected! Your assigned jobs will now appear on your calendar.",
+                    channel=user.preferred_channel or "whatsapp",
+                    trigger_source="system_notification"
+                )
+
             await db.commit()
-            return {"status": "success", "message": "Google Calendar connected successfully! You can close this window."}
+            
+            # Return nice HTML
+            html_content = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Connected</title>
+                <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; text-align: center; padding: 40px; background-color: #f4f4f5; color: #18181b; }
+                    .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); max-width: 400px; margin: 0 auto; }
+                    h1 { color: #10b981; margin-bottom: 16px; font-size: 24px; }
+                    p { color: #52525b; line-height: 1.5; margin-bottom: 24px; }
+                    .icon { font-size: 48px; margin-bottom: 16px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="icon">📅</div>
+                    <h1>Connected!</h1>
+                    <p>Google Calendar has been successfully linked. Your assigned jobs will now automatically appear on your calendar.</p>
+                    <p style="font-size: 14px; color: #71717a;">You can close this window now.</p>
+                </div>
+            </body>
+            </html>
+            """
+            return Response(content=html_content, media_type="text/html")
         else:
             raise HTTPException(status_code=404, detail="User not found")
     except Exception as e:
         logger.exception(f"Google callback failed: {e}")
         raise HTTPException(status_code=500, detail=f"Connection failed: {str(e)}")
-

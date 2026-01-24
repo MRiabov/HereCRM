@@ -123,6 +123,24 @@ Specialized tools for financial health and payroll, distinct from daily field CR
 
 ---
 
+## ⚙️ STATE: SETTINGS (Configuration)
+
+ Managed via the **Settings** menu or "Update settings" command.
+
+### 1. Google Calendar Integration
+
+- **Purpose**: Two-way sync of jobs to your personal/work calendar.
+- **How to Connect**:
+  - Ask the bot: "Connect Google Calendar".
+  - Or visit: `/auth/google/login?user_id=[YOUR_ID]`.
+- **What Syncs**:
+  - Jobs assigned to you -> appeared as events on Google Calendar.
+  - Updates to jobs -> update the calendar event.
+- **Troubleshooting**:
+  - If jobs don't appear, ask admin to reconnect or say "Sync Calendar".
+
+ ---
+
 ## 🛠️ ADMINISTRATION & PERMISSIONS
 
 ### 1. Tool-Level RBAC
