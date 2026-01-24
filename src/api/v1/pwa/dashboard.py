@@ -1,13 +1,11 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
 from src.database import get_db
-from src.services.auth_service import AuthService
 from src.services.crm_service import CRMService
 from src.services.dashboard_service import DashboardService
 from src.schemas.pwa import DashboardStats, RecentActivity
-from src.api.routes import get_services # Reusing existing dependency logic if suitable, or making new one
 
 router = APIRouter()
 

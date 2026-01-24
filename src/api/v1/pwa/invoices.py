@@ -2,11 +2,11 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select, desc
+from sqlalchemy.orm import joinedload
 
 from src.database import get_db
-from src.models import Invoice, Customer
+from src.models import Invoice, Job, Customer
 from src.schemas.pwa import InvoiceSchema
 
 router = APIRouter()
@@ -15,82 +15,60 @@ router = APIRouter()
 async def list_invoices(
     session: AsyncSession = Depends(get_db)
 ):
-    # HARDCODED BUSINESS ID = 1
-    # Simple query for all invoices for the business
-    # We join with Job -> Customer to get customer name if we want to enrich
-    
-    query = (
+    # Retrieve invoices with Job and Customer info
+    # HARDCODED BUSINESS ID = 1 filter
+    stmt = (
         select(Invoice)
-        .join(Invoice.job)
-        .options(selectinload(Invoice.job).selectinload(Customer.jobs)) # Complex loading might be needed
-        # Actually, let's just join Job and Customer
-        .join(Customer, Invoice.job.has(Customer.id == Invoice.job_id)) # logic might be weird, easier:
-        # Invoice -> Job -> Customer
-        # .options(selectinload(Invoice.job).selectinload(Job.customer))
-        .order_by(Invoice.created_at.desc())
-        .limit(50)
+        .join(Job)
+        .join(Customer)
+        .where(Job.business_id == 1)
+        .options(
+            joinedload(Invoice.job).joinedload(Job.customer)
+        )
+        .order_by(desc(Invoice.created_at))
     )
-    # Simplify for now: Just get invoices and let Pydantic try to fetch? NO, async doesn't like lazy load
-    # Explicit load
-    from src.models import Job
-    from src.models import Job
-    query = (
-        select(Invoice)
-        .options(selectinload(Invoice.job).selectinload(Job.customer))
-        .order_by(Invoice.created_at.desc())
-        .limit(50)
-    )
-    
-    result = await session.execute(query)
+    result = await session.execute(stmt)
     invoices = result.scalars().all()
-    
-    # Map to schema
-    output = []
+
+    response = []
     for inv in invoices:
-        output.append(InvoiceSchema(
+        # Populate schema fields
+        # InvoiceSchema needs: id, job_id, total_amount, status, created_at, public_url, customer_name
+        response.append(InvoiceSchema(
             id=inv.id,
             job_id=inv.job_id,
-            total_amount=0.0, # TODO: Invoice model doesn't have total_amount stored directly? Check model.
-            # Model check: Invoice has s3_key, public_url, payment_link, status. 
-            # Payment has amount. Job has value. 
-            # We can use Job value or sum line items.
-            # Assuming Job value for now.
+            total_amount=inv.job.value or 0.0,
             status=inv.status,
             created_at=inv.created_at,
             public_url=inv.public_url,
             customer_name=inv.job.customer.name if inv.job and inv.job.customer else "Unknown"
         ))
-    
-    # Fix total amount from Job
-    for i, inv in enumerate(invoices):
-         if inv.job and inv.job.value:
-             output[i].total_amount = inv.job.value
-
-    return output
+    return response
 
 @router.get("/{invoice_id}", response_model=InvoiceSchema)
 async def get_invoice(
     invoice_id: int,
     session: AsyncSession = Depends(get_db)
 ):
-    from src.models import Job
-    query = (
+    stmt = (
         select(Invoice)
+        .options(
+            joinedload(Invoice.job).joinedload(Job.customer)
+        )
         .where(Invoice.id == invoice_id)
-        .options(selectinload(Invoice.job).selectinload(Job.customer))
     )
-    result = await session.execute(query)
-    inv = result.scalar_one_or_none()
+    result = await session.execute(stmt)
+    invoice = result.scalar_one_or_none()
     
-    if not inv:
+    if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
-        
+
     return InvoiceSchema(
-        id=inv.id,
-        job_id=inv.job_id,
-        total_amount=inv.job.value if inv.job and inv.job.value else 0.0,
-        status=inv.status,
-        created_at=inv.created_at,
-        public_url=inv.public_url,
-        customer_name=inv.job.customer.name if inv.job and inv.job.customer else "Unknown"
+        id=invoice.id,
+        job_id=invoice.job_id,
+        total_amount=invoice.job.value or 0.0,
+        status=invoice.status,
+        created_at=invoice.created_at,
+        public_url=invoice.public_url,
+        customer_name=invoice.job.customer.name if invoice.job and invoice.job.customer else "Unknown"
     )

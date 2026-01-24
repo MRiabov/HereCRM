@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import List, Optional, Any, Dict
-from pydantic import BaseModel, Field
-from src.models import MessageRole, Job, Customer, Invoice, User
+from pydantic import BaseModel
 
 # --- Shared / Base Schemas ---
 
@@ -11,6 +10,11 @@ class UserSchema(BaseModel):
     email: Optional[str]
     phone_number: Optional[str]
     role: str
+    current_latitude: Optional[float] = None
+    current_longitude: Optional[float] = None
+    location_updated_at: Optional[datetime] = None
+    default_start_location_lat: Optional[float] = None
+    default_start_location_lng: Optional[float] = None
 
     class Config:
         from_attributes = True
@@ -22,7 +26,21 @@ class CustomerSchema(BaseModel):
     email: Optional[str] = None
     street: Optional[str] = None
     city: Optional[str] = None
+    postal_code: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     pipeline_stage: str
+
+    class Config:
+        from_attributes = True
+
+class LineItemSchema(BaseModel):
+    id: int
+    description: str
+    quantity: float
+    unit_price: float
+    total_price: float
+    service_id: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -34,8 +52,13 @@ class JobSchema(BaseModel):
     scheduled_at: Optional[datetime]
     value: Optional[float]
     location: Optional[str]
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    paid: bool = False
+    estimated_duration: int = 60
     customer: Optional[CustomerSchema]
     employee: Optional[UserSchema] = None
+    line_items: List[LineItemSchema] = []
 
     class Config:
         from_attributes = True
@@ -110,3 +133,123 @@ class InvoiceSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+# --- Quote Schemas ---
+
+class QuoteLineItemSchema(BaseModel):
+    id: int
+    description: str
+    quantity: float
+    unit_price: float
+    total: float
+    service_id: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+class QuoteSchema(BaseModel):
+    id: int
+    customer_id: int
+    total_amount: float
+    status: str
+    external_token: str
+    public_url: Optional[str]
+    created_at: datetime
+    items: List[QuoteLineItemSchema] = []
+    customer: Optional[CustomerSchema] = None
+
+    class Config:
+        from_attributes = True
+
+class QuoteCreate(BaseModel):
+    customer_id: int
+    items: List[dict] # Simplified for creation
+    status: str = "draft"
+
+# --- Request Schemas ---
+
+class RequestSchema(BaseModel):
+    id: int
+    content: str
+    status: str
+    created_at: datetime
+    customer_id: Optional[int] = None # Inferred from context usually
+    
+    class Config:
+        from_attributes = True
+
+# --- Service Catalog Schemas ---
+
+class ServiceSchema(BaseModel):
+    id: int
+    name: str
+    description: Optional[str]
+    default_price: float
+    estimated_duration: int
+    
+    class Config:
+        from_attributes = True
+
+class ServiceCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    default_price: float
+    estimated_duration: int = 60
+
+# --- Finance Schemas ---
+
+class ExpenseSchema(BaseModel):
+    id: int
+    description: str
+    amount: float
+    date: datetime
+    job_id: Optional[int] = None
+    
+    class Config:
+        from_attributes = True # If mapped to DB model later, currently maybe just ad-hoc
+
+class LedgerEntrySchema(BaseModel):
+    id: int
+    employee_id: int
+    amount: float
+    type: str # credit/debit
+    description: str
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+# --- Settings & Workflow ---
+
+class BusinessSettingsSchema(BaseModel):
+    workflow_invoicing: Optional[str]
+    workflow_quoting: Optional[str]
+    workflow_payment_timing: Optional[str]
+    workflow_tax_inclusive: Optional[bool]
+    workflow_include_payment_terms: Optional[bool]
+    workflow_enable_reminders: Optional[bool]
+    payment_link: Optional[str]
+    stripe_connected: bool
+
+class BusinessSettingsUpdate(BaseModel):
+    workflow_invoicing: Optional[str] = None
+    workflow_quoting: Optional[str] = None
+    workflow_payment_timing: Optional[str] = None
+    workflow_tax_inclusive: Optional[bool] = None
+    workflow_include_payment_terms: Optional[bool] = None
+    workflow_enable_reminders: Optional[bool] = None
+    payment_link: Optional[str] = None
+
+# --- Search ---
+
+class SearchResult(BaseModel):
+    type: str # customer, job, request
+    id: int
+    title: str
+    subtitle: Optional[str]
+    metadata: Optional[Dict[str, Any]] = None
+
+class GlobalSearchResponse(BaseModel):
+    query: str
+    results: List[SearchResult]
+

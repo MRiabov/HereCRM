@@ -31,6 +31,16 @@ except ImportError:
     pass  # PWA module not found or failed to load
 
 
+def render_header(title: str, subtitle: str = None):
+    """
+    Renders a consistent header across the application.
+    """
+    st.markdown(f"<h1 style='margin-bottom: 0px;'>{title}</h1>", unsafe_allow_html=True)
+    if subtitle:
+        st.caption(subtitle)
+    st.divider()
+
+
 def is_valid_phone(phone: str) -> bool:
     # Basic international format validation: + followed by 1-15 digits
     # Or just digits if no plus. 
@@ -41,8 +51,7 @@ def is_valid_phone(phone: str) -> bool:
 
 # --- Phone Number Modal/Overlay ---
 if "phone_number" not in st.session_state:
-    st.title("Welcome to HereCRM")
-    st.subheader("Please enter your phone number to continue")
+    render_header("Welcome to HereCRM", "Please enter your phone number to continue")
     
     with st.container(border=True):
         temp_phone = st.text_input(
@@ -67,8 +76,9 @@ if "phone_number" not in st.session_state:
 
 phone_number = st.session_state.phone_number
 
-st.title("HereCRM")
-st.caption("Advanced Text-based CRM")
+phone_number = st.session_state.phone_number
+
+render_header("HereCRM", "Advanced Text-based CRM")
 
 # Multi-user session management
 col1, col2 = st.columns([2, 1])

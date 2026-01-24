@@ -42,7 +42,7 @@ class DashboardService:
             Job.employee_id.in_(employee_ids),
             Job.scheduled_at >= start_of_day,
             Job.scheduled_at <= end_of_day
-        ).order_by(Job.scheduled_at.asc())
+        ).options(selectinload(Job.customer)).order_by(Job.scheduled_at.asc())
 
         job_result = await self.session.execute(job_stmt)
         jobs = job_result.scalars().all()

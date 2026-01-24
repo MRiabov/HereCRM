@@ -51,6 +51,7 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(webhook_router)
 app.include_router(stripe_router, prefix="/webhooks", tags=["webhooks"])
 app.include_router(integrations_v1)
+
 app.include_router(pwa_router, prefix="/api/v1/pwa")
 
 
