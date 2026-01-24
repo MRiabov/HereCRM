@@ -111,6 +111,7 @@ settings_menu: |
   Options:
   - *Workflow*: 'Workflow settings'
   - *Accounting*: 'Accounting settings'
+  - *Integrations*: 'Google Calendar', 'QuickBooks'
   - *Payroll*: 'Payroll settings'
   - *Services*: 'List', 'Add Service [Name] [Price]'
   - *Preferences*: 'Confirm by default [true/false]'
@@ -129,10 +130,11 @@ settings_workflow_menu: |
   - *Back*: 'Back'
 
 settings_accounting_menu: |
-  📊 *Accounting Settings*
+  📊 *Accounting & Integrations*
   
   Options:
   - *QuickBooks*: 'Connect QuickBooks', 'Disconnect QuickBooks'
+  - *Google Calendar*: 'Connect Google Calendar'
   - *Sync*: 'Sync QuickBooks now'
   - *Status*: 'QuickBooks status'
   - *Back*: 'Back'
@@ -177,6 +179,7 @@ help_message: |
   - *Sales Pipeline*: View sales funnel or update customer status: 'Show sales pipeline', 'Show Lost customers', 'Mark John as Not Interested'
   - *Invoice*: Generate and send an invoice: 'Send invoice to John'
   - *Send Status*: Notify customer you are on the way: 'On my way to John'. The client receives "Hello, I'm on my way to you. Will be there soon." (configurable)
+  - *Google Calendar*: Sync jobs to your calendar: 'Connect Google Calendar'
   - *Edit*: Modify an entry: 'Edit Job, Lead or Request: John on High Street 34...'
   - *Settings*: Configure preferences: 'Update settings'
   
@@ -198,6 +201,7 @@ welcome_message: |
   - *Search*: 'Show my jobs for today'
   - *Pipeline*: 'Show pipeline'
   - *Invoice*: 'Send invoice to John'
+  - *Calendar*: 'Connect Google Calendar'
   - *Send Status to customer*: 'On my way to John'
   - *Team Management*: 'Show team schedule' or 'Assign job #123 to John'
   
@@ -312,3 +316,12 @@ workflow_blocked: "⚠️ This action is currently disabled by your business wor
 stripe_setup_prompt: "🔗 Click here to connect your Stripe account and start accepting payments: {url}"
 stripe_connected: "✅ Stripe connected successfully! You can now send invoices with payment links."
 stripe_payment_received: "💰 Payment received! {customer_name} paid {amount} for Job #{job_id}."
+
+# Google Calendar
+google_calendar_connect_prompt: |
+  To connect your Google Calendar, please use this secure link:
+  {url}
+  
+  Once connected, your assigned jobs will automatically appear as events on your calendar.
+google_calendar_connected: "✅ Google Calendar connected successfully! Your jobs will now sync automatically."
+google_calendar_disconnected: "✅ Google Calendar has been disconnected."

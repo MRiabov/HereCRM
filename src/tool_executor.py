@@ -67,6 +67,9 @@ from src.uimodels import (
     DisconnectQuickBooksTool,
     QuickBooksStatusTool,
     SyncQuickBooksTool,
+    ConnectGoogleCalendarTool,
+    DisconnectGoogleCalendarTool,
+    GoogleCalendarStatusTool,
 )
 
 from src.tools.invoice_tools import SendInvoiceTool
@@ -181,6 +184,9 @@ class ToolExecutor:
             PromoteUserTool,
             DismissUserTool,
             LeaveBusinessTool,
+            ConnectGoogleCalendarTool,
+            DisconnectGoogleCalendarTool,
+            GoogleCalendarStatusTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
 
@@ -307,6 +313,12 @@ class ToolExecutor:
             return await self._execute_quickbooks_status(tool_call)
         elif isinstance(tool_call, SyncQuickBooksTool):
             return await self._execute_sync_quickbooks(tool_call)
+        elif isinstance(tool_call, ConnectGoogleCalendarTool):
+            return await self._execute_connect_google_calendar(tool_call)
+        elif isinstance(tool_call, DisconnectGoogleCalendarTool):
+            return await self._execute_disconnect_google_calendar(tool_call)
+        elif isinstance(tool_call, GoogleCalendarStatusTool):
+            return await self._execute_google_calendar_status(tool_call)
         elif isinstance(tool_call, GetWorkflowSettingsTool):
              # Just return a message, the details are in the prompt or help usually
              # But let's check if we have a handler for it?
@@ -1082,6 +1094,7 @@ class ToolExecutor:
              return "No next scheduled client found.", None
 
         # 2. Emit Event
+        print(f"DEBUG: Emitting SEND_STATUS_MESSAGE for customer={customer.id}")
         await event_bus.emit(
             "SEND_STATUS_MESSAGE",
             {
@@ -1556,3 +1569,34 @@ class ToolExecutor:
             "entity": "user",
             "id": self.user_id
         }
+
+    async def _execute_connect_google_calendar(self, tool: ConnectGoogleCalendarTool) -> Tuple[str, Optional[Dict[str, Any]]]:
+        from src.services.google_calendar_service import GoogleCalendarService
+        service = GoogleCalendarService()
+        if not service.is_configured:
+            return "Error: Google Calendar API is not configured on the server. Please contact support.", None
+        
+        # We pass user_id in the state to verify on callback
+        auth_url, _ = service.get_auth_url(state=str(self.user_id))
+        
+        return self.template_service.render("google_calendar_connect_prompt", url=auth_url), {"action": "connect", "entity": "google_calendar"}
+
+    async def _execute_disconnect_google_calendar(self, tool: DisconnectGoogleCalendarTool) -> Tuple[str, Optional[Dict[str, Any]]]:
+        user = await self.user_repo.get_by_id(self.user_id)
+        if not user:
+            return "Error: User not found.", None
+        
+        user.google_calendar_credentials = None
+        user.google_calendar_sync_enabled = False
+        await self.session.flush()
+        
+        return self.template_service.render("google_calendar_disconnected"), {"action": "disconnect", "entity": "google_calendar"}
+
+    async def _execute_google_calendar_status(self, tool: GoogleCalendarStatusTool) -> Tuple[str, Optional[Dict[str, Any]]]:
+        user = await self.user_repo.get_by_id(self.user_id)
+        if not user:
+            return "Error: User not found.", None
+        
+        connected = "Yes" if user.google_calendar_sync_enabled and user.google_calendar_credentials else "No"
+        
+        return f"📅 *Google Calendar Status*:\n- Connected: {connected}\n- Sync Enabled: {connected}", {"action": "query", "entity": "google_calendar"}

@@ -146,6 +146,10 @@ class User(Base):
     default_start_location_lat: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     default_start_location_lng: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
+    # Google Calendar Integration
+    google_calendar_credentials: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    google_calendar_sync_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+
     # Location tracking fields
     current_latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     current_longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)

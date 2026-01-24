@@ -481,16 +481,25 @@ class UpdateWorkflowSettingsTool(BaseModel):
     enable_reminders: Optional[bool] = Field(None, description="Whether to send auto-reminders")
 
 
-class ConnectQuickBooksTool(BaseModel):
-    """Initiate the OAuth flow to connect QuickBooks Online."""
-    pass
-
-
-class DisconnectQuickBooksTool(BaseModel):
-    """Disconnect the current QuickBooks Online integration."""
-    pass
-
 
 class ExitAccountingTool(BaseModel):
     """Exit the accounting management mode."""
+    pass
+
+
+class ConnectGoogleCalendarTool(BaseModel):
+    """Initiate the connection to Google Calendar.
+    Triggered when user says 'Connect Google Calendar' or 'Sync my calendar'."""
+    pass
+
+
+class DisconnectGoogleCalendarTool(BaseModel):
+    """Disconnect the currently linked Google Calendar.
+    Triggered when user says 'Disconnect Google Calendar'."""
+    pass
+
+
+class GoogleCalendarStatusTool(BaseModel):
+    """Check the status of Google Calendar integration.
+    Triggered when user says 'Google Calendar status' or 'Check calendar connection'."""
     pass

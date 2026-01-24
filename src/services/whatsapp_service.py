@@ -375,8 +375,10 @@ class WhatsappService:
         self, user: User, state_record: ConversationState, text: str
     ) -> str:
         lower_text = text.lower().strip()
+        print(f"DEBUG: _handle_waiting_confirm for user={user.id}, text='{text}'")
 
         if lower_text in ["yes", "y", "confirm"]:
+            print(f"DEBUG: Confirmed! Executing draft.")
             return await self._execute_draft(user, state_record)
 
         elif lower_text in ["no", "n", "cancel"]:

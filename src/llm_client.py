@@ -31,6 +31,9 @@ from src.uimodels import (
     LocateEmployeeTool,
     CheckETATool,
     AutorouteTool,
+    ConnectGoogleCalendarTool,
+    DisconnectGoogleCalendarTool,
+    GoogleCalendarStatusTool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.employee_management import (
@@ -285,6 +288,30 @@ class LLMParser:
                     "name": "ExportQueryTool",
                     "description": tool_desc.get("ExportQueryTool", "Export data as CSV based on search query."),
                     "parameters": ExportQueryTool.schema(),
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "ConnectGoogleCalendarTool",
+                    "description": tool_desc.get("ConnectGoogleCalendarTool", "Initiate Google Calendar connection."),
+                    "parameters": ConnectGoogleCalendarTool.schema(),
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "DisconnectGoogleCalendarTool",
+                    "description": tool_desc.get("DisconnectGoogleCalendarTool", "Disconnect Google Calendar."),
+                    "parameters": DisconnectGoogleCalendarTool.schema(),
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "GoogleCalendarStatusTool",
+                    "description": tool_desc.get("GoogleCalendarStatusTool", "Check Google Calendar status."),
+                    "parameters": GoogleCalendarStatusTool.schema(),
                 },
             }
         ])
@@ -675,6 +702,9 @@ class LLMParser:
             "ExportQueryTool": ExportQueryTool,
             "ConnectQuickBooksTool": ConnectQuickBooksTool,
             "DisconnectQuickBooksTool": DisconnectQuickBooksTool,
+            "ConnectGoogleCalendarTool": ConnectGoogleCalendarTool,
+            "DisconnectGoogleCalendarTool": DisconnectGoogleCalendarTool,
+            "GoogleCalendarStatusTool": GoogleCalendarStatusTool,
         }
 
         return await self._chat_with_retry(messages, self.tools, model_map)

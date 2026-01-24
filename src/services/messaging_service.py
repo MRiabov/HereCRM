@@ -341,6 +341,41 @@ class MessagingService:
                 business_id=business_id,
             )
 
+    async def handle_send_status_message(self, data: dict):
+        """
+        Handle SEND_STATUS_MESSAGE event from ToolExecutor.
+        """
+        print(f"DEBUG: handle_send_status_message received data: {data}")
+        business_id = data.get("business_id")
+        status_type = str(data.get("status_type", "unknown"))
+        message_content = data.get("message_content")
+        recipient_phone = data.get("customer_phone")
+        
+        if not business_id or not recipient_phone:
+            logger.error(f"Missing business_id or recipient_phone in SEND_STATUS_MESSAGE: {data}")
+            return
+            
+        print(f"DEBUG: Proceeding to enqueue message for {recipient_phone}")
+        # Determine content
+        if message_content:
+            content = message_content
+        else:
+            # Default templates
+            templates = {
+                "on_way": "We're on our way! See you soon.",
+                "running_late": "We're running a bit late, but we'll be there as soon as possible.",
+                "start_job": "We've started the job. We'll let you know when we're finished.",
+                "finish_job": "The job is complete! Thank you for choosing us.",
+            }
+            content = templates.get(status_type, f"Update on your job: {status_type}")
+            
+        await self.enqueue_message(
+            recipient_phone=recipient_phone,
+            content=content,
+            trigger_source=f"status_{status_type}",
+            business_id=business_id,
+        )
+
     def register_handlers(self):
         """
         Register this service's event handlers with the EventBus.
@@ -349,6 +384,7 @@ class MessagingService:
         event_bus.subscribe("JOB_CREATED", self.handle_job_created)
         event_bus.subscribe("JOB_SCHEDULED", self.handle_job_scheduled)
         event_bus.subscribe("ON_MY_WAY", self.handle_on_my_way)
+        event_bus.subscribe("SEND_STATUS_MESSAGE", self.handle_send_status_message)
         logger.info("MessagingService handlers registered with EventBus")
 
 

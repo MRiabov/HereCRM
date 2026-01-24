@@ -290,6 +290,19 @@ tool_descriptions:
     [ACCOUNTING] Check the status and last sync time of QuickBooks integration.
     Example: "QuickBooks status" -> QuickBooksStatusTool()
 
+  ConnectGoogleCalendarTool: |
+    [INTEGRATIONS] Initiate the connection to Google Calendar.
+    Triggered when user says "Connect Google Calendar", "Link my calendar", or "Sync jobs to my calendar".
+    Example: "Connect Google Calendar" -> ConnectGoogleCalendarTool()
+
+  DisconnectGoogleCalendarTool: |
+    [INTEGRATIONS] Disconnect the currently linked Google Calendar.
+    Example: "Disconnect Google Calendar" -> DisconnectGoogleCalendarTool()
+
+  GoogleCalendarStatusTool: |
+    [INTEGRATIONS] Check the status of Google Calendar integration.
+    Example: "Google Calendar status" -> GoogleCalendarStatusTool()
+
   UpdateWorkflowSettingsTool: |
     Update business-wide workflow settings like Invoicing (never, manual, automatic) or Quoting.
     Example: "Disable invoicing" -> UpdateWorkflowSettingsTool(invoicing="never")

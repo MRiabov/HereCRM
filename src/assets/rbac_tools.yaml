@@ -25,6 +25,9 @@ tools:
   CheckETATool:
     role: employee
     friendly_name: "check ETA"
+  SendStatusTool:
+    role: employee
+    friendly_name: "send status updates"
   CreateQuoteTool:
     role: employee
     friendly_name: "create a quote"
@@ -51,9 +54,6 @@ tools:
   GetPipelineTool:
     role: manager
     friendly_name: "view pipeline"
-  SendStatusTool:
-    role: manager
-    friendly_name: "send status updates"
   UpdateCustomerStageTool:
     role: manager
     friendly_name: "update pipeline stages"
