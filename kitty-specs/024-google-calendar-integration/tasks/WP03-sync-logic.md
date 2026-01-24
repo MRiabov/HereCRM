@@ -1,7 +1,7 @@
 ---
 work_package_id: WP03
 title: Calendar Sync Logic
-lane: "for_review"
+lane: "doing"
 dependencies: []
 subtasks: [T010, T011, T012, T013]
 agent: "Antigravity"
@@ -94,3 +94,4 @@ Now that we have credentials, we need to actually create/update/delete events. T
 - 2026-01-24T11:13:57Z – Antigravity – shell_pid=328681 – lane=planned – Moved to planned
 - 2026-01-24T11:24:34Z – Antigravity – shell_pid=365416 – lane=doing – Started implementation via workflow command
 - 2026-01-24T11:27:41Z – Antigravity – shell_pid=365416 – lane=for_review – Ready for review: Implemented Google Calendar CRUD operations, verified tests passed. Fixed duplicate gcal_event_id in Job model.
+- 2026-01-24T11:28:54Z – Antigravity – shell_pid=365416 – lane=doing – Started review via workflow command
