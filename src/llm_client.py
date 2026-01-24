@@ -33,12 +33,20 @@ from src.uimodels import (
     AutorouteTool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
-from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.employee_management import (
     ShowScheduleTool,
     AssignJobTool,
     InviteUserTool,
     ExitEmployeeManagementTool,
+)
+from src.uimodels import (
+    UpdateCustomerStageTool,
+    MassEmailTool,
+    QuickBooksStatusTool,
+    SyncQuickBooksTool,
+    UpdateWorkflowSettingsTool,
+    ConnectQuickBooksTool,
+    DisconnectQuickBooksTool,
 )
 from src.services.template_service import TemplateService
 from src.config.loader import get_channel_config_loader
@@ -229,6 +237,57 @@ class LLMParser:
                 "parameters": AutorouteTool.schema(),
             },
         })
+
+        self.tools.extend([
+            {
+                "type": "function",
+                "function": {
+                    "name": "UpdateCustomerStageTool",
+                    "description": tool_desc.get("UpdateCustomerStageTool", "Update a customer's pipeline stage (e.g. mark as lost, contacted)."),
+                    "parameters": UpdateCustomerStageTool.schema(),
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "MassEmailTool",
+                    "description": tool_desc.get("MassEmailTool", "Send a broadcast message to many customers at once."),
+                    "parameters": MassEmailTool.schema(),
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "SyncQuickBooksTool",
+                    "description": tool_desc.get("SyncQuickBooksTool", "Manually trigger a sync with QuickBooks accounting."),
+                    "parameters": SyncQuickBooksTool.schema(),
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "QuickBooksStatusTool",
+                    "description": tool_desc.get("QuickBooksStatusTool", "Check the status of QuickBooks integration."),
+                    "parameters": QuickBooksStatusTool.schema(),
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "UpdateWorkflowSettingsTool",
+                    "description": tool_desc.get("UpdateWorkflowSettingsTool", "Update business workflow settings like invoicing/quoting frequency."),
+                    "parameters": UpdateWorkflowSettingsTool.schema(),
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "ExportQueryTool",
+                    "description": tool_desc.get("ExportQueryTool", "Export data as CSV based on search query."),
+                    "parameters": ExportQueryTool.schema(),
+                },
+            }
+        ])
 
         self.settings_tools = [
             {
@@ -522,7 +581,8 @@ class LLMParser:
         text: str, 
         system_time: Optional[str] = None, 
         service_catalog: Optional[str] = None,
-        channel_name: str = "whatsapp"
+        channel_name: str = "whatsapp",
+        user_context: Optional[dict] = None
     ) -> Optional[
         Union[
             AddJobTool,
@@ -535,6 +595,11 @@ class LLMParser:
             HelpTool,
             GetPipelineTool,
             SendStatusTool,
+            UpdateCustomerStageTool,
+            MassEmailTool,
+            SyncQuickBooksTool,
+            QuickBooksStatusTool,
+            UpdateWorkflowSettingsTool,
             str,
         ]
     ]:
@@ -553,6 +618,14 @@ class LLMParser:
             system_instruction += self.prompts_service.render(
                 "service_catalog_matching", service_catalog=service_catalog
             )
+        
+        if user_context:
+            system_instruction += f"\n\nUSER CONTEXT:\n- Role: {user_context.get('role', 'unknown')}\n"
+            if "active_addons" in user_context:
+                system_instruction += f"- Active Addons: {user_context['active_addons']}\n"
+            for key, val in user_context.items():
+                if key not in ["role", "active_addons", "channel"]:
+                     system_instruction += f"- {key}: {val}\n"
 
         # 3. Channel constraints
         config_loader = get_channel_config_loader()
@@ -594,6 +667,14 @@ class LLMParser:
             "LocateEmployeeTool": LocateEmployeeTool,
             "CheckETATool": CheckETATool,
             "AutorouteTool": AutorouteTool,
+            "UpdateCustomerStageTool": UpdateCustomerStageTool,
+            "MassEmailTool": MassEmailTool,
+            "SyncQuickBooksTool": SyncQuickBooksTool,
+            "QuickBooksStatusTool": QuickBooksStatusTool,
+            "UpdateWorkflowSettingsTool": UpdateWorkflowSettingsTool,
+            "ExportQueryTool": ExportQueryTool,
+            "ConnectQuickBooksTool": ConnectQuickBooksTool,
+            "DisconnectQuickBooksTool": DisconnectQuickBooksTool,
         }
 
         return await self._chat_with_retry(messages, self.tools, model_map)
