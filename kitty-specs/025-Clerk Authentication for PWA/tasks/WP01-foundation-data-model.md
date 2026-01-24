@@ -1,9 +1,11 @@
 ---
 work_package_id: "WP01"
 title: "Foundation & Data Model"
-lane: "planned"
+lane: "doing"
 dependencies: []
 subtasks: ["T001", "T002", "T003"]
+agent: "Antigravity"
+shell_pid: "553005"
 ---
 
 ## Objective
@@ -55,3 +57,7 @@ We are replacing the internal auth system for the PWA with Clerk. To do this, we
 
 - **Migration Locking**: Ensure migration doesn't lock tables for too long (though likely empty/small for dev).
 - **Env Vars**: Make sure to document which env vars are needed for local dev (update `.env.example`).
+
+## Activity Log
+
+- 2026-01-24T21:13:11Z – Antigravity – shell_pid=553005 – lane=doing – Started implementation via workflow command
