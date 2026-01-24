@@ -1,7 +1,7 @@
 ---
 work_package_id: "WP01"
 title: "Foundation & Data Models"
-lane: "doing"
+lane: "for_review"
 dependencies: []
 subtasks: ["T001", "T002", "T003", "T004"]
 agent: "Antigravity"
@@ -78,3 +78,4 @@ We are implementing Spec 024. This first package sets up the ground work: librar
 ## Activity Log
 
 - 2026-01-24T09:56:55Z – Antigravity – shell_pid=318543 – lane=doing – Started implementation via workflow command
+- 2026-01-24T10:05:28Z – Antigravity – shell_pid=318543 – lane=for_review – Ready for review: Implemented WP01 foundation. Added Google API dependencies, configured OAuth credentials in settings, and updated User/Job models with new columns. Database migrations generated and applied.
