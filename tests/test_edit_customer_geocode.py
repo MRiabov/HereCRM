@@ -42,10 +42,10 @@ async def test_edit_customer_regeocodes(mock_template_service):
         
         async def side_effect(address, **kwargs):
             if address == "Bad Address":
-                return None, None, None, None, None, None
+                return None, None, None, None, None, None, "Bad Address"
             if address == "Dublin":
-                return 53.3498, -6.2603, "Street", "Dublin", "Ireland", "D01"
-            return None, None, None, None, None, None
+                return 53.3498, -6.2603, "Street", "Dublin", "Ireland", "D01", "Street, Dublin, Ireland, D01"
+            return None, None, None, None, None, None, address
             
         mock_geo.geocode.side_effect = side_effect
         executor.geocoding_service = mock_geo

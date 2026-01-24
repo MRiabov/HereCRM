@@ -32,11 +32,13 @@ system_instruction: |
 
   ### FEW-SHOT EXAMPLES:
   - "Add job for John 085123123 fix faucet $50" -> AddJobTool(customer_name="John", customer_phone="085123123", price=50.0, description="fix faucet")
-  - "Promote John's request to a quote" -> ConvertRequestTool(query="current_request", action="quote")
+  - "Promote John's request to a quote" -> ConvertRequestTool(query="John", action="quote")
+  - "Promote this request to a quote" -> ConvertRequestTool(query="current_request", action="quote")
   - "Find customers within 1km of High Street 10" -> SearchTool(query="all", center_address="High Street 10", radius=1000.0)
   - "Next Job" -> SendStatusTool(query="next", status_type="on_way")
   - "Export leads added last week" -> ExportQueryTool(query="leads", entity_type="customer")
   - "Sync QuickBooks now" -> SyncQuickBooksTool()
+  - "Hourly Sync" -> SyncQuickBooksTool()
   - "Done #101" -> SendStatusTool(query="101", status_type="finish_job")
   - "What is my billing status?" -> GetBillingStatusTool()
   - "Send a broadcast to all customers" -> MassEmailTool(subject="Update", body="Hello", recipient_query="all")
@@ -92,12 +94,19 @@ tool_descriptions:
       -> AddJobTool(customer_name="Sarah", price=60.0, line_items=[{"description": "windows", "quantity": 12.0, "unit_price": 5.0}])
     - User: "Add John 085123123 fix faucet $50"
       -> AddJobTool(customer_name="John", customer_phone="085123123", price=50.0, description="fix faucet")
+    - User: "Add job: Fix lamp $45.50"
+      -> AddJobTool(customer_name="Unknown", price=45.50, description="Fix lamp")
+    - User: "Add job for Mike, 3 hours of cleaning for $50"
+      -> AddJobTool(customer_name="Mike", price=50.0, description="3 hours of cleaning")
   
   AddLeadTool: |
-    Add a new lead or customer without a job.
+    Add a new lead or customer logic. 
+    Use this when the user says "lead", "client", "customer" and does NOT mention a specific job or task.
     Examples of when to call:
     - User: "Add new lead: Mike, 089999999"
       -> AddLeadTool(name="Mike", phone="089999999")
+    - User: "New customer Sarah needs a quote, lives in Cork"
+      -> AddLeadTool(name="Sarah", city="Cork", details="needs a quote")
     - User: "New customer Sarah needs a quote, lives in Cork"
       -> AddLeadTool(name="Sarah", city="Cork", details="needs a quote")
     - User: "Register client: TechCorp, Dublin"
@@ -170,6 +179,8 @@ tool_descriptions:
       -> ConvertRequestTool(query="Mary", action="log")
     - User: "Promote John's request to a quote"
       -> ConvertRequestTool(query="John", action="quote")
+    - User: "Promote this request to a quote"
+      -> ConvertRequestTool(query="current_request", action="quote")
 
   SendStatusTool: |
     Send a status update message to a customer (e.g. "On my way").
@@ -204,7 +215,8 @@ tool_descriptions:
   ExportQueryTool: |
     Export data based on keywords or filters. 
     Use this tool when the user says "export", "download", "csv", or "get a list of".
-    Example: "Export leads added last week", "Export all Dublin jobs as CSV" -> ExportQueryTool(query="Dublin", entity_type="job", format="csv")
+    Example: "Export leads added last week" -> ExportQueryTool(query="leads", entity_type="lead", format="csv")
+    Example: "Export all Dublin jobs as CSV" -> ExportQueryTool(query="Dublin", entity_type="job", format="csv")
     Example: "Export everything" -> ExportQueryTool(query="all", entity_type="job")
   
   GetBillingStatusTool: |
@@ -270,7 +282,9 @@ tool_descriptions:
 
   SyncQuickBooksTool: |
     [ACCOUNTING] Manually trigger a synchronization with QuickBooks accounting.
+    Trigger this when the user says "sync", "update qb", "hourly sync", or "push to quickbooks".
     Example: "Sync QuickBooks now" -> SyncQuickBooksTool()
+    Example: "Hourly Sync" -> SyncQuickBooksTool()
 
   QuickBooksStatusTool: |
     [ACCOUNTING] Check the status and last sync time of QuickBooks integration.

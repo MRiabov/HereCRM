@@ -13,17 +13,24 @@ async def test_get_chat_history(async_session: AsyncSession):
     await async_session.commit()
     await async_session.refresh(biz)
 
+    # Create a user
+    user = User(business_id=biz.id, phone_number="123", role="owner")
+    async_session.add(user)
+    await async_session.commit()
+    await async_session.refresh(user)
+
     # Create some messages
     m1 = Message(
         business_id=biz.id,
+        user_id=user.id,
         from_number="123",
-        to_number="456",
         body="Hello",
         role=MessageRole.USER,
         created_at=datetime(2026, 1, 1, 10, 0, 0, tzinfo=timezone.utc)
     )
     m2 = Message(
         business_id=biz.id,
+        user_id=user.id,
         from_number="456",
         to_number="123",
         body="Hi there",
@@ -32,8 +39,8 @@ async def test_get_chat_history(async_session: AsyncSession):
     )
     m3 = Message(
         business_id=biz.id,
+        user_id=user.id,
         from_number="123",
-        to_number="456",
         body="How are you?",
         role=MessageRole.USER,
         created_at=datetime(2026, 1, 1, 10, 2, 0, tzinfo=timezone.utc)
@@ -44,12 +51,12 @@ async def test_get_chat_history(async_session: AsyncSession):
 
     service = HelpService(async_session, MagicMock())
     
-    history = await service.get_chat_history(biz.id, "123", limit=2)
+    history = await service.get_chat_history(biz.id, user.id, limit=2)
     assert len(history) == 2
     assert history[0].body == "Hi there"
     assert history[1].body == "How are you?"
     
-    history_all = await service.get_chat_history(biz.id, "123", limit=5)
+    history_all = await service.get_chat_history(biz.id, user.id, limit=5)
     assert len(history_all) == 3
 
 @pytest.mark.asyncio
@@ -102,9 +109,16 @@ async def test_generate_help_response(async_session: AsyncSession):
     await async_session.commit()
     await async_session.refresh(biz)
     
+    # Create a user
+    user = User(business_id=biz.id, phone_number="123", role="owner")
+    async_session.add(user)
+    await async_session.commit()
+    await async_session.refresh(user)
+    
     # Add a previous message to history
     m1 = Message(
         business_id=biz.id,
+        user_id=user.id,
         from_number="123",
         body="Previous message",
         role=MessageRole.USER
@@ -117,7 +131,7 @@ async def test_generate_help_response(async_session: AsyncSession):
     
     service = HelpService(async_session, mock_llm)
     user_query = "How do I add a job?"
-    response = await service.generate_help_response(user_query, biz.id, "123", "whatsapp")
+    response = await service.generate_help_response(user_query, biz.id, user.id, "whatsapp")
     
     assert response == "To add a job, type 'add job'."
     mock_llm.chat_completion.assert_called_once()

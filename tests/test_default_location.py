@@ -51,7 +51,7 @@ async def test_add_lead_uses_defaults(db_session, setup_user):
         async def side_effect(address, default_city=None, default_country=None):
             city = default_city
             country = default_country
-            return 10.0, 20.0, "Street", city, country, "12345"
+            return 10.0, 20.0, "Street", city, country, "12345", f"Street, {city}, {country}, 12345"
             
         mock_geo_instance.geocode = AsyncMock(side_effect=side_effect)
         
@@ -82,7 +82,7 @@ async def test_add_job_creates_customer_with_defaults(db_session, setup_user):
     with patch("src.tool_executor.GeocodingService") as MockGeo:
         mock_geo_instance = MockGeo.return_value
         # Simulate geocoding returning defaults (or geocoded values matching defaults)
-        mock_geo_instance.geocode = AsyncMock(return_value=(1.0, 2.0, "Street", "DefaultCity", "DefaultCountry", "54321"))
+        mock_geo_instance.geocode = AsyncMock(return_value=(1.0, 2.0, "Street", "DefaultCity", "DefaultCountry", "54321", "Street, DefaultCity, DefaultCountry, 54321"))
 
         executor = ToolExecutor(db_session, business_id, user.id, user.phone_number, MagicMock())
 

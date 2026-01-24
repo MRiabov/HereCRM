@@ -62,6 +62,6 @@ async def test_help_tool_integration(test_session: AsyncSession, template_servic
         mock_help_instance.generate_help_response.assert_called_once_with(
             user_query="Help me",
             business_id=biz.id,
-            phone_number=user_phone,
+            user_id=user.id,
             channel="whatsapp"
         )

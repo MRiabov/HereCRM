@@ -29,7 +29,7 @@ async def test_nominatim_parsing_success():
             raise_for_status=lambda: None
         )
         
-        lat, lon, street, city, country, postcode = await service.geocode("34 High St", default_city="London")
+        lat, lon, street, city, country, postcode, full_address = await service.geocode("34 High St", default_city="London")
         
         assert lat == 53.344
         assert lon == -6.267
@@ -37,6 +37,7 @@ async def test_nominatim_parsing_success():
         assert city == "Dublin" # Overrides default
         assert country == "Ireland"
         assert postcode == "D08"
+        assert "34 High Street, Dublin, Ireland, D08" in full_address
 
 @pytest.mark.asyncio
 async def test_nominatim_parsing_fallback():
@@ -58,7 +59,7 @@ async def test_nominatim_parsing_fallback():
             raise_for_status=lambda: None
         )
         
-        lat, lon, street, city, country, postcode = await service.geocode("High Street", default_city="Dublin", default_country="Ireland")
+        lat, lon, street, city, country, postcode, full_address = await service.geocode("High Street", default_city="Dublin", default_country="Ireland")
         
         assert lat == 53.344
         assert lon == -6.267
@@ -66,3 +67,4 @@ async def test_nominatim_parsing_fallback():
         assert city == "Dublin"
         assert country == "Ireland"
         assert postcode is None
+        assert "Dublin, Ireland" in full_address

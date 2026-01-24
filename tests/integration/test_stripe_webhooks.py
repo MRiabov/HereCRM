@@ -96,7 +96,7 @@ async def test_stripe_webhook_subscription_updated(async_client, async_session, 
                 "items": {
                     "data": [
                          {
-                             "price": {"id": "price_H5gg_placeholder"}, # Matches seat config
+                             "price": {"id": "price_1SrkGWEWj96BiJElrDXGNpyz"}, # Matches seat config
                              "quantity": 2
                          },
                          {

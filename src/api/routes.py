@@ -472,6 +472,56 @@ async def generic_webhook(
         )
 
 
+class TextGridWebhookPayload(BaseModel):
+    from_number: str = Field(..., alias="from")
+    to_number: str = Field(..., alias="to")
+    text: str
+
+
+@router.post("/webhooks/textgrid")
+async def textgrid_webhook(
+    payload: TextGridWebhookPayload,
+    services: Tuple[AuthService, WhatsappService] = Depends(get_services),
+):
+    """
+    Handles inbound SMS from TextGrid.
+    Payload expected: {"from": "+123", "to": "+456", "text": "Hello"}
+    """
+    try:
+        auth_service, whatsapp_service = services
+        
+        # Rate Limiting
+        if check_rate_limit(payload.from_number):
+            logger.warning(f"Rate limit exceeded for {payload.from_number} (TextGrid)")
+            return {"status": "rate_limited"}
+
+        # Identify or Onboard User
+        user, is_new = await auth_service.get_or_create_user(payload.from_number)
+        
+        # Process Message
+        # We reuse the WhatsappService handle_message logic but for 'sms' channel
+        await whatsapp_service.handle_message(
+            user_id=user.id,
+            user_phone=user.phone_number,
+            message_text=payload.text,
+            is_new_user=is_new,
+            channel="sms"
+        )
+        
+        # Commit Transaction
+        await auth_service.session.commit()
+        
+        return {"status": "success"}
+
+    except Exception:
+        logger.exception("TextGrid webhook processing failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Error"
+        )
+
+
+
 
 @router.post("/webhooks/postmark/inbound", dependencies=[Depends(verify_postmark_auth)])
 async def postmark_inbound_webhook(

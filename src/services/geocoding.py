@@ -74,11 +74,6 @@ class GeocodingService:
         """
         query_address = address
         parts = []
-        if default_city and default_city.lower() not in address.lower():
-             parts.append(default_city)
-        if default_country and default_country.lower() not in address.lower():
-             parts.append(default_country)
-        
         if parts:
             query_address = f"{address}, {', '.join(parts)}"
 
@@ -89,7 +84,7 @@ class GeocodingService:
             lat, lon, details = await self.get_coordinates(address)
 
         if not details:
-            return lat, lon, None, default_city, default_country, None, address
+            return lat, lon, None, None, None, None, address
 
         # Parse address details
         street_name = details.get("road")

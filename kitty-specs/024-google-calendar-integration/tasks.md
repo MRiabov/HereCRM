@@ -26,11 +26,11 @@
 **Priority**: High
 **Test Strategy**: Manual verification of auth flow via browser; Unit tests for service methods.
 
-- [ ] **T005**: data structure for `GoogleCalendarService` to handle auth logic.
-- [ ] **T006**: Implement `get_auth_url()` using `Flow.from_client_config`.
-- [ ] **T007**: Implement `process_auth_callback(code)` to exchange code for credentials and save to `User`.
-- [ ] **T008**: Create API routes `GET /auth/google/login` and `GET /auth/google/callback` in `src/api/routes.py`.
-- [ ] **T009**: Verify auth flow stores credentials correctly in DB.
+- [x] **T005**: data structure for `GoogleCalendarService` to handle auth logic.
+- [x] **T006**: Implement `get_auth_url()` using `Flow.from_client_config`.
+- [x] **T007**: Implement `process_auth_callback(code)` to exchange code for credentials and save to `User`.
+- [x] **T008**: Create API routes `GET /auth/google/login` and `GET /auth/google/callback` in `src/api/routes.py`.
+- [x] **T009**: Verify auth flow stores credentials correctly in DB.
 
 **Parallelism**: Depends on WP01. Blocks WP03.
 **Est. Prompt Size**: ~450 lines
@@ -43,10 +43,10 @@
 **Priority**: High
 **Test Strategy**: Mock Google API responses to verify service logic.
 
-- [ ] **T010**: Implement `create_event(job, user_creds)`: Maps job fields to GCal Event resource.
-- [ ] **T011**: Implement `update_event(job, event_id, user_creds)`: Updates existing event.
-- [ ] **T012**: Implement `delete_event(event_id, user_creds)`: Removes event.
-- [ ] **T013**: Implement credential loading and automatic refresh logic using `google.oauth2.credentials`.
+- [x] **T010**: Implement `create_event(job, user_creds)`: Maps job fields to GCal Event resource.
+- [x] **T011**: Implement `update_event(job, event_id, user_creds)`: Updates existing event.
+- [x] **T012**: Implement `delete_event(event_id, user_creds)`: Removes event.
+- [x] **T013**: Implement credential loading and automatic refresh logic using `google.oauth2.credentials`.
 
 **Parallelism**: Depends on WP02. Blocks WP04.
 **Est. Prompt Size**: ~400 lines

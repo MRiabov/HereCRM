@@ -67,7 +67,7 @@ async def test_auto_confirm_initiation(mock_config_loader, mock_parser, mock_tem
     service.user_repo.get_by_phone = AsyncMock(return_value=user)
     service.state_repo.get_by_user_id = AsyncMock(return_value=state)
     service.state_repo.add = MagicMock()
-    service._generate_summary = MagicMock(return_value="Add Job Summary")
+    service._generate_summary = AsyncMock(return_value="Add Job Summary")
     
     # Mock ServiceRepository instantiated inside _handle_idle
     with patch("src.services.whatsapp_service.ServiceRepository") as MockServiceRepo:

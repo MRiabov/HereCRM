@@ -12,12 +12,12 @@ class OpenRouteServiceAdapter(RoutingServiceProvider):
     """
     BASE_URL = "https://api.openrouteservice.org/optimization"
 
-    def __init__(self, api_key: str = None):
+    def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or settings.openrouteservice_api_key
 
     def calculate_routes(self, jobs: List[Job], employees: List[User]) -> RoutingSolution:
         if not self.api_key:
-            return RoutingSolution({e.id: [] for e in employees}, jobs, {"status": "error", "message": "OpenRouteService API key is missing."})
+            raise RoutingException("OpenRouteService API key is missing.")
 
         # Handle empty cases
         if not jobs:
@@ -122,7 +122,7 @@ class OpenRouteServiceAdapter(RoutingServiceProvider):
         Parses ORS response into domain objects.
         """
         job_map = {j.id: j for j in original_jobs}
-        routes: Dict[int, List[Job]] = {e.id: [] for e in employees}
+        routes: Dict[int, List[RoutingStep]] = {e.id: [] for e in employees}
         assigned_ids = set()
 
         if "routes" in response:
