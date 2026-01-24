@@ -1,7 +1,7 @@
 ---
 work_package_id: WP05
 title: Polish & Documentation
-lane: "doing"
+lane: "done"
 dependencies: ["WP04"]
 subtasks: [T018, T019]
 agent: "Antigravity"
@@ -65,3 +65,4 @@ Code is working, but we need to tell the user what happened and update our manua
 - 2026-01-24T12:10:12Z – Antigravity – shell_pid=365416 – lane=doing – Started implementation via workflow command
 - 2026-01-24T12:24:38Z – Antigravity – shell_pid=365416 – lane=for_review – Ready for review: Implemented user feedback in auth callback and updated manual.md.
 - 2026-01-24T12:27:47Z – Antigravity – shell_pid=387516 – lane=doing – Started review via workflow command
+- 2026-01-24T12:29:00Z – Antigravity – shell_pid=387516 – lane=done – Review passed: Validated user feedback in auth_callback and manual updates.
