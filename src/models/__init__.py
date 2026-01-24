@@ -4,8 +4,8 @@ from sqlalchemy import String, ForeignKey, DateTime, Text, JSON, Float, Enum as 
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 import enum
 from src.database import Base
-from src.models.integration_config import IntegrationConfig, IntegrationType
-from src.models.document import Document, DocumentType
+from src.models.integration_config import IntegrationConfig as IntegrationConfig, IntegrationType as IntegrationType
+from src.models.document import Document as Document, DocumentType as DocumentType
 
 
 class UserRole(str, enum.Enum):
@@ -133,7 +133,7 @@ class User(Base):
     name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     phone_number: Mapped[Optional[str]] = mapped_column(String, unique=True, nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String, unique=True, nullable=True)
-    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"))
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     role: Mapped[UserRole] = mapped_column(SAEnum(UserRole), default=UserRole.EMPLOYEE)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
