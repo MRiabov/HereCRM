@@ -1,11 +1,11 @@
 ---
 work_package_id: WP02
 title: OAuth Authentication Flow
-lane: "for_review"
+lane: "doing"
 dependencies: []
 subtasks: [T005, T006, T007, T008, T009]
 agent: "Antigravity"
-shell_pid: "332944"
+shell_pid: "318543"
 ---
 
 # WP02 - OAuth Authentication Flow
@@ -107,3 +107,4 @@ We need a `GoogleCalendarService` that handles the heavy lifting of the OAuth fl
 
 - 2026-01-24T10:10:02Z – Antigravity – shell_pid=332944 – lane=doing – Started implementation via workflow command
 - 2026-01-24T10:41:35Z – Antigravity – shell_pid=332944 – lane=for_review – Implemented Google OAuth flow in service and API routes. Verified with unit tests.
+- 2026-01-24T10:46:56Z – Antigravity – shell_pid=318543 – lane=doing – Started review via workflow command
