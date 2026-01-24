@@ -17,7 +17,7 @@
 **Dependencies**: None
 
 - [x] T001: Add `clerk-backend-api`, `pyjwt`, `cryptography` to `pyproject.toml` and lock.
-- [ ] T002: Create migration to add `clerk_id` to `users` and `clerk_org_id` to `businesses`.
+- [x] T002: Create migration to add `clerk_id` to `users` and `clerk_org_id` to `businesses`.
 - [ ] T003: Update `src/config.py` with Clerk environment variables.
 
 ### WP02 - Authentication Service & Route Protection
