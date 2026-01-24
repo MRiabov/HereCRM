@@ -1,0 +1,25 @@
+services:
+  frontend:
+    build:
+      context: ..
+      dockerfile: pwa/Dockerfile
+    environment:
+      - API_BASE_URL=http://backend:8000
+    # No ports exposed directly, we go through Nginx
+    networks:
+      - herecrm-network
+
+  proxy:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+    networks:
+      - herecrm-network
+
+networks:
+  herecrm-network:
+    driver: bridge

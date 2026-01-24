@@ -4,6 +4,7 @@ from src.database import engine, Base
 from src.api.routes import router as webhook_router
 from src.api.webhooks.stripe_webhook import router as stripe_router
 from src.api.v1.integrations import router as integrations_v1
+from src.api.v1.pwa.router import router as pwa_router
 from src.events import event_bus
 from src.services.messaging_service import messaging_service
 
@@ -50,6 +51,7 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(webhook_router)
 app.include_router(stripe_router, prefix="/webhooks", tags=["webhooks"])
 app.include_router(integrations_v1)
+app.include_router(pwa_router, prefix="/api/v1/pwa")
 
 
 @app.get("/health")

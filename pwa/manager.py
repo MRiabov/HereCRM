@@ -3,7 +3,6 @@ PWA Injection module for HereCRM.
 """
 import streamlit as st
 import json
-import os
 from pathlib import Path
 
 def inject_pwa(
@@ -12,17 +11,17 @@ def inject_pwa(
     description: str = "Advanced Text-based CRM",
     bg_color: str = "#262730",
     theme_color: str = "#ff4b4b",
-    icon_path_192: str = "app/static/icon-192.png",
-    icon_path_512: str = "app/static/icon-512.png",
-    sw_path: str = "app/static/sw.js",
-    manifest_path: str = "app/static/manifest.json",
+    # Note: Streamlit dynamic static pathing is often '/app/static/' or just '/static/'
+    icon_path_192: str = "/icon-192.png",
+    icon_path_512: str = "/icon-512.png",
+    sw_path: str = "/sw.js",
+    manifest_path: str = "/manifest.json",
 ):
     """
-    Injects the PWA Logic into Streamlit.
+    Injects the PWA Logic into Streamlit with Diagnostic support.
     """
     
-    # 1. Ensure manifest exists on disk for Streamlit to serve
-    # We look for the 'assets' folder relative to this file
+    # 1. Ensure manifest exists on disk
     assets_dir = Path(__file__).parent / "assets"
     manifest_file = assets_dir / "manifest.json"
     
@@ -50,10 +49,26 @@ def inject_pwa(
         ]
     }
     
-    with open(manifest_file, "w") as f:
-        json.dump(manifest_data, f, indent=4)
+    try:
+        with open(manifest_file, "w") as f:
+            json.dump(manifest_data, f, indent=4)
+    except Exception as e:
+        st.error(f"PWA: Failed to write manifest: {e}")
 
-    # 2. Inject HTML/JS/CSS with Debugging
+    # 2. Diagnostic Info (only show if explicitly requested or in Dev Mode)
+    if st.session_state.get("dev_mode", False):
+        with st.sidebar.expander("🛠️ PWA Diagnostic"):
+            st.write(f"Manifest Path: `{manifest_path}`")
+            st.write(f"SW Path: `{sw_path}`")
+            st.write(f"Script Location: `{__file__}`")
+            if st.button("Force Show Install Toast"):
+                st.components.v1.html("""
+                    <script>
+                        window.parent.document.getElementById('pwa-install-toast').style.visibility = 'visible';
+                    </script>
+                """, height=0)
+
+    # 3. Inject HTML/JS/CSS
     st.markdown(f"""
     <link rel="manifest" href="{manifest_path}">
     <style>
@@ -73,7 +88,7 @@ def inject_pwa(
             gap: 12px;
             font-family: sans-serif;
             border: 1px solid #444;
-            transition: visibility 0.3s;
+            transition: all 0.3s ease-in-out;
         }}
         #pwa-install-btn {{
             background: {theme_color};
@@ -93,7 +108,7 @@ def inject_pwa(
         }}
     </style>
     <div id="pwa-install-toast">
-        <span id="pwa-msg">Install {short_name} on your phone</span>
+        <span>📲 Install {short_name}</span>
         <button id="pwa-install-btn">Install</button>
         <button id="pwa-close-btn">&times;</button>
     </div>
@@ -104,48 +119,44 @@ def inject_pwa(
         // Service Worker Registration
         if ('serviceWorker' in navigator) {{
             window.addEventListener('load', function() {{
-                console.log("PWA: Attempting to register SW from {sw_path}");
+                console.log("PWA: Registering SW at {sw_path}");
                 navigator.serviceWorker.register('{sw_path}', {{scope: '/'}})
                 .then(function(reg) {{
-                    console.log('PWA: ServiceWorker registered. Scope:', reg.scope);
+                    console.log('PWA: SW Registered. Scope:', reg.scope);
                 }}, function(err) {{
-                    console.error('PWA: ServiceWorker registration failed:', err);
+                    console.error('PWA: SW Failed:', err);
                 }});
             }});
-        }} else {{
-            console.warn("PWA: ServiceWorker not supported in this browser.");
         }}
 
-        // Install Prompt Logic
         let deferredPrompt;
         const toast = document.getElementById('pwa-install-toast');
-        const installBtn = document.getElementById('pwa-install-btn');
-        const closeBtn = document.getElementById('pwa-close-btn');
 
         window.addEventListener('beforeinstallprompt', (e) => {{
-            console.log("PWA: 'beforeinstallprompt' event fired!");
+            console.log("PWA: Install event fired!");
             e.preventDefault();
             deferredPrompt = e;
             toast.style.visibility = 'visible';
+            toast.style.bottom = '20px';
         }});
 
-        installBtn.addEventListener('click', async () => {{
+        document.getElementById('pwa-install-btn').addEventListener('click', async () => {{
             if (deferredPrompt) {{
                 deferredPrompt.prompt();
                 const {{ outcome }} = await deferredPrompt.userChoice;
-                console.log("PWA: Install choice outcome:", outcome);
+                console.log("PWA: Outcome:", outcome);
                 deferredPrompt = null;
                 toast.style.visibility = 'hidden';
             }}
         }});
 
-        closeBtn.addEventListener('click', () => {{
+        document.getElementById('pwa-close-btn').addEventListener('click', () => {{
             toast.style.visibility = 'hidden';
         }});
-
-        // Debug: Check for standalone mode
-        if (window.matchMedia('(display-mode: standalone)').matches) {{
-            console.log("PWA: App is running in standalone mode.");
-        }}
+        
+        // Heartbeat for diagnostic
+        setTimeout(() => {{
+             console.log("PWA: Active and waiting for browser install events.");
+        }}, 2000);
     </script>
     """, unsafe_allow_html=True)
