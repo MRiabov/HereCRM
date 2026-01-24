@@ -1,9 +1,11 @@
 ---
 work_package_id: "WP01"
 title: "Foundation & Data Models"
-lane: "planned"
+lane: "doing"
 dependencies: []
 subtasks: ["T001", "T002", "T003", "T004"]
+agent: "Antigravity"
+shell_pid: "318543"
 ---
 
 # WP01 - Foundation & Data Models
@@ -72,3 +74,7 @@ We are implementing Spec 024. This first package sets up the ground work: librar
 ## Risks
 
 - **JSON Column**: Ensure SQLite supports JSON (it usually does via extension or text storage). If using strict SQLAlchemy types, ensure `JSON` is imported from a dialect-agnostic source or handle as Text if needed.
+
+## Activity Log
+
+- 2026-01-24T09:56:55Z – Antigravity – shell_pid=318543 – lane=doing – Started implementation via workflow command
