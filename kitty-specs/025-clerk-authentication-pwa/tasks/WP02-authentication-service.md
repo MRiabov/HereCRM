@@ -1,9 +1,11 @@
 ---
 work_package_id: WP02
 title: Authentication Service & Route Protection
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks: [T004, T005, T006]
+agent: "Antigravity"
+shell_pid: "553005"
 ---
 
 ## Objective
@@ -60,3 +62,7 @@ We need a FastAPI dependency that extracts the Bearer token, verifies it against
 
 - **Performance**: JWKS fetching should be cached. User lookup on every request adds DB latency.
 - **Race Conditions**: JIT creation vs Webhook creation. Use `get_or_create` logic or handle UniqueViolation errors gracefully.
+
+## Activity Log
+
+- 2026-01-24T21:18:04Z – Antigravity – shell_pid=553005 – lane=doing – Started implementation via workflow command
