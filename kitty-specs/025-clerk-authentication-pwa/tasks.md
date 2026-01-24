@@ -28,7 +28,7 @@
 
 - [x] T004: Implement `VerifyToken` dependency in `src/api/dependencies/clerk_auth.py` with JWKS caching.
 - [x] T005: Add JIT user/business creation logic to `VerifyToken` (fallback for webhooks).
-- [ ] T006: Protect `src/api/v1/pwa` routes with `Depends(VerifyToken)`.
+- [x] T006: Protect `src/api/v1/pwa` routes with `Depends(VerifyToken)`.
 
 ### WP03 - Webhook Synchronization
 
