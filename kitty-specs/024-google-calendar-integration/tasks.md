@@ -75,8 +75,8 @@
 **Priority**: Medium
 **Test Strategy**: Visual check of help docs and bot responses.
 
-- [ ] **T018**: send confirmation message on successful auth ("✔ Google Calendar connected! ...").
-- [ ] **T019**: Update `src/assets/manual.md` with "Google Calendar Integration" section.
+- [x] **T018**: send confirmation message on successful auth ("✔ Google Calendar connected! ...").
+- [x] **T019**: Update `src/assets/manual.md` with "Google Calendar Integration" section.
 
 **Parallelism**: Depends on WP04.
 **Est. Prompt Size**: ~200 lines

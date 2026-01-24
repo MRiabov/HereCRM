@@ -6,6 +6,7 @@ import json
 import os
 import sys
 import re
+
 from dotenv import load_dotenv
 
 # Load .env file
@@ -21,6 +22,14 @@ except Exception:
     DEFAULT_SECRET = os.getenv("WHATSAPP_APP_SECRET", "dummy_secret")
 
 st.set_page_config(page_title="HereCRM - Text-based CRM", page_icon="src/assets/favicon.webp")
+
+# --- PWA Support ---
+try:
+    from pwa import inject_pwa
+    inject_pwa()
+except ImportError:
+    pass  # PWA module not found or failed to load
+
 
 def is_valid_phone(phone: str) -> bool:
     # Basic international format validation: + followed by 1-15 digits

@@ -15,7 +15,7 @@ RUN uv sync --frozen --no-install-project --no-dev
 
 # Copy the application code
 COPY src ./src
-COPY scripts ./scripts
+COPY pwa ./pwa
 
 # Place uv on the PATH
 ENV PATH="/app/.venv/bin:$PATH"
@@ -24,6 +24,5 @@ ENV PATH="/app/.venv/bin:$PATH"
 EXPOSE 8501
 
 # Command to run Streamlit
-# We use the shell form to allow variable expansion if needed, but array form is safer.
-# Streamlit handles PORT env var automatically or we can pass it explicitly.
-CMD ["streamlit", "run", "scripts/chat_ui.py", "--server.address", "0.0.0.0"]
+CMD ["streamlit", "run", "pwa/chat_ui.py", "--server.address", "0.0.0.0"]
+
