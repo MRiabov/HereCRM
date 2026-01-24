@@ -1,8 +1,8 @@
 ---
 work_package_id: WP05
 title: Polish & Documentation
-lane: "doing"
-dependencies: []
+lane: "planned"
+dependencies: ["WP04"]
 subtasks: [T018, T019]
 agent: "Antigravity"
 shell_pid: "365416"
@@ -60,3 +60,5 @@ Code is working, but we need to tell the user what happened and update our manua
 - 2026-01-24T11:59:37Z – Antigravity – shell_pid=365416 – lane=doing – Started review via workflow command
 - 2026-01-24T12:00:43Z – Antigravity – shell_pid=365416 – lane=planned – Moved to planned
 - 2026-01-24T12:04:16Z – Antigravity – shell_pid=365416 – lane=doing – Started implementation via workflow command
+- 2026-01-24T12:05:49Z – Antigravity – shell_pid=365416 – lane=doing – Blocked: Codebase missing previous implementations (WP04). Fixed spec dependency. Please reset and retry.
+- 2026-01-24T12:06:01Z – Antigravity – shell_pid=365416 – lane=planned – Resetting due to missing dependencies. Fixed spec, ready for retry.
