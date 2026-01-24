@@ -277,6 +277,9 @@ class Job(Base):
     longitude: Mapped[Optional[float]] = mapped_column(Float)
     postal_code: Mapped[Optional[str]] = mapped_column(String)
     paid: Mapped[bool] = mapped_column(Boolean, default=False)
+    
+    # Google Calendar Integration
+    gcal_event_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)

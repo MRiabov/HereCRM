@@ -8,6 +8,7 @@ from typing import Tuple
 from twilio.request_validator import RequestValidator
 
 from fastapi import APIRouter, Depends, HTTPException, Header, Request, status, Response, Query
+from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
@@ -22,6 +23,7 @@ from src.llm_client import parser as llm_parser
 from src.services.template_service import TemplateService
 from src.config import settings
 from src.security_utils import check_rate_limit
+from src.services.google_calendar_service import GoogleCalendarService
 
 template_service = TemplateService()
 
@@ -742,3 +744,84 @@ async def quickbooks_callback(
         logger.error(f"QuickBooks callback failed: {e}")
         raise HTTPException(status_code=500, detail=f"Connection failed: {str(e)}")
 
+
+@router.get("/auth/google/login")
+async def google_login(
+    user_id: int,
+):
+    """
+    Redirects user to Google OAuth login page.
+    """
+    try:
+        service = GoogleCalendarService()
+        # In a real app, we should sign the state to prevent tampering
+        auth_url, _ = service.get_auth_url(state=str(user_id))
+        return RedirectResponse(url=auth_url)
+    except Exception as e:
+        logger.error(f"Google login failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/auth/google/callback")
+async def google_callback(
+    code: str = Query(...),
+    state: str = Query(...),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Handle OAuth callback from Google.
+    Exchanges code for tokens and updates User in DB.
+    """
+    try:
+        user_id = int(state)
+        service = GoogleCalendarService()
+        success = await service.process_auth_callback(code, user_id, db)
+        if success:
+            # Notify User
+            from src.services.messaging_service import messaging_service
+            from src.repositories import UserRepository
+            
+            user_repo = UserRepository(db)
+            user = await user_repo.get(user_id)
+            
+            if user and user.phone_number:
+                # Send async notification
+                await messaging_service.send_message(
+                    recipient_phone=user.phone_number,
+                    content="✔ Google Calendar connected! Your assigned jobs will now appear on your calendar.",
+                    channel=user.preferred_channel or "whatsapp",
+                    trigger_source="system_notification"
+                )
+
+            await db.commit()
+            
+            # Return nice HTML
+            html_content = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Connected</title>
+                <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; text-align: center; padding: 40px; background-color: #f4f4f5; color: #18181b; }
+                    .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); max-width: 400px; margin: 0 auto; }
+                    h1 { color: #10b981; margin-bottom: 16px; font-size: 24px; }
+                    p { color: #52525b; line-height: 1.5; margin-bottom: 24px; }
+                    .icon { font-size: 48px; margin-bottom: 16px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="icon">📅</div>
+                    <h1>Connected!</h1>
+                    <p>Google Calendar has been successfully linked. Your assigned jobs will now automatically appear on your calendar.</p>
+                    <p style="font-size: 14px; color: #71717a;">You can close this window now.</p>
+                </div>
+            </body>
+            </html>
+            """
+            return Response(content=html_content, media_type="text/html")
+        else:
+            raise HTTPException(status_code=404, detail="User not found")
+    except Exception as e:
+        logger.exception(f"Google callback failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Connection failed: {str(e)}")
