@@ -826,15 +826,12 @@ class ToolExecutor:
     async def _execute_delete_service(
         self, tool: DeleteServiceTool
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
-        services = await self.service_repo.get_all_for_business(self.business_id)
-        
-        target = None
-        for s in services:
-            if s.name.lower() == tool.name.lower():
-                target = s
-                break
+        # Optimization: Try exact match first using repository method
+        target = await self.service_repo.get_by_name(tool.name, self.business_id)
         
         if not target:
+             # Fallback: Fuzzy search
+             services = await self.service_repo.get_all_for_business(self.business_id)
              for s in services:
                 if tool.name.lower() in s.name.lower():
                     target = s
