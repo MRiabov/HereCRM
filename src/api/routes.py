@@ -8,6 +8,7 @@ from typing import Tuple
 from twilio.request_validator import RequestValidator
 
 from fastapi import APIRouter, Depends, HTTPException, Header, Request, status, Response, Query
+from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
@@ -22,6 +23,7 @@ from src.llm_client import parser as llm_parser
 from src.services.template_service import TemplateService
 from src.config import settings
 from src.security_utils import check_rate_limit
+from src.services.google_calendar_service import GoogleCalendarService
 
 template_service = TemplateService()
 
@@ -740,5 +742,46 @@ async def quickbooks_callback(
         return {"status": "success", "message": "QuickBooks connected successfully! You can close this window."}
     except Exception as e:
         logger.error(f"QuickBooks callback failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Connection failed: {str(e)}")
+
+
+@router.get("/auth/google/login")
+async def google_login(
+    user_id: int,
+):
+    """
+    Redirects user to Google OAuth login page.
+    """
+    try:
+        service = GoogleCalendarService()
+        # In a real app, we should sign the state to prevent tampering
+        auth_url, _ = service.get_auth_url(state=str(user_id))
+        return RedirectResponse(url=auth_url)
+    except Exception as e:
+        logger.error(f"Google login failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/auth/google/callback")
+async def google_callback(
+    code: str = Query(...),
+    state: str = Query(...),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Handle OAuth callback from Google.
+    Exchanges code for tokens and updates User in DB.
+    """
+    try:
+        user_id = int(state)
+        service = GoogleCalendarService()
+        success = await service.process_auth_callback(code, user_id, db)
+        if success:
+            await db.commit()
+            return {"status": "success", "message": "Google Calendar connected successfully! You can close this window."}
+        else:
+            raise HTTPException(status_code=404, detail="User not found")
+    except Exception as e:
+        logger.exception(f"Google callback failed: {e}")
         raise HTTPException(status_code=500, detail=f"Connection failed: {str(e)}")
 

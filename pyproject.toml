@@ -32,6 +32,9 @@ dependencies = [
     "apscheduler",
     "smsutil",
     "sqlcipher3>=0.6.2",
+    "google-api-python-client>=2.188.0",
+    "google-auth-oauthlib>=1.2.4",
+    "google-auth>=2.47.0",
 ]
 
 # Optional dependencies for QuickBooks integration:

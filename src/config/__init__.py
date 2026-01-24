@@ -49,6 +49,11 @@ class Settings(BaseSettings):
     # OpenRouteService
     openrouteservice_api_key: Optional[str] = None
 
+    # Google Calendar
+    google_client_id: Optional[str] = None
+    google_client_secret: Optional[str] = None
+    google_redirect_uri: Optional[str] = None
+
     # Security
     secret_key: str = "dev_secret_key_change_me_in_production"
 
