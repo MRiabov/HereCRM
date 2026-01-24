@@ -1253,7 +1253,7 @@ class ToolExecutor:
              return "Assigned technician not found.", None
              
         # Get Tech Location
-        lat, lng, updated_at = await LocationService.get_employee_location(self.session, tech.id)
+        lat, lng, updated_at = tech.current_latitude, tech.current_longitude, tech.location_updated_at
         
         if lat is None or lng is None:
              return f"Technician {tech.name} is assigned but their location is currently unavailable.", None

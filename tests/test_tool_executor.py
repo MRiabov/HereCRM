@@ -47,7 +47,7 @@ async def test_execute_add_job_new_customer(
     # Mock GeocodingService to prevent unclosed client sessions
     with patch("src.tool_executor.GeocodingService") as link_mock:
         mock_geo = MagicMock()
-        mock_geo.geocode = AsyncMock(return_value=(None, None, None, None, None, None))
+        mock_geo.geocode = AsyncMock(return_value=(None, None, None, None, None, None, None))
         link_mock.return_value = mock_geo
         
         executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
