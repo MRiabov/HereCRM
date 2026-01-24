@@ -1,0 +1,1354 @@
+openapi: 3.1.0
+info:
+  title: HereCRM PWA API
+  version: 1.0.0
+paths:
+  /api/v1/pwa/dashboard/stats:
+    get:
+      tags:
+      - PWA - Dashboard
+      summary: Get Dashboard Stats
+      operationId: get_dashboard_stats_api_v1_pwa_dashboard_stats_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardStats'
+  /api/v1/pwa/dashboard/recent-activity:
+    get:
+      tags:
+      - PWA - Dashboard
+      summary: Get Recent Activity
+      operationId: get_recent_activity_api_v1_pwa_dashboard_recent_activity_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/RecentActivity'
+                type: array
+                title: Response Get Recent Activity Api V1 Pwa Dashboard Recent Activity
+                  Get
+  /api/v1/pwa/jobs/:
+    get:
+      tags:
+      - PWA - Jobs
+      summary: List Jobs
+      description: List jobs with optional filtering by date range and employee.
+      operationId: list_jobs_api_v1_pwa_jobs__get
+      parameters:
+      - name: date_from
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Date From
+      - name: date_to
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Date To
+      - name: employee_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Employee Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobListResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - PWA - Jobs
+      summary: Create Job
+      description: Create a new job.
+      operationId: create_job_api_v1_pwa_jobs__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobCreate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/pwa/jobs/{job_id}:
+    get:
+      tags:
+      - PWA - Jobs
+      summary: Get Job
+      description: Get job details by ID.
+      operationId: get_job_api_v1_pwa_jobs__job_id__get
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Job Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    patch:
+      tags:
+      - PWA - Jobs
+      summary: Update Job
+      description: Update job details.
+      operationId: update_job_api_v1_pwa_jobs__job_id__patch
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Job Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/pwa/customers/:
+    get:
+      tags:
+      - PWA - Customers
+      summary: List Customers
+      description: List customers with optional search.
+      operationId: list_customers_api_v1_pwa_customers__get
+      parameters:
+      - name: search
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            minLength: 1
+          - type: 'null'
+          title: Search
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+          title: Page
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomerSchema'
+                title: Response List Customers Api V1 Pwa Customers  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - PWA - Customers
+      summary: Create Customer
+      description: Create a new customer.
+      operationId: create_customer_api_v1_pwa_customers__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerCreate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/pwa/customers/{customer_id}:
+    get:
+      tags:
+      - PWA - Customers
+      summary: Get Customer
+      description: Get customer details by ID.
+      operationId: get_customer_api_v1_pwa_customers__customer_id__get
+      parameters:
+      - name: customer_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Customer Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/pwa/chat/history/{user_id}:
+    get:
+      tags:
+      - PWA - Chat
+      summary: Get Chat History
+      description: Get message history for a specific user/customer.
+      operationId: get_chat_history_api_v1_pwa_chat_history__user_id__get
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatMessage'
+                title: Response Get Chat History Api V1 Pwa Chat History  User Id  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/pwa/chat/send:
+    post:
+      tags:
+      - PWA - Chat
+      summary: Send Message
+      description: Send a message to a customer.
+      operationId: send_message_api_v1_pwa_chat_send_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatSendRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessage'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/pwa/invoices/:
+    get:
+      tags:
+      - PWA - Invoices
+      summary: List Invoices
+      description: List all invoices.
+      operationId: list_invoices_api_v1_pwa_invoices__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/InvoiceSchema'
+                type: array
+                title: Response List Invoices Api V1 Pwa Invoices  Get
+  /api/v1/pwa/invoices/{invoice_id}:
+    get:
+      tags:
+      - PWA - Invoices
+      summary: Get Invoice
+      description: Get invoice details by ID.
+      operationId: get_invoice_api_v1_pwa_invoices__invoice_id__get
+      parameters:
+      - name: invoice_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Invoice Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/pwa/quotes/:
+    get:
+      tags:
+      - PWA - Quotes
+      summary: List Quotes
+      operationId: list_quotes_api_v1_pwa_quotes_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QuoteSchema'
+    post:
+      tags:
+      - PWA - Quotes
+      summary: Create Quote
+      operationId: create_quote_api_v1_pwa_quotes_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteCreate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteSchema'
+  /api/v1/pwa/requests/:
+    get:
+      tags:
+      - PWA - Requests
+      summary: List Requests
+      operationId: list_requests_api_v1_pwa_requests_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RequestSchema'
+  /api/v1/pwa/services/:
+    get:
+      tags:
+      - PWA - Services
+      summary: List Services
+      operationId: list_services_api_v1_pwa_services_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceSchema'
+    post:
+      tags:
+      - PWA - Services
+      summary: Create Service
+      operationId: create_service_api_v1_pwa_services_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceCreate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceSchema'
+  /api/v1/pwa/settings/workflow:
+    get:
+      tags:
+      - PWA - Settings
+      summary: Get Workflow Settings
+      operationId: get_workflow_settings_api_v1_pwa_settings_workflow_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessSettingsSchema'
+    patch:
+      tags:
+      - PWA - Settings
+      summary: Update Workflow Settings
+      operationId: update_workflow_settings_api_v1_pwa_settings_workflow_patch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BusinessSettingsUpdate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessSettingsSchema'
+  /api/v1/pwa/search/:
+    get:
+      tags:
+      - PWA - Search
+      summary: Global Search
+      description: Search across customers, jobs, and requests with natural language.
+      operationId: global_search_api_v1_pwa_search_get
+      parameters:
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+          title: Query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GlobalSearchResponse'
+  /api/v1/pwa/finance/expenses/:
+    get:
+      tags:
+      - PWA - Finance
+      summary: List Expenses
+      operationId: list_expenses_api_v1_pwa_finance_expenses_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExpenseSchema'
+  /api/v1/pwa/finance/ledger/:
+    get:
+      tags:
+      - PWA - Finance
+      summary: Get Ledger Entries
+      operationId: get_ledger_api_v1_pwa_finance_ledger_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LedgerEntrySchema'
+components:
+  schemas:
+    ChatMessage:
+      properties:
+        role:
+          type: string
+          title: Role
+        content:
+          type: string
+          title: Content
+        timestamp:
+          type: string
+          format: date-time
+          title: Timestamp
+        is_outbound:
+          type: boolean
+          title: Is Outbound
+      type: object
+      required:
+      - role
+      - content
+      - timestamp
+      - is_outbound
+      title: ChatMessage
+    ChatSendRequest:
+      properties:
+        customer_id:
+          type: integer
+          title: Customer Id
+        message:
+          type: string
+          title: Message
+      type: object
+      required:
+      - customer_id
+      - message
+      title: ChatSendRequest
+    CustomerCreate:
+      properties:
+        name:
+          type: string
+          title: Name
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
+        email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Email
+        street:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Street
+        city:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: City
+      type: object
+      required:
+      - name
+      title: CustomerCreate
+    CustomerSchema:
+      properties:
+        id:
+          type: integer
+          title: Id
+        name:
+          type: string
+          title: Name
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
+        email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Email
+        street:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Street
+        city:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: City
+        pipeline_stage:
+          type: string
+          title: Pipeline Stage
+        postal_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Postal Code
+        latitude:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Latitude
+        longitude:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Longitude
+      type: object
+      required:
+      - id
+      - name
+      - pipeline_stage
+      title: CustomerSchema
+    DashboardStats:
+      properties:
+        revenue_monthly:
+          type: number
+          title: Revenue Monthly
+        active_leads_count:
+          type: integer
+          title: Active Leads Count
+        leads_need_followup:
+          type: integer
+          title: Leads Need Followup
+        pipeline_breakdown:
+          additionalProperties: true
+          type: object
+          title: Pipeline Breakdown
+      type: object
+      required:
+      - revenue_monthly
+      - active_leads_count
+      - leads_need_followup
+      - pipeline_breakdown
+      title: DashboardStats
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    InvoiceSchema:
+      properties:
+        id:
+          type: integer
+          title: Id
+        job_id:
+          type: integer
+          title: Job Id
+        total_amount:
+          type: number
+          title: Total Amount
+        status:
+          type: string
+          title: Status
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        public_url:
+          type: string
+          title: Public Url
+        customer_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Customer Name
+        payment_link:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Payment Link
+      type: object
+      required:
+      - id
+      - job_id
+      - total_amount
+      - status
+      - created_at
+      - public_url
+      title: InvoiceSchema
+    JobCreate:
+      properties:
+        customer_id:
+          type: integer
+          title: Customer Id
+        description:
+          type: string
+          title: Description
+        status:
+          type: string
+          title: Status
+          default: pending
+        scheduled_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Scheduled At
+        value:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Value
+        location:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Location
+      type: object
+      required:
+      - customer_id
+      - description
+      title: JobCreate
+    JobListResponse:
+      properties:
+        date:
+          type: string
+          title: Date
+        jobs:
+          items:
+            $ref: '#/components/schemas/JobSchema'
+          type: array
+          title: Jobs
+      type: object
+      required:
+      - date
+      - jobs
+      title: JobListResponse
+    JobSchema:
+      properties:
+        id:
+          type: integer
+          title: Id
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        status:
+          type: string
+          title: Status
+        scheduled_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Scheduled At
+        value:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Value
+        location:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Location
+        customer:
+          anyOf:
+          - $ref: '#/components/schemas/CustomerSchema'
+          - type: 'null'
+        employee:
+          anyOf:
+          - $ref: '#/components/schemas/UserSchema'
+          - type: 'null'
+        line_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LineItemSchema'
+          title: Line Items
+          default: []
+        paid:
+          type: boolean
+          title: Paid
+          default: false
+        estimated_duration:
+          type: integer
+          title: Estimated Duration
+          default: 60
+        latitude:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Latitude
+        longitude:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Longitude
+      type: object
+      required:
+      - id
+      - description
+      - status
+      - scheduled_at
+      - value
+      - location
+      - customer
+      title: JobSchema
+    JobUpdate:
+      properties:
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+        scheduled_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Scheduled At
+        value:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Value
+        employee_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Employee Id
+      type: object
+      title: JobUpdate
+    RecentActivity:
+      properties:
+        type:
+          type: string
+          title: Type
+        title:
+          type: string
+          title: Title
+        description:
+          type: string
+          title: Description
+        timestamp:
+          type: string
+          format: date-time
+          title: Timestamp
+        metadata:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Metadata
+      type: object
+      required:
+      - type
+      - title
+      - description
+      - timestamp
+      title: RecentActivity
+    UserSchema:
+      properties:
+        id:
+          type: integer
+          title: Id
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Email
+        phone_number:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone Number
+        role:
+          type: string
+          title: Role
+        current_latitude:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Current Latitude
+        current_longitude:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Current Longitude
+        location_updated_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Location Updated At
+        default_start_location_lat:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Default Start Location Lat
+        default_start_location_lng:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Default Start Location Lng
+      type: object
+      required:
+      - id
+      - name
+      - email
+      - phone_number
+      - role
+      title: UserSchema
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+    LineItemSchema:
+      properties:
+        id:
+          type: integer
+          title: Id
+        description:
+          type: string
+          title: Description
+        quantity:
+          type: number
+          title: Quantity
+        unit_price:
+          type: number
+          title: Unit Price
+        total_price:
+          type: number
+          title: Total Price
+        service_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Service Id
+      type: object
+      required:
+      - id
+      - description
+      - quantity
+      - unit_price
+      - total_price
+      title: LineItemSchema
+    QuoteLineItemSchema:
+      properties:
+        id:
+          type: integer
+          title: Id
+        description:
+          type: string
+          title: Description
+        quantity:
+          type: number
+          title: Quantity
+        unit_price:
+          type: number
+          title: Unit Price
+        total:
+          type: number
+          title: Total
+        service_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Service Id
+      type: object
+      required:
+      - id
+      - description
+      - quantity
+      - unit_price
+      - total
+      title: QuoteLineItemSchema
+    QuoteSchema:
+      properties:
+        id:
+          type: integer
+          title: Id
+        customer_id:
+          type: integer
+          title: Customer Id
+        total_amount:
+          type: number
+          title: Total Amount
+        status:
+          type: string
+          title: Status
+        external_token:
+          type: string
+          title: External Token
+        public_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Public Url
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        items:
+          items:
+            $ref: '#/components/schemas/QuoteLineItemSchema'
+          type: array
+          title: Items
+          default: []
+        customer:
+          anyOf:
+          - $ref: '#/components/schemas/CustomerSchema'
+          - type: 'null'
+      type: object
+      required:
+      - id
+      - customer_id
+      - total_amount
+      - status
+      - external_token
+      - created_at
+      title: QuoteSchema
+    RequestSchema:
+      properties:
+        id:
+          type: integer
+          title: Id
+        content:
+          type: string
+          title: Content
+        status:
+          type: string
+          title: Status
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        customer_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Customer Id
+      type: object
+      required:
+      - id
+      - content
+      - status
+      - created_at
+      title: RequestSchema
+    ServiceSchema:
+      properties:
+        id:
+          type: integer
+          title: Id
+        name:
+          type: string
+          title: Name
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        default_price:
+          type: number
+          title: Default Price
+        estimated_duration:
+          type: integer
+          title: Estimated Duration
+      type: object
+      required:
+      - id
+      - name
+      - default_price
+      - estimated_duration
+      title: ServiceSchema
+    ExpenseSchema:
+      properties:
+        id:
+          type: integer
+          title: Id
+        description:
+          type: string
+          title: Description
+        amount:
+          type: number
+          title: Amount
+        date:
+          type: string
+          format: date-time
+          title: Date
+        job_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Job Id
+      type: object
+      required:
+      - id
+      - description
+      - amount
+      - date
+      title: ExpenseSchema
+    LedgerEntrySchema:
+      properties:
+        id:
+          type: integer
+          title: Id
+        employee_id:
+          type: integer
+          title: Employee Id
+        amount:
+          type: number
+          title: Amount
+        type:
+          type: string
+          title: Type
+        description:
+          type: string
+          title: Description
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - employee_id
+      - amount
+      - type
+      - description
+      - created_at
+      title: LedgerEntrySchema
+    BusinessSettingsSchema:
+      properties:
+        workflow_invoicing:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Workflow Invoicing
+        workflow_quoting:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Workflow Quoting
+        workflow_payment_timing:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Workflow Payment Timing
+        workflow_tax_inclusive:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Workflow Tax Inclusive
+        workflow_include_payment_terms:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Workflow Include Payment Terms
+        workflow_enable_reminders:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Workflow Enable Reminders
+        payment_link:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Payment Link
+        stripe_connected:
+          type: boolean
+          title: Stripe Connected
+      type: object
+      required:
+      - stripe_connected
+      title: BusinessSettingsSchema
+    QuoteCreate:
+      properties:
+        customer_id:
+          type: integer
+          title: Customer Id
+        status:
+          type: string
+          title: Status
+          default: draft
+        items:
+          items:
+            type: object
+          type: array
+          title: Items
+      type: object
+      required:
+      - customer_id
+      - items
+      title: QuoteCreate
+    ServiceCreate:
+      properties:
+        name:
+          type: string
+          title: Name
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        default_price:
+          type: number
+          title: Default Price
+        estimated_duration:
+          type: integer
+          title: Estimated Duration
+          default: 60
+      type: object
+      required:
+      - name
+      - default_price
+      title: ServiceCreate
+    BusinessSettingsUpdate:
+      properties:
+        workflow_invoicing:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Workflow Invoicing
+        workflow_quoting:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Workflow Quoting
+        workflow_payment_timing:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Workflow Payment Timing
+        workflow_tax_inclusive:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Workflow Tax Inclusive
+        workflow_include_payment_terms:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Workflow Include Payment Terms
+        workflow_enable_reminders:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Workflow Enable Reminders
+        payment_link:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Payment Link
+      type: object
+      title: BusinessSettingsUpdate
+    SearchResult:
+      properties:
+        type:
+          type: string
+          title: Type
+        id:
+          type: integer
+          title: Id
+        title:
+          type: string
+          title: Title
+        subtitle:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Subtitle
+        metadata:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Metadata
+      type: object
+      required:
+      - type
+      - id
+      - title
+      title: SearchResult
+    GlobalSearchResponse:
+      properties:
+        query:
+          type: string
+          title: Query
+        results:
+          items:
+            $ref: '#/components/schemas/SearchResult'
+          type: array
+          title: Results
+      type: object
+      required:
+      - query
+      - results
+      title: GlobalSearchResponse
+

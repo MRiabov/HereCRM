@@ -95,18 +95,26 @@ api_url = os.getenv("API_BASE_URL", "http://localhost:8000")
 secret = DEFAULT_SECRET
 
 with st.sidebar:
-    st.header("Settings")
-    st.text_input("API Base URL", value=api_url, disabled=True)
-    if secret:
-        st.text_input("Security Protocol", value="HMAC-SHA256 Enabled", disabled=True)
-    else:
-        st.error("Security Key Missing")
-    
-    if st.button("Clear Chat History", type="secondary"):
-        st.session_state.messages = []
-        st.rerun()
-    
-    dev_mode = st.checkbox("Dev Mode", value=False, help="Show technical details and traces")
+    st.title("Profile")
+
+    with st.expander("Catalog"):
+        st.info("Manage your products and services.")
+
+    with st.expander("Integrations"):
+        st.info("Manage external integrations.")
+
+    with st.expander("General", expanded=True):
+        st.text_input("API Base URL", value=api_url, disabled=True)
+        if secret:
+            st.text_input("Security Protocol", value="HMAC-SHA256 Enabled", disabled=True)
+        else:
+            st.error("Security Key Missing")
+        
+        if st.button("Clear Chat History", type="secondary"):
+            st.session_state.messages = []
+            st.rerun()
+        
+        dev_mode = st.checkbox("Dev Mode", value=False, help="Show technical details and traces")
 
 def load_history():
     try:
