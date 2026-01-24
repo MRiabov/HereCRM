@@ -1,9 +1,11 @@
 ---
 work_package_id: WP02
 title: OAuth Authentication Flow
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks: [T005, T006, T007, T008, T009]
+agent: "Antigravity"
+shell_pid: "332944"
 ---
 
 # WP02 - OAuth Authentication Flow
@@ -100,3 +102,7 @@ We need a `GoogleCalendarService` that handles the heavy lifting of the OAuth fl
 - **User Identification**: Ensuring we know WHICH user is authenticating in the callback. If the app is headless/chat-based, the user might click a link in a standard browser where they AREN'T logged into the CRM.
   - - Mitigation*: Pass `state` parameter containing an encrypted user_id or a temporary token generated when the user requested the link in chat.
   - *Simplification for MVP*: Assume user creates the link from a context where we can pass a token in `state`, OR just user is logged in via browser session. **Decision**: Use `state` param to pass `user_id` if possible, otherwise rely on cookie session.
+
+## Activity Log
+
+- 2026-01-24T10:10:02Z – Antigravity – shell_pid=332944 – lane=doing – Started implementation via workflow command
