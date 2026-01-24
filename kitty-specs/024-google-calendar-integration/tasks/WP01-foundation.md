@@ -1,7 +1,7 @@
 ---
 work_package_id: "WP01"
 title: "Foundation & Data Models"
-lane: "doing"
+lane: "for_review"
 dependencies: []
 subtasks: ["T001", "T002", "T003", "T004"]
 agent: "Antigravity"
@@ -84,3 +84,4 @@ We are implementing Spec 024. This first package sets up the ground work: librar
 - 2026-01-24T10:09:44Z – Antigravity – shell_pid=332240 – lane=doing – Started review via workflow command
 - 2026-01-24T10:10:47Z – Antigravity – shell_pid=332240 – lane=planned – Moved to planned
 - 2026-01-24T10:11:48Z – Antigravity – shell_pid=332240 – lane=doing – Moved to doing
+- 2026-01-24T10:13:00Z – Antigravity – shell_pid=332240 – lane=for_review – Fixed migration. Verified schema in crm.db. Columns google_calendar_credentials, google_calendar_sync_enabled, and gcal_event_id are present.
