@@ -479,3 +479,18 @@ class UpdateWorkflowSettingsTool(BaseModel):
     tax_inclusive: Optional[bool] = Field(None, description="Whether prices include tax")
     include_payment_terms: Optional[bool] = Field(None, description="Whether to show net terms on invoices")
     enable_reminders: Optional[bool] = Field(None, description="Whether to send auto-reminders")
+
+
+class ConnectQuickBooksTool(BaseModel):
+    """Initiate the OAuth flow to connect QuickBooks Online."""
+    pass
+
+
+class DisconnectQuickBooksTool(BaseModel):
+    """Disconnect the current QuickBooks Online integration."""
+    pass
+
+
+class ExitAccountingTool(BaseModel):
+    """Exit the accounting management mode."""
+    pass

@@ -16,6 +16,11 @@ system_instruction: |
   - "Done #[ID]" -> SendStatusTool(query="[ID]", status_type="finish_job")
   - "Next Job" -> SendStatusTool(query="next", status_type="on_way")
 
+  ### AUTOROUTE:
+  - If the user says "autoroute" or "optimize route", ALWAYS prioritize safety and use `apply=False` (preview mode) unless the user explicitly commands "apply", "execute", "save", or "commit".
+  - "autoroute today" -> AutorouteTool(apply=False)
+  - "execute autoroute" -> AutorouteTool(apply=True)
+
   ### MATH & PRICE:
   - "12 windows for $60" -> total price is $60. Do NOT multiply. AddJobTool(price=60.0, line_items=[{"description": "windows", "quantity": 12.0, "unit_price": 5.0}])
 
@@ -26,8 +31,8 @@ system_instruction: |
   - Always identify the tool even if you think the user shouldn't have access. The system handles permissions.
 
   ### FEW-SHOT EXAMPLES:
-  - "Add job for Sarah, 12 windows for $60" -> AddJobTool(customer_name="Sarah", price=60.0, line_items=[{"description": "windows", "quantity": 12.0, "unit_price": 5.0}])
-  - "Promote John's request to a quote" -> ConvertRequestTool(query="John", action="quote")
+  - "Add job for John 085123123 fix faucet $50" -> AddJobTool(customer_name="John", customer_phone="085123123", price=50.0, description="fix faucet")
+  - "Promote John's request to a quote" -> ConvertRequestTool(query="current_request", action="quote")
   - "Find customers within 1km of High Street 10" -> SearchTool(query="all", center_address="High Street 10", radius=1000.0)
   - "Next Job" -> SendStatusTool(query="next", status_type="on_way")
   - "Export leads added last week" -> ExportQueryTool(query="leads", entity_type="customer")
@@ -35,6 +40,10 @@ system_instruction: |
   - "Done #101" -> SendStatusTool(query="101", status_type="finish_job")
   - "What is my billing status?" -> GetBillingStatusTool()
   - "Send a broadcast to all customers" -> MassEmailTool(subject="Update", body="Hello", recipient_query="all")
+  - "Add window cleaning for Mary tomorrow at 2pm in Dublin" -> ScheduleJobTool(customer_name="Mary", description="window cleaning", time="tomorrow at 2pm", city="Dublin")
+  - "Why did my last prompt fail?" -> HelpTool()
+  - "Why is the location stale?" -> CheckETATool()
+  - "Add lead John +1 (555) 123-4567" -> AddLeadTool(name="John", phone="+1 (555) 123-4567")
 
 
 accounting_system_instruction: |
@@ -160,7 +169,7 @@ tool_descriptions:
     - User: "Log that callback for Mary as complete"
       -> ConvertRequestTool(query="Mary", action="log")
     - User: "Promote John's request to a quote"
-      -> ConvertRequestTool(query="current_request", action="quote")
+      -> ConvertRequestTool(query="John", action="quote")
 
   SendStatusTool: |
     Send a status update message to a customer (e.g. "On my way").
@@ -177,21 +186,26 @@ tool_descriptions:
   GetPipelineTool: |
     Get a summary of the sales pipeline (funnel counts).
     Examples of when to call:
-    - User: "How is the pipeline looking?"
-      -> GetPipelineTool()
+    - User: "How is the pipeline looking?" -> GetPipelineTool()
+    - User: "Show me funnel status" -> GetPipelineTool()
+    - User: "Sales health check" -> GetPipelineTool()
 
   SendInvoiceTool: |
     Send a professional PDF invoice to a customer for their last completed job.
     Examples:
     - User: "Send invoice to John" -> SendInvoiceTool(query="John")
+    - User: "Bill Mary for the job" -> SendInvoiceTool(query="Mary")
+    - User: "Regenerate invoice for Bob" -> SendInvoiceTool(query="Bob", force_regenerate=True)
 
   HelpTool: |
     Get help or information about available commands, or explain why a previous command failed.
     Example: "Help", "How does this work?", "Why did my last prompt fail?" -> HelpTool()
   
   ExportQueryTool: |
-    Export data based on keywords or filters.
+    Export data based on keywords or filters. 
+    Use this tool when the user says "export", "download", "csv", or "get a list of".
     Example: "Export leads added last week", "Export all Dublin jobs as CSV" -> ExportQueryTool(query="Dublin", entity_type="job", format="csv")
+    Example: "Export everything" -> ExportQueryTool(query="all", entity_type="job")
   
   GetBillingStatusTool: |
     Check the current subscription status, limits, and usage.
@@ -216,6 +230,8 @@ tool_descriptions:
     Assign a specific job to an employee.
     Examples:
     - User: "Assign job 123 to John" -> AssignJobTool(job_id=123, assign_to_name="John")
+    - User: "Give this job to Sarah" -> AssignJobTool(assign_to_name="Sarah")
+    - User (Manager): "Assign Job #101 to John" -> AssignJobTool(job_id=101, assign_to_name="John")
 
   CreateQuoteTool: |
     Create and send a quote/proposal to a customer.
@@ -233,10 +249,14 @@ tool_descriptions:
   
   CheckETATool: |
     Check the estimated arrival time (ETA) for a technician for a customer.
+    This works for both customers asking about their own ETA and admins checking on a job.
     Examples:
     - User: "Where is my tech?" -> CheckETATool()
     - User: "When will the plumber arrive?" -> CheckETATool()
+    - User: "Is the technician close?" -> CheckETATool()
+    - User: "Show me technician location" -> CheckETATool()
     - User (Admin): "What is the ETA for customer John?" -> CheckETATool(customer_query="John")
+    - User: "Why is the location stale?" -> CheckETATool()
 
   UpdateCustomerStageTool: |
     Update a customer's pipeline stage manually.
