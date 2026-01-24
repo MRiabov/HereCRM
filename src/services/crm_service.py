@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from src.models import Job, Customer, PipelineStage, Business, PaymentTiming
 from src.repositories import JobRepository, CustomerRepository, RequestRepository
-from src.events import event_bus, JOB_CREATED, JOB_BOOKED, JOB_SCHEDULED
+from src.events import event_bus, JOB_CREATED, JOB_BOOKED, JOB_SCHEDULED, JOB_UPDATED
 from datetime import datetime, timedelta, timezone
 from src.services.quote_service import QuoteService
 
@@ -312,6 +312,21 @@ class CRMService:
                     "value": job.value,
                 },
             )
+        
+        # Always emit JOB_UPDATED for any change
+        await event_bus.emit(
+            JOB_UPDATED,
+            {
+                "job_id": job.id,
+                "customer_id": job.customer_id,
+                "business_id": self.business_id,
+                "changes": {
+                    "description": description,
+                    "status": status,
+                    "scheduled_at": scheduled_at.isoformat() if scheduled_at else None
+                }
+            }
+        )
 
         return job
 

@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from src.models import Job, User
 from src.repositories import JobRepository, UserRepository
+from src.events import event_bus, JOB_ASSIGNED, JOB_UNASSIGNED
 
 class AssignmentResult(BaseModel):
     success: bool
@@ -80,6 +81,12 @@ class AssignmentService:
         await self.session.commit()
         await self.session.refresh(job)
 
+        await event_bus.emit(JOB_ASSIGNED, {
+            "job_id": job.id,
+            "employee_id": employee_id,
+            "business_id": self.business_id
+        })
+
         return AssignmentResult(success=True, warning=warning, job=job)
 
     async def unassign_job(self, job_id: int) -> AssignmentResult:
@@ -91,8 +98,16 @@ class AssignmentService:
         if not job:
             return AssignmentResult(success=False, error=f"Job {job_id} not found")
         
+        old_employee_id = job.employee_id
         job.employee_id = None
         await self.session.commit()
         await self.session.refresh(job)
         
+        if old_employee_id:
+            await event_bus.emit(JOB_UNASSIGNED, {
+                "job_id": job.id,
+                "employee_id": old_employee_id,
+                "business_id": self.business_id
+            })
+            
         return AssignmentResult(success=True, job=job)

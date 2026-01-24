@@ -22,6 +22,10 @@ async def lifespan(app: FastAPI):
     
     # Register MessagingService event handlers
     messaging_service.register_handlers()
+
+    # Register CalendarSyncHandler event handlers
+    from src.services.calendar_sync_handler import calendar_sync_handler
+    calendar_sync_handler.register()
     
     # Start MessagingService background worker
     await messaging_service.start()
