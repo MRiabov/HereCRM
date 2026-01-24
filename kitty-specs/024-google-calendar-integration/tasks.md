@@ -10,10 +10,10 @@
 **Priority**: Critical (Blocker)
 **Test Strategy**: Verify migrations run successfully and schema reflects changes.
 
-- [ ] **T001**: Install Python dependencies (`google-api-python-client`, `google-auth-oauthlib`, `google-auth`).
-- [ ] **T002**: Add and validate environment variables (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`) in settings.
-- [ ] **T003**: Migration: Add `google_calendar_credentials` (JSON) and `google_calendar_sync_enabled` (bool) to `User` model.
-- [ ] **T004**: Migration: Add `gcal_event_id` (string) to `Job` model.
+- [x] **T001**: Install Python dependencies (`google-api-python-client`, `google-auth-oauthlib`, `google-auth`).
+- [x] **T002**: Add and validate environment variables (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`) in settings.
+- [x] **T003**: Migration: Add `google_calendar_credentials` (JSON) and `google_calendar_sync_enabled` (bool) to `User` model.
+- [x] **T004**: Migration: Add `gcal_event_id` (string) to `Job` model.
 
 **Parallelism**: Blocked by none. Blocks WP02.
 **Est. Prompt Size**: ~300 lines
