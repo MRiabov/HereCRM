@@ -36,7 +36,7 @@ class InferenceService:
             if not matched_service:
                 matched_service = self._find_matching_service(raw.description, catalog)
             
-            quantity = raw.quantity or 1.0
+            quantity = raw.quantity
             unit_price = raw.unit_price
             total_price = raw.total_price
 
@@ -44,7 +44,7 @@ class InferenceService:
                 # We found a match in the catalog
                 default_price = round(matched_service.default_price, 2)
 
-                if total_price is not None and unit_price is None and quantity == 1.0:
+                if total_price is not None and unit_price is None and quantity is None:
                     # Case: Total price provided, but no unit price or quantity. 
                     # Use default price to infer quantity.
                     if default_price > 0:
@@ -77,6 +77,10 @@ class InferenceService:
                     quantity = round(quantity, 2)
                     total_price = round(unit_price * quantity, 2)
                 
+                # Default quantity if still None
+                if quantity is None:
+                    quantity = 1.0
+
                 # Fallback for unit price if still None - but respect user overrides if total was set differently above
                 if unit_price is None:
                     unit_price = default_price
@@ -109,10 +113,20 @@ class InferenceService:
                     unit_price = round(unit_price, 2)
                     quantity = round(quantity, 2)
                     total_price = round(unit_price * quantity, 2)
+                elif total_price is not None and quantity is None and unit_price is None:
+                    # Explicit total with no quantity or unit price -> assume 1 unit at total price
+                    quantity = 1.0
+                    unit_price = round(total_price, 2)
+                    total_price = round(total_price, 2)
                 
                 # Final fallbacks for ad-hoc
                 if unit_price is None:
                     unit_price = 0.0
+
+                # Default quantity if still None
+                if quantity is None:
+                    quantity = 1.0
+
                 if total_price is None:
                     quantity = round(quantity, 2)
                     unit_price = round(unit_price, 2)

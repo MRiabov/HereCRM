@@ -69,6 +69,26 @@ async def test_inference_logic_with_catalog(test_session: AsyncSession):
     assert inferred[0].unit_price == 50.0
     assert inferred[0].total_price == 150.0
 
+    # 3. Test priority of explicit quantity=1.0 over inferred quantity
+    # Scenario: Service is $5. User says "1 Window Clean $50".
+    # Should result in Qty 1, Unit $50. Not Qty 10, Unit $5.
+    svc_low = Service(
+        business_id=biz.id,
+        name="Cheap Service",
+        default_price=5.0
+    )
+    test_session.add(svc_low)
+    await test_session.flush()
+
+    raw_items = [LineItemInfo(description="Cheap Service", quantity=1.0, total_price=50.0)]
+    inferred = await inference_service.infer_line_items(biz.id, raw_items)
+
+    assert len(inferred) == 1
+    assert inferred[0].service_id == svc_low.id
+    assert inferred[0].quantity == 1.0
+    assert inferred[0].unit_price == 50.0
+    assert inferred[0].total_price == 50.0
+
 
 @pytest.mark.asyncio
 async def test_tool_executor_with_line_items(
