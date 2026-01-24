@@ -134,11 +134,38 @@
 
 ---
 
+## Work Package WP05: Admin Enhancements - Smart Inference (Priority: P2)
+
+**Goal**: Improve UX for business owners with smart employee targeting.
+**Independent Test**: Owner asks "Where is my tech" in a 1-tech business and gets an answer without specifying a name.
+**Prompt**: `/tasks/WP05-admin-smart-inference.md`
+
+### Included Subtasks
+
+- [ ] T018 Implement smart inference in `LocateEmployeeTool`/`CheckETATool` (Auto-target if only 1 employee exists).
+- [ ] T019 Implement keyword-based employee lookup (e.g. 'employee John') to differentiate from customer lookup.
+- [ ] T020 Integration test: Owner-specific location scenarios (1-tech vs multi-tech with keywords).
+
+### Implementation Notes
+
+- In `ToolExecutor` or tool logic, check `user.role` to apply Admin-only inference filters.
+- Use `UserRepository.get_team_members` to count active employees for the business.
+
+### Parallel Opportunities
+
+- T019 can be developed once the basic lookup framework in WP04 is stable.
+
+### Dependencies
+
+- Depends on WP04.
+
+---
+
 ## Dependency & Execution Summary
 
-- **Sequence**: WP01 → WP02/WP03 (Parallel) → WP04.
+- **Sequence**: WP01 → WP02/WP03 (Parallel) → WP04 → WP05.
 - **Parallelization**: WP02 and WP03 can be implemented simultaneously once WP01 is merged.
-- **MVP Scope**: WP01, WP03, and WP04 (CheckETATool) are essential for the primary user story.
+- **MVP Scope**: WP01, WP03, and WP04 (CheckETATool) are essential for the primary user story. WP05 is a Polish/Admin enhancement.
 
 ---
 
@@ -159,7 +186,8 @@
 | T011       | Twilio location ingest | WP03         | P1       | Yes       |
 | T012       | Auto-reply acknowledge | WP03         | P1       | No        |
 | T013       | active job lookup | WP04         | P2       | No        |
-| T014       | LocateEmployeeTool | WP04         | P2       | Yes       |
-| T015       | CheckETATool | WP04         | P2       | Yes       |
 | T016       | Tool Registration | WP04         | P2       | No        |
 | T017       | ETA Integration test | WP04         | P2       | No        |
+| T018       | Smart inference (1-tech) | WP05         | P2       | No        |
+| T019       | Keyword-based staff lookup| WP05         | P2       | Yes       |
+| T020       | QoL Integration tests | WP05         | P2       | No        |

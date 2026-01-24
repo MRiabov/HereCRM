@@ -80,7 +80,28 @@ As a Business Owner, I want to query where a specific employee is so that I can 
 
 **Acceptance Scenarios**:
 
-1. **Given** an admin user, **When** they query a valid employee, **Then** system returns the location info.
+1. **Given** an admin user, **When** they query a valid employee by name (e.g., "locate John"), **Then** system returns the location info for John.
+2. **Given** an admin user, **When** they query "locate technician" and multiple technicians exist, **Then** the system asks for clarification (or provides a list of all).
+
+### User Story 3b - Smart Inference for Owners (Single Tech)
+
+As a Business Owner with only one technician, I want to simple ask "Where is my tech?" and have the system understand I mean my only employee.
+
+**Independent Test**:
+
+1. **Setup**: Business has 1 Owner and 1 Employee (named "John").
+2. **Action**: Owner says "Where is the technician?".
+3. **Result**: System identifies John and returns his location/status.
+
+### User Story 3c - Explicit Employee Lookup by Name
+
+As a Business Owner with multiple employees, I want to ask "where is my employee [Name]" and get their specific location.
+
+**Independent Test**:
+
+1. **Setup**: Business has 2+ employees.
+2. **Action**: Owner says "**Where is employee John?**".
+3. **Result**: System performs a fuzzy match on "John" among the business employees and returns his last known location.
 
 ---
 
@@ -94,6 +115,8 @@ As a Business Owner, I want to query where a specific employee is so that I can 
   - *Logic*: Find Job where `customer_phone == sender` AND `scheduled_start <= now <= scheduled_end + buffer`.
 - **FR-004**: System MUST integrate with OpenRouteService (ORS) Routing API (or Matrix API) to calculate driving time between `Employee.current_location` and `Job.location`.
 - **FR-005**: System MUST respond to semantic queries (LLM intent "check_eta" or similar) with the calculated duration rounded UP to the nearest 5 minutes (e.g. 7 mins -> 10 mins).
+- **FR-006**: (Smart Inference) If a Business Owner or Manager invokes location tools (CheckETA/Locate) without a specific target, and the business has exactly **one** other employee, the system MUST infer that employee is the target.
+- **FR-007**: (Explicit Employee Context) The system MUST ONLY search for an employee by name if the user explicitly includes identifying keywords (e.g., 'employee', 'technician', 'tech', 'staff'). General name queries (e.g., "Where is John?") without this context MUST default to searching for a customer named John.
 
 ### Key Entities
 

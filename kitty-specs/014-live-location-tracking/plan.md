@@ -62,6 +62,8 @@ class User(Base):
   - Calls `RoutingService.get_eta` -> Returns "10 mins away".
 - **Business Query**:
   - Admin says "Locate John" -> Tool `LocateEmployeeTool` -> Returns map link/address.
+  - **Smart Default**: If Owner says "Where is my tech" and only 1 employee exists, the system automatically targets that employee.
+  - **Explicit Name Lookup**: If Owner providing a specific keyword like "employee" OR "tech" (e.g., "Where is employee John"), the system looks up "John" in the employee list. Without these keywords, it defaults to the customer ETA logic.
 
 ## Work Packages
 
