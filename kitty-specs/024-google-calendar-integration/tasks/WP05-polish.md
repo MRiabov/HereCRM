@@ -1,9 +1,11 @@
 ---
 work_package_id: WP05
 title: Polish & Documentation
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks: [T018, T019]
+agent: "Antigravity"
+shell_pid: "365416"
 ---
 
 # WP05 - Polish & Documentation
@@ -48,3 +50,7 @@ Code is working, but we need to tell the user what happened and update our manua
 ## Risks
 
 - None really. Low complexity.
+
+## Activity Log
+
+- 2026-01-24T11:48:14Z – Antigravity – shell_pid=365416 – lane=doing – Started review via workflow command
