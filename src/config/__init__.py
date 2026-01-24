@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     # OpenRouteService
     openrouteservice_api_key: Optional[str] = None
 
-    # Google Calendar
+    # Google Calendar Integration
     google_client_id: Optional[str] = None
     google_client_secret: Optional[str] = None
     google_redirect_uri: Optional[str] = None

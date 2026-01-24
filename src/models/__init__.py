@@ -146,7 +146,7 @@ class User(Base):
     default_start_location_lat: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     default_start_location_lng: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
-    # Google Calendar integration
+    # Google Calendar Integration
     google_calendar_credentials: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     google_calendar_sync_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
 
@@ -277,12 +277,14 @@ class Job(Base):
     longitude: Mapped[Optional[float]] = mapped_column(Float)
     postal_code: Mapped[Optional[str]] = mapped_column(String)
     paid: Mapped[bool] = mapped_column(Boolean, default=False)
+    
+    # Google Calendar Integration
+    gcal_event_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
     estimated_duration: Mapped[int] = mapped_column(Integer, default=60)
-    gcal_event_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="jobs")
