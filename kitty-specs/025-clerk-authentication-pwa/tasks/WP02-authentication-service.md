@@ -1,7 +1,7 @@
 ---
 work_package_id: WP02
 title: Authentication Service & Route Protection
-lane: "doing"
+lane: "for_review"
 dependencies: []
 subtasks: [T004, T005, T006]
 agent: "Antigravity"
@@ -66,3 +66,4 @@ We need a FastAPI dependency that extracts the Bearer token, verifies it against
 ## Activity Log
 
 - 2026-01-24T21:18:04Z – Antigravity – shell_pid=553005 – lane=doing – Started implementation via workflow command
+- 2026-01-24T21:22:03Z – Antigravity – shell_pid=553005 – lane=for_review – Implemented VerifyToken dependency with JIT sync and protected all PWA routes.
