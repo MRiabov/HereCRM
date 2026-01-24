@@ -1,9 +1,11 @@
 ---
 work_package_id: WP04
 title: Event Bus Integration
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks: [T014, T015, T016, T017]
+agent: "Antigravity"
+shell_pid: "368890"
 ---
 
 # WP04 - Event Bus Integration
@@ -75,3 +77,7 @@ We need to capture changes in jobs and propagate them to the assigned user's cal
 - **Data Consistency**: If GCal update fails, do we roll back the Job update?
   - *Decision*: No (One-way sync). Job is truth. GCal is secondary. Log error, keep Job.
 - **Race Conditions**: `handle_job_event` usually runs async. Ensure DB session management is clean (new session per event).
+
+## Activity Log
+
+- 2026-01-24T11:31:22Z – Antigravity – shell_pid=368890 – lane=doing – Started implementation via workflow command
