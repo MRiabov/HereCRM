@@ -479,6 +479,7 @@ class UpdateWorkflowSettingsTool(BaseModel):
     tax_inclusive: Optional[bool] = Field(None, description="Whether prices include tax")
     include_payment_terms: Optional[bool] = Field(None, description="Whether to show net terms on invoices")
     enable_reminders: Optional[bool] = Field(None, description="Whether to send auto-reminders")
+    payment_link: Optional[str] = Field(None, description="URL for customer payments (Stripe/PayPal/etc)")
 
 
 class ExitAccountingTool(BaseModel):

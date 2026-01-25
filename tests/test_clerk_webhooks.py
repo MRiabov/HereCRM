@@ -154,5 +154,5 @@ async def test_clerk_webhook_membership_created():
                     from src.repositories import UserRepository
                     user_repo = UserRepository(session)
                     user = await user_repo.get_by_clerk_id("user_membership_test")
-                    assert user.role == "manager"
+                    assert user.role == "owner"
                     assert user.business_id is not None

@@ -58,6 +58,11 @@ class UserRepository(BaseRepository[User]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
+    async def get_by_clerk_id(self, clerk_id: str) -> Optional[User]:
+        query = select(User).where(User.clerk_id == clerk_id)
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
     def add(self, user: User):
         if user.phone_number:
             user.phone_number = normalize_phone(user.phone_number)
@@ -87,6 +92,11 @@ class BusinessRepository(BaseRepository[Business]):
     # But often we might want to get business by ID
     async def get_by_id_global(self, id: int) -> Optional[Business]:
         query = select(Business).where(Business.id == id)
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def get_by_clerk_id(self, clerk_org_id: str) -> Optional[Business]:
+        query = select(Business).where(Business.clerk_org_id == clerk_org_id)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 

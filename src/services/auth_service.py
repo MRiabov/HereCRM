@@ -1,6 +1,6 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import User, Business
+from src.models import User, Business, UserRole
 from src.repositories import UserRepository, BusinessRepository
 
 
@@ -26,7 +26,7 @@ class AuthService:
         # Flush to generate ID for the business
         await self.session.flush()
 
-        user = User(phone_number=phone, business_id=business.id, role="owner")
+        user = User(phone_number=phone, business_id=business.id, role=UserRole.OWNER)
         self.user_repo.add(user)
         # Flush to make the user available in the session identity map
         # and ensure IDs are generated if needed immediately
@@ -48,7 +48,7 @@ class AuthService:
             self.session.add(business)
             await self.session.flush()
             
-            user = User(email=identity, business_id=business.id, role="owner")
+            user = User(email=identity, business_id=business.id, role=UserRole.OWNER)
             self.user_repo.add(user)
             await self.session.flush()
             return user, True
@@ -89,7 +89,7 @@ class AuthService:
                 phone_number=primary_phone,
                 name=name,
                 business_id=business.id,
-                role="owner" # Default to owner of their personal business
+                role=UserRole.OWNER # Default to owner of their personal business
             )
             self.user_repo.add(user)
         
@@ -103,11 +103,7 @@ class AuthService:
         name = data.get("name")
         
         # Check if business exists
-        from sqlalchemy import select
-        
-        stmt = select(Business).where(Business.clerk_org_id == clerk_org_id)
-        result = await self.session.execute(stmt)
-        business = result.scalar_one_or_none()
+        business = await self.business_repo.get_by_clerk_id(clerk_org_id)
         
         if business:
             business.name = name
@@ -133,10 +129,7 @@ class AuthService:
              return
              
         # Resolve business
-        from sqlalchemy import select
-        stmt = select(Business).where(Business.clerk_org_id == org_clerk_id)
-        result = await self.session.execute(stmt)
-        business = result.scalar_one_or_none()
+        business = await self.business_repo.get_by_clerk_id(org_clerk_id)
         
         if not business:
             # Maybe create? Or wait for org.created event.
@@ -147,8 +140,10 @@ class AuthService:
         
         # Map roles
         if "admin" in role_key:
-            user.role = "manager" # or owner
+            user.role = UserRole.OWNER
+        elif "manager" in role_key:
+            user.role = UserRole.MANAGER
         elif "member" in role_key:
-            user.role = "employee"
+            user.role = UserRole.EMPLOYEE
             
         await self.session.flush()
