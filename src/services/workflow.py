@@ -24,6 +24,8 @@ class WorkflowSettingsService:
             "workflow_include_payment_terms": False if business.workflow_include_payment_terms is None else business.workflow_include_payment_terms,
             "workflow_enable_reminders": False if business.workflow_enable_reminders is None else business.workflow_enable_reminders,
             "payment_link": business.payment_link,
+            "seat_count": business.seat_limit,
+            "billing_cycle_anchor": business.billing_cycle_anchor,
         }
 
     async def update_settings(self, business_id: int, **settings) -> Dict[str, Any]:

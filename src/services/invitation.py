@@ -95,6 +95,8 @@ class InvitationService:
         
         # Create or Update User
         existing_user = await self.user_repo.get_by_phone(identifier)
+        if not existing_user and "@" in identifier:
+            existing_user = await self.user_repo.get_by_email(identifier)
         user = existing_user
         
         if existing_user:

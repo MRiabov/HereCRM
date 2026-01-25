@@ -160,7 +160,7 @@ class BillingService:
             self.logger.error(f"Stripe session creation failed for business {business_id}: {e}")
             raise
 
-    async def create_upgrade_link(self, business_id: int, item_type: str, item_id: str, success_url: str, cancel_url: str) -> dict:
+    async def create_upgrade_link(self, business_id: int, item_type: str, item_id: Optional[str], success_url: str, cancel_url: str) -> dict:
         """Creates an upgrade link with proration if possible."""
         business = await self.business_repo.get_by_id_global(business_id)
         if not business:

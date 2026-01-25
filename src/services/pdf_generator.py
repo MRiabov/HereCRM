@@ -37,7 +37,8 @@ class PDFGenerator:
             invoice_date = datetime.now()
             
         try:
-            template = self.env.get_template("invoice.html")
+            template_name = getattr(self, "template_name", "invoice.html")
+            template = self.env.get_template(template_name)
             
             # Prepare context
             context = {
@@ -59,6 +60,10 @@ class PDFGenerator:
             raise ValueError(f"Invoice template not found: invoice.html") from e
         except Exception as e:
             raise RuntimeError(f"Failed to generate invoice PDF: {str(e)}") from e
+
+    def generate(self, job: Job, invoice_date: Optional[datetime] = None, payment_link: Optional[str] = None) -> bytes:
+        """Alias for generate_invoice to support existing tests."""
+        return self.generate_invoice(job, invoice_date=invoice_date, payment_link=payment_link)
 
     def generate_quote(self, quote: Quote, issue_date: Optional[datetime] = None, expiry_date: Optional[datetime] = None) -> bytes:
         """

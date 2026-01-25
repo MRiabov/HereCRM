@@ -84,7 +84,14 @@ class GeocodingService:
             lat, lon, details = await self.get_coordinates(address)
 
         if not details:
-            return lat, lon, None, None, None, None, address
+            street = None
+            city = default_city
+            country = default_country
+            postcode = None
+            
+            addr_parts = [p for p in [street, city, country, postcode] if p]
+            full_address = ", ".join(addr_parts) if addr_parts else address
+            return lat, lon, street, city, country, postcode, full_address
 
         # Parse address details
         street_name = details.get("road")

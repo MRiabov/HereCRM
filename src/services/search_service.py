@@ -24,7 +24,7 @@ class SearchService:
 
         # Geocode if address provided but no coordinates
         if params.center_address and (params.center_lat is None or params.center_lon is None):
-            lat, lon, _, _, _, _ = await self.geocoding_service.geocode(params.center_address)
+            lat, lon, street, city, country, postal_code, full_address = await self.geocoding_service.geocode(params.center_address)
             if lat is not None and lon is not None:
                 params.center_lat = lat
                 params.center_lon = lon

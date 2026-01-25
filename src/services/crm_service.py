@@ -27,6 +27,7 @@ class CRMService:
         scheduled_at: Optional[datetime] = None,
         line_items: Optional[list] = None,
         postal_code: Optional[str] = None,
+        estimated_duration: int = 60,
     ) -> Job:
         # [T009] Check payment timing
         paid = False
@@ -45,6 +46,7 @@ class CRMService:
             line_items=line_items or [],
             postal_code=postal_code,
             paid=paid,
+            estimated_duration=estimated_duration,
         )
         self.job_repo.add(job)
         await self.session.commit() # Must commit for other sessions (handlers) to see it
