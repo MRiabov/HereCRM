@@ -5,8 +5,9 @@ from src.models import Expense
 from src.repositories import ExpenseRepository
 
 class ExpenseService:
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession, business_id: int):
         self.session = session
+        self.business_id = business_id
         self.expense_repo = ExpenseRepository(session)
 
     async def create_expense(

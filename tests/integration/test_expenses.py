@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from src.services.expenses import ExpenseService
 from src.models import User, Job, Business, UserRole, Customer, Expense
 from src.uimodels import AddExpenseTool
-from src.tools.expenses import execute_add_expense
+from src.tools.expenses import ExpenseTools
 
 @pytest.mark.asyncio
 async def test_expense_service_crud(async_session):
@@ -21,7 +21,7 @@ async def test_expense_service_crud(async_session):
     async_session.add(user)
     await async_session.flush()
 
-    service = ExpenseService(async_session)
+    service = ExpenseService(async_session, business.id)
 
     # 1. Create expense
     expense = await service.create_expense(
@@ -64,11 +64,12 @@ async def test_add_expense_tool_integration(async_session):
     async_session.add(job)
     await async_session.flush()
 
-    service = ExpenseService(async_session)
+    service = ExpenseService(async_session, business.id)
+    tools = ExpenseTools(service)
 
     # 1. Test Tool without job
     tool_no_job = AddExpenseTool(amount=10.0, description="Parking", category="Parking")
-    msg, metadata = await execute_add_expense(tool_no_job, service, business.id, user.id)
+    msg, metadata = await tools.add_expense(tool_no_job, user.id)
     
     assert "Recorded expense" in msg
     assert "Parking" in msg
@@ -77,7 +78,7 @@ async def test_add_expense_tool_integration(async_session):
 
     # 2. Test Tool with job
     tool_with_job = AddExpenseTool(amount=25.0, description="Supplies", category="Supplies", job_id=job.id)
-    msg_job, metadata_job = await execute_add_expense(tool_with_job, service, business.id, user.id)
+    msg_job, metadata_job = await tools.add_expense(tool_with_job, user.id)
     
     assert f"Linked to Job #{job.id}" in msg_job
     assert metadata_job["job_id"] == job.id
