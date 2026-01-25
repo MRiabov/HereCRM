@@ -1,11 +1,11 @@
 ---
 work_package_id: WP05
 title: Testing & Verification
-lane: "done"
+lane: "doing"
 dependencies: []
 subtasks: [T011]
 agent: "Antigravity"
-shell_pid: "590973"
+shell_pid: "601236"
 reviewed_by: "MRiabov"
 review_status: "approved"
 ---
@@ -49,3 +49,4 @@ With auth changing, we need to ensure security is tight (no unauthorized access)
 
 - 2026-01-25T08:17:26Z – Antigravity – shell_pid=590973 – lane=doing – Started implementation via workflow command
 - 2026-01-25T08:30:35Z – Antigravity – shell_pid=590973 – lane=done – Review passed. Forcing transition due to spurious subtask checking error.
+- 2026-01-25T08:37:09Z – Antigravity – shell_pid=601236 – lane=doing – Started review via workflow command
