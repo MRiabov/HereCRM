@@ -20,11 +20,12 @@ def mock_s3_service(monkeypatch):
 @pytest.fixture
 def mock_pdf_generator(monkeypatch):
     mock = MagicMock()
+    mock.generate_invoice.return_value = b"fake pdf content"
     mock.generate.return_value = b"fake pdf content"
     
     # Patch the class in invoice_service.py so instantiation returns our mock
     mock_class = MagicMock(return_value=mock)
-    monkeypatch.setattr("src.services.invoice_service.InvoicePDFGenerator", mock_class)
+    monkeypatch.setattr("src.services.invoice_service.PDFGenerator", mock_class)
     return mock
 
 @pytest.fixture
@@ -59,7 +60,7 @@ async def test_create_invoice_success(session: AsyncSession, mock_s3_service, mo
     assert invoice.status == "GENERATED"
     
     # Verify mocks called
-    mock_pdf_generator.generate.assert_called_once()
+    mock_pdf_generator.generate_invoice.assert_called_once()
     mock_s3_service.upload_file.assert_called_once()
 
 
@@ -167,5 +168,5 @@ async def test_existing_invoice_warning(session: AsyncSession, mock_s3_service, 
     
     # Assert 2: Should generate new
     assert "https://s3.example.com/invoice.pdf" in result_force
-    mock_pdf_generator.generate.assert_called()
+    mock_pdf_generator.generate_invoice.assert_called()
     mock_s3_service.upload_file.assert_called()

@@ -25,7 +25,7 @@ async def client(async_session):
     await async_session.commit()
     await async_session.refresh(user)
 
-    async def mock_auth(*args, **kwargs):
+    async def mock_auth():
         return user
 
     # Override get_current_user

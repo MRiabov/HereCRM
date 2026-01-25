@@ -7,10 +7,44 @@ from datetime import datetime, timezone
 # The endpoints currently default business_id=1, but in real app we'd need auth headers.
 # We'll assume the API is open or mocked auth for now as per implementation (no `Depends(get_current_user)` enforced strictly yet).
 
+from src.database import get_db
+from src.models import User, Business, UserRole
+from src.api.dependencies.clerk_auth import get_current_user, verify_token
+
 @pytest.fixture
-async def client():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+async def client(async_session):
+    # Setup a test user and business
+    biz = Business(name="Test Biz PWA")
+    async_session.add(biz)
+    await async_session.flush()
+    
+    user = User(
+        clerk_id="pwa_test_user",
+        name="PWA Developer",
+        email="dev@example.com",
+        business_id=biz.id,
+        role=UserRole.OWNER
+    )
+    async_session.add(user)
+    await async_session.commit()
+    await async_session.refresh(user)
+
+    async def mock_auth():
+        return user
+
+    # Override dependencies
+    app.dependency_overrides[get_current_user] = mock_auth
+    app.dependency_overrides[verify_token] = mock_auth
+    app.dependency_overrides[get_db] = lambda: async_session
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app), 
+        base_url="http://test",
+        headers={"Authorization": "Bearer dummy_pwa_token"}
+    ) as c:
         yield c
+    
+    app.dependency_overrides = {}
 
 @pytest.mark.asyncio
 async def test_dashboard_stats(client):

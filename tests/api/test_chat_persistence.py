@@ -1,0 +1,151 @@
+import pytest
+from httpx import AsyncClient, ASGITransport
+from src.main import app
+from src.api.dependencies.clerk_auth import get_current_user
+from src.models import User, MessageRole
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
+# Mock User
+class MockUser:
+    id = 1
+    business_id = 1
+    role = "owner"
+    name = "Test User"
+    phone_number = "+15550000"
+
+@pytest.fixture
+async def client():
+    from src.api.dependencies.clerk_auth import verify_token, get_current_user
+    from src.database import AsyncSessionLocal
+    from src.models import Business, User, UserRole
+
+    # Create records in DB
+    async with AsyncSessionLocal() as db:
+        # Check if business exists
+        stmt = select(Business).where(Business.id == 1)
+        res = await db.execute(stmt)
+        business = res.scalar_one_or_none()
+        if not business:
+            business = Business(id=1, name="Test Business")
+            db.add(business)
+            await db.flush()
+        
+        # Check if user exists
+        stmt = select(User).where(User.id == 1)
+        res = await db.execute(stmt)
+        user = res.scalar_one_or_none()
+        if not user:
+            user = User(
+                id=1, 
+                business_id=1, 
+                role=UserRole.OWNER, 
+                name="Test User", 
+                phone_number="+15550000",
+                clerk_id="test_clerk_id"
+            )
+            db.add(user)
+        await db.commit()
+
+    async def mock_auth_bypass():
+        async with AsyncSessionLocal() as db:
+            res = await db.execute(select(User).where(User.id == 1))
+            return res.scalar_one()
+
+    app.dependency_overrides[verify_token] = mock_auth_bypass
+    app.dependency_overrides[get_current_user] = mock_auth_bypass
+    
+    async with AsyncClient(
+        transport=ASGITransport(app=app), 
+        base_url="http://test",
+        headers={"Authorization": "Bearer mock-token"}
+    ) as c:
+        yield c
+    app.dependency_overrides.clear()
+
+@pytest.mark.asyncio
+async def test_ai_chat_persistence(client):
+    # 1. Send message to AI - should return 'proposed'
+    payload = {
+        "customer_id": 0,
+        "message": "Add job for Bob, $100"
+    }
+    response = await client.post("/api/v1/pwa/chat/send", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    # The API now returns status="sent" but the content is the JSON string of the proposal
+    assert data["status"] == "sent"
+    
+    import json
+    proposal = json.loads(data["content"])
+    assert proposal["status"] == "proposed"
+    assert proposal["tool"] == "AddJobTool"
+    
+    # 2. Execute the tool
+    exec_payload = {
+        "tool_name": "AddJobTool",
+        "arguments": proposal["data"]
+    }
+    exec_response = await client.post("/api/v1/pwa/chat/execute", json=exec_payload)
+    assert exec_response.status_code == 200
+    exec_data = exec_response.json()
+    assert exec_data["status"] == "sent"
+    
+    # 3. Check history
+    history_res = await client.get("/api/v1/pwa/chat/history/0")
+    assert history_res.status_code == 200
+    history = history_res.json()
+    
+    # Should have: user request, and AI response (after execution)
+    # The proposal itself is NOT strictly required in history if PWA handles it via cards, 
+    # but the current logic saves it as a message. 
+    # Actually, send_message logs the user message. execute_tool logs the assistant message.
+    assert len(history) >= 2
+    assert history[0]["content"] == "Add job for Bob, $100"
+    assert history[0]["role"] == MessageRole.USER
+    assert history[1]["role"] == MessageRole.ASSISTANT
+
+@pytest.mark.asyncio
+async def test_strict_ai_logic_no_tool(client):
+    # Send non-tool message
+    payload = {
+        "customer_id": 0,
+        "message": "How are you today?"
+    }
+    response = await client.post("/api/v1/pwa/chat/send", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    # Fallback to help message
+    assert "status" in data
+
+@pytest.mark.asyncio
+async def test_customer_chat_persistence(client):
+    # Create a customer first
+    customer_data = {
+        "name": "Persist Customer",
+        "phone": "+15559999"
+    }
+    cust_res = await client.post("/api/v1/pwa/customers/", json=customer_data)
+    assert cust_res.status_code == 200
+    customer_id = cust_res.json()["id"]
+
+    # Send message to customer
+    payload = {
+        "customer_id": customer_id,
+        "message": "See you at 10am!"
+    }
+    response = await client.post("/api/v1/pwa/chat/send", json=payload)
+    assert response.status_code == 200
+    
+    # Check history
+    history_res = await client.get(f"/api/v1/pwa/chat/history/{customer_id}")
+    assert history_res.status_code == 200
+    history = history_res.json()
+    
+    # Check if both user message and outbound were saved (per my new logic)
+    # Actually my logic saves two messages: one from technician, one 'system' to customer
+    assert len(history) >= 2
+    assert history[0]["content"] == "See you at 10am!"
+    assert history[0]["role"] == MessageRole.USER
+    assert history[1]["content"] == "See you at 10am!"
+    assert history[1]["role"] == MessageRole.ASSISTANT

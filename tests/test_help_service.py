@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from src.services.help_service import HelpService
-from src.models import Message, MessageRole, Business
+from src.models import Message, MessageRole, Business, User
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone
 

@@ -98,7 +98,7 @@ async def test_customer_pov_scenarios():
             sig_yes = hmac.new(secret.encode("utf-8"), payload_yes_bytes, hashlib.sha256).hexdigest()
             response = await ac.post("/webhook", content=payload_yes_bytes, headers={"X-Hub-Signature-256": f"sha256={sig_yes}", "Content-Type": "application/json"})
             print(f"DEBUG: Confirm Response: {response.json()}")
-            assert "✔ Message sent" in response.json()["reply"]
+            assert "✔ Sent status update" in response.json()["reply"]
 
             # Verify customer received message
             mock_enqueue.assert_called()
