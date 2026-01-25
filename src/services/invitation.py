@@ -72,20 +72,23 @@ class InvitationService:
 
         return invitation
 
-    async def process_join(self, identifier: str) -> tuple[bool, str, Optional[User]]:
+    async def process_join(self, identifier: str, code: Optional[str] = None) -> tuple[bool, str, Optional[User]]:
         """
         Process a 'Join' command from a user (potential employee).
         Finds pending invitations and adds the user to the business.
         """
-        pending = await self.invitation_repo.get_pending_by_identifier(identifier)
-        if not pending:
-            return False, "No pending invitations found for your number.", None
-
-        # Logic for multiple pending invites:
-        # Ideally we'd ask them to disambiguate "Join [Business Name]", 
-        # but for this MVP we'll take the most recent one.
-        # Assuming get_pending_by_identifier returns list, let's sort or just take first.
-        invite = pending[0]
+        invite = None
+        if code:
+            invite = await self.invitation_repo.get_by_token(code)
+            if not invite or invite.status != InvitationStatus.PENDING:
+                return False, "Invalid or expired invitation code.", None
+        else:
+            pending = await self.invitation_repo.get_pending_by_identifier(identifier)
+            if not pending:
+                return False, "No pending invitations found for your number.", None
+            # Logic for multiple pending invites:
+            # For this MVP we'll take the most recent one.
+            invite = pending[0]
         
         # Mark as accepted
         invite.status = InvitationStatus.ACCEPTED

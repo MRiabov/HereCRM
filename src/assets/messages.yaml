@@ -197,18 +197,15 @@ welcome_message: |
   
   I'm your AI assistant to help you manage your business via WhatsApp.
   
-  You can:
-  - *Add Jobs*: 'Fix sink for John $50'
-  - *Add Leads*: 'Add lead Mary'
-  - *Schedule*: 'Schedule John for tomorrow 2pm'
-  - *Search*: 'Show my jobs for today'
-  - *Pipeline*: 'Show pipeline'
-  - *Invoice*: 'Send invoice to John'
-  - *Calendar*: 'Connect Google Calendar'
-  - *Send Status to customer*: 'On my way to John'
-  - *Team Management*: 'Show team schedule' or 'Assign job #123 to John'
+  To get started, would you like to:
+  1. *Create a new business*
+  2. *Join an existing one*
   
-  Try saying "Add job Fix faucet for Bob at 42 Wallaby Way $80" to get started!
+  (Reply with '1' or '2')
+
+onboarding_join_prompt: "Please provide the *invitation code* or the *phone number* of the business owner you'd like to join."
+onboarding_create_success: "Great! Your business has been set up. You can now start adding jobs, leads, and managing your team. Type 'help' to see what I can do!"
+onboarding_invalid_choice: "I didn't quite get that. Please reply with '1' to create a new business or '2' to join an existing one."
 
 welcome_back: |
   Welcome back! 👋

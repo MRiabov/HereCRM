@@ -70,7 +70,6 @@ class WhatsappService:
         self.state_repo = ConversationStateRepository(session)
         self.user_repo = UserRepository(session)
         self.business_repo = BusinessRepository(session)
-        self.business_repo = BusinessRepository(session)
         self._current_metadata = {}
         self.data_service = DataManagementService(session)
         self.invitation_service = InvitationService(session)
@@ -170,11 +169,15 @@ class WhatsappService:
 
         if is_new_user:
             self.logger.info(f"New user onboarding for {active_identity}")
+            state_record.state = ConversationStatus.ONBOARDING
             reply = self.template_service.render("welcome_message")
         
         # If reply is already set (e.g. welcome message), skip state check
         if not reply:
-            if state_record.state == ConversationStatus.WAITING_CONFIRM:
+            if state_record.state == ConversationStatus.ONBOARDING:
+                self.logger.info(f"User {user.id} in ONBOARDING mode")
+                reply = await self._handle_onboarding(user, state_record, message_text)
+            elif state_record.state == ConversationStatus.WAITING_CONFIRM:
                 self.logger.info(f"User {user.id} in WAITING_CONFIRM mode")
                 reply = await self._handle_waiting_confirm(user, state_record, message_text)
             elif state_record.state == ConversationStatus.SETTINGS:
@@ -370,6 +373,43 @@ class WhatsappService:
 
         # If truly unclear
         return self.template_service.render("error_unclear_input")
+
+    async def _handle_onboarding(
+        self, user: User, state_record: ConversationState, text: str
+    ) -> str:
+        lower_text = text.lower().strip()
+        
+        # State 0: Initial choice (1 or 2)
+        if not state_record.draft_data:
+            if lower_text in ["1", "create", "new"]:
+                # user already has a default business created by auth_service
+                # so we just confirm and move to idle
+                state_record.state = ConversationStatus.IDLE
+                return self.template_service.render("onboarding_create_success")
+            elif lower_text in ["2", "join", "existing"]:
+                state_record.draft_data = {"step": "joining"}
+                return self.template_service.render("onboarding_join_prompt")
+            else:
+                return self.template_service.render("onboarding_invalid_choice")
+        
+        # State 1: Joining (processing invitation/code)
+        draft = state_record.draft_data
+        if draft.get("step") == "joining":
+            success, msg, _ = await self.invitation_service.process_join(user.phone_number or user.email or "", code=text)
+            if success:
+                state_record.state = ConversationStatus.IDLE
+                state_record.draft_data = None
+                return msg
+            else:
+                # If failed, maybe they want to go back?
+                if lower_text in ["back", "1", "create"]:
+                    state_record.state = ConversationStatus.IDLE # Or back to start?
+                    # actually they already have a business.
+                    state_record.draft_data = None
+                    return self.template_service.render("onboarding_create_success")
+                return f"{msg}\n\nType '1' to just create your own business instead, or try another code."
+
+        return self.template_service.render("onboarding_invalid_choice")
 
     async def _handle_waiting_confirm(
         self, user: User, state_record: ConversationState, text: str
