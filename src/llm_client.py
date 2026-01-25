@@ -1,6 +1,7 @@
 import logging
 import json
 import os
+import time
 from typing import Union, Optional, Any
 from openai import AsyncOpenAI
 from pydantic import ValidationError
@@ -420,6 +421,7 @@ class LLMParser:
         """
         for attempt in range(2):
             try:
+                start_time = time.perf_counter()
                 response = await self.client.chat.completions.create(
                     model=self.model,
                     messages=messages,
@@ -431,6 +433,16 @@ class LLMParser:
                         }
                     },
                 )
+                latency = time.perf_counter() - start_time
+                usage = response.usage
+                input_tokens = usage.prompt_tokens if usage else None
+                output_tokens = usage.completion_tokens if usage else None
+                
+                # Format output choices for PostHog
+                output_choices = [
+                    {"message": choice.message.dict(), "finish_reason": choice.finish_reason}
+                    for choice in response.choices
+                ]
 
                 message = response.choices[0].message
                 
@@ -450,7 +462,12 @@ class LLMParser:
                             success=False,
                             attempts=attempt + 1,
                             error_type="no_tool_call",
-                            model=self.model
+                            model=self.model,
+                            latency=latency,
+                            input_tokens=input_tokens,
+                            output_tokens=output_tokens,
+                            input_messages=messages,
+                            output_choices=output_choices
                         )
                         return None
 
@@ -480,7 +497,12 @@ class LLMParser:
                             success=False,
                             attempts=attempt + 1,
                             error_type="json_decode_error",
-                            model=self.model
+                            model=self.model,
+                            latency=latency,
+                            input_tokens=input_tokens,
+                            output_tokens=output_tokens,
+                            input_messages=messages,
+                            output_choices=output_choices
                         )
                         return None
 
@@ -495,7 +517,12 @@ class LLMParser:
                             success=True,
                             attempts=attempt + 1,
                             tool_called=function_name,
-                            model=self.model
+                            model=self.model,
+                            latency=latency,
+                            input_tokens=input_tokens,
+                            output_tokens=output_tokens,
+                            input_messages=messages,
+                            output_choices=output_choices
                         )
                         return result
                     except ValidationError as e:
@@ -517,7 +544,12 @@ class LLMParser:
                                 attempts=attempt + 1,
                                 error_type="validation_error",
                                 tool_called=function_name,
-                                model=self.model
+                                model=self.model,
+                                latency=latency,
+                                input_tokens=input_tokens,
+                                output_tokens=output_tokens,
+                                input_messages=messages,
+                                output_choices=output_choices
                             )
                             return None
                 else:

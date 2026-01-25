@@ -304,11 +304,19 @@ class WhatsappService:
         channel_name = state_record.active_channel or "whatsapp"
         
         system_time = datetime.now(timezone.utc).isoformat()
+        user_context = {
+            "role": user.role,
+            "name": user.name,
+            "business_id": user.business_id,
+            "phone_number": user.phone_number,
+            "clerk_id": user.clerk_id
+        }
         tool_call = await self.parser.parse(
             text, 
             system_time=system_time, 
             service_catalog=service_catalog_str,
-            channel_name=channel_name
+            channel_name=channel_name,
+            user_context=user_context
         )
         
         if tool_call:

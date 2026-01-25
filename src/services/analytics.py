@@ -41,8 +41,17 @@ class PostHogClient:
         attempts: int,
         error_type: Optional[str] = None,
         tool_called: Optional[str] = None,
-        model: Optional[str] = None
+        model: Optional[str] = None,
+        latency: Optional[float] = None,
+        input_tokens: Optional[int] = None,
+        output_tokens: Optional[int] = None,
+        input_messages: Optional[list] = None,
+        output_choices: Optional[list] = None
     ):
+        """
+        Captures LLM query metadata. 
+        Uses PostHog's $ai_generation schema for enhanced observability.
+        """
         properties = {
             "query": query,
             "success": success,
@@ -50,8 +59,18 @@ class PostHogClient:
             "error_type": error_type,
             "tool_called": tool_called,
             "model": model,
+            "$ai_model": model,
+            "$ai_latency": latency,
+            "$ai_input_tokens": input_tokens,
+            "$ai_output_tokens": output_tokens,
+            "$ai_input": input_messages,
+            "$ai_output_choices": output_choices,
         }
+        # Capture standard event for backward compatibility and filtering
         self.capture(user_id, "llm_query_processed", properties)
+        
+        # Capture $ai_generation for PostHog's specialized AI dashboard
+        self.capture(user_id, "$ai_generation", properties)
 
 # Singleton instance
 analytics = PostHogClient()
