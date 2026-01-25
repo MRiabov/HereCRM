@@ -8,6 +8,8 @@
 ## Summary
 
 Implement a financial tracking system for expenses and employee payroll within the existing CRM. This includes a flexible expense recording system (linked to jobs or general) and a payroll ledger that accumulates wages based on configurable models (Commission, Hourly, Daily). The system will use a simple transaction log approach (credit/debit) stored in SQLite to track "Balance Owed" to employees, accessible via chat commands.
+API Exposure: Finance endpoints (List Expenses, Get Ledger) for PWA.
+API Exposure: Finance endpoints (List Expenses, Get Ledger) for PWA.
 
 ## Technical Context
 

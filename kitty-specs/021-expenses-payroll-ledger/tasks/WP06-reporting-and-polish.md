@@ -65,6 +65,11 @@ We have the data (Expenses, Ledger). Now we need to expose it nicely.
 - "How to track time".
 - "How to run payroll".
 
+### T028: API Exposure
+
+**Goal**: Expose Finance endpoints for PWA.
+**Status**: [x] Implemented
+
 ## Testing
 
 - **Manual Verification**: Run through the full user stories from the Spec.
