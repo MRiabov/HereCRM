@@ -20,6 +20,7 @@ async def lifespan(app: FastAPI):
     # Import handlers to register them via decorators
     import src.services.pipeline_handlers  # noqa: F401
     import src.handlers.integration_handlers  # noqa: F401
+    import src.handlers.automation_handlers  # noqa: F401
     
     # Register MessagingService event handlers
     messaging_service.register_handlers()

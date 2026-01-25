@@ -38,6 +38,12 @@ class SchedulerService:
         self.scheduler.add_job(func, trigger, id=id, replace_existing=True)
         logger.info(f"Added daily job '{id}' at {hour}:{minute} UTC")
 
+    def add_delayed_job(self, func: Callable, delay: timedelta, *args, **kwargs):
+        """Add a one-off job to run after a delay."""
+        run_date = datetime.now(timezone.utc) + delay
+        self.scheduler.add_job(func, 'date', run_date=run_date, args=args, kwargs=kwargs)
+        logger.info(f"Added delayed job to run at {run_date} (delay: {delay})")
+
     async def check_shifts(self):
         """
         Daily check to notify employees about their jobs.
