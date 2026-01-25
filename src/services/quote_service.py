@@ -6,6 +6,7 @@ from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from src.models import Quote, QuoteLineItem, QuoteStatus, Job, LineItem, Request
+from src.events import event_bus, QUOTE_SENT
 from src.services.pdf_generator import PDFGenerator
 from src.services.storage import S3Service, StorageError
 
@@ -164,6 +165,13 @@ class QuoteService:
         quote.status = QuoteStatus.SENT
         await self.session.commit()
         await self.session.refresh(quote)
+
+        await event_bus.emit(QUOTE_SENT, {
+            "quote_id": quote.id,
+            "customer_id": quote.customer_id,
+            "business_id": quote.business_id,
+            "total_amount": quote.total_amount
+        })
 
     async def create_from_request(
         self, request_id: int, customer_id: int, items: Optional[List[Dict]] = None

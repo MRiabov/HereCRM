@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from src.models import Job, Customer, PipelineStage, Business, PaymentTiming
 from src.repositories import JobRepository, CustomerRepository, RequestRepository
-from src.events import event_bus, JOB_CREATED, JOB_BOOKED, JOB_SCHEDULED, JOB_UPDATED
+from src.events import event_bus, JOB_CREATED, JOB_BOOKED, JOB_SCHEDULED, JOB_UPDATED, JOB_PAID
 from datetime import datetime, timedelta, timezone
 from src.services.quote_service import QuoteService
 
@@ -330,3 +330,28 @@ class CRMService:
 
         return job
 
+    async def mark_job_paid(self, job_id: int) -> Job:
+        """
+        Marks a job as paid and emits JOB_PAID event.
+        """
+        job = await self.job_repo.get_by_id(job_id, self.business_id)
+        if not job:
+            raise ValueError(f"Job with ID {job_id} not found.")
+
+        if job.paid:
+            return job # Already paid
+
+        job.paid = True
+        await self.session.commit()
+        await self.session.refresh(job)
+
+        await event_bus.emit(
+            JOB_PAID,
+            {
+                "job_id": job.id,
+                "customer_id": job.customer_id,
+                "business_id": self.business_id,
+                "value": job.value,
+            }
+        )
+        return job
