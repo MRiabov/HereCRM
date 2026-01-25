@@ -13,3 +13,8 @@ channels:
     provider: meta
     auto_confirm: false
     max_length: 4096
+  pwa_chat:
+    provider: internal
+    auto_confirm: true
+    max_length: 10000
+    style: "helpful and detailed"

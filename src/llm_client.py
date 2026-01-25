@@ -722,12 +722,13 @@ class LLMParser:
     ]:
         # 1. Keyword pre-filtering
         lower_text = text.lower().strip()
+        if lower_text == "help":
+            return HelpTool()
         if lower_text in ["undo", "cancel"]:
             return None
-        if lower_text in ["hi", "hello", "hey", "greetings"]:
-            return None
-        if lower_text in ["help", "usage", "commands"]:
-            return HelpTool()
+        
+        # We removed strict "help" and "hi" filtering to let the LLM handle 
+        # varied intents and context better, especially for PWA chat.
 
         # 2. Construct Prompt
         system_instruction = self.prompts_service.render("system_instruction")

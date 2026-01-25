@@ -3,7 +3,7 @@ products:
     name: "Additional Seat"
     description: "Add another user to your workspace"
     price_id: "price_1SrkGWEWj96BiJElrDXGNpyz"  # Stripe Price ID
-    unit_amount_decimal: 15.00
+    unit_amount_decimal: 50.00
     currency: "eur"
 
   messaging:
@@ -21,12 +21,14 @@ addons:
     description: "Manage shifts and roles"
     price_id: "price_123_placeholder"
     scope: "manage_employees"
-    price_display: "€10/mo"
+    unit_amount_decimal: 20.00
+    price_display: "€20/mo"
 
   - id: "campaign_messaging"
     name: "Campaign Messaging"
     description: "Bulk messaging tools"
     price_id: "price_456_placeholder"
     scope: "campaigns"
+    unit_amount_decimal: 25.00
     price_display: "€25/mo"
 
