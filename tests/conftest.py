@@ -12,6 +12,13 @@ os.environ["QB_CLIENT_SECRET"] = "dummy_qb_client_secret"
 os.environ["QB_REDIRECT_URI"] = "http://localhost:8000/callback"
 os.environ["CREDENTIALS_DB_KEY"] = "dummy_key_for_testing_only_12345"
 
+# Clerk Settings for tests
+os.environ["CLERK_SECRET_KEY"] = "sk_test_dummy"
+os.environ["CLERK_PUBLISHABLE_KEY"] = "pk_test_dummy"
+os.environ["CLERK_ISSUER"] = "https://dummy.clerk.accounts.dev"
+os.environ["CLERK_JWKS_URL"] = "https://dummy.clerk.accounts.dev/.well-known/jwks.json"
+os.environ["CLERK_WEBHOOK_SECRET"] = "whsec_dummy"
+
 import pytest
 import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
