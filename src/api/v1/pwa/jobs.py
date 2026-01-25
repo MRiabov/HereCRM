@@ -8,13 +8,16 @@ from src.database import get_db
 from src.services.crm_service import CRMService
 from src.services.dashboard_service import DashboardService
 from src.schemas.pwa import JobListResponse, JobSchema, JobCreate, JobUpdate
-from src.models import Job
+from src.models import Job, User
+from src.api.dependencies.clerk_auth import get_current_user
 
 router = APIRouter()
 
-async def get_services(session: AsyncSession = Depends(get_db)):
-    # HARDCODED BUSINESS ID = 1 FOR PROTOTYPE
-    return CRMService(session, business_id=1), DashboardService(session)
+async def get_services(
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return CRMService(session, business_id=current_user.business_id), DashboardService(session)
 
 @router.get("/", response_model=List[JobListResponse])
 async def list_jobs(

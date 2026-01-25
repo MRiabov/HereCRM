@@ -6,15 +6,16 @@ from src.database import get_db
 from src.services.crm_service import CRMService
 from src.services.dashboard_service import DashboardService
 from src.schemas.pwa import DashboardStats, RecentActivity
+from src.api.dependencies.clerk_auth import get_current_user
+from src.models import User
 
 router = APIRouter()
 
-async def get_dashboard_services(session: AsyncSession = Depends(get_db)):
-    # Assuming authenticated user context is handled via middleware or another dependency
-    # For now, we instantiate services directly with session.
-    # In a real scenario, we'd extract business_id from the authenticated user.
-    # HARDCODED BUSINESS ID = 1 FOR PROTOTYPE
-    return CRMService(session, business_id=1), DashboardService(session)
+async def get_dashboard_services(
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return CRMService(session, business_id=current_user.business_id), DashboardService(session)
 
 @router.get("/stats", response_model=DashboardStats)
 async def get_dashboard_stats(

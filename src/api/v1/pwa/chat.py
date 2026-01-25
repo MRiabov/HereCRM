@@ -8,12 +8,16 @@ from src.database import get_db
 from src.services.crm_service import CRMService
 from src.services.messaging_service import messaging_service
 from src.schemas.pwa import ChatMessage, ChatSendRequest
-from src.models import Message, MessageRole
+from src.models import Message, MessageRole, User
+from src.api.dependencies.clerk_auth import get_current_user
 
 router = APIRouter()
 
-async def get_crm_service(session: AsyncSession = Depends(get_db)) -> CRMService:
-    return CRMService(session, business_id=1)
+async def get_crm_service(
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> CRMService:
+    return CRMService(session, business_id=current_user.business_id)
 
 @router.get("/history/{customer_id}", response_model=List[ChatMessage])
 async def get_chat_history(
