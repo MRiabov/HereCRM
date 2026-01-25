@@ -1,7 +1,7 @@
 ---
 work_package_id: WP05
 title: Expense Management
-lane: "doing"
+lane: "for_review"
 dependencies: []
 subtasks: [T020, T021, T022, T023]
 agent: "Antigravity"
@@ -72,3 +72,4 @@ Simple CRUD for the `Expense` entity, but exposed via an LLM Tool.
 ## Activity Log
 
 - 2026-01-22T14:47:57Z – Antigravity – shell_pid=260428 – lane=doing – Started implementation via workflow command
+- 2026-01-25T08:28:25Z – Antigravity – shell_pid=260428 – lane=for_review – Ready for review: Implemented ExpenseService, AddExpenseTool, and updated RBAC. Verified with integration tests.
