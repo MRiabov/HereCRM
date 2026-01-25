@@ -3,7 +3,7 @@ import pytest
 from unittest.mock import MagicMock
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, User, UserRole, InvoicingWorkflow
+from src.models import Business, User, UserRole, InvoicingWorkflow, Job
 from src.services.workflow import WorkflowSettingsService
 from src.services.template_service import TemplateService
 from src.uimodels import GetWorkflowSettingsTool, UpdateWorkflowSettingsTool
@@ -115,6 +115,64 @@ async def test_workflow_tool_validation():
         assert "Current Workflow Settings" in msg
         assert data["settings"]["workflow_invoicing"] == InvoicingWorkflow.MANUAL
         print("test_workflow_tool_validation passed!")
+        
+    @pytest.mark.asyncio
+    async def test_workflow_job_creation_default():
+        await setup_db()
+        async with TestAsyncSessionLocal() as session:
+            business = Business(name="Job Default Biz", subscription_status="free", active_addons=[])
+            session.add(business)
+            await session.flush()
+            
+            owner = User(name="Owner", business_id=business.id, role=UserRole.OWNER, phone_number="999")
+            session.add(owner)
+            await session.commit()
+            
+            template_service = MagicMock(spec=TemplateService)
+            template_service.render.return_value = "Mocked Response"
+            
+            # Helper to create/execute tool
+            async def execute_add_job(settings_value=None):
+                # Update setting
+                if settings_value:
+                    # Update directly in DB for speed
+                    await session.execute(
+                         sa.update(Business)
+                         .where(Business.id == business.id)
+                         .values(workflow_job_creation_default=settings_value)
+                    )
+                    await session.commit()
+
+                executor = ToolExecutor(session, business.id, owner.id, owner.phone_number, template_service)
+                # Ensure customer exists (mocked or pre-created)
+                # Actually AddJobTool creates customer if not exists, so it's fine.
+                
+                tool = AddJobTool(customer_name="Test Customer", price=100)
+                msg, data = await executor.execute(tool)
+                return data
+
+            import sqlalchemy as sa
+            from src.uimodels import AddJobTool
+            from src.models import JobCreationDefault
+
+            # 1. Default (None or UNSCHEDULED) -> Pending
+            data = await execute_add_job()
+            assert data["action"] == "create"
+            # Retrieve job to check status
+            job = await session.get(Job, data["id"])
+            assert job.status == "pending"
+
+            # 2. MARK_DONE -> Done
+            data = await execute_add_job(JobCreationDefault.MARK_DONE)
+            job = await session.get(Job, data["id"])
+            assert job.status == "done"
+
+            # 3. AUTO_SCHEDULE -> Pending (for now)
+            data = await execute_add_job(JobCreationDefault.AUTO_SCHEDULE)
+            job = await session.get(Job, data["id"])
+            assert job.status == "pending"
+            
+            print("test_workflow_job_creation_default passed!")
 
 if __name__ == "__main__":
     async def run_all():
@@ -122,6 +180,7 @@ if __name__ == "__main__":
             await test_workflow_settings_defaults()
             await test_workflow_tool_rbac()
             await test_workflow_tool_validation()
+            await test_workflow_job_creation_default()
             print("\nALL TESTS PASSED")
         except Exception as e:
             print(f"\nTESTS FAILED: {e}")
