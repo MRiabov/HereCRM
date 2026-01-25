@@ -111,6 +111,10 @@ class ChatSendRequest(BaseModel):
     customer_id: int
     message: str
 
+class ChatExecuteRequest(BaseModel):
+    tool_name: str
+    arguments: Dict[str, Any]
+
 # --- Customer Schemas ---
 
 class CustomerCreate(BaseModel):
@@ -230,6 +234,8 @@ class BusinessSettingsSchema(BaseModel):
     workflow_enable_reminders: Optional[bool]
     payment_link: Optional[str]
     stripe_connected: bool
+    seat_count: int
+    billing_cycle_anchor: Optional[datetime] = None
 
 class BusinessSettingsUpdate(BaseModel):
     workflow_invoicing: Optional[str] = None
