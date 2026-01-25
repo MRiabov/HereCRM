@@ -1,7 +1,7 @@
 ---
 work_package_id: WP04
 title: Messaging Ingress & Registration
-lane: "doing"
+lane: "for_review"
 dependencies: []
 subtasks: [T009, T010]
 agent: "Antigravity"
@@ -50,3 +50,4 @@ Currently, `auth_service.get_or_create_user` might auto-create a user when a mes
 ## Activity Log
 
 - 2026-01-25T08:14:13Z – Antigravity – shell_pid=587193 – lane=doing – Started review via workflow command
+- 2026-01-25T08:16:04Z – Antigravity – shell_pid=587193 – lane=for_review – Moved to for_review
