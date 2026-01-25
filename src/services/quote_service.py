@@ -1,17 +1,22 @@
 import logging
 import secrets
 from typing import List, Dict, Optional
+from datetime import datetime
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from src.models import Quote, QuoteLineItem, QuoteStatus, Job, LineItem, Request
 from src.events import event_bus, QUOTE_SENT
+from src.services.pdf_generator import PDFGenerator
+from src.services.storage import S3Service, StorageError
 
 logger = logging.getLogger(__name__)
 
 class QuoteService:
     def __init__(self, session: AsyncSession):
         self.session = session
+        self.s3_service = S3Service()
+        self.pdf_generator = PDFGenerator()
 
     async def confirm_quote(self, token: str) -> Optional[Quote]:
         """
@@ -125,14 +130,35 @@ class QuoteService:
     async def send_quote(self, quote_id: int) -> None:
         """
         Sends the quote to the customer via their preferred channel.
-        For now, this mocks the PDF generation and delivery by updating status.
+        Generates PDF, uploads to S3, and updates status.
         """
         quote = await self.get_quote(quote_id)
         if not quote:
             raise ValueError(f"Quote {quote_id} not found")
         
-        # TODO: Integrate with PDF generation service (WP02)
-        # TODO: Integrate with MessagingService
+        logger.info(f"Generating PDF for Quote #{quote.id}")
+
+        try:
+            # Generate PDF
+            pdf_bytes = self.pdf_generator.generate_quote(quote)
+
+            # Upload to S3
+            filename = f"quotes/quote_{quote.id}_{int(datetime.now().timestamp())}.pdf"
+            public_url = self.s3_service.upload_file(
+                file_content=pdf_bytes,
+                key=filename,
+                content_type="application/pdf"
+            )
+
+            quote.blob_url = public_url
+            logger.info(f"Quote PDF uploaded to {public_url}")
+
+        except Exception as e:
+            logger.error(f"Failed to generate or upload PDF for quote {quote.id}: {e}")
+            # We raise error to indicate failure
+            raise RuntimeError(f"Failed to process quote PDF: {e}") from e
+
+        # TODO: Integrate with MessagingService (send the public_url)
         
         logger.info(f"Sending Quote #{quote.id} to Customer #{quote.customer_id}")
         

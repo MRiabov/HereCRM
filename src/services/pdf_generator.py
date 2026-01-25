@@ -1,11 +1,11 @@
 import os
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from weasyprint import HTML
-from src.models import Job
+from src.models import Job, Quote
 
-class InvoicePDFGenerator:
+class PDFGenerator:
     def __init__(self, template_dir: Optional[str] = None):
         if template_dir is None:
             # Default to src/templates relative to this file
@@ -16,9 +16,8 @@ class InvoicePDFGenerator:
             loader=FileSystemLoader(template_dir),
             autoescape=True  # CRITICAL: Prevent template injection
         )
-        self.template_name = "invoice.html"
 
-    def generate(self, job: Job, invoice_date: Optional[datetime] = None, payment_link: Optional[str] = None) -> bytes:
+    def generate_invoice(self, job: Job, invoice_date: Optional[datetime] = None, payment_link: Optional[str] = None) -> bytes:
         """
         Generates a PDF invoice for a given job.
         
@@ -38,12 +37,13 @@ class InvoicePDFGenerator:
             invoice_date = datetime.now()
             
         try:
-            template = self.env.get_template(self.template_name)
+            template = self.env.get_template("invoice.html")
             
             # Prepare context
             context = {
                 "job": job,
                 "invoice_date": invoice_date.strftime("%Y-%m-%d"),
+                "due_date": invoice_date.strftime("%Y-%m-%d"), # Fallback if no due date logic
                 "payment_link": payment_link
             }
             
@@ -56,6 +56,42 @@ class InvoicePDFGenerator:
             return pdf_bytes
 
         except TemplateNotFound as e:
-            raise ValueError(f"Invoice template not found: {self.template_name}") from e
+            raise ValueError(f"Invoice template not found: invoice.html") from e
         except Exception as e:
             raise RuntimeError(f"Failed to generate invoice PDF: {str(e)}") from e
+
+    def generate_quote(self, quote: Quote, issue_date: Optional[datetime] = None, expiry_date: Optional[datetime] = None) -> bytes:
+        """
+        Generates a PDF quote.
+
+        Args:
+            quote: The Quote object.
+            issue_date: Optional issue date. Defaults to quote.created_at or now.
+            expiry_date: Optional expiry date.
+
+        Returns:
+            The generated PDF as bytes.
+        """
+        if issue_date is None:
+            issue_date = quote.created_at or datetime.now()
+
+        try:
+            template = self.env.get_template("quote.html")
+
+            context = {
+                "quote": quote,
+                "issue_date": issue_date.strftime("%B %d, %Y"),
+                "expiry_date": expiry_date.strftime("%B %d, %Y") if expiry_date else "N/A"
+            }
+
+            html_content = template.render(**context)
+            pdf_bytes = HTML(string=html_content).write_pdf()
+            return pdf_bytes
+
+        except TemplateNotFound as e:
+            raise ValueError(f"Quote template not found: quote.html") from e
+        except Exception as e:
+            raise RuntimeError(f"Failed to generate quote PDF: {str(e)}") from e
+
+# Alias for backward compatibility if needed, though we will refactor usage.
+InvoicePDFGenerator = PDFGenerator

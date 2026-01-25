@@ -1197,7 +1197,9 @@ class ToolExecutor:
         
         results = []
         for emp in target_employees:
-            lat, lng, updated_at = await LocationService.get_employee_location(self.session, emp.id)
+            # [Performance] Use pre-loaded fields on User model instead of N+1 query via LocationService
+            lat, lng, updated_at = emp.current_latitude, emp.current_longitude, emp.location_updated_at
+
             status = "Location not available"
             link = ""
             if lat is not None and lng is not None:
@@ -1266,7 +1268,7 @@ class ToolExecutor:
              return "Assigned technician not found.", None
              
         # Get Tech Location
-        lat, lng, updated_at = await LocationService.get_employee_location(self.session, tech.id)
+        lat, lng, updated_at = tech.current_latitude, tech.current_longitude, tech.location_updated_at
         
         if lat is None or lng is None:
              return f"Technician {tech.name} is assigned but their location is currently unavailable.", None
