@@ -61,7 +61,7 @@ As a business owner, I want to add my own payment link (Stripe, PayPal, etc.) to
 
 **Acceptance Scenarios**:
 
-1. **Given** a business with a configured payment link "https://stripe.com/pay/abc", **When** an invoice is generated, **Then** the PDF contains a "Pay Now" button/link and the WhatsApp message includes the link.
+1. **Given** a business with a configured payment link "<https://stripe.com/pay/abc>", **When** an invoice is generated, **Then** the PDF contains a "Pay Now" button/link and the WhatsApp message includes the link.
 2. **Given** a business with NO payment link configured, **When** an invoice is generated, **Then** no payment button appears in the PDF and no link is sent in the message.
 
 ---
@@ -126,6 +126,7 @@ Businesses can configure how taxes are applied to their pricing:
 - **FR-TAX-003**: System MUST display tax breakdown on invoices (tax rate, tax amount, subtotal, total)
 - **FR-TAX-004**: System MUST handle tax calculation errors gracefully (fallback to 0% tax with warning)
 - **FR-TAX-005**: System MUST cache tax calculations to avoid redundant API calls for identical line items
+- **FR-TAX-006**: System MUST expose Invoice management endpoints (List, Get) and generation actions for PWA as defined in OpenAPI.
 
 ### Tax Display
 

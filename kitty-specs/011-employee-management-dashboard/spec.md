@@ -81,6 +81,7 @@ As a Business Owner, I want to move a job from one employee to another or unassi
 
 - **FR-005**: The system MUST parse commands matching patterns like "Assign #[ID] to [Name]" or "Move #[ID] to [Name]".
 - **FR-006**: This functionality MUST be restricted to Users with `role='owner'`.
+- **FR-007**: System MUST expose Dashboard Stats and Recent Activity endpoints for PWA as defined in OpenAPI.
 
 ### Key Entities
 

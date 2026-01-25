@@ -109,6 +109,7 @@ As a Field Employee, I want to "Check In" and "Start Job" via text commands so t
 - **FR-006**: The system MUST support a `Record Payout` action (Manual) that creates a debit `LedgerEntry`, reducing the employee's specific balance.
 - **FR-007**: Expenses and Ledger entries MUST be exportable via the existing CSV export framework (Spec 007).
 - **FR-008**: Job Profitability calculations MUST deduct linked Expenses and linked Wage Costs from Revenue to show "Net Job Profit".
+- **FR-009**: System MUST expose Finance endpoints (List Expenses, Get Ledger) for PWA as defined in OpenAPI.
 
 ### Key Entities
 

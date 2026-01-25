@@ -168,6 +168,10 @@ Business owners must be able to view and update workflow settings through a conv
   - User selects new values
   - System confirms changes and updates `Business.settings`
 
+#### 2.3.1. API Exposure
+
+- System MUST expose Workflow Settings endpoints (Get, Update) for PWA as defined in OpenAPI.
+
 **Permissions**:
 
 - Only users with `role = OWNER` can modify workflow settings

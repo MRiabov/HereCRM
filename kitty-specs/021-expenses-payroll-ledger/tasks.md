@@ -90,10 +90,10 @@
 **Priority**: Medium
 **Tests**: `tests/integration/test_expenses.py`.
 
-- [ ] **T020**: Implement `ExpenseService` with `create_expense`, `list_expenses`.
-- [ ] **T021**: Implement `AddExpenseTool` with arguments for `amount`, `description`, `job_id` (optional).
-- [ ] **T022**: Implement expense listing functionality (for reporting).
-- [ ] **T023**: Integration tests for creating expenses and linking to jobs.
+- [x] **T020**: Implement `ExpenseService` with `create_expense`, `list_expenses`.
+- [x] **T021**: Implement `AddExpenseTool` with arguments for `amount`, `description`, `job_id` (optional).
+- [x] **T022**: Implement expense listing functionality (for reporting).
+- [x] **T023**: Integration tests for creating expenses and linking to jobs.
 
 **Implementation**:
 

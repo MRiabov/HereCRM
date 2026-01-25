@@ -91,6 +91,7 @@ Users need to filter by specific attributes like phone number, date, or status.
 - **FR-007**: System MUST handle pagination or truncation for > 10 results to fit WhatsApp constraints.
 - **FR-008**: System MUST support searching the Service Catalog specifically (Entity: Service).
 - **FR-009**: System SHOULD support searching Message Logs (from Feature 003) if available in the database.
+- **FR-010**: System MUST expose Global Search endpoint for PWA as defined in OpenAPI.
 
 ### Key Entities
 

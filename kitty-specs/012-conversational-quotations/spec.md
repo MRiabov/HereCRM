@@ -70,6 +70,7 @@ As a business owner, I want to satisfy a customer request by sending them a form
 
 - **FR-008**: System MUST support "Confirm" intent detection on incoming customer messages for active quotes.
 - **FR-009**: System MUST support promoting a `Request` entity to a `Quote` (similar to "Request -> Job" promotion), preserving customer context and description.
+- **FR-010**: System MUST expose Quote management endpoints (List, Create) for PWA as defined in OpenAPI.
 
 ### Key Entities
 

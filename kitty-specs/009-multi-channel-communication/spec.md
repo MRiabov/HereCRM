@@ -72,6 +72,7 @@ External systems (e.g., Zapier, Contact Forms) can inject messages or leads into
 - **FR-007**: System MUST support **WhatsApp** via the existing Meta API integration (preserving current functionality).
 - **FR-008**: System MUST allow configuring the "Max Message Length" or "conciseness" per channel (e.g., compact for SMS, standard for Email).
 - **FR-009**: System MUST enforce **GSM-7 character set normalization** on all outbound SMS messages to prevent costly Unicode segmentation usage. Smart-replace emojis/special chars with ASCII equivalents where possible.
+- **FR-010**: System MUST expose Chat History, Send Message, Customer management (List, Get, Create), and Request listing endpoints for PWA as defined in OpenAPI.
 
 ### Key Entities
 

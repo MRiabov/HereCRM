@@ -71,6 +71,7 @@ As a user, I want to see the breakdown of line items when viewing a job/quote so
 - **FR-005**: System MUST infer Unit Price when Total Price and Quantity are known (Total / Qty = Unit Price).
 - **FR-006**: System MUST prioritize explicit user input over defaults (e.g., specific price overrides catalog default).
 - **FR-007**: System MUST fallback to ad-hoc line items if no catalog service is matched.
+- **FR-008**: System MUST expose Service Catalog endpoints (List, Create) for PWA as defined in OpenAPI.
 
 ### Key Entities
 

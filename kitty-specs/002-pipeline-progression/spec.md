@@ -81,6 +81,7 @@ As a user, I want to manually move customers to certain stages like "Not Interes
 - **FR-007**: System MUST allow manual stage updates via LLM commands for terminal stages like `Not Interested` and `Lost`.
 - **FR-008**: System MUST support querying the pipeline to show counts per stage AND detailed lists of customers (Name, Address, Phone) within each stage.
 - **FR-009**: System MUST support filtering customers by `pipeline_stage` in search queries.
+- **FR-010**: System MUST expose Job management endpoints (List, Create, Get, Update) for PWA as defined in OpenAPI.
 
 ### Key Entities
 
