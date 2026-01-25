@@ -6,22 +6,23 @@ from sqlalchemy import select, desc
 from sqlalchemy.orm import joinedload
 
 from src.database import get_db
-from src.models import Invoice, Job, Customer
+from src.models import Invoice, Job, Customer, User
 from src.schemas.pwa import InvoiceSchema
+from src.api.dependencies.clerk_auth import get_current_user
 
 router = APIRouter()
 
 @router.get("/", response_model=List[InvoiceSchema])
 async def list_invoices(
-    session: AsyncSession = Depends(get_db)
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     # Retrieve invoices with Job and Customer info
-    # HARDCODED BUSINESS ID = 1 filter
     stmt = (
         select(Invoice)
         .join(Job)
         .join(Customer)
-        .where(Job.business_id == 1)
+        .where(Job.business_id == current_user.business_id)
         .options(
             joinedload(Invoice.job).joinedload(Job.customer)
         )
@@ -48,14 +49,16 @@ async def list_invoices(
 @router.get("/{invoice_id}", response_model=InvoiceSchema)
 async def get_invoice(
     invoice_id: int,
-    session: AsyncSession = Depends(get_db)
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     stmt = (
         select(Invoice)
+        .join(Job)
         .options(
             joinedload(Invoice.job).joinedload(Job.customer)
         )
-        .where(Invoice.id == invoice_id)
+        .where(Invoice.id == invoice_id, Job.business_id == current_user.business_id)
     )
     result = await session.execute(stmt)
     invoice = result.scalar_one_or_none()

@@ -1,7 +1,10 @@
 from fastapi import APIRouter
 from src.api.v1.pwa import dashboard, jobs, customers, chat, invoices
 
-router = APIRouter()
+from src.api.dependencies.clerk_auth import VerifyToken
+from fastapi import Depends
+
+router = APIRouter(dependencies=[Depends(VerifyToken())])
 
 router.include_router(dashboard.router, prefix="/dashboard", tags=["pwa-dashboard"])
 router.include_router(jobs.router, prefix="/jobs", tags=["pwa-jobs"])

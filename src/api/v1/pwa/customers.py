@@ -5,13 +5,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database import get_db
 from src.services.crm_service import CRMService
 from src.schemas.pwa import CustomerSchema, CustomerCreate
-from src.models import Customer, PipelineStage
+from src.models import Customer, PipelineStage, User
+from src.api.dependencies.clerk_auth import get_current_user
 
 router = APIRouter()
 
-async def get_crm_service(session: AsyncSession = Depends(get_db)) -> CRMService:
-    # HARDCODED BUSINESS ID = 1
-    return CRMService(session, business_id=1)
+async def get_crm_service(
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> CRMService:
+    return CRMService(session, business_id=current_user.business_id)
 
 @router.get("/", response_model=List[CustomerSchema])
 async def list_customers(

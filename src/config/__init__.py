@@ -57,6 +57,13 @@ class Settings(BaseSettings):
     # Security
     secret_key: str = "dev_secret_key_change_me_in_production"
 
+    # Clerk Settings
+    clerk_secret_key: Optional[str] = None
+    clerk_publishable_key: Optional[str] = None
+    clerk_issuer: Optional[str] = None
+    clerk_jwks_url: Optional[str] = None
+    clerk_webhook_secret: Optional[str] = None
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
