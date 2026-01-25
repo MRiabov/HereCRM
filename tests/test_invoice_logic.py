@@ -20,7 +20,7 @@ def mock_s3_service():
 
 @pytest.fixture
 def mock_pdf_generator():
-    with patch("src.services.invoice_service.InvoicePDFGenerator") as mock:
+    with patch("src.services.invoice_service.PDFGenerator") as mock:
         yield mock.return_value
 
 @pytest.mark.asyncio
@@ -29,7 +29,7 @@ async def test_invoice_service_create(mock_session, mock_s3_service, mock_pdf_ge
     job = Job(id=1, description="Test Job", value=100.0)
     
     # Setup mocks
-    mock_pdf_generator.generate.return_value = b"%PDF-mock"
+    mock_pdf_generator.generate_invoice.return_value = b"%PDF-mock"
     mock_s3_service.upload_file.return_value = "https://s3.example.com/invoice.pdf"
     
     # Mock existing invoice check to return None
@@ -42,7 +42,7 @@ async def test_invoice_service_create(mock_session, mock_s3_service, mock_pdf_ge
     invoice = await service.create_invoice(job)
     
     # Verify
-    mock_pdf_generator.generate.assert_called_once_with(job, payment_link=None)
+    mock_pdf_generator.generate_invoice.assert_called_once_with(job, payment_link=None)
     mock_s3_service.upload_file.assert_called_once()
     assert invoice.job_id == 1
     assert invoice.public_url == "https://s3.example.com/invoice.pdf"
@@ -65,7 +65,7 @@ async def test_invoice_service_existing(mock_session, mock_s3_service, mock_pdf_
     
     # Verify we got existing back and NO generation happened
     assert invoice == existing_invoice
-    mock_pdf_generator.generate.assert_not_called()
+    mock_pdf_generator.generate_invoice.assert_not_called()
     mock_s3_service.upload_file.assert_not_called()
 
 @pytest.mark.asyncio
@@ -79,14 +79,14 @@ async def test_invoice_service_force_regenerate(mock_session, mock_s3_service, m
     mock_result.scalars.return_value.first.return_value = existing_invoice
     mock_session.execute.return_value = mock_result
     
-    mock_pdf_generator.generate.return_value = b"%PDF"
+    mock_pdf_generator.generate_invoice.return_value = b"%PDF"
     mock_s3_service.upload_file.return_value = "https://new.url"
 
     # Execute WITH force
     invoice = await service.create_invoice(job, force_regenerate=True)
     
     # Verify generation happened
-    mock_pdf_generator.generate.assert_called_once()
+    mock_pdf_generator.generate_invoice.assert_called_once()
     assert invoice.public_url == "https://new.url"
     mock_session.add.assert_called_once()
 

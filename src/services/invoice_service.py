@@ -6,7 +6,7 @@ from datetime import datetime
 
 from src.models import Job, Invoice
 from src.services.storage import S3Service, StorageError
-from src.services.pdf_generator import InvoicePDFGenerator
+from src.services.pdf_generator import PDFGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ class InvoiceService:
     def __init__(self, session: AsyncSession):
         self.session = session
         self.s3_service = S3Service()
-        self.pdf_generator = InvoicePDFGenerator()
+        self.pdf_generator = PDFGenerator()
 
     async def get_existing_invoice(self, job_id: int) -> Optional[Invoice]:
         """
@@ -42,7 +42,7 @@ class InvoiceService:
 
         # 1. Generate PDF
         try:
-            pdf_bytes = self.pdf_generator.generate(job, payment_link=payment_link)
+            pdf_bytes = self.pdf_generator.generate_invoice(job, payment_link=payment_link)
         except (ValueError, RuntimeError) as e:
             logger.error(f"Failed to generate PDF for job {job.id}: {e}")
             raise RuntimeError(f"PDF generation failed: {e}") from e
