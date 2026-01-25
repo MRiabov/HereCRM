@@ -96,6 +96,12 @@ history:
     4. Mention that only owners can change them.
 - **Files**: `docs/manual.md`
 
+### Subtask T008 – API Exposure
+
+- **Purpose**: Expose Workflow Settings endpoints for PWA.
+- **Steps**: Implement REST endpoints.
+- **Status**: [x] Implemented
+
 ## Test Strategy
 
 - **Test Command**: `pytest tests/unit/test_workflow_settings.py`

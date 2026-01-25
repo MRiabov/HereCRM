@@ -43,7 +43,11 @@ We need to wire the service to the repositories.
      - Also handle 'request' and 'job'.
      - If `query.entity_type` is None, call ALL and combine results.
 
-5. **[T008] Aggregation Tests**
+5. **[T007a] API Exposure**
+   - Expose Global Search endpoints for PWA.
+   - Status: [x] Implemented
+
+6. **[T008] Aggregation Tests**
    - Update `tests/test_search_service.py` with mocks for repos. Verification that specific entity types route correctly and mixed types aggregate.
 
 ## Verification

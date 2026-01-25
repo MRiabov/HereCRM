@@ -114,6 +114,11 @@ This is the final assembly. We need a service layer to coordinate checks (duplic
 - Test `InvoiceService` works as expected.
 - Mock the S3 upload to avoid network calls.
 
+### T015: API Exposure
+
+- Expose Invoice management endpoints (List, Get) and generation actions for PWA.
+- Status: [x] Implemented
+
 ## Verification
 
 - Run `pytest tests/test_invoice_logic.py`.

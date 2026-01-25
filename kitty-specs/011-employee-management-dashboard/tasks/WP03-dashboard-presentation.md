@@ -67,6 +67,11 @@ Implement the View layer. Create the text template and rendering logic that tran
 4. Assert the string output contains specific lines (e.g., "John's schedule:", "#123").
 5. Verify line breaks and spacing are readable.
 
+### T011: API Exposure
+
+- Expose Dashboard Stats and Recent Activity endpoints for PWA.
+- Status: [x] Implemented
+
 ## Acceptance Criteria
 
 - Dashboard renders correctly with valid data.

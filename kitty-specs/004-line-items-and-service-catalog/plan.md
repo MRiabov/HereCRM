@@ -10,6 +10,7 @@ Implement a **Service Catalog** and **Line Item** system for the WhatsApp CRM.
 1. **Catalog Management**: Admin users can manage a list of `Services` (name, default price) via a new `SETTINGS` chat state and menu.
 2. **Line Item Inference**: When creating jobs, the system intelligently parses input to infer line items, using catalog defaults to calculate missing quantities or prices (e.g., "$50 total" + "$5/unit default" = "10 units").
 3. **Data Persistence**: New `Service` and `LineItem` tables in the existing database.
+4. **API Exposure**: Expose Service Catalog endpoints for PWA.
 
 ## Technical Context
 

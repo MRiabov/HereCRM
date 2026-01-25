@@ -13,6 +13,7 @@ Implement a centralized "Advanced Search" feature driven by a unified `SearchSer
 - Date range filtering (e.g., "created last week").
 - Proximity search (using OpenStreetMap/Nominatim).
 - Detailed vs. Concise output formatting.
+- **API Exposure**: Global Search endpoint for PWA.
 
 Technically, this refactors existing scattered search logic from `ToolExecutor` into a dedicated domain service and enhances `LLMClient` system instructions for better parameter extraction.
 
@@ -98,6 +99,10 @@ src/
   - **[NOTE]** Proximity search cannot be supported as `Request` entity lacks location data.
 - **`ServiceRepository`**:
   - **[NEW SEARCH]** Implement `search()` method to support text matching on service names for Unified Search.
+
+### 5. API Exposure
+
+- Expose Global Search endpoints for PWA as defined in OpenAPI.
 
 ## Complexity Tracking
 

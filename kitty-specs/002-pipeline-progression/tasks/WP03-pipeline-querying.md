@@ -74,6 +74,12 @@ The user wants to see "the health of the sales funnel". This means getting count
 
 - **File**: `src/llm_client.py`
 - **Action**: Add or update a tool (e.g., `GetPipelineTool`) that allows the LLM to fetch this summary when the user asks "show me our pipeline".
+- **API**: Expose Job management endpoints (List, Create, Get, Update) for PWA.
+
+### T012: API Exposure
+
+- **Action**: Implement REST endpoints for Job management.
+- **Status**: [x] Implemented
 
 ## Definition of Done
 

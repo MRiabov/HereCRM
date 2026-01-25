@@ -9,7 +9,7 @@ The planner will not begin until all planning questions have been answered—cap
 
 ## Summary
 
-This feature implements an automatic customer pipeline with stages (`Not Contacted`, `Contacted`, `Converted Once`, `Converted Recurrent`, etc.). It utilizes a new `EventBus` to decouple stage progression logic (e.g., job creation triggering stage updates) and updates the core `Customer` model with a `pipeline_stage` Enum. It also adds text-based pipeline querying and filtering capabilities.
+This feature implements an automatic customer pipeline with stages (`Not Contacted`, `Contacted`, `Converted Once`, `Converted Recurrent`, etc.). It utilizes a new `EventBus` to decouple stage progression logic (e.g., job creation triggering stage updates) and updates the core `Customer` model with a `pipeline_stage` Enum. It also adds text-based pipeline querying and filtering capabilities, AND exposes these via REST API for the PWA.
 
 ## Technical Context
 

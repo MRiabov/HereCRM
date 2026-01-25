@@ -79,6 +79,11 @@ Different channels have different costs and user expectations. SMS should be sho
   2. System plans tool -> waits 45s -> Auto-confirms -> Executes.
   3. System sends result -> Twilio -> SMS (concise).
 
+### T023: API Exposure
+
+- Expose Chat History, Send Message, Customer, and Request management endpoints.
+- Status: [x] Implemented
+
 ## Test Strategy
 
 - **Manual**: Use the `manual.md` checklist (to be updated) to verify timing and interruptions.

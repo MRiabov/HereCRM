@@ -65,6 +65,7 @@ src/
 │   └── quote_tools.py   # LLM tools for creating quotes
 └── api/
     └── public.py        # Confirmation endpoint
+    └── views.py         # [NEW] Quote Management API
 ```
 
 **Structure Decision**: Option 1: Single project.

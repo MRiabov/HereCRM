@@ -59,6 +59,9 @@ src/
 tests/
 ├── integration/         # Workflow enforcement tests
 └── unit/                # Settings service tests
+
+### API Exposure
+- Expose Workflow Settings endpoints (Get, Update) for PWA.
 ```
 
 **Structure Decision**: Option 1: Single project. All business logic and models reside in `src/`.

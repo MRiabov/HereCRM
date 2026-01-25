@@ -6,7 +6,7 @@ import logging
 import os
 
 # Using relative path for SQLite database as default
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./crm.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./data/crm.db")
 
 # Helper to ensure database directory exists if using SQLite
 if "sqlite" in DATABASE_URL:

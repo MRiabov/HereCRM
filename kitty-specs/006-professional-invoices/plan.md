@@ -81,6 +81,10 @@
 
 - Register `SendInvoiceTool`.
 
+### API Exposure
+
+- Expose Invoice management endpoints (List, Get) and generation actions for PWA.
+
 ### Integration
 
 #### [MODIFY] src/whatsapp_service.py or src/services/messaging_service.py

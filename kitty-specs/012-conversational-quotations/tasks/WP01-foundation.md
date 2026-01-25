@@ -76,6 +76,12 @@ We are introducing a new entity `Quote` which is similar to an Invoice but repre
 2. Test `create_quote`: check calculations, token generation, DB persistence.
 3. Test `get_quote`: retrieval.
 
+#### T006: API Exposure
+
+**Purpose**: Expose Quote management endpoints for PWA.
+**Steps**: Implement REST endpoints (List, Create).
+**Status**: [x] Implemented
+
 ### Verification
 
 - Run `pytest tests/unit/test_quote_service.py`.

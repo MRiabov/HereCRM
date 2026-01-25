@@ -136,3 +136,6 @@ crm.db
 
 # Prevent worktree-local kitty-specs/ (status managed in main repo)
 .worktrees/*/kitty-specs/
+
+# Data directory
+data/

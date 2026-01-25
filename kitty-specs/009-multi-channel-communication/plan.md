@@ -11,7 +11,7 @@ The planner will not begin until all planning questions have been answered—cap
 
 ## Summary
 
-Implement multi-channel communication support including TextGrid (default SMS), Twilio (optional SMS), Postmark (Email), and a detailed Generic Webhook. Refactor SMS logic behind an `SMSMessagingService` interface to support switching providers. Refactor the `User` model to support multiple identities (email/phone) with an Integer ID. Introduce a configurable "Auto-Confirmation" state machine and strict GSM-7 symbol normalization for SMS cost control.
+Implement multi-channel communication support including TextGrid (default SMS), Twilio (optional SMS), Postmark (Email), and a detailed Generic Webhook. Refactor SMS logic behind an `SMSMessagingService` interface to support switching providers. Refactor the `User` model to support multiple identities (email/phone) with an Integer ID. Introduce a configurable "Auto-Confirmation" state machine and strict GSM-7 symbol normalization for SMS cost control. Expose API endpoints for Chat History and Messaging.
 
 ## Technical Context
 

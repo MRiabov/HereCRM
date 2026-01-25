@@ -1,6 +1,6 @@
 # Implementation Plan: [FEATURE]
-*Path: [templates/plan-template.md](templates/plan-template.md)*
 
+*Path: [templates/plan-template.md](templates/plan-template.md)*
 
 **Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
 **Input**: Feature specification from `/kitty-specs/[###-feature-name]/spec.md`
@@ -12,6 +12,7 @@ The planner will not begin until all planning questions have been answered—cap
 ## Summary
 
 [Extract from feature spec: primary requirement + technical approach from research]
+API Exposure: Dashboard Stats and Recent Activity endpoints.
 
 ## Technical Context
 
