@@ -6,6 +6,7 @@ from openai import AsyncOpenAI
 from pydantic import ValidationError
 
 from src.config import settings
+from src.services.analytics import analytics
 from src.uimodels import (
     AddJobTool,
     AddLeadTool,
@@ -406,7 +407,12 @@ class LLMParser:
         ]
 
     async def _chat_with_retry(
-        self, messages: list[dict], tools: list[dict], model_map: dict[str, Any]
+        self, 
+        messages: list[dict], 
+        tools: list[dict], 
+        model_map: dict[str, Any],
+        distinct_id: str = "anonymous",
+        original_query: str = ""
     ) -> Optional[Any]:
         """
         Executes a chat completion with retry logic for missing tool calls, 
@@ -438,6 +444,14 @@ class LLMParser:
                         continue
                     else:
                         # Return None if final attempt failed, so the caller can handle it as an error/help message
+                        analytics.capture_llm_query(
+                            user_id=distinct_id,
+                            query=original_query,
+                            success=False,
+                            attempts=attempt + 1,
+                            error_type="no_tool_call",
+                            model=self.model
+                        )
                         return None
 
                 # Process the first tool call
@@ -460,13 +474,30 @@ class LLMParser:
                         continue
                     else:
                         self.logger.error(f"JSON Decode Error on retry: {e}")
+                        analytics.capture_llm_query(
+                            user_id=distinct_id,
+                            query=original_query,
+                            success=False,
+                            attempts=attempt + 1,
+                            error_type="json_decode_error",
+                            model=self.model
+                        )
                         return None
 
                 # Check for Validation errors
                 model_cls = model_map.get(function_name)
                 if model_cls:
                     try:
-                        return model_cls(**arguments)
+                        result = model_cls(**arguments)
+                        analytics.capture_llm_query(
+                            user_id=distinct_id,
+                            query=original_query,
+                            success=True,
+                            attempts=attempt + 1,
+                            tool_called=function_name,
+                            model=self.model
+                        )
+                        return result
                     except ValidationError as e:
                         if attempt == 0:
                             self.logger.warning(f"Validation Error: {e}")
@@ -479,6 +510,15 @@ class LLMParser:
                             continue
                         else:
                             self.logger.error(f"Validation Error on retry: {e}")
+                            analytics.capture_llm_query(
+                                user_id=distinct_id,
+                                query=original_query,
+                                success=False,
+                                attempts=attempt + 1,
+                                error_type="validation_error",
+                                tool_called=function_name,
+                                model=self.model
+                            )
                             return None
                 else:
                     self.logger.warning(f"Unknown tool called: {function_name}")
@@ -539,7 +579,13 @@ class LLMParser:
             "ExitDataManagementTool": ExitDataManagementTool,
         }
 
-        return await self._chat_with_retry(messages, self.datamgmt_tools, model_map)
+        return await self._chat_with_retry(
+            messages, 
+            self.datamgmt_tools, 
+            model_map,
+            distinct_id=text, # Defaulting to text if unknown, but better context would be ideal
+            original_query=text
+        )
 
     async def parse_settings(
         self, text: str, service_context: Optional[str] = None
@@ -577,7 +623,13 @@ class LLMParser:
             "UpdateSettingsTool": UpdateSettingsTool,
         }
         
-        return await self._chat_with_retry(messages, self.settings_tools, model_map)
+        return await self._chat_with_retry(
+            messages, 
+            self.settings_tools, 
+            model_map,
+            distinct_id=text,
+            original_query=text
+        )
 
     async def parse_employee_management(
         self, text: str
@@ -601,7 +653,13 @@ class LLMParser:
             "ExitEmployeeManagementTool": ExitEmployeeManagementTool,
         }
 
-        return await self._chat_with_retry(messages, self.employee_mgmt_tools, model_map)
+        return await self._chat_with_retry(
+            messages, 
+            self.employee_mgmt_tools, 
+            model_map,
+            distinct_id=text,
+            original_query=text
+        )
 
     async def parse(
         self, 
@@ -707,7 +765,17 @@ class LLMParser:
             "GoogleCalendarStatusTool": GoogleCalendarStatusTool,
         }
 
-        return await self._chat_with_retry(messages, self.tools, model_map)
+        distinct_id = "anonymous"
+        if user_context:
+            distinct_id = user_context.get("phone_number") or user_context.get("clerk_id") or "anonymous"
+
+        return await self._chat_with_retry(
+            messages, 
+            self.tools, 
+            model_map,
+            distinct_id=distinct_id,
+            original_query=text
+        )
 
 
 
