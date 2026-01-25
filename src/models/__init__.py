@@ -217,7 +217,7 @@ class LineItem(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id"), index=True)
-    service_id: Mapped[Optional[int]] = mapped_column(ForeignKey("services.id"), nullable=True)
+    service_id: Mapped[Optional[int]] = mapped_column(ForeignKey("services.id"), nullable=True, index=True)
     description: Mapped[str] = mapped_column(String)
     quantity: Mapped[float] = mapped_column(Float, default=1.0)
     unit_price: Mapped[float] = mapped_column(Float)
@@ -415,7 +415,7 @@ class ImportJob(Base):
     __tablename__ = "import_jobs"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"))
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     status: Mapped[str] = mapped_column(String, default="pending")  # 'pending', 'processing', 'completed', 'failed'
     file_url: Mapped[str] = mapped_column(String)
     filename: Mapped[Optional[str]] = mapped_column(String)
@@ -440,7 +440,7 @@ class Quote(Base):
     total_amount: Mapped[float] = mapped_column(Float, default=0.0)
     external_token: Mapped[str] = mapped_column(String, unique=True, index=True)
     blob_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True)
+    job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
@@ -470,7 +470,7 @@ class QuoteLineItem(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     quote_id: Mapped[int] = mapped_column(ForeignKey("quotes.id"), index=True)
-    service_id: Mapped[Optional[int]] = mapped_column(ForeignKey("services.id"), nullable=True)
+    service_id: Mapped[Optional[int]] = mapped_column(ForeignKey("services.id"), nullable=True, index=True)
     description: Mapped[str] = mapped_column(String)
     quantity: Mapped[float] = mapped_column(Float, default=1.0)
     unit_price: Mapped[float] = mapped_column(Float)
@@ -484,7 +484,7 @@ class ExportRequest(Base):
     __tablename__ = "export_requests"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"))
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     status: Mapped[str] = mapped_column(String, default="pending")  # 'pending', 'processing', 'completed', 'failed'
     query: Mapped[str] = mapped_column(Text)
     format: Mapped[str] = mapped_column(String)  # 'csv', 'excel', 'json'
