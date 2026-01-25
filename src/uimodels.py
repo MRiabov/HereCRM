@@ -61,6 +61,10 @@ class AddJobTool(BaseModel):
         description="ISO 8601 formatted datetime string (parsed by LLM)",
         max_length=50,
     )
+    estimated_duration: Optional[int] = Field(
+        60,
+        description="Estimated duration of the job in minutes (default 60)",
+    )
 
     @validator("price")
     def validate_price(cls, v):

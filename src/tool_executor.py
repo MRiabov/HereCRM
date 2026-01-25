@@ -585,6 +585,7 @@ class ToolExecutor:
             scheduled_at=scheduled_at,
             line_items=inferred_items,
             postal_code=postal_code,
+            estimated_duration=tool.estimated_duration or 60,
         )
         price_info = f" – €{job.value}" if job.value else " – No price"
         line_items_summary = ""
