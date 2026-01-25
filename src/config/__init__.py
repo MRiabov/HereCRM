@@ -57,6 +57,9 @@ class Settings(BaseSettings):
     # Security
     secret_key: str = "dev_secret_key_change_me_in_production"
 
+    # Clerk Authentication
+    clerk_signup_url: str = "https://accounts.herecrm.app/sign-up"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

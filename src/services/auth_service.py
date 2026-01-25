@@ -1,3 +1,4 @@
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import User, Business
 from src.repositories import UserRepository, BusinessRepository
@@ -9,29 +10,12 @@ class AuthService:
         self.user_repo = UserRepository(session)
         self.business_repo = BusinessRepository(session)
 
-    async def get_or_create_user(self, phone: str) -> tuple[User, bool]:
+    async def resolve_user_from_ingress(self, phone: str) -> Optional[User]:
         """
-        Retrieves a user by phone number. If not found, creates a new Business
-        and a new User (Owner) linked to that business.
-        Returns a tuple of (User, is_new).
+        Retrieves a user by phone number from an inbound messaging channel.
+        Returns User if found, None otherwise.
         """
-        user = await self.user_repo.get_by_phone(phone)
-        if user:
-            return user, False
-
-        # Create new Business and User
-        business = Business(name=f"Business of {phone}")
-        self.session.add(business)
-        # Flush to generate ID for the business
-        await self.session.flush()
-
-        user = User(phone_number=phone, business_id=business.id, role="owner")
-        self.user_repo.add(user)
-        # Flush to make the user available in the session identity map
-        # and ensure IDs are generated if needed immediately
-        await self.session.flush()
-
-        return user, True
+        return await self.user_repo.get_by_phone(phone)
 
     async def get_or_create_user_by_identity(self, identity: str) -> tuple[User, bool]:
         """
@@ -52,5 +36,8 @@ class AuthService:
             await self.session.flush()
             return user, True
         else:
-            return await self.get_or_create_user(identity)
+            user = await self.resolve_user_from_ingress(identity)
+            if user:
+                return user, False
+            return None, False
 

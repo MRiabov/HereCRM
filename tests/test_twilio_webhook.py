@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch, AsyncMock, MagicMock
 from src.main import app
 from src.api.routes import get_services, verify_twilio_signature
-from fastapi import Response
+
 
 class TestTwilioWebhook:
     """Test suite for Twilio webhook endpoint"""
@@ -20,7 +20,7 @@ class TestTwilioWebhook:
 
     @pytest.mark.asyncio
     async def test_twilio_webhook_success(self, client):
-        """Test successful Twilio webhook processing"""
+        """Test successful Twilio webhook processing for registered user"""
         # Mock Services
         mock_auth_service = AsyncMock()
         mock_whatsapp_service = AsyncMock()
@@ -29,7 +29,7 @@ class TestTwilioWebhook:
         mock_user = MagicMock()
         mock_user.id = 1
         mock_user.phone_number = "+1234567890"
-        mock_auth_service.get_or_create_user.return_value = (mock_user, False)
+        mock_auth_service.resolve_user_from_ingress.return_value = mock_user
         
         # Override Dependencies
         async def override_get_services():
@@ -54,11 +54,54 @@ class TestTwilioWebhook:
         assert "<Response></Response>" in response.text
         
         # Verify interactions
-        mock_auth_service.get_or_create_user.assert_called_with("+1234567890")
+        mock_auth_service.resolve_user_from_ingress.assert_called_with("+1234567890")
         mock_whatsapp_service.handle_message.assert_called_once()
         call_args = mock_whatsapp_service.handle_message.call_args
         assert call_args.kwargs['user_phone'] == "+1234567890"
         assert call_args.kwargs['channel'] == "sms"
+
+    @pytest.mark.asyncio
+    async def test_twilio_webhook_unknown_user(self, client):
+        """Test Twilio webhook for unknown user sends signup link"""
+        # Mock Services
+        mock_auth_service = AsyncMock()
+        mock_whatsapp_service = AsyncMock()
+        
+        # Setup mocks: user not found
+        mock_auth_service.resolve_user_from_ingress.return_value = None
+        
+        # Override Dependencies
+        async def override_get_services():
+            return mock_auth_service, mock_whatsapp_service
+            
+        async def override_verify_signature():
+            return # skip validation
+            
+        app.dependency_overrides[get_services] = override_get_services
+        app.dependency_overrides[verify_twilio_signature] = override_verify_signature
+        
+        # Mock messaging_service.send_message
+        with patch("src.services.messaging_service.messaging_service.send_message", new_callable=AsyncMock) as mock_send:
+            params = {
+                "From": "+9999999999",
+                "Body": "Where am I?"
+            }
+            
+            response = client.post("/webhooks/twilio", data=params)
+            
+            # Assertions
+            assert response.status_code == 200
+            assert "<Response></Response>" in response.text
+            
+            # Verify invitation sent
+            mock_send.assert_called_once()
+            call_args = mock_send.call_args
+            assert "+9999999999" in call_args.kwargs['recipient_phone']
+            assert "sign in" in call_args.kwargs['content'].lower()
+            assert "https://accounts.herecrm.app/sign-up" in call_args.kwargs['content']
+            
+            # Verify whatsapp_service NOT called
+            mock_whatsapp_service.handle_message.assert_not_called()
 
     async def test_twilio_webhook_missing_signature(self, client):
         """Test webhook rejects requests without signature (triggering real dependency)"""

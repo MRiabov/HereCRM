@@ -166,15 +166,28 @@ async def webhook(
                                 logger.warning(f"Rate limit exceeded for {from_number}")
                                 continue
 
-                            # Get/Create User
-                            user, is_new = await auth_service.get_or_create_user(from_number)
+                            # Get User from Ingress
+                            user = await auth_service.resolve_user_from_ingress(from_number)
                             
+                            if user is None:
+                                # Send Invitation
+                                from src.services.messaging_service import messaging_service
+                                signup_msg = f"Welcome to HereCRM! Please sign in to verify your identity: {settings.clerk_signup_url}"
+                                await messaging_service.send_message(
+                                    recipient_phone=from_number,
+                                    content=signup_msg,
+                                    channel="whatsapp",
+                                    trigger_source="bot_reply"
+                                )
+                                processed_count += 1
+                                continue
+
                             # Handle Message
                             response_text = await whatsapp_service.handle_message(
                                 user_id=user.id,
                                 user_phone=user.phone_number,
                                 message_text=text_body,
-                                is_new_user=is_new,
+                                is_new_user=False,
                                 channel="whatsapp",
                                 media_url=media_url,
                                 media_type=media_type
@@ -212,13 +225,17 @@ async def webhook(
             if check_rate_limit(from_number):
                 return {"reply": "Too many requests. Please try again later."}
 
-            user, is_new = await auth_service.get_or_create_user(from_number)
+            user = await auth_service.resolve_user_from_ingress(from_number)
             
+            if user is None:
+                signup_msg = f"Welcome to HereCRM! Please sign in to verify your identity: {settings.clerk_signup_url}"
+                return {"reply": signup_msg}
+
             response_text = await whatsapp_service.handle_message(
                 user_id=user.id,
                 user_phone=user.phone_number,
                 message_text=text_body,
-                is_new_user=is_new,
+                is_new_user=False,
                 media_url=media_url,
                 media_type=media_type,
                 channel="whatsapp"
@@ -346,9 +363,22 @@ async def twilio_webhook(
              logger.warning(f"Rate limit exceeded for {from_number} (SMS)")
              return Response(content='<?xml version="1.0" encoding="UTF-8"?><Response></Response>', media_type="application/xml")
 
-        # Get/Create User
-        user, is_new = await auth_service.get_or_create_user(from_number)
+        # Get User from Ingress
+        user = await auth_service.resolve_user_from_ingress(from_number)
         
+        if user is None:
+            from src.services.messaging_service import messaging_service
+            signup_msg = f"Welcome to HereCRM! Please sign in to verify your identity: {settings.clerk_signup_url}"
+            # For Twilio, we need to send the invite
+            # Since handle_message is skipped, we send it here.
+            await messaging_service.send_message(
+                recipient_phone=from_number,
+                content=signup_msg,
+                channel="sms",
+                trigger_source="bot_reply"
+            )
+            return Response(content='<?xml version="1.0" encoding="UTF-8"?><Response></Response>', media_type="application/xml")
+
         # Handle Message
         # The reply text is sent via TwilioService inside handle_message for SMS channel
         await whatsapp_service.handle_message(
@@ -356,7 +386,7 @@ async def twilio_webhook(
             user_phone=user.phone_number,
             message_text=body,
             channel="sms",
-            is_new_user=is_new
+            is_new_user=False
         )
         
         await auth_service.session.commit()
@@ -444,15 +474,23 @@ async def generic_webhook(
             logger.warning(f"Rate limit exceeded for {payload.identity} (Generic)")
             return {"reply": "Too many requests. Please try again later."}
 
-        # Identify or Onboard User
-        user, is_new = await auth_service.get_or_create_user_by_identity(payload.identity)
+        # Identify User
+        user, _ = await auth_service.get_or_create_user_by_identity(payload.identity)
+
+        if user is None:
+             signup_msg = f"Welcome to HereCRM! Please sign in to verify your identity: {settings.clerk_signup_url}"
+             return {
+                "reply": signup_msg,
+                "status": "unauthorized",
+                "source": payload.source
+            }
 
         # Process Message
         response_text = await whatsapp_service.handle_message(
             user_id=user.id,
             user_phone=user.phone_number,
             message_text=payload.message,
-            is_new_user=is_new,
+            is_new_user=False,
             channel=payload.source
         )
 
@@ -497,16 +535,27 @@ async def textgrid_webhook(
             logger.warning(f"Rate limit exceeded for {payload.from_number} (TextGrid)")
             return {"status": "rate_limited"}
 
-        # Identify or Onboard User
-        user, is_new = await auth_service.get_or_create_user(payload.from_number)
+        # Identify User from Ingress
+        user = await auth_service.resolve_user_from_ingress(payload.from_number)
         
+        if user is None:
+            from src.services.messaging_service import messaging_service
+            signup_msg = f"Welcome to HereCRM! Please sign in to verify your identity: {settings.clerk_signup_url}"
+            await messaging_service.send_message(
+                recipient_phone=payload.from_number,
+                content=signup_msg,
+                channel="sms",
+                trigger_source="bot_reply"
+            )
+            return {"status": "unauthorized", "message": "User not registered"}
+
         # Process Message
         # We reuse the WhatsappService handle_message logic but for 'sms' channel
         await whatsapp_service.handle_message(
             user_id=user.id,
             user_phone=user.phone_number,
             message_text=payload.text,
-            is_new_user=is_new,
+            is_new_user=False,
             channel="sms"
         )
         
