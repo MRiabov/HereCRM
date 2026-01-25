@@ -1,9 +1,11 @@
 ---
 work_package_id: WP04
 title: Messaging Ingress & Registration
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks: [T009, T010]
+agent: "Antigravity"
+shell_pid: "579417"
 ---
 
 ## Objective
@@ -44,3 +46,7 @@ Currently, `auth_service.get_or_create_user` might auto-create a user when a mes
 
 - **Lost leads**: We are effectively ignoring messages from non-users. Ensure the signup flow is robust.
 - **Config**: Need `CLERK_SIGNUP_URL` in config/env.
+
+## Activity Log
+
+- 2026-01-25T08:00:31Z – Antigravity – shell_pid=579417 – lane=doing – Started implementation via workflow command
