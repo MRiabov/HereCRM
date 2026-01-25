@@ -37,9 +37,15 @@ tools:
   AutorouteTool:
     role: employee
     friendly_name: "optimize route"
+<<<<<<< HEAD
   LeaveBusinessTool:
     role: employee
     friendly_name: "leave the business"
+=======
+  AddExpenseTool:
+    role: employee
+    friendly_name: "record an expense"
+>>>>>>> 021-expenses-payroll-ledger-WP05
 
   # Manager Level (Mid tier - Oversight)
   LocateEmployeeTool:

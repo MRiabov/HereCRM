@@ -32,6 +32,7 @@ from src.services.dashboard_service import DashboardService
 from src.services.assignment_service import AssignmentService
 from src.services.rbac_service import RBACService
 from src.services.workflow import WorkflowSettingsService
+from src.services.expenses import ExpenseService
 from src.lib.text_formatter import render_employee_dashboard
 from src.uimodels import (
     AddJobTool,

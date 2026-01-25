@@ -526,9 +526,16 @@ class FinishJobTool(BaseModel):
 
 
 class AddExpenseTool(BaseModel):
-    """Add a business expense.
-    Triggered when user says 'Add expense [amount] [description]'."""
-    amount: float = Field(..., description="Amount of the expense")
-    description: str = Field(..., description="What was the expense for")
-    category: Optional[str] = Field("General", description="Expense category")
-    job_id: Optional[int] = Field(None, description="Linked job ID if applicable")
+    """Record a business expense (e.g., fuel, materials, parking).
+    Triggered when user says 'Add expense', 'Log cost', 'I spent $X on [item]'."""
+
+    amount: float = Field(..., description="The amount spent")
+    description: str = Field(..., description="What was the expense for?")
+    category: str = Field("General", description="Expense category (e.g., Fuel, Supplies, Parking)")
+    job_id: Optional[int] = Field(None, description="The ID of the job this expense is linked to, if any")
+
+    @validator("amount")
+    def validate_amount(cls, v):
+        if v <= 0:
+            raise ValueError("Amount must be positive")
+        return v
