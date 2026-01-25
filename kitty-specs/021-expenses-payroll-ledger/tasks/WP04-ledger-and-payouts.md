@@ -1,13 +1,13 @@
 ---
 work_package_id: WP04
 title: Ledger & Payouts
-lane: "for_review"
+lane: "doing"
 dependencies: []
 subtasks: [T015, T016, T017, T018, T019]
 review_status: "has_feedback"
 reviewed_by: "MRiabov"
 agent: "Antigravity"
-shell_pid: "284006"
+shell_pid: "587193"
 ---
 
 # Work Package: Ledger & Payouts
@@ -116,3 +116,4 @@ This is the integration point.
 - 2026-01-22T17:56:14Z – Antigravity – shell_pid=284006 – lane=doing – Started implementation via workflow command
 - 2026-01-22T18:18:26Z – Antigravity – shell_pid=284006 – lane=for_review – Ready for review: Ledger implemented, time tracking wired to wages, payout and balance tools added.
 - 2026-01-25T08:12:49Z – Antigravity – shell_pid=284006 – lane=for_review – Implemented LedgerService, integrated with TimeTracking, and added financial tools. All tests passed.
+- 2026-01-25T08:14:44Z – Antigravity – shell_pid=587193 – lane=doing – Started review via workflow command
