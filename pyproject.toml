@@ -35,6 +35,9 @@ dependencies = [
     "google-api-python-client>=2.188.0",
     "google-auth-oauthlib>=1.2.4",
     "google-auth>=2.47.0",
+    "clerk-backend-api",
+    "pyjwt",
+    "cryptography",
 ]
 
 # Optional dependencies for QuickBooks integration:

@@ -78,6 +78,19 @@ class PaymentTiming(str, enum.Enum):
     PAID_LATER = "paid_later"
 
 
+class WageModelType(str, enum.Enum):
+    COMMISSION = "commission"
+    HOURLY_PER_JOB = "hourly_per_job"
+    HOURLY_PER_SHIFT = "hourly_per_shift"
+    FIXED_DAILY = "fixed_daily"
+
+
+class LedgerEntryType(str, enum.Enum):
+    WAGE = "wage"
+    PAYOUT = "payout"
+    EXPENSE_REIMBURSEMENT = "expense_reimbursement"
+
+
 class Business(Base):
     __tablename__ = "businesses"
 
@@ -98,6 +111,7 @@ class Business(Base):
     # QuickBooks connection metadata (non-sensitive)
     quickbooks_connected: Mapped[bool] = mapped_column(Boolean, default=False)
     quickbooks_last_sync: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    clerk_org_id: Mapped[Optional[str]] = mapped_column(String, unique=True, nullable=True)
 
     # Workflow Settings
     workflow_invoicing: Mapped[Optional[InvoicingWorkflow]] = mapped_column(SAEnum(InvoicingWorkflow), nullable=True)
@@ -149,16 +163,22 @@ class User(Base):
     # Google Calendar Integration
     google_calendar_credentials: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     google_calendar_sync_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    clerk_id: Mapped[Optional[str]] = mapped_column(String, unique=True, nullable=True)
 
     # Location tracking fields
     current_latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     current_longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     location_updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
+    # Financial / Wage fields
+    current_shift_start: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="users")
     conversation_state: Mapped[Optional["ConversationState"]] = relationship(back_populates="user")
     messages: Mapped[List["Message"]] = relationship(back_populates="user")
+    wage_config: Mapped[Optional["WageConfiguration"]] = relationship(back_populates="user", uselist=False)
+    ledger_entries: Mapped[List["LedgerEntry"]] = relationship(back_populates="user")
 
 
 class Service(Base):
@@ -285,6 +305,7 @@ class Job(Base):
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
     estimated_duration: Mapped[int] = mapped_column(Integer, default=60)
+    begun_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="jobs")
@@ -293,6 +314,7 @@ class Job(Base):
     employee: Mapped[Optional["User"]] = relationship(foreign_keys=[employee_id])
     line_items: Mapped[List["LineItem"]] = relationship(back_populates="job", cascade="all, delete-orphan")
     invoices: Mapped[List["Invoice"]] = relationship(back_populates="job", cascade="all, delete-orphan")
+    expenses: Mapped[List["Expense"]] = relationship(back_populates="job")
 
     @validates("value")
     def validate_value(self, key, value):
@@ -591,4 +613,57 @@ class Invitation(Base):
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="invitations")
     inviter: Mapped["User"] = relationship()
+
+
+class WageConfiguration(Base):
+    __tablename__ = "wage_configurations"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
+    model_type: Mapped[WageModelType] = mapped_column(SAEnum(WageModelType))
+    rate_value: Mapped[float] = mapped_column(Float)
+    tax_withholding_rate: Mapped[float] = mapped_column(Float, default=0.0)
+
+    # Relationships
+    user: Mapped["User"] = relationship(back_populates="wage_config")
+
+
+class Expense(Base):
+    __tablename__ = "expenses"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
+    job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True)
+    employee_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    amount: Mapped[float] = mapped_column(Float)
+    category: Mapped[str] = mapped_column(String)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    receipt_url: Mapped[Optional[str]] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+
+    # Relationships
+    business: Mapped["Business"] = relationship()
+    job: Mapped[Optional["Job"]] = relationship(back_populates="expenses")
+    employee: Mapped["User"] = relationship()
+
+
+class LedgerEntry(Base):
+    __tablename__ = "ledger_entries"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    employee_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    amount: Mapped[float] = mapped_column(Float)
+    entry_type: Mapped[LedgerEntryType] = mapped_column(SAEnum(LedgerEntryType))
+    description: Mapped[str] = mapped_column(String)
+    job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+
+    # Relationships
+    user: Mapped["User"] = relationship(back_populates="ledger_entries")
+    job: Mapped[Optional["Job"]] = relationship()
+
 
