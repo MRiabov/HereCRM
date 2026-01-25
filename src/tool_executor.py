@@ -712,6 +712,36 @@ class ToolExecutor:
     async def _execute_update_settings(
         self, tool: UpdateSettingsTool
     ) -> tuple[str, Optional[dict]]:
+        # Map certain keys to business settings instead of user preferences
+        business_keys = ["payment_link", "tax_inclusive", "include_payment_terms"]
+        
+        if tool.setting_key in business_keys:
+            # Check permission: Only owner can update business settings
+            user = await self.user_repo.get_by_id(self.user_id)
+            if not user or user.role != UserRole.OWNER:
+                return "Error: Only the business owner can update business-level settings.", None
+                
+            val = tool.setting_value
+            # Handle boolean casting for business settings if needed
+            if tool.setting_key in ["tax_inclusive", "include_payment_terms"]:
+                val = val.lower() in ["true", "yes", "on", "1"]
+
+            updates = {tool.setting_key: val}
+            new_settings = await self.workflow_service.update_settings(self.business_id, **updates)
+            
+            return (
+                self.template_service.render(
+                    "setting_updated", key=tool.setting_key, value=tool.setting_value
+                ),
+                {
+                    "action": "update_settings",
+                    "entity": "business",
+                    "business_id": self.business_id,
+                    "setting_key": tool.setting_key,
+                    "new_value": tool.setting_value,
+                },
+            )
+
         old_value = await self.user_repo.update_preferences(
             self.user_id, tool.setting_key, tool.setting_value
         )
@@ -1374,14 +1404,8 @@ class ToolExecutor:
             except ValueError:
                 return f"Error: Invalid payment_timing value '{tool.payment_timing}'. Use: always_paid_on_spot, usually_paid_on_spot, paid_later.", None
         
-        if tool.tax_inclusive is not None:
-            updates["workflow_tax_inclusive"] = tool.tax_inclusive
-        if tool.include_payment_terms is not None:
-            updates["workflow_include_payment_terms"] = tool.include_payment_terms
         if tool.enable_reminders is not None:
             updates["workflow_enable_reminders"] = tool.enable_reminders
-        if tool.payment_link is not None:
-            updates["payment_link"] = tool.payment_link
             
         if not updates:
             return "No updates provided.", None
