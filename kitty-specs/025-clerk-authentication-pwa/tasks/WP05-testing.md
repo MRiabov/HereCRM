@@ -1,9 +1,11 @@
 ---
 work_package_id: WP05
 title: Testing & Verification
-lane: planned
+lane: "doing"
 dependencies: []
 subtasks: [T011]
+agent: "Antigravity"
+shell_pid: "590973"
 ---
 
 ## Objective
@@ -40,3 +42,7 @@ With auth changing, we need to ensure security is tight (no unauthorized access)
 ## Risks
 
 - **Mocking complexity**: Mocking JWKS and Svix can be tricky. Use libraries like `respx` or `unittest.mock`.
+
+## Activity Log
+
+- 2026-01-25T08:17:26Z – Antigravity – shell_pid=590973 – lane=doing – Started implementation via workflow command
