@@ -98,6 +98,7 @@ class Business(Base):
     # QuickBooks connection metadata (non-sensitive)
     quickbooks_connected: Mapped[bool] = mapped_column(Boolean, default=False)
     quickbooks_last_sync: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    clerk_org_id: Mapped[Optional[str]] = mapped_column(String, unique=True, nullable=True)
 
     # Workflow Settings
     workflow_invoicing: Mapped[Optional[InvoicingWorkflow]] = mapped_column(SAEnum(InvoicingWorkflow), nullable=True)
@@ -149,6 +150,7 @@ class User(Base):
     # Google Calendar Integration
     google_calendar_credentials: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     google_calendar_sync_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    clerk_id: Mapped[Optional[str]] = mapped_column(String, unique=True, nullable=True)
 
     # Location tracking fields
     current_latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
