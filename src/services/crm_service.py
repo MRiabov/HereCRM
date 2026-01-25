@@ -330,3 +330,44 @@ class CRMService:
 
         return job
 
+    async def get_job_profitability(self, job_id: int) -> dict:
+        """
+        Calculates Net Job Profit:
+        Revenue (Line Items) - Cost_Expenses - Cost_Labor (Ledger Entries)
+        """
+        from src.models import Expense, LedgerEntry, LedgerEntryType
+        from sqlalchemy import select
+        
+        job = await self.job_repo.get_by_id(job_id, self.business_id)
+        if not job:
+             raise ValueError(f"Job {job_id} not found")
+
+        # Revenue from job.line_items? Job model has line_items JSON or related? 
+        # Check Job model. It usually has .value as a summary or line_items JSON.
+        revenue = job.value or 0.0
+
+        # Expenses
+        stmt_expenses = select(Expense).where(Expense.job_id == job_id)
+        result_expenses = await self.session.execute(stmt_expenses)
+        expenses = result_expenses.scalars().all()
+        cost_expenses = sum(e.amount for e in expenses)
+
+        # Labor (Ledger entries linked to job)
+        stmt_labor = select(LedgerEntry).where(
+            LedgerEntry.job_id == job_id,
+            LedgerEntry.entry_type == LedgerEntryType.WAGE
+        )
+        result_labor = await self.session.execute(stmt_labor)
+        labor_entries = result_labor.scalars().all()
+        cost_labor = sum(le.amount for le in labor_entries)
+
+        net_profit = revenue - cost_expenses - cost_labor
+
+        return {
+            "job_id": job_id,
+            "revenue": revenue,
+            "cost_expenses": cost_expenses,
+            "cost_labor": cost_labor,
+            "net_profit": net_profit
+        }
+

@@ -25,6 +25,9 @@ error_unclear_input: |
   - *Status*: 'On my way to John'
   - *Teams*: 'Show schedule' or 'Where are my employees?'
   - *Assign*: 'Assign job 123 to John'
+  - *Expenses*: 'Add expense 50 for fuel'
+  - *Payroll*: 'Check balance' or 'Record payout 500'
+  - *Reporting*: 'Export expenses to csv'
   - *Edit*: 'Edit Job, Lead or Request: John on High Street 34, call 0871235678 tomorrow at 12:00'
   - *Settings*: 'Update settings'
 

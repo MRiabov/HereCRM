@@ -481,7 +481,6 @@ class UpdateWorkflowSettingsTool(BaseModel):
     enable_reminders: Optional[bool] = Field(None, description="Whether to send auto-reminders")
 
 
-
 class ExitAccountingTool(BaseModel):
     """Exit the accounting management mode."""
     pass
@@ -503,3 +502,33 @@ class GoogleCalendarStatusTool(BaseModel):
     """Check the status of Google Calendar integration.
     Triggered when user says 'Google Calendar status' or 'Check calendar connection'."""
     pass
+
+
+class CheckInTool(BaseModel):
+    """Check in for the day/shift. 
+    Triggered when user says 'Start shift', 'Check in', 'I am here'."""
+    pass
+
+class CheckOutTool(BaseModel):
+    """Check out for the day/shift.
+    Triggered when user says 'End shift', 'Check out', 'I am leaving'."""
+    pass
+
+class StartJobTool(BaseModel):
+    """Start tracking time for a specific job.
+    Triggered when user says 'Start job', 'I am arriving at [customer]', 'Begin work'."""
+    job_id: int = Field(..., description="ID of the job to start.")
+
+class FinishJobTool(BaseModel):
+    """Finish tracking time for a specific job.
+    Triggered when user says 'Finish job', 'Job done', 'Work complete'."""
+    job_id: int = Field(..., description="ID of the job to finish.")
+
+
+class AddExpenseTool(BaseModel):
+    """Add a business expense.
+    Triggered when user says 'Add expense [amount] [description]'."""
+    amount: float = Field(..., description="Amount of the expense")
+    description: str = Field(..., description="What was the expense for")
+    category: Optional[str] = Field("General", description="Expense category")
+    job_id: Optional[int] = Field(None, description="Linked job ID if applicable")

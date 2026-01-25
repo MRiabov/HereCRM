@@ -70,8 +70,18 @@ from src.uimodels import (
     ConnectGoogleCalendarTool,
     DisconnectGoogleCalendarTool,
     GoogleCalendarStatusTool,
+    CheckInTool,
+    CheckOutTool,
+    StartJobTool,
+    FinishJobTool,
+    AddExpenseTool,
 )
-
+from src.services.expenses import ExpenseService
+from src.tools.expenses import ExpenseTools
+from src.services.accounting.accounting_tools import AccountingToolsHandler
+from src.services.time_tracking import TimeTrackingService
+from src.tools.shifts import ShiftTools
+from src.tools.jobs_time import JobTimeTools
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.quote_tools import QuoteCreationHandler
 from src.tools.routing_tools import AutorouteToolExecutor
@@ -125,8 +135,11 @@ class ToolExecutor:
         self.quote_service = QuoteService(session)
         self.rbac_service = RBACService()
         self.workflow_service = WorkflowSettingsService(session)
-
-        # [T008] Initialize logger
+        self.time_tracking_service = TimeTrackingService(session)
+        self.shift_tools = ShiftTools(self.time_tracking_service)
+        self.job_time_tools = JobTimeTools(self.time_tracking_service)
+        self.expense_service = ExpenseService(session, self.business_id)
+        self.expense_tools = ExpenseTools(self.expense_service)
         self._routing_service = None
 
     def _get_routing_service(self) -> OpenRouteServiceAdapter:
@@ -187,6 +200,11 @@ class ToolExecutor:
             ConnectGoogleCalendarTool,
             DisconnectGoogleCalendarTool,
             GoogleCalendarStatusTool,
+            CheckInTool,
+            CheckOutTool,
+            StartJobTool,
+            FinishJobTool,
+            AddExpenseTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
 
@@ -320,10 +338,6 @@ class ToolExecutor:
         elif isinstance(tool_call, GoogleCalendarStatusTool):
             return await self._execute_google_calendar_status(tool_call)
         elif isinstance(tool_call, GetWorkflowSettingsTool):
-             # Just return a message, the details are in the prompt or help usually
-             # But let's check if we have a handler for it?
-             # No direct handler method in the diff, usually handled by checking settings.
-             # Wait, the tool is for RETRIEVING settings.
              settings = await self.workflow_service.get_settings(self.business_id)
              return f"Current Workflow Settings:\n{settings}", {"action": "get_workflow_settings", "settings": settings}
         elif isinstance(tool_call, UpdateWorkflowSettingsTool):
@@ -334,6 +348,16 @@ class ToolExecutor:
             return await self._execute_dismiss_user(tool_call)
         elif isinstance(tool_call, LeaveBusinessTool):
             return await self._execute_leave_business(tool_call)
+        elif isinstance(tool_call, CheckInTool):
+             return await self.shift_tools.check_in(tool_call, self.user_id), None
+        elif isinstance(tool_call, CheckOutTool):
+             return await self.shift_tools.check_out(tool_call, self.user_id), None
+        elif isinstance(tool_call, StartJobTool):
+             return await self.job_time_tools.start_job(tool_call, self.user_id), None
+        elif isinstance(tool_call, FinishJobTool):
+             return await self.job_time_tools.finish_job(tool_call), None
+        elif isinstance(tool_call, AddExpenseTool):
+             return await self.expense_tools.add_expense(tool_call, self.user_id), None
         return "Unknown tool call", None
 
     # ... (other methods unchanged)
