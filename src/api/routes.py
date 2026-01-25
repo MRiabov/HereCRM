@@ -24,6 +24,7 @@ from src.services.template_service import TemplateService
 from src.config import settings
 from src.security_utils import check_rate_limit
 from src.services.google_calendar_service import GoogleCalendarService
+from src.api.dependencies.auth import verify_admin_access
 
 template_service = TemplateService()
 
@@ -244,7 +245,7 @@ async def webhook(
         )
 
 
-@router.get("/history/{phone_number}")
+@router.get("/history/{phone_number}", dependencies=[Depends(verify_admin_access)])
 async def get_history(
     phone_number: str,
     db: AsyncSession = Depends(get_db),
