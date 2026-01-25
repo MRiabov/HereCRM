@@ -1380,6 +1380,8 @@ class ToolExecutor:
             updates["workflow_include_payment_terms"] = tool.include_payment_terms
         if tool.enable_reminders is not None:
             updates["workflow_enable_reminders"] = tool.enable_reminders
+        if tool.payment_link is not None:
+            updates["payment_link"] = tool.payment_link
             
         if not updates:
             return "No updates provided.", None
