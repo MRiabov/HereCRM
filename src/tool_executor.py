@@ -11,6 +11,7 @@ from src.models import (
     InvoicingWorkflow,
     QuotingWorkflow,
     PaymentTiming,
+    JobCreationDefault,
 )
 from src.events import event_bus
 from src.repositories import (
@@ -573,6 +574,19 @@ class ToolExecutor:
                 description = f"{description} (Scheduled: {tool.time})"
             else:
                 description = f"(Scheduled: {tool.time})"
+                
+        # Apply default status if not specified and not scheduled
+        status = tool.status
+        if not status and not tool.time:
+             settings = await self.workflow_service.get_settings(self.business_id)
+             default_setting = settings.get("workflow_job_creation_default") or JobCreationDefault.UNSCHEDULED
+             
+             if default_setting == JobCreationDefault.MARK_DONE:
+                 status = "done"
+             elif default_setting == JobCreationDefault.AUTO_SCHEDULE:
+                 status = "pending" # TODO: Hook into auto-scheduler
+             else:
+                 status = "pending"
 
         # 4. Create job using CRMService to ensure events are fired
         crm_service = CRMService(self.session, self.business_id)
@@ -581,7 +595,7 @@ class ToolExecutor:
             description=description,
             value=job_value,
             location=tool.location,
-            status=tool.status or ("scheduled" if tool.time else "pending"),
+            status=status or ("scheduled" if tool.time else "pending"),
             scheduled_at=scheduled_at,
             line_items=inferred_items,
             postal_code=postal_code,

@@ -79,6 +79,12 @@ class PaymentTiming(str, enum.Enum):
     PAID_LATER = "paid_later"
 
 
+class JobCreationDefault(str, enum.Enum):
+    MARK_DONE = "mark_done"
+    UNSCHEDULED = "unscheduled"
+    AUTO_SCHEDULE = "auto_schedule"
+
+
 class WageModelType(str, enum.Enum):
     COMMISSION = "commission"
     HOURLY_PER_JOB = "hourly_per_job"
@@ -121,6 +127,7 @@ class Business(Base):
     workflow_tax_inclusive: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     workflow_include_payment_terms: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     workflow_enable_reminders: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    workflow_job_creation_default: Mapped[Optional[JobCreationDefault]] = mapped_column(SAEnum(JobCreationDefault), nullable=True)
 
     # T020 - Usage-Based Billing
     message_count_current_period: Mapped[int] = mapped_column(Integer, default=0)

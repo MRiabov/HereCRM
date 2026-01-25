@@ -139,6 +139,30 @@ Controls the default geographical context used for resolving job and customer ad
 
 **Default**: Empty (context-aware geocoding relies on user input only).
 
+#### 2.1.8. Job Creation Default
+
+Controls the default status/behavior when a new job is added without an explicit time or status.
+
+**Options**:
+
+- **Mark as Done**: Autosets status to 'done'. Useful for logging past work.
+- **Unscheduled**: Autosets status to 'pending'. Useful for backlog management.
+- **Auto Schedule**: Autosets status to 'pending' (and triggers scheduler if available).
+
+**Default**: Unscheduled
+
+#### 2.1.8. Default Job Creation Status
+
+Controls the initial status of a job when it is created or captured.
+
+**Options**:
+
+- **Mark as Done**: Job is recorded as completed immediately (e.g., for logging past work).
+- **Unscheduled**: Job is added to the backlog/unscheduled list.
+- **Auto-schedule**: System automatically searches for a convenient time slot.
+
+**Default**: Unscheduled
+
 ### 2.2. Settings Storage
 
 All workflow settings must be stored as **columns** on the `Business` model.
@@ -153,6 +177,8 @@ All workflow settings must be stored as **columns** on the `Business` model.
 - `workflow_enable_reminders` (boolean)
 - `default_city` (string)
 - `default_country` (string)
+- `workflow_job_creation_default` (`mark_done` | `unscheduled` | `auto_schedule`)
+- `workflow_default_job_status` (`mark_as_done` | `unscheduled` | `auto_schedule`)
 
 ### 2.3. Settings Management Interface
 
@@ -226,6 +252,7 @@ For existing businesses without workflow settings:
 - `workflow_enable_reminders`
 - `default_city`
 - `default_country`
+- `workflow_default_job_status`
 
 **Note**: Database migration is required to add these columns.
 

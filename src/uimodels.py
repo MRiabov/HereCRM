@@ -2,7 +2,7 @@ from typing import Optional, List, ClassVar
 from pydantic.v1 import BaseModel, Field, validator
 
 # Allowlist for settings that can be updated via LLM
-ALLOWED_SETTING_KEYS = ["confirm_by_default", "language", "timezone", "notifications", "default_city", "default_country", "payment_link", "tax_inclusive", "include_payment_terms"]
+ALLOWED_SETTING_KEYS = ["confirm_by_default", "language", "timezone", "notifications", "default_city", "default_country", "payment_link", "tax_inclusive", "include_payment_terms", "job_creation_default"]
 
 
 class LineItemInfo(BaseModel):
@@ -481,6 +481,7 @@ class UpdateWorkflowSettingsTool(BaseModel):
     quoting: Optional[str] = Field(None, description="Quoting workflow: 'never', 'manual', 'automatic'")
     payment_timing: Optional[str] = Field(None, description="Payment timing: 'always_paid_on_spot', 'usually_paid_on_spot', 'paid_later'")
     enable_reminders: Optional[bool] = Field(None, description="Whether to send auto-reminders")
+    job_creation_default: Optional[str] = Field(None, description="Job creation default: 'mark_done', 'unscheduled', 'auto_schedule'")
 
 
 class ExitAccountingTool(BaseModel):

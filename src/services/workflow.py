@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.repositories import BusinessRepository
-from src.models import InvoicingWorkflow, QuotingWorkflow, PaymentTiming
+from src.models import InvoicingWorkflow, QuotingWorkflow, PaymentTiming, JobCreationDefault
 from typing import Any, Dict, Optional
 
 class WorkflowSettingsService:
@@ -23,6 +23,7 @@ class WorkflowSettingsService:
             "workflow_tax_inclusive": True if business.workflow_tax_inclusive is None else business.workflow_tax_inclusive,
             "workflow_include_payment_terms": False if business.workflow_include_payment_terms is None else business.workflow_include_payment_terms,
             "workflow_enable_reminders": False if business.workflow_enable_reminders is None else business.workflow_enable_reminders,
+            "workflow_job_creation_default": business.workflow_job_creation_default or JobCreationDefault.UNSCHEDULED,
             "payment_link": business.payment_link,
             "seat_count": business.seat_limit,
             "billing_cycle_anchor": business.billing_cycle_anchor,
@@ -44,6 +45,7 @@ class WorkflowSettingsService:
             "workflow_include_payment_terms",
             "workflow_enable_reminders",
             "payment_link",
+            "workflow_job_creation_default",
         }
 
         for key, value in settings.items():
