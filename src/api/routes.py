@@ -24,6 +24,7 @@ from src.services.template_service import TemplateService
 from src.config import settings
 from src.security_utils import check_rate_limit
 from src.services.google_calendar_service import GoogleCalendarService
+from src.services.analytics import analytics
 
 template_service = TemplateService()
 
@@ -170,6 +171,11 @@ async def webhook(
                             user, is_new = await auth_service.get_or_create_user(from_number)
                             
                             # Handle Message
+                            analytics.capture(
+                                user.phone_number or "unknown", 
+                                "message_received", 
+                                {"body": text_body, "channel": "whatsapp", "is_new_user": is_new}
+                            )
                             response_text = await whatsapp_service.handle_message(
                                 user_id=user.id,
                                 user_phone=user.phone_number,
@@ -182,9 +188,14 @@ async def webhook(
                             
                             # Send Reply explicitly via Cloud API
                             if response_text:
+                                analytics.capture(
+                                    user.phone_number or "unknown", 
+                                    "reply_sent", 
+                                    {"body": response_text, "channel": "whatsapp"}
+                                )
                                 from src.services.messaging_service import messaging_service
                                 await messaging_service.send_message(
-                                    recipient_phone=user.phone_number,
+                                    recipient_phone=user.phone_number or "",
                                     content=response_text,
                                     channel="whatsapp",
                                     trigger_source="bot_reply"
@@ -214,15 +225,27 @@ async def webhook(
 
             user, is_new = await auth_service.get_or_create_user(from_number)
             
+            analytics.capture(
+                user.phone_number or "unknown", 
+                "message_received", 
+                {"body": text_body, "channel": "whatsapp_stub", "is_new_user": is_new}
+            )
             response_text = await whatsapp_service.handle_message(
                 user_id=user.id,
-                user_phone=user.phone_number,
+                user_phone=user.phone_number or "unknown",
                 message_text=text_body,
                 is_new_user=is_new,
                 media_url=media_url,
                 media_type=media_type,
                 channel="whatsapp"
             )
+            
+            if response_text:
+                analytics.capture(
+                    user.phone_number or "unknown", 
+                    "reply_sent", 
+                    {"body": response_text, "channel": "whatsapp_stub"}
+                )
             
             await auth_service.session.commit()
             
@@ -653,13 +676,17 @@ async def postmark_inbound_webhook(
         last_message = result.scalar_one_or_none()
         
         if last_message:
-            if not last_message.log_metadata:
-                last_message.log_metadata = {}
-            last_message.log_metadata["email_message_id"] = message_id
+            meta = last_message.log_metadata
+            if meta is None:
+                meta = {}
+            
+            meta["email_message_id"] = message_id
             if in_reply_to_value:
-                last_message.log_metadata["in_reply_to"] = in_reply_to_value
+                meta["in_reply_to"] = in_reply_to_value
             if references:
-                last_message.log_metadata["references"] = references
+                meta["references"] = references
+            
+            last_message.log_metadata = meta
         
         # Commit transaction
         await auth_service.session.commit()
@@ -782,7 +809,7 @@ async def google_callback(
             from src.repositories import UserRepository
             
             user_repo = UserRepository(db)
-            user = await user_repo.get(user_id)
+            user = await user_repo.get_by_id(user_id)
             
             if user and user.phone_number:
                 # Send async notification

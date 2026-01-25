@@ -3,7 +3,8 @@ from fastapi import Request, HTTPException, status, Depends
 from jwt import PyJWKClient
 from src.config import settings
 from src.database import get_db
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import User, Business, UserRole
 
 from clerk_backend_api import Clerk
@@ -15,7 +16,7 @@ class VerifyToken:
         self.jwks_client = PyJWKClient(settings.clerk_jwks_url)
         self.clerk_client = Clerk(bearer_auth=settings.clerk_secret_key)
 
-    async def __call__(self, request: Request, db: Session = Depends(get_db)) -> User:
+    async def __call__(self, request: Request, db: AsyncSession = Depends(get_db)) -> User:
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
             raise HTTPException(
@@ -47,24 +48,26 @@ class VerifyToken:
             raise HTTPException(status_code=401, detail="Invalid token: missing sub")
 
         # 1. Resolve User
-        user = db.query(User).filter(User.clerk_id == clerk_id).first()
+        user_result = await db.execute(select(User).where(User.clerk_id == clerk_id))
+        user = user_result.scalar_one_or_none()
 
         if not user:
             # JIT Creation
             try:
-                clerk_user = self.clerk_client.users.get(clerk_id)
+                clerk_user = self.clerk_client.users.get(user_id=clerk_id)
                 # Resolve Organization if org_id is present
                 business = None
                 if clerk_org_id:
-                    business = db.query(Business).filter(Business.clerk_org_id == clerk_org_id).first()
+                    business_result = await db.execute(select(Business).where(Business.clerk_org_id == clerk_org_id))
+                    business = business_result.scalar_one_or_none()
                     if not business:
-                        clerk_org = self.clerk_client.organizations.get(clerk_org_id)
+                        clerk_org = self.clerk_client.organizations.get(organization_id=clerk_org_id)
                         business = Business(
                             name=clerk_org.name or f"Org {clerk_org_id}",
                             clerk_org_id=clerk_org_id
                         )
                         db.add(business)
-                        db.flush() # Get business.id
+                        await db.flush() # Get business.id
                 else:
                     # No org_id in token. For now, maybe create a personal business if none exists?
                     # Or check if user already has a business.
@@ -76,11 +79,12 @@ class VerifyToken:
                 if not business:
                     # Fallback: find any business or create a default one? 
                     # Spec says "Link User to Business". Let's create a placeholder business if needed.
-                    business = db.query(Business).filter(Business.name == "Default Business").first()
+                    business_result = await db.execute(select(Business).where(Business.name == "Default Business"))
+                    business = business_result.scalar_one_or_none()
                     if not business:
                         business = Business(name="Default Business")
                         db.add(business)
-                        db.flush()
+                        await db.flush()
 
                 user = User(
                     clerk_id=clerk_id,
@@ -91,10 +95,10 @@ class VerifyToken:
                     role=UserRole.OWNER # Default to owner for first user of business? Or manager?
                 )
                 db.add(user)
-                db.commit()
-                db.refresh(user)
+                await db.commit()
+                await db.refresh(user)
             except Exception as e:
-                db.rollback()
+                await db.rollback()
                 raise HTTPException(status_code=500, detail=f"JIT sync failed: {str(e)}")
         
         # 2. Validate Org Mismatch
