@@ -34,6 +34,9 @@ tools:
   AutorouteTool:
     role: employee
     friendly_name: "optimize route"
+  AddExpenseTool:
+    role: employee
+    friendly_name: "record an expense"
 
   # Manager Level (Mid tier - Oversight)
   LocateEmployeeTool:

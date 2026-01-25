@@ -16,8 +16,7 @@ from src.models import (
     Service,
     LineItem,
     CustomerAvailability,
-    IntegrationConfig,
-    IntegrationType
+    Expense
 )
 from .base import BaseRepository, normalize_phone, haversine_distance
 from src.repositories.integration_repository import IntegrationRepository
@@ -471,6 +470,33 @@ class JobRepository(BaseRepository[Job]):
 
     def add(self, item: Job):
         super().add(item)
+
+
+class ExpenseRepository(BaseRepository[Expense]):
+    def __init__(self, session: AsyncSession):
+        super().__init__(session, Expense)
+
+    async def get_expenses(
+        self,
+        business_id: int,
+        job_id: Optional[int] = None,
+        employee_id: Optional[int] = None,
+        min_date: Optional[datetime] = None,
+        max_date: Optional[datetime] = None,
+    ) -> List[Expense]:
+        conditions = [Expense.business_id == business_id]
+        if job_id:
+            conditions.append(Expense.job_id == job_id)
+        if employee_id:
+            conditions.append(Expense.employee_id == employee_id)
+        if min_date:
+            conditions.append(Expense.created_at >= min_date)
+        if max_date:
+            conditions.append(Expense.created_at <= max_date)
+
+        stmt = select(Expense).where(and_(*conditions)).order_by(Expense.created_at.desc())
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
 
 
 class ConversationStateRepository:

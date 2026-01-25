@@ -32,6 +32,7 @@ from src.services.dashboard_service import DashboardService
 from src.services.assignment_service import AssignmentService
 from src.services.rbac_service import RBACService
 from src.services.workflow import WorkflowSettingsService
+from src.services.expenses import ExpenseService
 from src.lib.text_formatter import render_employee_dashboard
 from src.uimodels import (
     AddJobTool,
@@ -71,8 +72,8 @@ from src.uimodels import (
     CheckOutTool,
     StartJobTool,
     FinishJobTool,
+    AddExpenseTool,
 )
-from src.services.accounting.accounting_tools import AccountingToolsHandler
 from src.services.time_tracking import TimeTrackingService
 from src.tools.shifts import ShiftTools
 from src.tools.jobs_time import JobTimeTools
@@ -126,6 +127,7 @@ class ToolExecutor:
         self.time_tracking_service = TimeTrackingService(session)
         self.shift_tools = ShiftTools(self.time_tracking_service)
         self.job_time_tools = JobTimeTools(self.time_tracking_service)
+        self.expense_service = ExpenseService(session)
         self._routing_service = None
 
     def _get_routing_service(self) -> OpenRouteServiceAdapter:
@@ -184,6 +186,7 @@ class ToolExecutor:
             CheckOutTool,
             StartJobTool,
             FinishJobTool,
+            AddExpenseTool,
         ],
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
 
@@ -323,6 +326,9 @@ class ToolExecutor:
              return await self.job_time_tools.start_job(tool_call, self.user_id), None
         elif isinstance(tool_call, FinishJobTool):
              return await self.job_time_tools.finish_job(tool_call), None
+        elif isinstance(tool_call, AddExpenseTool):
+             from src.tools.expenses import execute_add_expense
+             return await execute_add_expense(tool_call, self.expense_service, self.business_id, self.user_id)
         return "Unknown tool call", None
 
     # ... (other methods unchanged)
