@@ -209,10 +209,42 @@ class DataManagementService:
                         "status": j.status,
                         "value": j.value,
                         "scheduled_at": j.scheduled_at,
-                        "location": j.location or j.customer.street, # Fallback
+                        "location": j.location or j.customer.street if j.customer else "",
                         "created_at": j.created_at
                     }
                     data.append(row)
+
+            elif entity_type == "expense" or (query and "expense" in query.lower()):
+                from src.models import Expense
+                stmt = select(Expense).where(Expense.business_id == business_id)
+                if min_date: stmt = stmt.where(Expense.date >= min_date)
+                if max_date: stmt = stmt.where(Expense.date <= max_date)
+                result = await self.session.execute(stmt)
+                expenses = result.scalars().all()
+                for e in expenses:
+                    data.append({
+                        "date": e.date,
+                        "amount": e.amount,
+                        "category": e.category or "",
+                        "description": e.description or "",
+                        "job_id": e.job_id or ""
+                    })
+
+            elif entity_type == "ledger" or (query and any(k in query.lower() for k in ["payroll", "ledger", "payout"])):
+                from src.models import LedgerEntry
+                stmt = select(LedgerEntry).where(LedgerEntry.business_id == business_id)
+                if min_date: stmt = stmt.where(LedgerEntry.date >= min_date)
+                if max_date: stmt = stmt.where(LedgerEntry.date <= max_date)
+                result = await self.session.execute(stmt)
+                entries = result.scalars().all()
+                for le in entries:
+                    data.append({
+                        "date": le.date,
+                        "employee_id": le.user_id,
+                        "amount": le.amount,
+                        "type": le.type.value,
+                        "description": le.description or ""
+                    })
             
             else:
                 # Default to Customer/Lead
