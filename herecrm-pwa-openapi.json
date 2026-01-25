@@ -51,6 +51,51 @@
         }
       }
     },
+    "/api/v1/pwa/onboarding/choice": {
+      "post": {
+        "tags": [
+          "PWA - Onboarding"
+        ],
+        "summary": "Process Onboarding Choice",
+        "description": "Handle the user's choice to either keep their auto-created business or join an existing one via invite code.",
+        "operationId": "process_onboarding_choice_api_v1_pwa_onboarding_choice_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingChoice"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/pwa/jobs/": {
       "get": {
         "tags": [
@@ -584,6 +629,267 @@
           }
         }
       }
+    },
+    "/api/v1/pwa/quotes/": {
+      "get": {
+        "tags": [
+          "PWA - Quotes"
+        ],
+        "summary": "List Quotes",
+        "operationId": "list_quotes_api_v1_pwa_quotes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QuoteSchema"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "PWA - Quotes"
+        ],
+        "summary": "Create Quote",
+        "operationId": "create_quote_api_v1_pwa_quotes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pwa/requests/": {
+      "get": {
+        "tags": [
+          "PWA - Requests"
+        ],
+        "summary": "List Requests",
+        "operationId": "list_requests_api_v1_pwa_requests_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RequestSchema"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pwa/services/": {
+      "get": {
+        "tags": [
+          "PWA - Services"
+        ],
+        "summary": "List Services",
+        "operationId": "list_services_api_v1_pwa_services_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceSchema"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "PWA - Services"
+        ],
+        "summary": "Create Service",
+        "operationId": "create_service_api_v1_pwa_services_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pwa/settings/workflow": {
+      "get": {
+        "tags": [
+          "PWA - Settings"
+        ],
+        "summary": "Get Workflow Settings",
+        "operationId": "get_workflow_settings_api_v1_pwa_settings_workflow_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessSettingsSchema"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "PWA - Settings"
+        ],
+        "summary": "Update Workflow Settings",
+        "operationId": "update_workflow_settings_api_v1_pwa_settings_workflow_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusinessSettingsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessSettingsSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pwa/search/": {
+      "get": {
+        "tags": [
+          "PWA - Search"
+        ],
+        "summary": "Global Search",
+        "description": "Search across customers, jobs, and requests with natural language.",
+        "operationId": "global_search_api_v1_pwa_search_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Query"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GlobalSearchResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pwa/finance/expenses/": {
+      "get": {
+        "tags": [
+          "PWA - Finance"
+        ],
+        "summary": "List Expenses",
+        "operationId": "list_expenses_api_v1_pwa_finance_expenses_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExpenseSchema"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pwa/finance/ledger/": {
+      "get": {
+        "tags": [
+          "PWA - Finance"
+        ],
+        "summary": "Get Ledger Entries",
+        "operationId": "get_ledger_api_v1_pwa_finance_ledger_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LedgerEntrySchema"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -749,6 +1055,39 @@
           "pipeline_stage": {
             "type": "string",
             "title": "Pipeline Stage"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postal Code"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
           }
         },
         "type": "object",
@@ -838,6 +1177,17 @@
               }
             ],
             "title": "Customer Name"
+          },
+          "payment_link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Link"
           }
         },
         "type": "object",
@@ -1003,6 +1353,46 @@
                 "type": "null"
               }
             ]
+          },
+          "line_items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineItemSchema"
+            },
+            "title": "Line Items",
+            "default": []
+          },
+          "paid": {
+            "type": "boolean",
+            "title": "Paid",
+            "default": false
+          },
+          "estimated_duration": {
+            "type": "integer",
+            "title": "Estimated Duration",
+            "default": 60
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
           }
         },
         "type": "object",
@@ -1162,6 +1552,62 @@
           "role": {
             "type": "string",
             "title": "Role"
+          },
+          "current_latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Latitude"
+          },
+          "current_longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Longitude"
+          },
+          "location_updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Updated At"
+          },
+          "default_start_location_lat": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Start Location Lat"
+          },
+          "default_start_location_lng": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Start Location Lng"
           }
         },
         "type": "object",
@@ -1206,6 +1652,661 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "LineItemSchema": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "quantity": {
+            "type": "number",
+            "title": "Quantity"
+          },
+          "unit_price": {
+            "type": "number",
+            "title": "Unit Price"
+          },
+          "total_price": {
+            "type": "number",
+            "title": "Total Price"
+          },
+          "service_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "description",
+          "quantity",
+          "unit_price",
+          "total_price"
+        ],
+        "title": "LineItemSchema"
+      },
+      "QuoteLineItemSchema": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "quantity": {
+            "type": "number",
+            "title": "Quantity"
+          },
+          "unit_price": {
+            "type": "number",
+            "title": "Unit Price"
+          },
+          "total": {
+            "type": "number",
+            "title": "Total"
+          },
+          "service_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "description",
+          "quantity",
+          "unit_price",
+          "total"
+        ],
+        "title": "QuoteLineItemSchema"
+      },
+      "QuoteSchema": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "customer_id": {
+            "type": "integer",
+            "title": "Customer Id"
+          },
+          "total_amount": {
+            "type": "number",
+            "title": "Total Amount"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "external_token": {
+            "type": "string",
+            "title": "External Token"
+          },
+          "public_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Public Url"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/QuoteLineItemSchema"
+            },
+            "type": "array",
+            "title": "Items",
+            "default": []
+          },
+          "customer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CustomerSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "customer_id",
+          "total_amount",
+          "status",
+          "external_token",
+          "created_at"
+        ],
+        "title": "QuoteSchema"
+      },
+      "RequestSchema": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "customer_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "content",
+          "status",
+          "created_at"
+        ],
+        "title": "RequestSchema"
+      },
+      "ServiceSchema": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "default_price": {
+            "type": "number",
+            "title": "Default Price"
+          },
+          "estimated_duration": {
+            "type": "integer",
+            "title": "Estimated Duration"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "default_price",
+          "estimated_duration"
+        ],
+        "title": "ServiceSchema"
+      },
+      "ExpenseSchema": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Date"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "description",
+          "amount",
+          "date"
+        ],
+        "title": "ExpenseSchema"
+      },
+      "LedgerEntrySchema": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "employee_id": {
+            "type": "integer",
+            "title": "Employee Id"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "employee_id",
+          "amount",
+          "type",
+          "description",
+          "created_at"
+        ],
+        "title": "LedgerEntrySchema"
+      },
+      "BusinessSettingsSchema": {
+        "properties": {
+          "workflow_invoicing": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Invoicing"
+          },
+          "workflow_quoting": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Quoting"
+          },
+          "workflow_payment_timing": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Payment Timing"
+          },
+          "workflow_tax_inclusive": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Tax Inclusive"
+          },
+          "workflow_include_payment_terms": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Include Payment Terms"
+          },
+          "workflow_enable_reminders": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Enable Reminders"
+          },
+          "payment_link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Link"
+          },
+          "stripe_connected": {
+            "type": "boolean",
+            "title": "Stripe Connected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stripe_connected"
+        ],
+        "title": "BusinessSettingsSchema"
+      },
+      "QuoteCreate": {
+        "properties": {
+          "customer_id": {
+            "type": "integer",
+            "title": "Customer Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "draft"
+          },
+          "items": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "customer_id",
+          "items"
+        ],
+        "title": "QuoteCreate"
+      },
+      "ServiceCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "default_price": {
+            "type": "number",
+            "title": "Default Price"
+          },
+          "estimated_duration": {
+            "type": "integer",
+            "title": "Estimated Duration",
+            "default": 60
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "default_price"
+        ],
+        "title": "ServiceCreate"
+      },
+      "BusinessSettingsUpdate": {
+        "properties": {
+          "workflow_invoicing": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Invoicing"
+          },
+          "workflow_quoting": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Quoting"
+          },
+          "workflow_payment_timing": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Payment Timing"
+          },
+          "workflow_tax_inclusive": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Tax Inclusive"
+          },
+          "workflow_include_payment_terms": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Include Payment Terms"
+          },
+          "workflow_enable_reminders": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Enable Reminders"
+          },
+          "payment_link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Link"
+          }
+        },
+        "type": "object",
+        "title": "BusinessSettingsUpdate"
+      },
+      "SearchResult": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtitle"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "id",
+          "title"
+        ],
+        "title": "SearchResult"
+      },
+      "GlobalSearchResponse": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/SearchResult"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "query",
+          "results"
+        ],
+        "title": "GlobalSearchResponse"
+      },
+      "OnboardingChoice": {
+        "properties": {
+          "choice": {
+            "type": "string",
+            "title": "Choice"
+          },
+          "invite_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invite Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "choice"
+        ],
+        "title": "OnboardingChoice"
+      },
+      "StatusResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message"
+        ],
+        "title": "StatusResponse"
       }
     }
   }

@@ -33,6 +33,34 @@ paths:
                 type: array
                 title: Response Get Recent Activity Api V1 Pwa Dashboard Recent Activity
                   Get
+  /api/v1/pwa/onboarding/choice:
+    post:
+      tags:
+      - PWA - Onboarding
+      summary: Process Onboarding Choice
+      description: Handle the user's choice to either keep their auto-created business or join an existing one via invite code.
+      operationId: process_onboarding_choice_api_v1_pwa_onboarding_choice_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingChoice'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+        '400':
+          description: Bad Request
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/pwa/jobs/:
     get:
       tags:
@@ -1351,4 +1379,31 @@ components:
       - query
       - results
       title: GlobalSearchResponse
+    OnboardingChoice:
+      properties:
+        choice:
+          type: string
+          title: Choice
+        invite_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Invite Code
+      type: object
+      required:
+      - choice
+      title: OnboardingChoice
+    StatusResponse:
+      properties:
+        status:
+          type: string
+          title: Status
+        message:
+          type: string
+          title: Message
+      type: object
+      required:
+      - status
+      - message
+      title: StatusResponse
 
