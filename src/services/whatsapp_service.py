@@ -8,7 +8,7 @@ from src.repositories import (
     ServiceRepository,
     CustomerRepository,
 )
-from src.models import ConversationState, ConversationStatus, User, Request, Message, MessageRole
+from src.models import ConversationState, ConversationStatus, User, Request, Message, MessageRole, Business
 from src.services.chat_utils import format_service_list, format_line_items
 from src.llm_client import LLMParser
 from src.tool_executor import ToolExecutor
