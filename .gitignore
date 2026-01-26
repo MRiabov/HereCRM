@@ -139,3 +139,5 @@ crm.db
 
 # Data directory
 data/
+*.log
+*.pid
