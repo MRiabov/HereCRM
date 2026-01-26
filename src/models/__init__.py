@@ -451,7 +451,7 @@ class Quote(Base):
     total_amount: Mapped[float] = mapped_column(Float, default=0.0)
     external_token: Mapped[str] = mapped_column(String, unique=True, index=True)
     blob_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True)
+    job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
@@ -495,7 +495,7 @@ class ExportRequest(Base):
     __tablename__ = "export_requests"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"))
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     status: Mapped[str] = mapped_column(String, default="pending")  # 'pending', 'processing', 'completed', 'failed'
     query: Mapped[str] = mapped_column(Text)
     format: Mapped[str] = mapped_column(String)  # 'csv', 'excel', 'json'
@@ -645,7 +645,7 @@ class Expense(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
-    job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True)
+    job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True, index=True)
     employee_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     amount: Mapped[float] = mapped_column(Float)
     category: Mapped[str] = mapped_column(String)
@@ -669,7 +669,7 @@ class LedgerEntry(Base):
     amount: Mapped[float] = mapped_column(Float)
     entry_type: Mapped[LedgerEntryType] = mapped_column(SAEnum(LedgerEntryType))
     description: Mapped[str] = mapped_column(String)
-    job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True)
+    job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
