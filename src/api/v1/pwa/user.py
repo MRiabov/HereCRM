@@ -37,7 +37,7 @@ async def get_google_calendar_auth_url(
         auth_url, _ = service.get_auth_url(state=str(current_user.id))
         return {"auth_url": auth_url}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to generate auth URL.")
 
 @router.delete("/integrations/google-calendar")
 async def disconnect_google_calendar(

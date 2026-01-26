@@ -18,6 +18,8 @@ os.environ["CLERK_PUBLISHABLE_KEY"] = "pk_test_dummy"
 os.environ["CLERK_ISSUER"] = "https://dummy.clerk.accounts.dev"
 os.environ["CLERK_JWKS_URL"] = "https://dummy.clerk.accounts.dev/.well-known/jwks.json"
 os.environ["CLERK_WEBHOOK_SECRET"] = "whsec_dummy"
+os.environ["POSTHOG_API_KEY"] = "dummy_posthog_key"
+os.environ["POSTHOG_HOST"] = "https://app.posthog.com"
 
 import pytest
 import asyncio
