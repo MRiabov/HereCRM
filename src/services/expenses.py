@@ -40,6 +40,7 @@ class ExpenseService:
     async def get_expenses(
         self,
         business_id: int,
+        query: Optional[str] = None,
         job_id: Optional[int] = None,
         employee_id: Optional[int] = None,
         min_date: Optional[datetime] = None,
@@ -50,6 +51,7 @@ class ExpenseService:
         """
         return await self.expense_repo.get_expenses(
             business_id=business_id,
+            query=query,
             job_id=job_id,
             employee_id=employee_id,
             min_date=min_date,
