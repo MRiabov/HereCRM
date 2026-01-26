@@ -102,6 +102,9 @@ class CRMService:
                 
         return None
 
+    async def get_jobs_for_customer(self, customer_id: int) -> list:
+        return await self.job_repo.get_by_customer(customer_id, self.business_id)
+
     async def convert_request(
         self,
         query: str,
@@ -267,12 +270,47 @@ class CRMService:
         await self.session.flush()
         return customer
 
+    async def update_customer(
+        self,
+        customer_id: int,
+        name: Optional[str] = None,
+        phone: Optional[str] = None,
+        email: Optional[str] = None,
+        street: Optional[str] = None,
+        city: Optional[str] = None,
+        pipeline_stage: Optional[str] = None
+    ) -> Customer:
+        customer = await self.customer_repo.get_by_id(customer_id, self.business_id)
+        if not customer:
+            raise ValueError(f"Customer with ID {customer_id} not found.")
+
+        if name is not None:
+            customer.name = name
+        if phone is not None:
+            customer.phone = phone
+        if email is not None:
+            customer.email = email
+        if street is not None:
+            customer.street = street
+        if city is not None:
+            customer.city = city
+        if pipeline_stage is not None:
+            try:
+                customer.pipeline_stage = PipelineStage(pipeline_stage)
+            except ValueError:
+                raise ValueError(f"Invalid pipeline stage: {pipeline_stage}")
+
+        await self.session.flush()
+        return customer
+
     async def update_job(
         self,
         job_id: int,
         description: Optional[str] = None,
         status: Optional[str] = None,
         scheduled_at: Optional[datetime] = None,
+        value: Optional[float] = None,
+        line_items: Optional[list] = None,
     ) -> Job:
         job = await self.job_repo.get_by_id(job_id, self.business_id)
         if not job:
@@ -287,6 +325,10 @@ class CRMService:
             job.status = status
         if scheduled_at is not None:
             job.scheduled_at = scheduled_at
+        if value is not None:
+            job.value = value
+        if line_items is not None:
+            job.line_items = line_items
 
         await self.session.commit()
         await self.session.refresh(job)

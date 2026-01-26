@@ -124,7 +124,13 @@ class CustomerCreate(BaseModel):
     street: Optional[str] = None
     city: Optional[str] = None
 
-# --- Invoice Schemas ---
+class CustomerUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    street: Optional[str] = None
+    city: Optional[str] = None
+    pipeline_stage: Optional[str] = None
 
 class InvoiceSchema(BaseModel):
     id: int
@@ -204,13 +210,15 @@ class ServiceCreate(BaseModel):
 
 class ExpenseSchema(BaseModel):
     id: int
-    description: str
+    description: Optional[str] = None
+    category: str
     amount: float
-    date: datetime
+    created_at: datetime
+    receipt_url: Optional[str] = None
     job_id: Optional[int] = None
     
     class Config:
-        from_attributes = True # If mapped to DB model later, currently maybe just ad-hoc
+        from_attributes = True
 
 class LedgerEntrySchema(BaseModel):
     id: int
@@ -233,6 +241,8 @@ class BusinessSettingsSchema(BaseModel):
     workflow_include_payment_terms: Optional[bool]
     workflow_enable_reminders: Optional[bool]
     payment_link: Optional[str]
+    quickbooks_connected: bool
+    quickbooks_last_sync: Optional[datetime] = None
     stripe_connected: bool
     seat_count: int
     billing_cycle_anchor: Optional[datetime] = None
@@ -258,4 +268,31 @@ class SearchResult(BaseModel):
 class GlobalSearchResponse(BaseModel):
     query: str
     results: List[SearchResult]
+
+# --- Routing Schemas ---
+
+class RoutingStep(BaseModel):
+    job_id: int
+    arrival_time: Optional[datetime]
+    departure_time: Optional[datetime]
+    distance_to_next: Optional[float] = None
+    duration_to_next: Optional[float] = None
+    job: JobSchema
+
+class RouteSchema(BaseModel):
+    employee_id: int
+    employee_name: str
+    steps: List[RoutingStep]
+
+class RoutingMetrics(BaseModel):
+    total_distance: float # meters
+    total_duration: float # seconds
+    jobs_assigned: int
+    unassigned_count: int
+
+class RoutingResponse(BaseModel):
+    date: str
+    metrics: RoutingMetrics
+    routes: List[RouteSchema]
+    unassigned_jobs: List[JobSchema]
 

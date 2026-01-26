@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.database import get_db
 from src.services.crm_service import CRMService
-from src.schemas.pwa import CustomerSchema, CustomerCreate
+from src.schemas.pwa import CustomerSchema, CustomerCreate, CustomerUpdate
 from src.models import Customer, PipelineStage, User
 from src.api.dependencies.clerk_auth import get_current_user
 
@@ -19,10 +19,15 @@ async def get_crm_service(
 @router.get("/", response_model=List[CustomerSchema])
 async def list_customers(
     search: Optional[str] = None,
+    pipeline_stage: Optional[str] = None,
     service: CRMService = Depends(get_crm_service)
 ):
-    if search:
-        customers = await service.customer_repo.search(search, service.business_id)
+    if search or pipeline_stage:
+        customers = await service.customer_repo.search(
+            query=search or "", 
+            business_id=service.business_id,
+            pipeline_stage=pipeline_stage
+        )
     else:
         # TODO: Implement pagination in repo
         customers = await service.customer_repo.get_all(service.business_id)
@@ -58,3 +63,25 @@ async def create_customer(
     await service.session.commit()
     await service.session.refresh(new_customer)
     return new_customer
+
+@router.patch("/{customer_id}", response_model=CustomerSchema)
+async def update_customer(
+    customer_id: int,
+    data: CustomerUpdate,
+    service: CRMService = Depends(get_crm_service)
+):
+    try:
+        updated_customer = await service.update_customer(
+            customer_id=customer_id,
+            name=data.name,
+            phone=data.phone,
+            email=data.email,
+            street=data.street,
+            city=data.city,
+            pipeline_stage=data.pipeline_stage
+        )
+        await service.session.commit()
+        await service.session.refresh(updated_customer)
+        return updated_customer
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))

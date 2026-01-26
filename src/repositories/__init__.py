@@ -525,6 +525,16 @@ class JobRepository(BaseRepository[Job]):
         result = await self.session.execute(stmt)
         return result.unique().scalar_one_or_none()
 
+    async def get_by_customer(self, customer_id: int, business_id: int) -> List[Job]:
+        stmt = (
+            select(Job)
+            .options(joinedload(Job.line_items))
+            .where(Job.customer_id == customer_id, Job.business_id == business_id)
+            .order_by(Job.scheduled_at.desc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().unique().all())
+
     def add(self, item: Job):
         super().add(item)
 
@@ -536,12 +546,19 @@ class ExpenseRepository(BaseRepository[Expense]):
     async def get_expenses(
         self,
         business_id: int,
+        query: Optional[str] = None,
         job_id: Optional[int] = None,
         employee_id: Optional[int] = None,
         min_date: Optional[datetime] = None,
         max_date: Optional[datetime] = None,
     ) -> List[Expense]:
         conditions = [Expense.business_id == business_id]
+        
+        if query:
+            conditions.append(or_(
+                Expense.description.ilike(f"%{query}%"),
+                Expense.category.ilike(f"%{query}%")
+            ))
         if job_id:
             conditions.append(Expense.job_id == job_id)
         if employee_id:
