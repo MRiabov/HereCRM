@@ -131,6 +131,13 @@ class Business(Base):
     workflow_show_whatsapp_button: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=False)
     workflow_job_creation_default: Mapped[Optional[JobCreationDefault]] = mapped_column(SAEnum(JobCreationDefault), nullable=True)
 
+    # Automatic Messaging Settings (Feature 003)
+    workflow_auto_quote_followup: Mapped[bool] = mapped_column(Boolean, default=False)
+    workflow_quote_followup_delay_hrs: Mapped[int] = mapped_column(Integer, default=48)
+    workflow_auto_review_requests: Mapped[bool] = mapped_column(Boolean, default=False)
+    workflow_review_request_delay_hrs: Mapped[int] = mapped_column(Integer, default=2)
+    workflow_review_link: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
     default_city: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     default_country: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
@@ -413,6 +420,7 @@ class Message(Base):
     role: Mapped[MessageRole] = mapped_column(SAEnum(MessageRole))
     channel_type: Mapped[str] = mapped_column(String, default="whatsapp")
     external_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    is_executed: Mapped[bool] = mapped_column(Boolean, default=False)
     log_metadata: Mapped[Optional[dict]] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
@@ -520,6 +528,7 @@ class MessageStatus(str, enum.Enum):
     PENDING = "pending"
     SENT = "sent"
     FAILED = "failed"
+    DRAFT = "draft"
 
 
 class MessageLog(Base):
@@ -535,6 +544,7 @@ class MessageLog(Base):
     )
     trigger_source: Mapped[str] = mapped_column(String)
     external_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    log_metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )

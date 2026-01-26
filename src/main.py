@@ -8,6 +8,7 @@ from src.api.v1.integrations import router as integrations_v1
 from src.api.v1.pwa.router import router as pwa_router
 from src.events import event_bus
 from src.services.messaging_service import messaging_service
+from src.services.automation_service import automation_service
 
 
 @asynccontextmanager
@@ -22,15 +23,17 @@ async def lifespan(app: FastAPI):
     import src.services.pipeline_handlers  # noqa: F401
     import src.handlers.integration_handlers  # noqa: F401
     
-    # Register MessagingService event handlers
+    # Register Event Handlers
     messaging_service.register_handlers()
+    automation_service.register_handlers()
 
     # Register CalendarSyncHandler event handlers
     from src.services.calendar_sync_handler import calendar_sync_handler
     calendar_sync_handler.register()
     
-    # Start MessagingService background worker
+    # Start background workers
     await messaging_service.start()
+    await automation_service.start()
 
     # Start Scheduler Service
     from src.services.scheduler import scheduler_service
@@ -42,6 +45,7 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     scheduler_service.stop()
+    await automation_service.stop()
     await messaging_service.stop()
     from src.services.geocoding import GeocodingService
     await GeocodingService.close_client()
