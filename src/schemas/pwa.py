@@ -253,6 +253,7 @@ class BusinessSettingsSchema(BaseModel):
     workflow_tax_inclusive: Optional[bool]
     workflow_include_payment_terms: Optional[bool]
     workflow_enable_reminders: Optional[bool]
+    workflow_show_whatsapp_button: Optional[bool]
     payment_link: Optional[str]
     default_city: Optional[str] = None
     default_country: Optional[str] = None
@@ -269,6 +270,7 @@ class BusinessSettingsUpdate(BaseModel):
     workflow_tax_inclusive: Optional[bool] = None
     workflow_include_payment_terms: Optional[bool] = None
     workflow_enable_reminders: Optional[bool] = None
+    workflow_show_whatsapp_button: Optional[bool] = None
     payment_link: Optional[str] = None
     default_city: Optional[str] = None
     default_country: Optional[str] = None

@@ -128,6 +128,7 @@ class Business(Base):
     workflow_tax_inclusive: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     workflow_include_payment_terms: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     workflow_enable_reminders: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    workflow_show_whatsapp_button: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=False)
     workflow_job_creation_default: Mapped[Optional[JobCreationDefault]] = mapped_column(SAEnum(JobCreationDefault), nullable=True)
 
     default_city: Mapped[Optional[str]] = mapped_column(String, nullable=True)
