@@ -138,15 +138,37 @@ class GoogleCalendarService:
              job = result.scalar_one()
 
         customer_name = job.customer.name if job.customer else "Unknown Customer"
+        customer_phone = job.customer.phone if job.customer else "N/A"
+        customer_email = job.customer.email if job.customer else "N/A"
         
         start_time = job.scheduled_at or datetime.now()
-        # Default duration 1 hour
-        end_time = start_time + timedelta(hours=1)
+        # Use estimated_duration (minutes), default to 60
+        duration_mins = job.estimated_duration if job.estimated_duration else 60
+        end_time = start_time + timedelta(minutes=duration_mins)
+        
+        description_parts = []
+        if job.description:
+            description_parts.append(f"Description: {job.description}")
+        
+        description_parts.append(f"Customer: {customer_name}")
+        if customer_phone != "N/A":
+            description_parts.append(f"Phone: {customer_phone}")
+        if customer_email != "N/A":
+            description_parts.append(f"Email: {customer_email}")
+            
+        if job.location:
+            description_parts.append(f"Location: {job.location}")
+            
+        description_parts.append(f"
+HereCRM Job ID: {job.id}")
+        
+description = "
+".join(description_parts)
         
         return {
             'summary': f'Job: {customer_name}',
             'location': job.location or '',
-            'description': job.description or '',
+            'description': description,
             'start': {
                 'dateTime': start_time.isoformat(),
                 'timeZone': 'UTC',
@@ -160,14 +182,26 @@ class GoogleCalendarService:
                     'herecrm_job_id': str(job.id)
                 }
             }
+        },
+            'end': {
+                'dateTime': end_time.isoformat(),
+                'timeZone': 'UTC',
+            },
+            'extendedProperties': {
+                'shared': {
+                    'herecrm_job_id': str(job.id)
+                }
+            }
         }
 
     async def create_event(self, job: Job, user: User, db: AsyncSession) -> Optional[str]:
         if not user.google_calendar_sync_enabled:
+            logger.debug(f"Sync disabled for user {user.id}, skipping create_event")
             return None
             
         service = await self._get_calendar_service(user, db)
         if not service:
+            logger.warning(f"Could not get calendar service for user {user.id} (likely auth failure)")
             return None
             
         event_body = await self._build_event_body(job, db)
@@ -179,15 +213,19 @@ class GoogleCalendarService:
             logger.info(f"Created GCal event {event['id']} for job {job.id}")
             return event['id']
         except Exception as e:
-            logger.error(f"Failed to create GCal event for job {job.id}: {e}")
+            logger.error(f"Failed to create GCal event for job {job.id}: {e}", exc_info=True)
             return None
 
     async def update_event(self, job: Job, user: User, db: AsyncSession) -> bool:
-        if not user.google_calendar_sync_enabled or not job.gcal_event_id:
+        if not user.google_calendar_sync_enabled:
+            return False
+            
+        if not job.gcal_event_id:
             return False
             
         service = await self._get_calendar_service(user, db)
         if not service:
+            logger.warning(f"Could not get calendar service for user {user.id} (likely auth failure)")
             return False
             
         event_body = await self._build_event_body(job, db)
@@ -202,6 +240,11 @@ class GoogleCalendarService:
             logger.info(f"Updated GCal event {job.gcal_event_id} for job {job.id}")
             return True
         except Exception as e:
+            # If 404, the event might have been deleted manually in GCal
+            if "404" in str(e):
+                logger.warning(f"GCal event {job.gcal_event_id} not found, clearing ID from job {job.id}")
+                job.gcal_event_id = None
+                await db.flush()
             logger.error(f"Failed to update GCal event {job.gcal_event_id}: {e}")
             return False
 

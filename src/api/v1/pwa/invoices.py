@@ -1,8 +1,8 @@
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, or_
 from sqlalchemy.orm import joinedload
 
 from src.database import get_db
@@ -14,6 +14,7 @@ router = APIRouter()
 
 @router.get("/", response_model=List[InvoiceSchema])
 async def list_invoices(
+    search: Optional[str] = None,
     session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -26,8 +27,21 @@ async def list_invoices(
         .options(
             joinedload(Invoice.job).joinedload(Job.customer)
         )
-        .order_by(desc(Invoice.created_at))
     )
+
+    if search:
+        # Search by Invoice ID (if numeric), Customer Name, or Job Description
+        search_filters = [
+            Customer.name.ilike(f"%{search}%"),
+            Job.description.ilike(f"%{search}%")
+        ]
+        if search.isdigit():
+            search_filters.append(Invoice.id == int(search))
+        
+        stmt = stmt.where(or_(*search_filters))
+
+    stmt = stmt.order_by(desc(Invoice.created_at))
+    
     result = await session.execute(stmt)
     invoices = result.scalars().all()
 

@@ -431,6 +431,7 @@ class JobRepository(BaseRepository[Job]):
                 or_(
                     Job.description.ilike(f"%{query}%"),
                     Job.location.ilike(f"%{query}%"),
+                    Customer.name.ilike(f"%{query}%"),
                 )
             )
 
@@ -458,12 +459,12 @@ class JobRepository(BaseRepository[Job]):
             conditions.append(eff_lat.between(lat_min, lat_max))
             conditions.append(eff_lon.between(lon_min, lon_max))
 
-            stmt = select(Job).outerjoin(Job.customer).options(
+            stmt = select(Job).join(Job.customer).options(
                 contains_eager(Job.customer).joinedload(Customer.availability), joinedload(Job.line_items)
             ).where(and_(*conditions))
         else:
-            stmt = select(Job).options(
-                joinedload(Job.customer).joinedload(Customer.availability), 
+            stmt = select(Job).join(Job.customer).options(
+                contains_eager(Job.customer).joinedload(Customer.availability), 
                 joinedload(Job.line_items)
             ).where(and_(*conditions))
 

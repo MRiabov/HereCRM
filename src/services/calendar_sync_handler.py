@@ -88,9 +88,15 @@ class CalendarSyncHandler:
                 return
 
             if job.gcal_event_id:
-                # Update existing
-                await self.gcal_service.update_event(job, user, db)
-            else:
+                if job.scheduled_at:
+                    # Update existing
+                    await self.gcal_service.update_event(job, user, db)
+                else:
+                    # Job was unscheduled, delete the event
+                    success = await self.gcal_service.delete_event(job.gcal_event_id, user, db)
+                    if success:
+                        job.gcal_event_id = None
+            elif job.scheduled_at:
                 # Create brand new
                 event_id = await self.gcal_service.create_event(job, user, db)
                 if event_id:

@@ -83,6 +83,7 @@ class JobCreationDefault(str, enum.Enum):
     MARK_DONE = "mark_done"
     UNSCHEDULED = "unscheduled"
     AUTO_SCHEDULE = "auto_schedule"
+    SCHEDULED_TODAY = "scheduled_today"
 
 
 class WageModelType(str, enum.Enum):

@@ -3,8 +3,9 @@ import hashlib
 import logging
 import base64
 import email.utils
+import json
 
-from typing import Tuple
+from typing import Tuple, Optional
 from twilio.request_validator import RequestValidator
 
 from fastapi import APIRouter, Depends, HTTPException, Header, Request, status, Response, Query
@@ -793,6 +794,7 @@ async def google_login(
 async def google_callback(
     code: str = Query(...),
     state: str = Query(...),
+    success_url: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -800,7 +802,16 @@ async def google_callback(
     Exchanges code for tokens and updates User in DB.
     """
     try:
-        user_id = int(state)
+        # Try to parse state as JSON (new style) or int (legacy style)
+        try:
+            state_data = json.loads(state)
+            user_id = int(state_data.get("user_id"))
+            # If success_url was passed in state, it overrides the query param
+            if "success_url" in state_data:
+                success_url = state_data["success_url"]
+        except (json.JSONDecodeError, TypeError, ValueError):
+            user_id = int(state)
+        
         service = GoogleCalendarService()
         success = await service.process_auth_callback(code, user_id, db)
         if success:
@@ -821,6 +832,9 @@ async def google_callback(
                 )
 
             await db.commit()
+
+            if success_url:
+                return RedirectResponse(url=success_url)
             
             # Return nice HTML
             html_content = """

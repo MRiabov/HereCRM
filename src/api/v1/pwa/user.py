@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -26,6 +27,7 @@ async def get_integrations(
 
 @router.get("/integrations/google-calendar/auth-url")
 async def get_google_calendar_auth_url(
+    success_url: Optional[str] = Query(None),
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -33,8 +35,14 @@ async def get_google_calendar_auth_url(
     """
     service = GoogleCalendarService()
     try:
-        # Use user.id as state to map callback back to this user
-        auth_url, _ = service.get_auth_url(state=str(current_user.id))
+        import json
+        from typing import Any, Dict
+        state_data: Dict[str, Any] = {"user_id": current_user.id}
+        if success_url:
+            state_data["success_url"] = success_url
+        
+        state = json.dumps(state_data)
+        auth_url, _ = service.get_auth_url(state=state)
         return {"auth_url": auth_url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

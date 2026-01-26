@@ -24,14 +24,31 @@ async def list_jobs(
     date_from: Optional[date] = None,
     customer_id: Optional[int] = None,
     employee_id: Optional[int] = None,
+    search: Optional[str] = None,
     services: tuple[CRMService, DashboardService] = Depends(get_services)
 ):
     """
     List jobs.
+    If search is provided, returns jobs matching the query.
     If customer_id is provided, returns job history for that customer grouped by date.
     Otherwise, returns daily schedule for employees (defaults to today).
     """
     crm_service, dashboard_service = services
+
+    if search:
+        jobs = await crm_service.job_repo.search(query=search, business_id=crm_service.business_id)
+        # Group search results by date
+        from itertools import groupby
+        jobs.sort(key=lambda x: x.scheduled_at.date() if x.scheduled_at else date.min, reverse=True)
+        
+        response = []
+        for date_key, group in groupby(jobs, key=lambda x: x.scheduled_at.date() if x.scheduled_at else None):
+             d_str = date_key.isoformat() if date_key else "Unscheduled"
+             response.append(JobListResponse(
+                 date=d_str,
+                 jobs=[JobSchema.model_validate(j) for j in group]
+             ))
+        return response
 
     if customer_id:
         jobs = await crm_service.get_jobs_for_customer(customer_id)

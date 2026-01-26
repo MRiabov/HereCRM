@@ -597,7 +597,6 @@ class ToolExecutor:
         # 3. Handle scheduling if time provided
         scheduled_at = None
         if tool.iso_time:
-            from datetime import datetime
             try:
                 scheduled_at = datetime.fromisoformat(
                     tool.iso_time.replace("Z", "+00:00")
@@ -622,6 +621,11 @@ class ToolExecutor:
                  status = "done"
              elif default_setting == JobCreationDefault.AUTO_SCHEDULE:
                  status = "pending" # TODO: Hook into auto-scheduler
+             elif default_setting == JobCreationDefault.SCHEDULED_TODAY:
+                 status = "scheduled"
+                 # Set scheduled_at to now if not provided
+                 if not scheduled_at:
+                     scheduled_at = datetime.now(timezone.utc)
              else:
                  status = "pending"
 
