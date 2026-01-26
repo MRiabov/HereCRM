@@ -40,7 +40,7 @@ async def test_search_customers_delegation(search_service):
     
     # Execute
     params.entity_type = "customer" # Ensure it is set
-    result = await search_service.search(params, business_id=1)
+    result, data = await search_service.search(params, business_id=1)
     
     # Verify
     search_service.customer_repo.search.assert_awaited_once()
@@ -56,7 +56,7 @@ async def test_search_jobs_delegation(search_service):
     params = SearchTool(query="Sink", entity_type="job")
     
     # Execute
-    result = await search_service.search(params, business_id=1)
+    result, data = await search_service.search(params, business_id=1)
     
     # Verify
     search_service.job_repo.search.assert_awaited_once()
@@ -69,7 +69,8 @@ async def test_search_requests_delegation(search_service):
     params = SearchTool(query="help", entity_type="request")
     
     # Execute
-    result = await search_service.search(params, business_id=1)
+    result, data = await search_service.search(params, business_id=1)
+
     
     # Verify
     search_service.request_repo.search.assert_awaited_once()
@@ -84,7 +85,7 @@ async def test_search_aggregation_all(search_service):
     params = SearchTool(query="all") # entity_type is None
     
     # Execute
-    result = await search_service.search(params, business_id=1)
+    result, data = await search_service.search(params, business_id=1)
     
     # Verify all repos called
     search_service.customer_repo.search.assert_awaited_once()
@@ -142,7 +143,7 @@ async def test_search_formatting_detailed(search_service):
     
     # Test Detailed
     params = SearchTool(query="John", entity_type="customer", detailed=True)
-    result = await search_service.search(params, business_id=1)
+    result, data = await search_service.search(params, business_id=1)
     
     assert "John Doe (123)" in result
     assert "Main St" in result
@@ -151,7 +152,7 @@ async def test_search_formatting_detailed(search_service):
 
     # Test Concise (Default)
     params.detailed = False
-    result_concise = await search_service.search(params, business_id=1)
+    result_concise, data_concise = await search_service.search(params, business_id=1)
     
     assert "John Doe (123)" in result_concise
     assert "Main St" not in result_concise
@@ -164,7 +165,7 @@ async def test_search_truncation(search_service):
     search_service.customer_repo.search.return_value = results
     
     params = SearchTool(query="all", entity_type="customer")
-    result = await search_service.search(params, business_id=1)
+    result, data = await search_service.search(params, business_id=1)
     
     # Check that we only see 10 items formatted + truncation message
     # We can count newlines or check for specific names.

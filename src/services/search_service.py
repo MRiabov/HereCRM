@@ -21,7 +21,7 @@ class SearchService:
         default_country: Optional[str] = None,
         safeguard_enabled: bool = False,
         max_distance_km: float = 100.0
-    ) -> str:
+    ) -> tuple[str, dict]:
         """
         Execute a unified search across Customers, Jobs, and Requests.
         """
@@ -44,7 +44,7 @@ class SearchService:
                 params.center_lat = lat
                 params.center_lon = lon
             elif safeguard_enabled and default_city:
-                 return f"Search center location '{params.center_address}' is too far from {default_city} or not found."
+                 return f"Search center location '{params.center_address}' is too far from {default_city} or not found.", {}
         
         # Default radius if location present
         if (params.center_lat is not None and params.center_lon is not None) and not params.radius:
@@ -76,13 +76,46 @@ class SearchService:
         # Format results
         output = self._format_results(results, params.detailed)
         
+        # Prepare structured data
+        serialized_results = []
+        from src.models import Customer, Job, Request
+        for item in results:
+            if isinstance(item, Customer):
+                serialized_results.append({
+                    "type": "customer",
+                    "id": item.id,
+                    "name": item.name,
+                    "phone": item.phone,
+                    "address": item.original_address_input or item.street,
+                    "city": item.city,
+                    "pipeline_stage": item.pipeline_stage.value if hasattr(item, 'pipeline_stage') and item.pipeline_stage else None
+                })
+            elif isinstance(item, Job):
+                serialized_results.append({
+                    "type": "job",
+                    "id": item.id,
+                    "description": item.description,
+                    "status": item.status,
+                    "customer_name": item.customer.name if item.customer else "Unknown",
+                    "scheduled_at": item.scheduled_at.isoformat() if item.scheduled_at else None,
+                    "value": item.value
+                })
+            elif isinstance(item, Request):
+                serialized_results.append({
+                    "type": "request",
+                    "id": item.id,
+                    "content": item.content,
+                    "status": item.status,
+                    "created_at": item.created_at.isoformat() if hasattr(item, 'created_at') and item.created_at else None
+                })
+
         if not output:
-            return "No results found."
+            return "No results found.", {"results": []}
 
         if truncated_count > 0:
             output += f"\n\n...and {truncated_count} more results."
 
-        return output
+        return output, {"results": serialized_results, "query": params.query}
 
     def _format_results(self, results: list, detailed: bool) -> str:
         lines = []

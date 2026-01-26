@@ -783,7 +783,7 @@ class ToolExecutor:
         self, tool: SearchTool
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
         default_city, default_country, safeguard_enabled, max_dist = await self._get_user_defaults()
-        result_text = await self.search_service.search(
+        result_text, data = await self.search_service.search(
             tool, 
             self.business_id,
             default_city=default_city,
@@ -791,7 +791,7 @@ class ToolExecutor:
             safeguard_enabled=safeguard_enabled,
             max_distance_km=max_dist
         )
-        return result_text, None
+        return result_text, data
 
     async def _execute_update_settings(
         self, tool: UpdateSettingsTool
