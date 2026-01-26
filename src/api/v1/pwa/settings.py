@@ -1,7 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Any
-
 from src.database import get_db
 from src.services.workflow import WorkflowSettingsService
 from src.schemas.pwa import BusinessSettingsSchema, BusinessSettingsUpdate
@@ -28,7 +26,9 @@ async def get_workflow_settings(
     
     return BusinessSettingsSchema(
         **settings,
-        stripe_connected=business.quickbooks_connected
+        quickbooks_connected=business.quickbooks_connected,
+        quickbooks_last_sync=business.quickbooks_last_sync,
+        stripe_connected=business.stripe_customer_id is not None
     )
 
 @router.patch("/workflow", response_model=BusinessSettingsSchema)
@@ -52,5 +52,7 @@ async def update_workflow_settings(
     
     return BusinessSettingsSchema(
         **settings,
-        stripe_connected=business.quickbooks_connected
+        quickbooks_connected=business.quickbooks_connected,
+        quickbooks_last_sync=business.quickbooks_last_sync,
+        stripe_connected=business.stripe_customer_id is not None
     )
