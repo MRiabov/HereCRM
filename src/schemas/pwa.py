@@ -234,6 +234,14 @@ class ExpenseSchema(BaseModel):
     class Config:
         from_attributes = True
 
+class ExpenseCreate(BaseModel):
+    amount: float
+    category: str
+    description: Optional[str] = None
+    job_id: Optional[int] = None
+    vendor: Optional[str] = None
+    date: Optional[datetime] = None
+
 class LedgerEntrySchema(BaseModel):
     id: int
     employee_id: int

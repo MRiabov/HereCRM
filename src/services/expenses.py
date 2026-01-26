@@ -19,6 +19,7 @@ class ExpenseService:
         description: Optional[str] = None,
         job_id: Optional[int] = None,
         receipt_url: Optional[str] = None,
+        created_at: Optional[datetime] = None,
     ) -> Expense:
         """
         Record a new expense.
@@ -31,7 +32,7 @@ class ExpenseService:
             category=category,
             description=description,
             receipt_url=receipt_url,
-            created_at=datetime.now(timezone.utc)
+            created_at=created_at or datetime.now(timezone.utc)
         )
         self.expense_repo.add(expense)
         await self.session.flush()
