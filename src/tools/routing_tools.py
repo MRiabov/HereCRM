@@ -42,17 +42,28 @@ class AutorouteToolExecutor:
              except ValueError:
                  return f"Invalid date format: {input.date}. Please use YYYY-MM-DD."
 
-        # 2. Fetch data
-        # Employees
+        # 2. Calculate Solution
+        solution, employees_or_error = await self._calculate(target_date)
+        if solution is None or not isinstance(employees_or_error, list):
+            return str(employees_or_error)
+        
+        if input.apply:
+            return await self.apply_schedule(solution, input.notify)
+        
+        # 3. Format Output
+        routes_body = await self._format_solution_body(solution, employees_or_error)
+        return self.template_service.render("autoroute_preview", date=target_date, routes=routes_body)
+
+    async def _calculate(self, target_date: date_cls):
+        """Internal helper to fetch data and call routing service."""
+        # 1. Fetch data
         employees = await self.user_repo.get_team_members(self.business_id)
         if not employees:
-            return "No employees found to route."
+            return None, "No employees found to route."
 
         # Jobs
-        # Fetch pending (backlog) - these are jobs that need to be done but aren't scheduled
         pending_jobs = await self.job_repo.search(query="all", business_id=self.business_id, status="pending")
         
-        # Fetch scheduled for target_date - these are jobs already on the board for today
         start_of_day = datetime.combine(target_date, datetime.min.time())
         end_of_day = datetime.combine(target_date, datetime.max.time())
         
@@ -65,7 +76,6 @@ class AutorouteToolExecutor:
             query_type="scheduled"
         )
         
-        # Combine unique jobs
         all_jobs_map = {j.id: j for j in pending_jobs}
         for j in scheduled_jobs:
             all_jobs_map[j.id] = j
@@ -73,25 +83,18 @@ class AutorouteToolExecutor:
         all_jobs = list(all_jobs_map.values())
         
         if not all_jobs:
-            return f"No jobs found to route for {target_date} (checked pending and scheduled)."
+            return None, f"No jobs found to route for {target_date} (checked pending and scheduled)."
 
-        # 3. Call Service (Run in thread to avoid blocking if sync)
+        # 2. Call Service
         try:
              loop = asyncio.get_running_loop()
              solution = await loop.run_in_executor(None, self.routing_service.calculate_routes, all_jobs, employees)
+             return solution, employees
         except RoutingException as e:
-             return f"Routing calculation failed: {str(e)}"
+             return None, f"Routing calculation failed: {str(e)}"
         except Exception as e:
              logger.exception("Unexpected routing error")
-             return f"An unexpected error occurred during routing: {str(e)}"
-
-        if input.apply:
-            return await self.apply_schedule(solution, input.notify)
-        
-        # 4. Format Output
-        # Convert output to body only, let template handle header
-        routes_body = await self._format_solution_body(solution, employees)
-        return self.template_service.render("autoroute_preview", date=target_date, routes=routes_body)
+             return None, f"An unexpected error occurred during routing: {str(e)}"
 
     async def apply_schedule(self, solution: RoutingSolution, notify: bool) -> str:
         count = 0
@@ -100,7 +103,6 @@ class AutorouteToolExecutor:
             for emp_id, steps in solution.routes.items():
                 # Find employee for notification
                 employee = await self.user_repo.get_by_id(emp_id)
-                emp_name = employee.name if employee else f"Technician {emp_id}"
 
                 for step in steps:
                     job = step.job

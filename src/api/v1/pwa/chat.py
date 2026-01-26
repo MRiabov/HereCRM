@@ -341,6 +341,7 @@ async def execute_tool(
         "SendStatusTool": uimodels.SendStatusTool,
         "LocateEmployeeTool": uimodels.LocateEmployeeTool,
         "CheckETATool": uimodels.CheckETATool,
+        "AutorouteTool": uimodels.AutorouteTool,
     }
     
     tool_cls = model_map.get(request.tool_name)

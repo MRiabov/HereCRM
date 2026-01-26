@@ -359,7 +359,7 @@ class ToolExecutor:
         elif isinstance(tool_call, FinishJobTool):
              return await self.job_time_tools.finish_job(tool_call), None
         elif isinstance(tool_call, AddExpenseTool):
-             return await self.expense_tools.add_expense(tool_call, self.user_id), None
+             return await self.expense_tools.add_expense(tool_call, self.user_id)
         return "Unknown tool call", None
 
     # ... (other methods unchanged)
@@ -668,8 +668,10 @@ class ToolExecutor:
             job = await crm_service.update_job(
                 job_id=job.id,
                 scheduled_at=scheduled_at,
-                description=f"{job.description} (Scheduled: {tool.time})" if job.description and "(Scheduled:" not in job.description else job.description or f"(Scheduled: {tool.time})",
-                status="scheduled"
+                description=tool.description or (f"{job.description} (Scheduled: {tool.time})" if job.description and "(Scheduled:" not in job.description else job.description or f"(Scheduled: {tool.time})"),
+                status="scheduled",
+                value=tool.price,
+                line_items=tool.line_items,
             )
 
             return self.template_service.render(
@@ -682,6 +684,24 @@ class ToolExecutor:
                 "customer_name": job.customer.name,
                 "description": job.description,
             }
+
+        if not job and tool.customer_name:
+            # Create a new job if none found but customer name is provided
+            add_job_tool = AddJobTool(
+                customer_name=tool.customer_name,
+                customer_phone=tool.customer_phone,
+                location=tool.location,
+                price=tool.price,
+                description=tool.description,
+                status="scheduled",
+                line_items=tool.line_items,
+                time=tool.time,
+                iso_time=tool.iso_time,
+                estimated_duration=tool.estimated_duration,
+                city=tool.city,
+                country=tool.country,
+            )
+            return await self._execute_add_job(add_job_tool)
 
         return "Could not find a job to schedule. Try adding a job first.", None
 
@@ -1208,7 +1228,35 @@ class ToolExecutor:
             "unscheduled": unscheduled
         })
         
-        return report, {"action": "query", "entity": "dashboard", "date": target_date.isoformat()}
+        # Serialize data for the frontend
+        serialized_employees = []
+        for emp, jobs in schedule.items():
+            serialized_employees.append({
+                "name": emp.name,
+                "role": emp.role,
+                "jobs": [{
+                    "id": job.id,
+                    "customer_name": job.customer.name if job.customer else "Unknown",
+                    "description": job.description,
+                    "scheduled_at": job.scheduled_at.isoformat() if job.scheduled_at else None,
+                    "status": job.status
+                } for job in jobs]
+            })
+
+        serialized_unscheduled = [{
+            "id": job.id,
+            "customer_name": job.customer.name if job.customer else "Unknown",
+            "description": job.description,
+            "status": job.status
+        } for job in unscheduled]
+
+        return report, {
+            "action": "query", 
+            "entity": "dashboard", 
+            "date": target_date.isoformat(),
+            "employees": serialized_employees,
+            "unscheduled": serialized_unscheduled
+        }
 
     async def _execute_assign_job(
         self, tool: AssignJobTool

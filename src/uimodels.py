@@ -122,6 +122,24 @@ class ScheduleJobTool(BaseModel):
     customer_query: Optional[str] = Field(
         None, description="Name or phone to find the customer/job", max_length=100
     )
+    customer_name: Optional[str] = Field(None, description="Name of the customer", max_length=100)
+    customer_phone: Optional[str] = Field(
+        None, description="Phone number of the customer", max_length=20
+    )
+    location: Optional[str] = Field(
+        None, description="Address or location of the job (e.g. 'High Street 44')", max_length=200
+    )
+    price: Optional[float] = Field(None, description="Total price or value of the job")
+    description: Optional[str] = Field(
+        None, description="Details of the work to be done", max_length=500
+    )
+    line_items: Optional[List[LineItemInfo]] = Field(
+        None, description="List of structured line items for the job"
+    )
+    estimated_duration: Optional[int] = Field(
+        60,
+        description="Estimated duration of the job in minutes (default 60)",
+    )
     city: Optional[str] = Field(
         None, description="City (e.g. 'Dublin')", max_length=100
     )
