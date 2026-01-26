@@ -46,7 +46,9 @@ class PostHogClient:
         input_tokens: Optional[int] = None,
         output_tokens: Optional[int] = None,
         input_messages: Optional[list] = None,
-        output_choices: Optional[list] = None
+        output_choices: Optional[list] = None,
+        thought: Optional[str] = None,
+        extra_properties: Optional[Dict[str, Any]] = None
     ):
         """
         Captures LLM query metadata. 
@@ -65,7 +67,10 @@ class PostHogClient:
             "$ai_output_tokens": output_tokens,
             "$ai_input": input_messages,
             "$ai_output_choices": output_choices,
+            "$ai_thought": thought,
         }
+        if extra_properties:
+            properties.update(extra_properties)
         # Capture standard event for backward compatibility and filtering
         self.capture(user_id, "llm_query_processed", properties)
         

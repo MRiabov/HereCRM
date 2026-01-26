@@ -3,7 +3,7 @@ import json
 import os
 import time
 from typing import Union, Optional, Any
-from openai import AsyncOpenAI
+from posthog.ai.openai import AsyncOpenAI
 from pydantic import ValidationError
 
 from src.config import settings
@@ -63,6 +63,7 @@ class LLMParser:
         self.client = AsyncOpenAI(
             base_url="https://openrouter.ai/api/v1",
             api_key=settings.openrouter_api_key,
+            posthog_client=analytics.client
         )
         self.model = settings.openrouter_model
 
@@ -432,6 +433,10 @@ class LLMParser:
                             "sort": "throughput",
                         }
                     },
+                    posthog_distinct_id=distinct_id,
+                    posthog_properties={
+                        "original_query": original_query
+                    }
                 )
                 latency = time.perf_counter() - start_time
                 usage = response.usage
@@ -445,6 +450,15 @@ class LLMParser:
                 ]
 
                 message = response.choices[0].message
+                
+                # Extract reasoning/thought if available
+                # OpenRouter/OpenAI models might provide it in .reasoning or sometimes in the content
+                reasoning = getattr(message, "reasoning", None)
+                if not reasoning and message.content and "<thought>" in message.content:
+                    import re
+                    match = re.search(r"<thought>(.*?)</thought>", message.content, re.DOTALL)
+                    if match:
+                        reasoning = match.group(1).strip()
                 
                 # Case 1: No tool calls produced
                 if not message.tool_calls:
@@ -522,7 +536,8 @@ class LLMParser:
                             input_tokens=input_tokens,
                             output_tokens=output_tokens,
                             input_messages=messages,
-                            output_choices=output_choices
+                            output_choices=output_choices,
+                            thought=reasoning
                         )
                         return result
                     except ValidationError as e:
@@ -549,7 +564,8 @@ class LLMParser:
                                 input_tokens=input_tokens,
                                 output_tokens=output_tokens,
                                 input_messages=messages,
-                                output_choices=output_choices
+                                output_choices=output_choices,
+                                thought=reasoning
                             )
                             return None
                 else:
@@ -584,6 +600,7 @@ class LLMParser:
                     "sort": "throughput",
                 }
             },
+            posthog_distinct_id="anonymous", # Or pass if available
         )
         return response.choices[0].message.content or ""
 
