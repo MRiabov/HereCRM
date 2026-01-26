@@ -66,6 +66,7 @@ class WhatsappService:
         self.parser = parser
         self.template_service = template_service
         self.billing_service = billing_service or BillingService(session)
+        self.geocoding_service = GeocodingService()
         self.logger = logging.getLogger(__name__)
         self.state_repo = ConversationStateRepository(session)
         self.user_repo = UserRepository(session)
@@ -341,6 +342,40 @@ class WhatsappService:
                     user_id=user.id,
                     channel=channel_name
                 )
+
+            # [WP08] Geocode during summary generation
+            if isinstance(tool_call, (AddJobTool, AddLeadTool)) and tool_call.location:
+                # Resolve defaults
+                default_city = user.preferences.get("default_city") if user.preferences else None
+                default_country = user.preferences.get("default_country") if user.preferences else None
+                
+                # Inference from phone number if country is missing
+                phone = getattr(tool_call, "customer_phone", None) or getattr(tool_call, "phone", None)
+                if not default_country and phone:
+                    if phone.startswith("+353") or phone.startswith("08"): # Ireland
+                        default_country = "Ireland"
+                    elif phone.startswith("+1"):
+                        default_country = "USA"
+
+                lat, lon, street, city, country, postal_code, full_address = await self.geocoding_service.geocode(
+                    tool_call.location,
+                    default_city=tool_call.city or default_city,
+                    default_country=tool_call.country or default_country
+                )
+                if full_address:
+                    tool_call.location = full_address
+                if city:
+                    tool_call.city = city
+                if country:
+                    tool_call.country = country
+                
+                # Update street if AddLeadTool
+                if isinstance(tool_call, AddLeadTool) and street:
+                    tool_call.street = street
+                
+                # Update draft data arguments if it was already set
+                if "tool_call" in self._current_metadata:
+                    self._current_metadata["tool_call"]["arguments"] = tool_call.dict()
 
             # Prepare state record
             state_record.draft_data = {

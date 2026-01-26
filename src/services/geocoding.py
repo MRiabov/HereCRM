@@ -74,6 +74,11 @@ class GeocodingService:
         """
         query_address = address
         parts = []
+        if default_city:
+            parts.append(default_city)
+        if default_country:
+            parts.append(default_country)
+            
         if parts:
             query_address = f"{address}, {', '.join(parts)}"
 
