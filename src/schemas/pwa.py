@@ -328,3 +328,35 @@ class GeocodeResponse(BaseModel):
     postal_code: Optional[str]
     full_address: Optional[str]
 
+
+# --- Data Management ---
+
+class ImportJobSchema(BaseModel):
+    id: int
+    filename: Optional[str]
+    record_count: int
+    status: str
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class ExportRequestSchema(BaseModel):
+    id: int
+    query: str
+    format: str
+    status: str
+    public_url: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class DataActivitySchema(BaseModel):
+    imports: List[ImportJobSchema]
+    exports: List[ExportRequestSchema]
+
+class ExportCreateRequest(BaseModel):
+    query: Optional[str] = None
+    format: str # 'CSV', 'Excel', 'JSON'

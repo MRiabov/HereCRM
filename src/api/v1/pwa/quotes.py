@@ -27,7 +27,8 @@ async def list_quotes(
         )
     )
 
-    if search:
+    ignore_keywords = ["all", "quotes", "show quotes", "show all quotes", "list quotes"]
+    if search and search.strip().lower() not in ignore_keywords:
         search_filters = [
             Customer.name.ilike(f"%{search}%"),
         ]
@@ -45,7 +46,7 @@ async def list_quotes(
     stmt = stmt.order_by(desc(Quote.created_at)).distinct()
     
     result = await session.execute(stmt)
-    quotes = result.scalars().all()
+    quotes = result.scalars().unique().all()
     return quotes
 
 @router.get("/{quote_id}", response_model=QuoteSchema)

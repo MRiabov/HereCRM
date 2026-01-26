@@ -29,7 +29,8 @@ async def list_invoices(
         )
     )
 
-    if search:
+    ignore_keywords = ["all", "invoices", "show invoices", "show all invoices", "list invoices"]
+    if search and search.strip().lower() not in ignore_keywords:
         # Search by Invoice ID (if numeric), Customer Name, or Job Description
         search_filters = [
             Customer.name.ilike(f"%{search}%"),
@@ -43,7 +44,7 @@ async def list_invoices(
     stmt = stmt.order_by(desc(Invoice.created_at))
     
     result = await session.execute(stmt)
-    invoices = result.scalars().all()
+    invoices = result.scalars().unique().all()
 
     response = []
     for inv in invoices:

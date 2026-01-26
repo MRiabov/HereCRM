@@ -555,11 +555,15 @@ class ExpenseRepository(BaseRepository[Expense]):
     ) -> List[Expense]:
         conditions = [Expense.business_id == business_id]
         
-        if query:
+        ignore_keywords = ["all", "expenses", "show expenses", "show all expenses", "list expenses"]
+        if query and query.strip().lower() not in ignore_keywords:
             conditions.append(or_(
                 Expense.description.ilike(f"%{query}%"),
-                Expense.category.ilike(f"%{query}%")
+                Expense.category.ilike(f"%{query}%"),
+                Job.description.ilike(f"%{query}%"),
+                Customer.name.ilike(f"%{query}%")
             ))
+        
         if job_id:
             conditions.append(Expense.job_id == job_id)
         if employee_id:
@@ -569,9 +573,15 @@ class ExpenseRepository(BaseRepository[Expense]):
         if max_date:
             conditions.append(Expense.created_at <= max_date)
 
-        stmt = select(Expense).where(and_(*conditions)).order_by(Expense.created_at.desc())
+        stmt = (
+            select(Expense)
+            .outerjoin(Job, Expense.job_id == Job.id)
+            .outerjoin(Customer, Job.customer_id == Customer.id)
+            .where(and_(*conditions))
+            .order_by(Expense.created_at.desc())
+        )
         result = await self.session.execute(stmt)
-        return list(result.scalars().all())
+        return list(result.scalars().unique().all())
 
 
 class ConversationStateRepository:
