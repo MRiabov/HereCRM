@@ -92,7 +92,12 @@ async def test_employee_dashboard_flow_mocked():
         assert "Employees management:" in result
         assert "Alice's schedule:" in result
         assert "Fix sink" in result
+        # Verify metadata
         assert metadata["action"] == "query"
+        assert "employees" in metadata
+        assert "unscheduled" in metadata
+        assert metadata["employees"][0]["name"] == "Alice"
+        assert metadata["employees"][0]["jobs"][0]["description"] == "Fix sink"
 
         # --- Step 2: Assign Job ---
         # Setup mock for ambiguous case first
