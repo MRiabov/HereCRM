@@ -389,7 +389,7 @@ async def execute_tool(
         template_service=template_service
     )
     
-    response_text, _ = await executor.execute(tool_call)
+    response_text, data = await executor.execute(tool_call)
     
     # 4. Persist result as Assistant Message
     # This helps keep history clean and shows the user what happened
@@ -410,4 +410,4 @@ async def execute_tool(
     
     await service.session.commit()
     
-    return {"status": "sent", "content": response_text}
+    return {"status": "sent", "content": response_text, "tool": request.tool_name, "data": data}
