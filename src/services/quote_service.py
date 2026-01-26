@@ -6,16 +6,16 @@ from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from src.models import Quote, QuoteLineItem, QuoteStatus, Job, LineItem, Request
-from src.services.pdf_generator import PDFGenerator
-from src.services.storage import S3Service, StorageError
+from src.services.pdf_generator import pdf_generator
+from src.services.storage import storage_service
 
 logger = logging.getLogger(__name__)
 
 class QuoteService:
     def __init__(self, session: AsyncSession):
         self.session = session
-        self.s3_service = S3Service()
-        self.pdf_generator = PDFGenerator()
+        self.s3_service = storage_service
+        self.pdf_generator = pdf_generator
 
     async def confirm_quote(self, token: str) -> Optional[Quote]:
         """

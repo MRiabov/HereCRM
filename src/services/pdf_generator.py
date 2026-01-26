@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from typing import Optional, Union
+from typing import Optional
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from weasyprint import HTML
 from src.models import Job, Quote
@@ -57,7 +57,7 @@ class PDFGenerator:
             return pdf_bytes
 
         except TemplateNotFound as e:
-            raise ValueError(f"Invoice template not found: invoice.html") from e
+            raise ValueError("Invoice template not found: invoice.html") from e
         except Exception as e:
             raise RuntimeError(f"Failed to generate invoice PDF: {str(e)}") from e
 
@@ -94,9 +94,13 @@ class PDFGenerator:
             return pdf_bytes
 
         except TemplateNotFound as e:
-            raise ValueError(f"Quote template not found: quote.html") from e
+            raise ValueError("Quote template not found: quote.html") from e
+# ... (lines 98-99)
         except Exception as e:
             raise RuntimeError(f"Failed to generate quote PDF: {str(e)}") from e
+
+# Singleton instance for module-level access
+pdf_generator = PDFGenerator()
 
 # Alias for backward compatibility if needed, though we will refactor usage.
 InvoicePDFGenerator = PDFGenerator
