@@ -36,7 +36,7 @@ class InferenceService:
             if not matched_service:
                 matched_service = self._find_matching_service(raw.description, catalog)
             
-            quantity = raw.quantity
+            quantity = raw.quantity or 1.0
             unit_price = raw.unit_price
             total_price = raw.total_price
 
@@ -44,7 +44,7 @@ class InferenceService:
                 # We found a match in the catalog
                 default_price = round(matched_service.default_price, 2)
 
-                if total_price is not None and unit_price is None and quantity is None:
+                if total_price is not None and unit_price is None and quantity == 1.0:
                     # Case: Total price provided, but no unit price or quantity. 
                     # Use default price to infer quantity.
                     if default_price > 0:
@@ -81,10 +81,6 @@ class InferenceService:
                 if unit_price is None:
                     unit_price = default_price
                 
-                # Default quantity if still None
-                if quantity is None:
-                    quantity = 1.0
-
                 if total_price is None:
                     quantity = round(quantity, 2)
                     unit_price = round(unit_price, 2)
@@ -101,11 +97,6 @@ class InferenceService:
                 )
             else:
                 # Ad-hoc item (not in catalog)
-
-                # If quantity is None for ad-hoc, default to 1.0 immediately as we have no catalog reference to infer otherwise
-                if quantity is None:
-                    quantity = 1.0
-
                 if total_price is not None and quantity is not None and unit_price is None:
                     quantity = round(quantity, 2)
                     if quantity > 0:

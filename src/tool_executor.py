@@ -11,6 +11,8 @@ from src.models import (
     InvoicingWorkflow,
     QuotingWorkflow,
     PaymentTiming,
+    ConversationState,
+    ConversationStatus,
 )
 from src.events import event_bus
 from src.repositories import (
@@ -805,9 +807,18 @@ class ToolExecutor:
             "new_stage": tool.stage,
         }
 
+    async def _check_settings_mode(self) -> bool:
+        # Check if user is in SETTINGS mode
+        state = await self.session.get(ConversationState, self.user_id)
+        if not state or state.state != ConversationStatus.SETTINGS:
+            return False
+        return True
+
     async def _execute_add_service(
         self, tool: AddServiceTool
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        if not await self._check_settings_mode():
+            return "Error: You must be in Settings mode to manage services. Say 'settings' to enter settings.", None
 
         service_name = tool.name.strip().title()
         existing = await self.service_repo.get_by_name(service_name, self.business_id)
@@ -849,6 +860,9 @@ class ToolExecutor:
     async def _execute_edit_service(
         self, tool: EditServiceTool
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        if not await self._check_settings_mode():
+            return "Error: You must be in Settings mode to manage services. Say 'settings' to enter settings.", None
+
         # Fuzzy find service
         services = await self.service_repo.get_all_for_business(self.business_id)
         
@@ -894,6 +908,9 @@ class ToolExecutor:
     async def _execute_delete_service(
         self, tool: DeleteServiceTool
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        if not await self._check_settings_mode():
+            return "Error: You must be in Settings mode to manage services. Say 'settings' to enter settings.", None
+
         services = await self.service_repo.get_all_for_business(self.business_id)
         
         target = None

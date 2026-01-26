@@ -9,7 +9,7 @@ class LineItemInfo(BaseModel):
     """Information about a single line item."""
 
     description: str = Field(..., description="Description of the service or item")
-    quantity: Optional[float] = Field(None, description="Quantity or amount")
+    quantity: float = Field(1.0, description="Quantity or amount")
     unit_price: Optional[float] = Field(None, description="Price per unit")
     total_price: Optional[float] = Field(None, description="Total price for this line item")
     service_id: Optional[int] = Field(None, description="The ID of the matching service from the catalog")
