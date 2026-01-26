@@ -35,7 +35,7 @@ async def list_jobs(
     """
     crm_service, dashboard_service = services
 
-    if search:
+    if search is not None:
         jobs = await crm_service.job_repo.search(query=search, business_id=crm_service.business_id)
         # Group search results by date
         from itertools import groupby
@@ -129,7 +129,8 @@ async def create_job(
             location=job_data.location,
             status=job_data.status,
             scheduled_at=job_data.scheduled_at,
-            estimated_duration=job_data.estimated_duration
+            estimated_duration=job_data.estimated_duration,
+            employee_id=job_data.employee_id
         )
     
         # Reload with customer for schema validation
@@ -156,7 +157,8 @@ async def update_job(
             description=job_update.description,
             status=job_update.status,
             scheduled_at=job_update.scheduled_at,
-            estimated_duration=job_update.estimated_duration
+            estimated_duration=job_update.estimated_duration,
+            employee_id=job_update.employee_id
         )
         return job
     except ValueError as e:
