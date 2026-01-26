@@ -22,28 +22,56 @@ async def get_services(
 @router.get("/", response_model=List[JobListResponse])
 async def list_jobs(
     date_from: Optional[date] = None,
+    customer_id: Optional[int] = None,
+    employee_id: Optional[int] = None,
     services: tuple[CRMService, DashboardService] = Depends(get_services)
 ):
     """
-    List jobs grouped by date. 
-    Currently simplifies to returning today's jobs for the business owner/employees.
-    Reference matching: DashboardService.get_employee_schedules
+    List jobs.
+    If customer_id is provided, returns job history for that customer grouped by date.
+    Otherwise, returns daily schedule for employees (defaults to today).
     """
     crm_service, dashboard_service = services
+
+    if customer_id:
+        jobs = await crm_service.get_jobs_for_customer(customer_id)
+        
+        # Group by date
+        from itertools import groupby
+        
+        # Ensure we sort by date for groupby
+        jobs.sort(key=lambda x: x.scheduled_at.date() if x.scheduled_at else date.min, reverse=True)
+        
+        response = []
+        for date_key, group in groupby(jobs, key=lambda x: x.scheduled_at.date() if x.scheduled_at else None):
+             if date_key is None:
+                 # Skip unscheduled for now or handle as specific group? 
+                 # Let's put them in a catch-all group if vital, but usually history implies scheduled/done.
+                 # If we want to show them, we can use a placeholder date string or current date?
+                 # Schema expects date string.
+                 d_str = "Unscheduled"
+             else:
+                 d_str = date_key.isoformat()
+             
+             response.append(JobListResponse(
+                 date=d_str,
+                 jobs=[JobSchema.model_validate(j) for j in group]
+             ))
+        return response
+
     target_date = date_from or datetime.now(timezone.utc).date()
     
     # Get schedules for all employees
     # DashboardService returns {User: [Job]}
     schedules = await dashboard_service.get_employee_schedules(crm_service.business_id, target_date)
     
-    # Flatten to list of jobs for the response, since frontend expects a flat list or grouped by date?
-    # The PWA 'Schedule' screen expects jobs for a specific day.
-    # The schema `JobListResponse` expects `date` and `jobs`.
-    
     daily_jobs = []
     seen_job_ids = set()
     
     for user, jobs in schedules.items():
+        if employee_id and user.id != employee_id:
+            continue
+            
         for job in jobs:
             if job.id not in seen_job_ids:
                 daily_jobs.append(job)
