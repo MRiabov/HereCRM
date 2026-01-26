@@ -4,6 +4,7 @@ from jwt import PyJWKClient
 from src.config import settings
 from src.database import get_db
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import User, Business, UserRole
 
@@ -48,7 +49,11 @@ class VerifyToken:
             raise HTTPException(status_code=401, detail="Invalid token: missing sub")
 
         # 1. Resolve User
-        user_result = await db.execute(select(User).where(User.clerk_id == clerk_id))
+        user_result = await db.execute(
+            select(User)
+            .options(joinedload(User.business))
+            .where(User.clerk_id == clerk_id)
+        )
         user = user_result.scalar_one_or_none()
 
         if not user:

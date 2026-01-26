@@ -59,7 +59,7 @@ async def process_onboarding_choice(
                 user_id=current_user.clerk_id,
                 public_metadata={
                     "business_id": current_user.business_id,
-                    "role": "OWNER"
+                    "role": UserRole.OWNER.value
                 }
             )
         except Exception as e:

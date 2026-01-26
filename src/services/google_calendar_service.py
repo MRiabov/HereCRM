@@ -74,6 +74,18 @@ class GoogleCalendarService:
         # Serialize credentials to JSON
         creds_json = json.loads(creds.to_json())
         
+        # Also try to get user email if scope allows
+        email = None
+        try:
+            service = build('oauth2', 'v2', credentials=creds)
+            user_info = await asyncio.to_thread(service.userinfo().get().execute)
+            email = user_info.get("email")
+        except Exception as e:
+            logger.warning(f"Could not fetch user email during Google Auth: {e}")
+        
+        if email:
+            creds_json["email"] = email
+
         query = select(User).where(User.id == user_id)
         result = await db.execute(query)
         user = result.scalar_one_or_none()
