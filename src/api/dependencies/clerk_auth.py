@@ -39,7 +39,7 @@ class VerifyToken:
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Token validation failed: {str(e)}",
+                detail="Token validation failed",
             )
 
         clerk_id = payload.get("sub")
@@ -104,7 +104,7 @@ class VerifyToken:
                 await db.refresh(user)
             except Exception as e:
                 await db.rollback()
-                raise HTTPException(status_code=500, detail=f"JIT sync failed: {str(e)}")
+                raise HTTPException(status_code=500, detail="Authentication failed. Please contact support.")
         
         # 2. Validate Org Mismatch
         if clerk_org_id and user.business.clerk_org_id != clerk_org_id:
