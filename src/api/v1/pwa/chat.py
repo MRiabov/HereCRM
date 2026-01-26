@@ -128,113 +128,139 @@ async def send_message(
         lower_msg = request.message.lower().strip()
         msg_template_service = TemplateService()
 
-        tool_call = await parser.parse(
-            text=request.message,
-            system_time=system_time,
-            service_catalog=service_catalog,
-            channel_name="pwa_chat",
-            user_context=user_context
-        )
+        feedback = None
+        tool_call = None
+        
+        for attempt in range(2): # Up to 2 attempts
+            tool_call = await parser.parse(
+                text=request.message,
+                system_time=system_time,
+                service_catalog=service_catalog,
+                channel_name="pwa_chat",
+                user_context=user_context,
+                feedback=feedback
+            )
 
-        response_text = ""
-        if tool_call is None or tool_call == "None": 
-            if lower_msg in ["hi", "hello", "hey", "greetings"]:
-                response_text = msg_template_service.render("welcome_back")
+            if tool_call is None or tool_call == "None": 
+                if lower_msg in ["hi", "hello", "hey", "greetings"]:
+                    response_text = msg_template_service.render("welcome_back")
+                else:
+                    # Use templated help message as fallback
+                    response_text = msg_template_service.render("help_message")
+                break
+            elif isinstance(tool_call, str):
+                response_text = tool_call
+                break
             else:
-                # Use templated help message as fallback
-                response_text = msg_template_service.render("help_message")
-        elif isinstance(tool_call, str):
-            response_text = tool_call
-        else:
-            # 3. Execute tool
-            
-            if isinstance(tool_call, HelpTool):
-                help_service = HelpService(service.session, parser)
-                response_text = await help_service.generate_help_response(
-                    user_query=request.message,
-                    business_id=service.business_id,
-                    user_id=current_user.id,
-                    channel="pwa_chat"
-                )
-            else:
-                # 3. Handle Tool Proposal instead of immediate execution
+                # 3. Execute tool
                 
-                # --- Geocoding Injection Start ---
-                try:
-                    # Check if it's a tool that has location/address fields we want to expand
-                    # We need to import these types, assuming they are available or we check via extraction
-                    is_job_tool = isinstance(tool_call, AddJobTool)
-                    is_lead_tool = isinstance(tool_call, AddLeadTool)
-                    is_edit_customer_tool = isinstance(tool_call, EditCustomerTool)
+                if isinstance(tool_call, HelpTool):
+                    help_service = HelpService(service.session, parser)
+                    response_text = await help_service.generate_help_response(
+                        user_query=request.message,
+                        business_id=service.business_id,
+                        user_id=current_user.id,
+                        channel="pwa_chat"
+                    )
+                    break
+                else:
+                    # 3. Handle Tool Proposal instead of immediate execution
                     
-                    location_query = None
-                    if is_job_tool and tool_call.location:
-                        location_query = tool_call.location
-                    elif is_lead_tool:
-                        # For lead, it might be street or location field
-                        location_query = tool_call.street or tool_call.location
-                    elif is_edit_customer_tool and tool_call.location:
-                        location_query = tool_call.location
-
-                    if location_query:
-                        # Attempt to resolve
-                        geocoder = GeocodingService()
-                        # Use business settings for default city/country if available in future
-                        lat, lon, street, city, country, postcode, full_address = await geocoder.geocode(location_query)
+                    # --- Geocoding Injection Start ---
+                    try:
+                        # Check if it's a tool that has location/address fields we want to expand
+                        is_job_tool = isinstance(tool_call, AddJobTool)
+                        is_lead_tool = isinstance(tool_call, AddLeadTool)
+                        is_edit_customer_tool = isinstance(tool_call, EditCustomerTool)
                         
-                        if full_address and full_address != location_query:
-                            print(f"DEBUG: Expanded location '{location_query}' to '{full_address}'")
-                            
-                            if is_job_tool:
-                                tool_call.location = full_address
-                                if city:
-                                    tool_call.city = city
-                                if country:
-                                    tool_call.country = country
-                                # We could also add lat/lon if the model supports it, but sticking to address strings for now
-                            elif is_lead_tool:
-                                if tool_call.street:
-                                    tool_call.street = street or tool_call.street
-                                tool_call.location = full_address
-                                if city:
-                                    tool_call.city = city
-                                if country:
-                                    tool_call.country = country
-                            elif is_edit_customer_tool:
-                                tool_call.location = full_address
-                except Exception as e:
-                    print(f"WARNING: Geocoding failed: {e}")
-                    # Continue without expansion
-                # --- Geocoding Injection End ---
+                        location_query = None
+                        if is_job_tool and tool_call.location:
+                            location_query = tool_call.location
+                        elif is_lead_tool:
+                            location_query = tool_call.street or tool_call.location
+                        elif is_edit_customer_tool and tool_call.location:
+                            location_query = tool_call.location
 
-                # Update ConversationState
-                stmt = select(ConversationState).where(ConversationState.user_id == current_user.id)
-                res = await service.session.execute(stmt)
-                state_record = res.scalar_one_or_none()
-                
-                if not state_record:
-                    state_record = ConversationState(user_id=current_user.id, state=ConversationStatus.IDLE)
-                    service.session.add(state_record)
-                
-                state_record.state = ConversationStatus.WAITING_CONFIRM
-                state_record.draft_data = {
-                    "tool_name": tool_call.__class__.__name__,
-                    "arguments": tool_call.dict()
-                }
-                
-                await service.session.commit()
-                
-                proposal_data = {
-                    "status": "proposed",
-                    "content": "I've prepared a draft for you. Please confirm below.",
-                    "tool": tool_call.__class__.__name__,
-                    "data": tool_call.dict()
-                }
-                
-                # Persist the proposal as a system message so it survives reload
-                import json
-                # Use default=str to handle datetime or other non-serializable types safely
-                response_text = json.dumps(proposal_data, default=str)
+                        if location_query:
+                            # Resolve defaults
+                            business = await service.session.get(Business, current_user.business_id)
+                            prefs = current_user.preferences or {}
+                            
+                            default_city = (business.default_city if business else None) or prefs.get("default_city")
+                            default_country = (business.default_country if business else None) or prefs.get("default_country")
+                            
+                            safeguard_enabled = prefs.get("geocoding_safeguard_enabled", False)
+                            if isinstance(safeguard_enabled, str):
+                                safeguard_enabled = safeguard_enabled.lower() in ["true", "yes", "on", "1"]
+                            
+                            max_dist = prefs.get("geocoding_max_distance_km", 100.0)
+                            try:
+                                max_dist = float(max_dist)
+                            except (ValueError, TypeError):
+                                max_dist = 100.0
+
+                            # Attempt to resolve
+                            geocoder = GeocodingService()
+                            lat, lon, street, city, country, postcode, full_address = await geocoder.geocode(
+                                location_query,
+                                default_city=default_city,
+                                default_country=default_country,
+                                safeguard_enabled=safeguard_enabled,
+                                max_distance_km=max_dist
+                            )
+                            
+                            if safeguard_enabled and default_city and not lat:
+                                if attempt == 0:
+                                    feedback = f"The location '{location_query}' is too far from {default_city} or not found. Please try to infer a more accurate address or city."
+                                    continue
+                                else:
+                                    response_text = f"Sorry, the location '{location_query}' seems too far from your default city ({default_city}) or could not be found. Please provide a more specific address or update your default city."
+                                    break
+
+                            if full_address and full_address != location_query:
+                                if is_job_tool:
+                                    tool_call.location = full_address
+                                    if city: tool_call.city = city
+                                    if country: tool_call.country = country
+                                elif is_lead_tool:
+                                    if tool_call.street: tool_call.street = street or tool_call.street
+                                    tool_call.location = full_address
+                                    if city: tool_call.city = city
+                                    if country: tool_call.country = country
+                                elif is_edit_customer_tool:
+                                    tool_call.location = full_address
+                    except Exception as e:
+                        print(f"WARNING: Geocoding failed: {e}")
+                    # --- Geocoding Injection End ---
+
+                    # If we reached here without break/continue, geocoding succeeded
+                    # Update ConversationState
+                    stmt = select(ConversationState).where(ConversationState.user_id == current_user.id)
+                    res = await service.session.execute(stmt)
+                    state_record = res.scalar_one_or_none()
+                    
+                    if not state_record:
+                        state_record = ConversationState(user_id=current_user.id, state=ConversationStatus.IDLE)
+                        service.session.add(state_record)
+                    
+                    state_record.state = ConversationStatus.WAITING_CONFIRM
+                    state_record.draft_data = {
+                        "tool_name": tool_call.__class__.__name__,
+                        "arguments": tool_call.dict()
+                    }
+                    
+                    await service.session.commit()
+                    
+                    proposal_data = {
+                        "status": "proposed",
+                        "content": "I've prepared a draft for you. Please confirm below.",
+                        "tool": tool_call.__class__.__name__,
+                        "data": tool_call.dict()
+                    }
+                    
+                    import json
+                    response_text = json.dumps(proposal_data, default=str)
+                    break
         
         # 4. Persist AI Response
         ai_msg = Message(

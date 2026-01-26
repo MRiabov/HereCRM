@@ -1,3 +1,4 @@
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.repositories import CustomerRepository, JobRepository, RequestRepository
 from src.services.geocoding import GeocodingService
@@ -12,7 +13,15 @@ class SearchService:
         self.job_repo = JobRepository(session)
         self.request_repo = RequestRepository(session)
 
-    async def search(self, params: SearchTool, business_id: int) -> str:
+    async def search(
+        self, 
+        params: SearchTool, 
+        business_id: int,
+        default_city: Optional[str] = None,
+        default_country: Optional[str] = None,
+        safeguard_enabled: bool = False,
+        max_distance_km: float = 100.0
+    ) -> str:
         """
         Execute a unified search across Customers, Jobs, and Requests.
         """
@@ -24,10 +33,18 @@ class SearchService:
 
         # Geocode if address provided but no coordinates
         if params.center_address and (params.center_lat is None or params.center_lon is None):
-            lat, lon, street, city, country, postal_code, full_address = await self.geocoding_service.geocode(params.center_address)
+            lat, lon, street, city, country, postal_code, full_address = await self.geocoding_service.geocode(
+                params.center_address,
+                default_city=default_city,
+                default_country=default_country,
+                safeguard_enabled=safeguard_enabled,
+                max_distance_km=max_distance_km
+            )
             if lat is not None and lon is not None:
                 params.center_lat = lat
                 params.center_lon = lon
+            elif safeguard_enabled and default_city:
+                 return f"Search center location '{params.center_address}' is too far from {default_city} or not found."
         
         # Default radius if location present
         if (params.center_lat is not None and params.center_lon is not None) and not params.radius:

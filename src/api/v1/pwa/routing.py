@@ -9,6 +9,7 @@ from src.models import User, Job
 from src.api.dependencies.clerk_auth import get_current_user
 from src.tools.routing_tools import AutorouteToolExecutor
 from src.services.template_service import TemplateService
+from src.services.geocoding import GeocodingService
 from src.schemas.pwa import (
     RoutingResponse, 
     RouteSchema, 
@@ -16,10 +17,35 @@ from src.schemas.pwa import (
     RoutingMetrics as PWARoutingMetrics,
     JobSchema,
     CustomerSchema,
-    UserSchema
+    UserSchema,
+    GeocodeResponse
 )
 
 router = APIRouter()
+
+@router.get("/geocode", response_model=GeocodeResponse)
+async def geocode_address(
+    address: str,
+    city: Optional[str] = None,
+    country: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    geocoder = GeocodingService()
+    lat, lon, street, city_res, country_res, postal_code, full_address = await geocoder.geocode(
+        address,
+        default_city=city or (current_user.preferences.get("default_city") if current_user.preferences else None),
+        default_country=country or (current_user.preferences.get("default_country") if current_user.preferences else None)
+    )
+    
+    return GeocodeResponse(
+        latitude=lat,
+        longitude=lon,
+        street=street,
+        city=city_res,
+        country=country_res,
+        postal_code=postal_code,
+        full_address=full_address
+    )
 
 @router.get("/", response_model=RoutingResponse)
 async def get_routing_preview(

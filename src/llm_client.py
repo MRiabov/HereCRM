@@ -716,7 +716,8 @@ class LLMParser:
         system_time: Optional[str] = None, 
         service_catalog: Optional[str] = None,
         channel_name: str = "whatsapp",
-        user_context: Optional[dict] = None
+        user_context: Optional[dict] = None,
+        feedback: Optional[str] = None
     ) -> Optional[
         Union[
             AddJobTool,
@@ -737,6 +738,7 @@ class LLMParser:
             str,
         ]
     ]:
+        # ... (rest of the method unchanged, but using the feedback)
         # 1. Keyword pre-filtering
         lower_text = text.lower().strip()
         if lower_text == "help":
@@ -780,6 +782,10 @@ class LLMParser:
             )
 
         messages.append({"role": "user", "content": user_prompt})
+
+        if feedback:
+            messages.append({"role": "assistant", "content": "I will try to find the location."}) # Placeholder assistant response
+            messages.append({"role": "user", "content": f"ERROR: {feedback}\nPlease try parsing the original request again with better inputs."})
 
         model_map = {
             "AddJobTool": AddJobTool,

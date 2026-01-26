@@ -150,11 +150,33 @@ class ToolExecutor:
             self._routing_service = OpenRouteServiceAdapter(api_key=settings.openrouteservice_api_key)
         return self._routing_service
 
-    async def _get_user_defaults(self) -> Tuple[Optional[str], Optional[str]]:
+    async def _get_user_defaults(self) -> Tuple[Optional[str], Optional[str], bool, float]:
         user = await self.user_repo.get_by_id(self.user_id)
-        if user and user.preferences:
-            return user.preferences.get("default_city"), user.preferences.get("default_country")
-        return None, None
+        if not user:
+            return None, None, False, 100.0
+            
+        # Preference: Business defaults > User preferences
+        business = await self.session.get(Business, self.business_id)
+        
+        default_city = (business.default_city if business else None) or user.preferences.get("default_city")
+        default_country = (business.default_country if business else None) or user.preferences.get("default_country")
+        
+        safeguard = user.preferences.get("geocoding_safeguard_enabled", False)
+        if isinstance(safeguard, str):
+            safeguard = safeguard.lower() in ["true", "yes", "on", "1"]
+        
+        max_dist = user.preferences.get("geocoding_max_distance_km", 100.0)
+        try:
+            max_dist = float(max_dist)
+        except (ValueError, TypeError):
+            max_dist = 100.0
+            
+        return (
+            default_city, 
+            default_country,
+            safeguard,
+            max_dist
+        )
 
     async def execute(
         self,
@@ -381,7 +403,7 @@ class ToolExecutor:
 
         # 2. Extract address
         # Check for user defaults first
-        default_city, default_country = await self._get_user_defaults()
+        default_city, default_country, safeguard_enabled, max_dist = await self._get_user_defaults()
         
         # Use provided city/country if available, otherwise defaults for geocoding
         # Note: AddLeadTool has specific city/country fields, but also 'location' string.
@@ -395,8 +417,13 @@ class ToolExecutor:
         lat, lon, street, city, country, postal_code, full_address = await self.geocoding_service.geocode(
             tool.location or "",
             default_city=tool.city or default_city,
-            default_country=tool.country or default_country
+            default_country=tool.country or default_country,
+            safeguard_enabled=safeguard_enabled,
+            max_distance_km=max_dist
         )
+        
+        if safeguard_enabled and default_city and not lat and tool.location:
+             return f"Error: The location '{tool.location}' is too far from your default city ({default_city}) or could not be found within the allowed range. Please provide a more specific address or update your default city.", None
         
         # If geocoding didn't return city/country (e.g. not found or not parsed), use the ones we have
         final_city = city or target_city
@@ -472,12 +499,18 @@ class ToolExecutor:
         if tool.location:
             customer.original_address_input = tool.location
             # Re-geocode
-            default_city, default_country = await self._get_user_defaults()
+            default_city, default_country, safeguard_enabled, max_dist = await self._get_user_defaults()
             lat, lon, street, city, country, postal_code, full_address = await self.geocoding_service.geocode(
                 tool.location, 
                 default_city=default_city, 
-                default_country=default_country
+                default_country=default_country,
+                safeguard_enabled=safeguard_enabled,
+                max_distance_km=max_dist
             )
+
+            if safeguard_enabled and default_city and not lat:
+                return f"Error: The location '{tool.location}' is too far from your default city ({default_city}) or could not be found within the allowed range.", None
+
             if lat and lon:
                 customer.latitude = lat
                 customer.longitude = lon
@@ -515,18 +548,22 @@ class ToolExecutor:
 
         # Geocode the location if provided (used for new customer and/or job location)
         lat, lon, street, city, country, postal_code, full_address = None, None, None, None, None, None, tool.location
+        default_city, default_country, safeguard_enabled, max_dist = await self._get_user_defaults()
+        
         if tool.location:
-            default_city, default_country = await self._get_user_defaults()
             lat, lon, street, city, country, postal_code, full_address = await self.geocoding_service.geocode(
                 tool.location, 
                 default_city=tool.city or default_city, 
-                default_country=tool.country or default_country
+                default_country=tool.country or default_country,
+                safeguard_enabled=safeguard_enabled,
+                max_distance_km=max_dist
             )
+            
+            if safeguard_enabled and default_city and not lat:
+                return f"Error: The location '{tool.location}' is too far from your default city ({default_city}) or could not be found within the allowed range.", None
 
         if not customer:
             # Create new customer
-            default_city, default_country = await self._get_user_defaults()
-            
             # Use defaults if geocoding didn't fill them
             final_city = city or default_city
             final_country = country or default_country
@@ -741,7 +778,15 @@ class ToolExecutor:
     async def _execute_search(
         self, tool: SearchTool
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
-        result_text = await self.search_service.search(tool, self.business_id)
+        default_city, default_country, safeguard_enabled, max_dist = await self._get_user_defaults()
+        result_text = await self.search_service.search(
+            tool, 
+            self.business_id,
+            default_city=default_city,
+            default_country=default_country,
+            safeguard_enabled=safeguard_enabled,
+            max_distance_km=max_dist
+        )
         return result_text, None
 
     async def _execute_update_settings(
@@ -1408,7 +1453,14 @@ class ToolExecutor:
         if job_lat is None or job_lng is None:
              if job.location:
                    # Geocode job.location
-                   j_lat, j_lon, _, _, _, _, _ = await self.geocoding_service.geocode(job.location)
+                   default_city, default_country, safeguard_enabled, max_dist = await self._get_user_defaults()
+                   j_lat, j_lon, _, _, _, _, _ = await self.geocoding_service.geocode(
+                       job.location,
+                       default_city=default_city,
+                       default_country=default_country,
+                       safeguard_enabled=safeguard_enabled,
+                       max_distance_km=max_dist
+                   )
                    if j_lat and j_lon:
                         job_lat, job_lng = j_lat, j_lon
         

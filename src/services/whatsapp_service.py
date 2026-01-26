@@ -16,6 +16,7 @@ from src.services.template_service import TemplateService
 from src.services.data_management import DataManagementService
 from src.services.location_service import LocationService
 from src.services.billing_service import BillingService
+from src.services.geocoding import GeocodingService
 from src.services.invitation import InvitationService
 
 from src.config.loader import get_channel_config_loader
@@ -312,27 +313,24 @@ class WhatsappService:
             "phone_number": user.phone_number,
             "clerk_id": user.clerk_id
         }
-        tool_call = await self.parser.parse(
-            text, 
-            system_time=system_time, 
-            service_catalog=service_catalog_str,
-            channel_name=channel_name,
-            user_context=user_context
-        )
-        
-        if tool_call:
-            # Capture tool call metadata
-            if not isinstance(tool_call, str):
-                self._current_metadata["tool_call"] = {
-                    "name": tool_call.__class__.__name__,
-                    "arguments": tool_call.dict()
-                }
 
-            # Handle string response (reasoning/clarification)
-            if isinstance(tool_call, str):
-                return tool_call
-                
-            # Handle HelpTool separately (skip confirmation)
+        feedback = None
+        tool_call = None
+        
+        for attempt in range(2): # Up to 2 attempts
+            tool_call = await self.parser.parse(
+                text, 
+                system_time=system_time, 
+                service_catalog=service_catalog_str,
+                channel_name=channel_name,
+                user_context=user_context,
+                feedback=feedback
+            )
+            
+            if not tool_call:
+                break
+
+            # Handle HelpTool separately (skip confirmation and geocoding)
             if isinstance(tool_call, HelpTool):
                 from src.services.help_service import HelpService
                 help_service = HelpService(self.session, self.parser)
@@ -346,8 +344,21 @@ class WhatsappService:
             # [WP08] Geocode during summary generation
             if isinstance(tool_call, (AddJobTool, AddLeadTool)) and tool_call.location:
                 # Resolve defaults
-                default_city = user.preferences.get("default_city") if user.preferences else None
-                default_country = user.preferences.get("default_country") if user.preferences else None
+                business = await self.session.get(Business, user.business_id)
+                prefs = user.preferences or {}
+                
+                default_city = (business.default_city if business else None) or prefs.get("default_city")
+                default_country = (business.default_country if business else None) or prefs.get("default_country")
+                
+                safeguard_enabled = prefs.get("geocoding_safeguard_enabled", False)
+                if isinstance(safeguard_enabled, str):
+                    safeguard_enabled = safeguard_enabled.lower() in ["true", "yes", "on", "1"]
+                
+                max_dist = prefs.get("geocoding_max_distance_km", 100.0)
+                try:
+                    max_dist = float(max_dist)
+                except (ValueError, TypeError):
+                    max_dist = 100.0
                 
                 # Inference from phone number if country is missing
                 phone = getattr(tool_call, "customer_phone", None) or getattr(tool_call, "phone", None)
@@ -359,23 +370,55 @@ class WhatsappService:
 
                 lat, lon, street, city, country, postal_code, full_address = await self.geocoding_service.geocode(
                     tool_call.location,
-                    default_city=tool_call.city or default_city,
-                    default_country=tool_call.country or default_country
+                    default_city=getattr(tool_call, "city", None) or default_city,
+                    default_country=getattr(tool_call, "country", None) or default_country,
+                    safeguard_enabled=safeguard_enabled,
+                    max_distance_km=max_dist
                 )
+                
+                if safeguard_enabled and default_city and not lat:
+                    if attempt == 0:
+                        self.logger.info(f"Geocoding rejected by safeguard for '{tool_call.location}', retrying with feedback...")
+                        feedback = f"The location '{tool_call.location}' is too far from {default_city} or not found. Please try to infer a more accurate address or city."
+                        continue
+                    else:
+                        return f"Sorry, the location '{tool_call.location}' seems too far from your default city ({default_city}) or could not be found. Please provide a more specific address or update your default city."
+
                 if full_address:
                     tool_call.location = full_address
-                if city:
+                if city and hasattr(tool_call, "city"):
                     tool_call.city = city
-                if country:
+                if country and hasattr(tool_call, "country"):
                     tool_call.country = country
+                
+                # Update lat/lon
+                if lat is not None:
+                    tool_call.latitude = lat
+                if lon is not None:
+                    tool_call.longitude = lon
                 
                 # Update street if AddLeadTool
                 if isinstance(tool_call, AddLeadTool) and street:
                     tool_call.street = street
+            
+            # If we reached here, it means either no geocoding needed or geocoding succeeded
+            break
+
+        if tool_call:
+            # Capture tool call metadata
+            if not isinstance(tool_call, str):
+                self._current_metadata["tool_call"] = {
+                    "name": tool_call.__class__.__name__,
+                    "arguments": tool_call.dict()
+                }
+
+            # Handle string response (reasoning/clarification)
+            if isinstance(tool_call, str):
+                return tool_call
                 
-                # Update draft data arguments if it was already set
-                if "tool_call" in self._current_metadata:
-                    self._current_metadata["tool_call"]["arguments"] = tool_call.dict()
+            # Update draft data arguments if it was already set
+            if "tool_call" in self._current_metadata and not isinstance(tool_call, str):
+                self._current_metadata["tool_call"]["arguments"] = tool_call.dict()
 
             # Prepare state record
             state_record.draft_data = {

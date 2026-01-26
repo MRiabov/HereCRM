@@ -129,6 +129,9 @@ class Business(Base):
     workflow_enable_reminders: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     workflow_job_creation_default: Mapped[Optional[JobCreationDefault]] = mapped_column(SAEnum(JobCreationDefault), nullable=True)
 
+    default_city: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    default_country: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
     # T020 - Usage-Based Billing
     message_count_current_period: Mapped[int] = mapped_column(Integer, default=0)
     billing_cycle_anchor: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)

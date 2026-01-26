@@ -2,7 +2,7 @@ from typing import Optional, List, ClassVar
 from pydantic.v1 import BaseModel, Field, validator
 
 # Allowlist for settings that can be updated via LLM
-ALLOWED_SETTING_KEYS = ["confirm_by_default", "language", "timezone", "notifications", "default_city", "default_country", "payment_link", "tax_inclusive", "include_payment_terms", "job_creation_default"]
+ALLOWED_SETTING_KEYS = ["confirm_by_default", "language", "timezone", "notifications", "default_city", "default_country", "payment_link", "tax_inclusive", "include_payment_terms", "job_creation_default", "geocoding_safeguard_enabled", "geocoding_max_distance_km"]
 
 
 class LineItemInfo(BaseModel):
@@ -65,6 +65,8 @@ class AddJobTool(BaseModel):
         60,
         description="Estimated duration of the job in minutes (default 60)",
     )
+    latitude: Optional[float] = Field(None, description="Geocoded latitude")
+    longitude: Optional[float] = Field(None, description="Geocoded longitude")
 
     @validator("price")
     def validate_price(cls, v):
@@ -98,6 +100,8 @@ class AddLeadTool(BaseModel):
         description="Additional details or description about the lead/client",
         max_length=500,
     )
+    latitude: Optional[float] = Field(None, description="Geocoded latitude")
+    longitude: Optional[float] = Field(None, description="Geocoded longitude")
 
 
 class EditCustomerTool(BaseModel):
@@ -112,6 +116,8 @@ class EditCustomerTool(BaseModel):
     details: Optional[str] = Field(
         None, description="New details/notes", max_length=500
     )
+    latitude: Optional[float] = Field(None, description="Geocoded latitude")
+    longitude: Optional[float] = Field(None, description="Geocoded longitude")
 
 
 class ScheduleJobTool(BaseModel):
@@ -156,6 +162,8 @@ class ScheduleJobTool(BaseModel):
         description="ISO 8601 formatted datetime string (parsed by LLM)",
         max_length=50,
     )
+    latitude: Optional[float] = Field(None, description="Geocoded latitude")
+    longitude: Optional[float] = Field(None, description="Geocoded longitude")
 
 
 class AddRequestTool(BaseModel):

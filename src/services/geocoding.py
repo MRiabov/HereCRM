@@ -1,8 +1,26 @@
 import httpx
+import math
 from typing import Optional, Tuple
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def calculate_haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """
+    Calculate the great circle distance between two points 
+    on the earth (specified in decimal degrees) in kilometers.
+    """
+    # Convert decimal degrees to radians 
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+
+    # Haversine formula 
+    dlon = lon2 - lon1 
+    dlat = lat2 - lat1 
+    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    c = 2 * math.asin(math.sqrt(a)) 
+    r = 6371 # Radius of earth in kilometers. Use 3956 for miles
+    return c * r
 
 
 class GeocodingService:
@@ -65,12 +83,15 @@ class GeocodingService:
         self, 
         address: str,
         default_city: Optional[str] = None,
-        default_country: Optional[str] = None
+        default_country: Optional[str] = None,
+        safeguard_enabled: bool = False,
+        max_distance_km: float = 100.0
     ) -> Tuple[
         Optional[float], Optional[float], Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]
     ]:
         """
         Geocodes an address and returns (lat, lon, street, city, country, postal_code, full_address).
+        If safeguard is enabled and default_city is provided, ensures result is within max_distance_km.
         """
         query_address = address
         parts = []
@@ -87,6 +108,18 @@ class GeocodingService:
         if not lat and query_address != address:
             # Fallback to original address if enhanced query fails
             lat, lon, details = await self.get_coordinates(address)
+
+        # Apply Safeguard
+        if safeguard_enabled and default_city and lat and lon:
+            # Get coordinates for the default city to check distance
+            ref_lat, ref_lon, _ = await self.get_coordinates(f"{default_city}, {default_country}" if default_country else default_city)
+            if ref_lat and ref_lon:
+                distance = calculate_haversine_distance(ref_lat, ref_lon, lat, lon)
+                if distance > max_distance_km:
+                    logger.warning(f"Geocoding result for '{address}' is {distance:.2f}km away from {default_city}, exceeding safeguard limit of {max_distance_km}km.")
+                    # If it's too far, we treat it as not found or we could return a specific error
+                    # For now, returning None to trigger potential retries or error handling in caller
+                    return None, None, None, None, None, None, None
 
         if not details:
             street = None

@@ -241,6 +241,8 @@ class BusinessSettingsSchema(BaseModel):
     workflow_include_payment_terms: Optional[bool]
     workflow_enable_reminders: Optional[bool]
     payment_link: Optional[str]
+    default_city: Optional[str] = None
+    default_country: Optional[str] = None
     quickbooks_connected: bool
     quickbooks_last_sync: Optional[datetime] = None
     stripe_connected: bool
@@ -255,6 +257,8 @@ class BusinessSettingsUpdate(BaseModel):
     workflow_include_payment_terms: Optional[bool] = None
     workflow_enable_reminders: Optional[bool] = None
     payment_link: Optional[str] = None
+    default_city: Optional[str] = None
+    default_country: Optional[str] = None
 
 # --- Search ---
 
@@ -295,4 +299,13 @@ class RoutingResponse(BaseModel):
     metrics: RoutingMetrics
     routes: List[RouteSchema]
     unassigned_jobs: List[JobSchema]
+
+class GeocodeResponse(BaseModel):
+    latitude: Optional[float]
+    longitude: Optional[float]
+    street: Optional[str]
+    city: Optional[str]
+    country: Optional[str]
+    postal_code: Optional[str]
+    full_address: Optional[str]
 
