@@ -833,7 +833,13 @@ async def google_callback(
 
             await db.commit()
 
+            # Trigger initial sync for existing jobs
+            from src.services.calendar_sync_handler import calendar_sync_handler
+            import asyncio
+            asyncio.create_task(calendar_sync_handler.sync_all_user_jobs(user_id))
+
             if success_url:
+                logger.info(f"Google Auth successful for user {user_id}, redirecting to {success_url}")
                 return RedirectResponse(url=success_url)
             
             # Return nice HTML
@@ -862,7 +868,11 @@ async def google_callback(
             """
             return Response(content=html_content, media_type="text/html")
         else:
+            logger.error(f"Google Auth failed for user {user_id}: User not found")
             raise HTTPException(status_code=404, detail="User not found")
     except Exception as e:
         logger.exception(f"Google callback failed: {e}")
+        if success_url:
+            error_url = success_url + ("&" if "?" in success_url else "?") + "error=google_auth_failed"
+            return RedirectResponse(url=error_url)
         raise HTTPException(status_code=500, detail=f"Connection failed: {str(e)}")

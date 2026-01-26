@@ -34,6 +34,7 @@ class CRMService:
         line_items: Optional[list] = None,
         postal_code: Optional[str] = None,
         estimated_duration: int = 60,
+        employee_id: Optional[int] = None,
     ) -> Job:
         # [T009] Check payment timing
         paid = False
@@ -53,6 +54,7 @@ class CRMService:
             postal_code=postal_code,
             paid=paid,
             estimated_duration=estimated_duration,
+            employee_id=employee_id if employee_id and employee_id > 0 else None,
         )
         self.job_repo.add(job)
         await self.session.flush() # Generate ID for default description
@@ -67,6 +69,11 @@ class CRMService:
             JOB_CREATED,
             {"job_id": job.id, "customer_id": customer_id, "business_id": self.business_id},
         )
+        if job.employee_id:
+             await event_bus.emit(
+                JOB_ASSIGNED,
+                {"job_id": job.id, "employee_id": job.employee_id, "business_id": self.business_id},
+            )
         if status == "booked":
             await event_bus.emit(
                 JOB_BOOKED,
@@ -323,6 +330,7 @@ class CRMService:
         value: Optional[float] = None,
         line_items: Optional[list] = None,
         estimated_duration: Optional[int] = None,
+        employee_id: Optional[int] = None,
     ) -> Job:
         job = await self.job_repo.get_by_id(job_id, self.business_id)
         if not job:
@@ -330,6 +338,7 @@ class CRMService:
 
         old_scheduled_at = job.scheduled_at
         old_status = job.status
+        old_employee_id = job.employee_id
 
         if description is not None:
             job.description = description
@@ -343,9 +352,29 @@ class CRMService:
             job.line_items = line_items
         if estimated_duration is not None:
             job.estimated_duration = estimated_duration
+        if employee_id is not None:
+            # We don't use 0 here, None means unassign
+            new_emp_id = employee_id if employee_id > 0 else None
+            job.employee_id = new_emp_id
 
         await self.session.commit()
         await self.session.refresh(job)
+
+        # Handle Assignment Events
+        if employee_id is not None and job.employee_id != old_employee_id:
+            from src.events import JOB_ASSIGNED, JOB_UNASSIGNED
+            if old_employee_id:
+                await event_bus.emit(JOB_UNASSIGNED, {
+                    "job_id": job.id,
+                    "employee_id": old_employee_id,
+                    "business_id": self.business_id
+                })
+            if job.employee_id:
+                await event_bus.emit(JOB_ASSIGNED, {
+                    "job_id": job.id,
+                    "employee_id": job.employee_id,
+                    "business_id": self.business_id
+                })
 
         # Emit JOB_SCHEDULED if scheduled_at changed and is now set
         if scheduled_at and scheduled_at != old_scheduled_at:

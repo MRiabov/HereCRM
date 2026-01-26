@@ -60,6 +60,39 @@ class CalendarSyncHandler:
                     job.gcal_event_id = None
                     await db.commit()
 
+    async def sync_all_user_jobs(self, user_id: int):
+        """Sync all upcoming assigned jobs for a user to their Google Calendar."""
+        async with AsyncSessionLocal() as db:
+            user_repo = UserRepository(db)
+            user = await user_repo.get_by_id(user_id)
+            
+            if not user or not user.google_calendar_sync_enabled:
+                return
+
+            # Fetch all upcoming jobs for this user
+            from sqlalchemy import and_
+            stmt = (
+                select(Job)
+                .where(
+                    Job.employee_id == user_id,
+                    Job.scheduled_at >= datetime.now(),
+                    Job.status != 'completed',
+                    Job.status != 'cancelled'
+                )
+            )
+            result = await db.execute(stmt)
+            jobs = result.scalars().all()
+            
+            for job in jobs:
+                if job.gcal_event_id:
+                    await self.gcal_service.update_event(job, user, db)
+                elif job.scheduled_at:
+                    event_id = await self.gcal_service.create_event(job, user, db)
+                    if event_id:
+                        job.gcal_event_id = event_id
+            
+            await db.commit()
+
     async def _sync_job(self, job_id_raw: Any, business_id_raw: Any):
         if job_id_raw is None or business_id_raw is None:
             return

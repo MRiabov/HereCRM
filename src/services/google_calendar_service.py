@@ -159,11 +159,9 @@ class GoogleCalendarService:
         if job.location:
             description_parts.append(f"Location: {job.location}")
             
-        description_parts.append(f"
-HereCRM Job ID: {job.id}")
+        description_parts.append(f"HereCRM Job ID: {job.id}")
         
-description = "
-".join(description_parts)
+        description = "\n".join(description_parts)
         
         return {
             'summary': f'Job: {customer_name}',
@@ -173,16 +171,6 @@ description = "
                 'dateTime': start_time.isoformat(),
                 'timeZone': 'UTC',
             },
-            'end': {
-                'dateTime': end_time.isoformat(),
-                'timeZone': 'UTC',
-            },
-            'extendedProperties': {
-                'shared': {
-                    'herecrm_job_id': str(job.id)
-                }
-            }
-        },
             'end': {
                 'dateTime': end_time.isoformat(),
                 'timeZone': 'UTC',
