@@ -57,6 +57,13 @@ class QuoteService:
         quote.job_id = job.id
         await self.session.commit()
         await self.session.refresh(quote)
+
+        from src.events import QUOTE_ACCEPTED, event_bus
+        await event_bus.emit(QUOTE_ACCEPTED, {
+            "quote_id": quote.id,
+            "business_id": quote.business_id,
+            "customer_id": quote.customer_id
+        })
         
         return quote
 
@@ -157,13 +164,36 @@ class QuoteService:
             # We raise error to indicate failure
             raise RuntimeError(f"Failed to process quote PDF: {e}") from e
 
-        # TODO: Integrate with MessagingService (send the public_url)
+        # Integrate with MessagingService (send the public_url)
+        from src.services.messaging_service import messaging_service
+        from src.repositories import CustomerRepository
+        from src.events import QUOTE_SENT, event_bus
+
+        customer_repo = CustomerRepository(self.session)
+        customer = await customer_repo.get_by_id(quote.customer_id, quote.business_id)
+        
+        if customer and customer.phone:
+            content = f"Here is your quote from {customer.business.name}: {public_url}"
+            await messaging_service.enqueue_message(
+                recipient_phone=customer.phone,
+                content=content,
+                trigger_source="quote_sent",
+                business_id=quote.business_id,
+            )
         
         logger.info(f"Sending Quote #{quote.id} to Customer #{quote.customer_id}")
         
         quote.status = QuoteStatus.SENT
         await self.session.commit()
         await self.session.refresh(quote)
+
+        # Emit event for follow-up scheduling
+        await event_bus.emit(QUOTE_SENT, {
+            "quote_id": quote.id,
+            "customer_id": quote.customer_id,
+            "business_id": quote.business_id,
+            "total_amount": quote.total_amount
+        })
 
     async def create_from_request(
         self, request_id: int, customer_id: int, items: Optional[List[Dict]] = None

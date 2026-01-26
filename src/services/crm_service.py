@@ -39,7 +39,7 @@ class CRMService:
         # [T009] Check payment timing
         paid = False
         business = await self.session.get(Business, self.business_id)
-        if business and business.workflow_payment_timing == PaymentTiming.ALWAYS_PAID_ON_SPOT:
+        if business and business.workflow_payment_timing in [PaymentTiming.ALWAYS_PAID_ON_SPOT, PaymentTiming.USUALLY_PAID_ON_SPOT]:
             paid = True
 
         job = Job(
@@ -339,11 +339,15 @@ class CRMService:
         old_scheduled_at = job.scheduled_at
         old_status = job.status
         old_employee_id = job.employee_id
+        old_paid = job.paid
 
         if description is not None:
             job.description = description
         if status is not None:
             job.status = status
+            # If status explicitly set to 'paid', update the flag too
+            if status.lower() == 'paid':
+                job.paid = True
         if scheduled_at is not None:
             job.scheduled_at = scheduled_at
         if value is not None:
@@ -359,6 +363,16 @@ class CRMService:
 
         await self.session.commit()
         await self.session.refresh(job)
+
+        # Emit JOB_PAID if paid status changed to True
+        if job.paid and not old_paid:
+            from src.events import JOB_PAID
+            await event_bus.emit(JOB_PAID, {
+                "job_id": job.id,
+                "customer_id": job.customer_id,
+                "business_id": self.business_id,
+                "value": job.value
+            })
 
         # Handle Assignment Events
         if employee_id is not None and job.employee_id != old_employee_id:
