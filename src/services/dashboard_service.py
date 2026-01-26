@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
-from typing import List, Dict, Any, Optional
+from typing import List, Dict
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from src.models import Job, User, UserRole
@@ -42,7 +42,11 @@ class DashboardService:
             Job.employee_id.in_(employee_ids),
             Job.scheduled_at >= start_of_day,
             Job.scheduled_at <= end_of_day
-        ).options(selectinload(Job.customer)).order_by(Job.scheduled_at.asc())
+        ).options(
+            selectinload(Job.customer),
+            selectinload(Job.employee),
+            selectinload(Job.line_items)
+        ).order_by(Job.scheduled_at.asc())
 
         job_result = await self.session.execute(job_stmt)
         jobs = job_result.scalars().all()
@@ -62,7 +66,7 @@ class DashboardService:
         """
         stmt = select(Job).where(
             Job.business_id == business_id,
-            Job.employee_id == None,
+            Job.employee_id.is_(None),
             Job.status.in_(["pending", "open"])
         ).order_by(Job.created_at.desc())
 

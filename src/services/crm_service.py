@@ -15,7 +15,13 @@ class CRMService:
         self.job_repo = JobRepository(session)
         self.customer_repo = CustomerRepository(session)
         self.request_repo = RequestRepository(session)
-        self.quote_service = QuoteService(session)
+        self._quote_service = None
+
+    @property
+    def quote_service(self) -> QuoteService:
+        if self._quote_service is None:
+            self._quote_service = QuoteService(self.session)
+        return self._quote_service
 
     async def create_job(
         self,
@@ -49,6 +55,11 @@ class CRMService:
             estimated_duration=estimated_duration,
         )
         self.job_repo.add(job)
+        await self.session.flush() # Generate ID for default description
+        
+        if not job.description or not job.description.strip():
+            job.description = f"Job #{job.id}"
+            
         await self.session.commit() # Must commit for other sessions (handlers) to see it
 
         # Emit events
@@ -311,6 +322,7 @@ class CRMService:
         scheduled_at: Optional[datetime] = None,
         value: Optional[float] = None,
         line_items: Optional[list] = None,
+        estimated_duration: Optional[int] = None,
     ) -> Job:
         job = await self.job_repo.get_by_id(job_id, self.business_id)
         if not job:
@@ -329,6 +341,8 @@ class CRMService:
             job.value = value
         if line_items is not None:
             job.line_items = line_items
+        if estimated_duration is not None:
+            job.estimated_duration = estimated_duration
 
         await self.session.commit()
         await self.session.refresh(job)
@@ -367,7 +381,8 @@ class CRMService:
                 "changes": {
                     "description": description,
                     "status": status,
-                    "scheduled_at": scheduled_at.isoformat() if scheduled_at else None
+                    "scheduled_at": scheduled_at.isoformat() if scheduled_at else None,
+                    "estimated_duration": estimated_duration
                 }
             }
         )

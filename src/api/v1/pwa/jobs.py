@@ -111,7 +111,8 @@ async def create_job(
             value=job_data.value,
             location=job_data.location,
             status=job_data.status,
-            scheduled_at=job_data.scheduled_at
+            scheduled_at=job_data.scheduled_at,
+            estimated_duration=job_data.estimated_duration
         )
     
         # Reload with customer for schema validation
@@ -137,7 +138,8 @@ async def update_job(
             job_id=job_id,
             description=job_update.description,
             status=job_update.status,
-            scheduled_at=job_update.scheduled_at
+            scheduled_at=job_update.scheduled_at,
+            estimated_duration=job_update.estimated_duration
         )
         return job
     except ValueError as e:

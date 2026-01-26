@@ -86,11 +86,12 @@ class JobListResponse(BaseModel):
 
 class JobCreate(BaseModel):
     customer_id: int
-    description: str
+    description: Optional[str] = None
     status: str = "pending"
     scheduled_at: Optional[datetime] = None
     value: Optional[float] = None
     location: Optional[str] = None
+    estimated_duration: int = 60
 
 class JobUpdate(BaseModel):
     description: Optional[str] = None
@@ -98,6 +99,7 @@ class JobUpdate(BaseModel):
     scheduled_at: Optional[datetime] = None
     value: Optional[float] = None
     employee_id: Optional[int] = None
+    estimated_duration: Optional[int] = None
 
 # --- Chat Schemas ---
 
