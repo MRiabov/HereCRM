@@ -24,7 +24,7 @@ We have significant existing logic that can be reused:
 
 ### 2. Services
 
-- **`GeocodingService`**: Already exists (`src/services/geocoding.py`) and uses Nominatim.
+- **`GeocodingService`**: Already exists (`src/services/geocoding.py`) and uses Geoapify.
   - Returns `(lat, lon)`.
   - Used by `ToolExecutor` to resolve `center_address`.
 

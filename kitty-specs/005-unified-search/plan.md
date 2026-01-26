@@ -11,7 +11,7 @@ Implement a centralized "Advanced Search" feature driven by a unified `SearchSer
 
 - Flexible text matching (Name, Phone, Description).
 - Date range filtering (e.g., "created last week").
-- Proximity search (using OpenStreetMap/Nominatim).
+- Proximity search (using Geoapify).
 - Detailed vs. Concise output formatting.
 - **API Exposure**: Global Search endpoint for PWA.
 
@@ -31,7 +31,7 @@ Technically, this refactors existing scattered search logic from `ToolExecutor` 
 **Target Platform**: Linux server (existing).
 **Performance Goals**: <3s response time for standard queries.
 **Constraints**:
-- Respect Nominatim API rate limits (1 req/sec).
+- Respect Geoapify API rate limits.
 - WhatsApp message limits (requires pagination/truncation strategy).
 
 ## Constitution Check

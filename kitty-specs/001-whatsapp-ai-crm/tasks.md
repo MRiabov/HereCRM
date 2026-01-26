@@ -29,7 +29,7 @@
 - [x] **T033**: SearchTool updates (radius/center). [[WP08-geolocation.md]]
 - [x] **T034**: Spatial Filtering Logic (Haversine). [[WP08-geolocation.md]]
 - [x] **T035**: Wiring spatial search in ToolExecutor. [[WP08-geolocation.md]]
-- [x] **T036**: Real Geocoding implementation using OpenStreetMap (Nominatim). [[WP08-geolocation.md]]
+- [x] **T036**: Real Geocoding implementation using Geoapify. [[WP08-geolocation.md]]
 - [x] **T037**: Integration tests for Geocoding. [[WP08-geolocation.md]]
 - [x] **T038**: WhatsApp Location handling. [[WP08-geolocation.md]]
 

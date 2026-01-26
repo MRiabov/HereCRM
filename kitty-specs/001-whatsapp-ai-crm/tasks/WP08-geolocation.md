@@ -23,7 +23,7 @@ Add location intelligence to the CRM. Access jobs and customers based on their p
 - [x] **T033**: Update `SearchTool` to accept `radius`, `center_lat`, `center_lon`, `center_address`.
 - [x] **T034**: Implement `haversine_distance` utility and spatial filtering logic in `BaseRepository` or specific repositories.
 - [x] **T035**: Update `ToolExecutor` to pass spatial parameters to repositories.
-- [x] **T036**: Implement `GeocodingService` using OpenStreetMap (Nominatim) API to replace mocks.
+- [x] **T036**: Implement `GeocodingService` using Geoapify API to replace mocks.
 - [x] **T037**: Mock Geocoding in tests to avoid external API calls.
 - [x] **T038**: Implement "Get User Location" flow via WhatsApp Location messages (future).
 - [x] **T039**: Generate static map images for Job locations in confirmation messages (future).

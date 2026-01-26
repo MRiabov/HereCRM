@@ -84,7 +84,7 @@ Users need to filter by specific attributes like phone number, date, or status.
 
 - **FR-001**: System MUST implement a unified `SearchService` that accepts a natural language query string.
 - **FR-002**: System MUST use an LLM (via `LLMClient`) to interpret the query intent (Target Entity: Customer/Job/Request/Service/All) and extract filter parameters (Name, Phone, Location, Status, PipelineStage, CreatedAt, ScheduledTime, "Detailed" flag).
-- **FR-003**: System MUST support "Proximity Search" by geocoding a reference address (using OpenStreetMap/Nominatim) and filtering entities validation logic (within X km/meters).
+- **FR-003**: System MUST support "Proximity Search" by geocoding a reference address (using Geoapify) and filtering entities validation logic (within X km/meters).
 - **FR-004**: System MUST support an explicit boolean `detailed` flag in the search context; if true, the output formatter renders extended data (e.g., job line items, full customer notes).
 - **FR-005**: System MUST maintain current "concise" formatting (summary view) by default, preserving changes introduced by Feature 002 (stages) and 004 (line items).
 - **FR-006**: System MUST return grouped results if multiple entity types match (e.g., "Results for 'John': 1 Customer, 2 Jobs").
