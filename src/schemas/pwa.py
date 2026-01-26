@@ -4,6 +4,15 @@ from pydantic import BaseModel
 
 # --- Shared / Base Schemas ---
 
+class WageConfigurationSchema(BaseModel):
+    model_type: str
+    rate_value: float
+    tax_withholding_rate: float
+    allow_expense_claims: bool
+
+    class Config:
+        from_attributes = True
+
 class UserSchema(BaseModel):
     id: int
     name: Optional[str]
@@ -15,6 +24,7 @@ class UserSchema(BaseModel):
     location_updated_at: Optional[datetime] = None
     default_start_location_lat: Optional[float] = None
     default_start_location_lng: Optional[float] = None
+    wage_config: Optional[WageConfigurationSchema] = None
 
     class Config:
         from_attributes = True
@@ -91,6 +101,7 @@ class JobCreate(BaseModel):
     scheduled_at: Optional[datetime] = None
     value: Optional[float] = None
     location: Optional[str] = None
+    employee_id: Optional[int] = None
     estimated_duration: int = 60
 
 class JobUpdate(BaseModel):
@@ -261,6 +272,12 @@ class BusinessSettingsUpdate(BaseModel):
     payment_link: Optional[str] = None
     default_city: Optional[str] = None
     default_country: Optional[str] = None
+
+class WageConfigurationUpdate(BaseModel):
+    model_type: Optional[str] = None
+    rate_value: Optional[float] = None
+    tax_withholding_rate: Optional[float] = None
+    allow_expense_claims: Optional[bool] = None
 
 # --- Search ---
 

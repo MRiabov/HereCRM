@@ -635,6 +635,7 @@ class WageConfiguration(Base):
     model_type: Mapped[WageModelType] = mapped_column(SAEnum(WageModelType))
     rate_value: Mapped[float] = mapped_column(Float)
     tax_withholding_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    allow_expense_claims: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="wage_config")
