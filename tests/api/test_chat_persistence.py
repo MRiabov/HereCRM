@@ -90,11 +90,17 @@ async def test_ai_chat_persistence(client):
     assert exec_response.status_code == 200
     exec_data = exec_response.json()
     assert exec_data["status"] == "sent"
+    assert exec_data["is_executed"] is True
     
     # 3. Check history
     history_res = await client.get("/api/v1/pwa/chat/history/0")
     assert history_res.status_code == 200
     history = history_res.json()
+    
+    # Should find the draft message and verify it is marked as executed
+    draft_msg = next((m for m in history if '"status": "proposed"' in m["content"]), None)
+    assert draft_msg is not None
+    assert draft_msg["is_executed"] is True
     
     # Should have: user request, and AI response (after execution)
     # The proposal itself is NOT strictly required in history if PWA handles it via cards, 

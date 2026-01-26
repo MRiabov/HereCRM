@@ -51,7 +51,8 @@ async def get_chat_history(
                 role=msg.role,
                 content=msg.body,
                 timestamp=msg.created_at,
-                is_outbound=(msg.role == MessageRole.ASSISTANT)
+                is_outbound=(msg.role == MessageRole.ASSISTANT),
+                is_executed=msg.is_executed
             )
             for msg in messages
         ]
@@ -82,7 +83,8 @@ async def get_chat_history(
             role=msg.role,
             content=msg.body,
             timestamp=msg.created_at,
-            is_outbound=(msg.role == MessageRole.ASSISTANT)
+            is_outbound=(msg.role == MessageRole.ASSISTANT),
+            is_executed=msg.is_executed
         )
         for msg in messages
     ]
@@ -404,10 +406,28 @@ async def execute_tool(
     )
     service.session.add(ai_msg)
     
+    # 4.1 Mark the draft message as executed
+    # We find the most recent ASSISTANT message that contains "proposed" status in its JSON body
+    draft_stmt = (
+        select(Message)
+        .where(
+            Message.business_id == service.business_id,
+            Message.user_id == current_user.id,
+            Message.role == MessageRole.ASSISTANT,
+            Message.body.like('%"status": "proposed"%')
+        )
+        .order_by(Message.created_at.desc())
+        .limit(1)
+    )
+    draft_res = await service.session.execute(draft_stmt)
+    last_draft = draft_res.scalar_one_or_none()
+    if last_draft:
+        last_draft.is_executed = True
+
     # 5. Reset State
     state_record.state = ConversationStatus.IDLE
     state_record.draft_data = None
     
     await service.session.commit()
     
-    return {"status": "sent", "content": response_text, "tool": request.tool_name, "data": data}
+    return {"status": "sent", "content": response_text, "tool": request.tool_name, "data": data, "is_executed": True}
