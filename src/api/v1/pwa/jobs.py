@@ -17,7 +17,7 @@ async def get_services(
     session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return CRMService(session, business_id=current_user.business_id), DashboardService(session)
+    return CRMService(session, business_id=current_user.business_id, user_id=current_user.id), DashboardService(session)
 
 @router.get("/", response_model=List[JobListResponse])
 async def list_jobs(
@@ -147,16 +147,9 @@ async def create_job(
             scheduled_at=job_data.scheduled_at,
             estimated_duration=job_data.estimated_duration,
             employee_id=job_data.employee_id,
-            postal_code=job_data.postal_code
+            postal_code=job_data.postal_code,
+            items=[item.model_dump() for item in job_data.items] if job_data.items else None
         )
-    
-        # Reload with customer for schema validation
-        from sqlalchemy import select
-        from sqlalchemy.orm import joinedload
-        stmt = select(Job).options(joinedload(Job.customer)).where(Job.id == job.id)
-        result = await crm_service.session.execute(stmt)
-        job = result.scalar_one()
-        
         return job
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -177,7 +170,8 @@ async def update_job(
             estimated_duration=job_update.estimated_duration,
             employee_id=job_update.employee_id,
             location=job_update.location,
-            postal_code=job_update.postal_code
+            postal_code=job_update.postal_code,
+            items=[item.model_dump() for item in job_update.items] if job_update.items else None
         )
         return job
     except ValueError as e:

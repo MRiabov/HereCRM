@@ -92,6 +92,7 @@ class DashboardService:
         ).options(
             selectinload(Job.customer),
             selectinload(Job.employee),
+            selectinload(Job.employee).selectinload(User.wage_config),
             selectinload(Job.line_items)
         ).order_by(Job.created_at.desc())
 
