@@ -1,108 +1,117 @@
-# Implementation Plan: [FEATURE]
-*Path: [templates/plan-template.md](templates/plan-template.md)*
+# IMPL-023 Broadcast Marketing Campaigns Implementation Plan
 
+## Goal Description
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/kitty-specs/[###-feature-name]/spec.md`
+Implement "Broadcast Marketing Campaigns" to allow business owners to send proactive mass messages (WhatsApp, Email) to customer segments defined by natural language queries. This shifts the CRM from reactive to proactive revenue generation.
 
-**Note**: This template is filled in by the `/spec-kitty.plan` command. See `.kittify/templates/commands/plan.md` for the execution workflow.
+The feature includes:
 
-The planner will not begin until all planning questions have been answered—capture those answers in this document before progressing to later phases.
+1. **Segmentation**: Using the existing Unified Search (`SearchService`) to find customers based on natural language (e.g., "Customers in Dublin").
+2. **Creation**: A UI to draft messages, select channels (Email/SMS/WhatsApp), and preview the audience.
+3. **Execution**: Background processing of the campaign using `APScheduler` to handle rate limiting and batch sending.
+4. **Safety**: A "Blast Protocol" requiring explicit confirmation to prevent accidental mass spam.
 
-## Summary
+## User Review Required
 
-[Extract from feature spec: primary requirement + technical approach from research]
+> [!IMPORTANT]
+> **Credential Security**: SMTP and Twilio credentials will be stored **unencrypted** in the SQLite database for this MVP, as confirmed by the user. This is a known security risk but accepted for the current phase.
 
-## Technical Context
+> [!WARNING]
+> **Rate Limiting**: We are using `APScheduler` for batch processing. Strict rate limits (e.g., 10 emails/sec, 1 WhatsApp/sec) will be enforced in the application logic. If the application restarts, `APScheduler` with a persistent job store (SQLite) should resume, but we must ensure idempotency to avoid double sending.
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
+## Proposed Changes
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+### Database Layer
 
-## Constitution Check
+#### [NEW] [models_marketing.py](file:///home/maksym/Work/proj/HereCRM-combined/HereCRM/src/models/marketing.py)
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+- Create `Campaign` model:
+  - `id`, `name`, `status` (draft, scheduled, running, completed, failed)
+  - `query_string` (the NL query used)
+  - `channel` (email, whatsapp, sms)
+  - `message_template`
+  - `total_recipients`, `sent_count`, `failed_count`
+  - `created_at`, `scheduled_at`, `completed_at`
+- Create `CampaignRecipient` model:
+  - `id`, `campaign_id`, `customer_id`
+  - `status` (pending, sent, failed)
+  - `error_message`
+  - `sent_at`
 
-[Gates determined based on constitution file]
+#### [MODIFY] [models.py](file:///home/maksym/Work/proj/HereCRM-combined/HereCRM/src/models/models.py)
 
-## Project Structure
+- Import and register new models.
 
-### Documentation (this feature)
+### Backend Services
 
-```
-kitty-specs/[###-feature]/
-├── plan.md              # This file (/spec-kitty.plan command output)
-├── research.md          # Phase 0 output (/spec-kitty.plan command)
-├── data-model.md        # Phase 1 output (/spec-kitty.plan command)
-├── quickstart.md        # Phase 1 output (/spec-kitty.plan command)
-├── contracts/           # Phase 1 output (/spec-kitty.plan command)
-└── tasks.md             # Phase 2 output (/spec-kitty.tasks command - NOT created by /spec-kitty.plan)
-```
+#### [NEW] [campaign_service.py](file:///home/maksym/Work/proj/HereCRM-combined/HereCRM/src/services/marketing/campaign_service.py)
 
-### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
+- `create_campaign(query, channel, template)`:
+  - Calls `SearchService.search(query, entity_type='customer')` to get recipients.
+  - Persists `Campaign` and `CampaignRecipient`s.
+- `execute_campaign(campaign_id)`:
+  - Orchestrates the sending process.
+  - Loads pending recipients.
+  - Process in batches.
+- `send_batch(campaign_id, limit=50)`:
+  - Called by Scheduler.
+  - Sends messages via `MessagingService`.
 
-```
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
+#### [MODIFY] [scheduler.py](file:///home/maksym/Work/proj/HereCRM-combined/HereCRM/src/services/scheduler.py)
 
-tests/
-├── contract/
-├── integration/
-└── unit/
+- Add method `schedule_campaign(campaign_id, run_at)` to trigger `CampaignService.execute_campaign`.
 
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
+#### [MODIFY] [messaging_service.py](file:///home/maksym/Work/proj/HereCRM-combined/HereCRM/src/services/messaging_service.py)
 
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
+- Ensure generic `enqueue_message` or specific `send_email`/`send_whatsapp` methods can accept dynamic credentials if meant to be per-user, or use system defaults if that's the design. *Correction*: Spec says "User provides credentials". We need to pass these or retrieve them from `Settings`.
 
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
+### API Layer
 
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
-```
+#### [NEW] [marketing.py](file:///home/maksym/Work/proj/HereCRM-combined/HereCRM/src/routers/marketing.py)
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+- `POST /campaigns/draft`: Create a draft, returns preview (count, sample recipients).
+- `POST /campaigns/{id}/launch`: Execute the blast protocol (requires confirmation string).
+- `GET /campaigns`: List campaigns.
+- `GET /campaigns/{id}`: Get details and progress.
 
-## Complexity Tracking
+#### [MODIFY] [main.py](file:///home/maksym/Work/proj/HereCRM-combined/HereCRM/src/main.py)
 
-*Fill ONLY if Constitution Check has violations that must be justified*
+- Register `marketing` router.
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+### Frontend (PWA)
+
+#### [NEW] [MarketingCampaignsScreen.jsx](file:///home/maksym/Work/proj/HereCRM-combined/HereCRM-PWA/src/components/MarketingCampaignsScreen.jsx)
+
+- List of past/active campaigns.
+- Button to "New Campaign".
+
+#### [NEW] [NewCampaignScreen.jsx](file:///home/maksym/Work/proj/HereCRM-combined/HereCRM-PWA/src/components/NewCampaignScreen.jsx)
+
+- **Step 1: Audience**: Input for NL query (e.g., "Customers in Dublin"). Calls API to preview segment size.
+- **Step 2: Channel & Content**: Select WhatsApp/Email. Text area for message.
+- **Step 3: Blast Protocol**: "Review" screen. Show big numbers. Disable button. Input field for "EXECUTE BLAST".
+
+#### [NEW] [CampaignDetailsScreen.jsx](file:///home/maksym/Work/proj/HereCRM-combined/HereCRM-PWA/src/components/CampaignDetailsScreen.jsx)
+
+- Live progress bar of sending.
+- Stats (Sent vs Failed).
+
+## Verification Plan
+
+### Automated Tests
+
+- **Unit Tests**:
+  - `test_campaign_service.py`: Test creation logic, segment resolution from mock SearchService.
+  - `test_rate_limiting.py`: Verify that the batch processor respects limits (mocking time).
+- **Integration Tests**:
+  - Create a campaign with checking that `CampaignRecipient` rows are created matching `SearchService` results.
+
+### Manual Verification
+
+1. **Audience Check**: Type "Customers in [City]" in the UI, verify the count matches the `sqlite3` count of customers in that city.
+2. **Blast Protocol**: Try to click "Send" without typing confirmation. Should be disabled. Type confirmation -> enabled.
+3. **Execution**: Launch a campaign to 5 test users.
+    - Verify 5 rows in `CampaignRecipient`.
+    - Verify 5 messages sent (via logs or actual receipt if creds provided).
+    - Verify status updates in UI to "Completed".
+4. **Resilience**: Restart backend mid-campaign. Verify it resumes (or at least doesn't double send) - *Note: exact resume logic depends on Scheduler persistence, verification is optional for MVP but good to check.*
