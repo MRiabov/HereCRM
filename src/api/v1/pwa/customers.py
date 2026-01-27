@@ -20,17 +20,21 @@ async def get_crm_service(
 async def list_customers(
     search: Optional[str] = None,
     pipeline_stage: Optional[str] = None,
+    page: int = 1,
+    limit: int = 50,
     service: CRMService = Depends(get_crm_service)
 ):
+    skip = (page - 1) * limit
     if search or pipeline_stage:
         customers = await service.customer_repo.search(
             query=search or "", 
             business_id=service.business_id,
-            pipeline_stage=pipeline_stage
+            pipeline_stage=pipeline_stage,
+            skip=skip,
+            limit=limit
         )
     else:
-        # TODO: Implement pagination in repo
-        customers = await service.customer_repo.get_all(service.business_id)
+        customers = await service.customer_repo.get_all(service.business_id, skip=skip, limit=limit)
         
     # Enrich with job stats
     if customers:

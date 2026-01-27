@@ -317,6 +317,8 @@ class CustomerRepository(BaseRepository[Customer]):
         center_lon: Optional[float] = None,
         center_address: Optional[str] = None,
         pipeline_stage: Optional[str] = None,
+        skip: int = 0,
+        limit: int = 100,
     ) -> List[Customer]:
         conditions = [Customer.business_id == business_id]
 
@@ -410,6 +412,10 @@ class CustomerRepository(BaseRepository[Customer]):
 
         # Combine all DB conditions
         stmt = stmt.where(and_(*conditions)).distinct()
+        
+        # If no radius filtering, apply pagination in DB
+        if not (center_lat is not None and center_lon is not None and radius):
+            stmt = stmt.offset(skip).limit(limit)
 
         result = await self.session.execute(stmt)
         customers = list(result.scalars().all())
@@ -424,7 +430,8 @@ class CustomerRepository(BaseRepository[Customer]):
                     )
                     if dist <= radius:
                         filtered.append(c)
-            return filtered
+            # Apply pagination to filtered list
+            return filtered[skip : skip + limit]
 
         return customers
 
@@ -486,6 +493,8 @@ class JobRepository(BaseRepository[Job]):
         center_lat: Optional[float] = None,
         center_lon: Optional[float] = None,
         center_address: Optional[str] = None,
+        skip: int = 0,
+        limit: int = 100,
     ) -> List[Job]:
         conditions = [Job.business_id == business_id]
 
@@ -535,6 +544,10 @@ class JobRepository(BaseRepository[Job]):
                 joinedload(Job.employee)
             ).where(and_(*conditions))
 
+        # If no radius filtering, apply pagination in DB
+        if not (center_lat is not None and center_lon is not None and radius):
+            stmt = stmt.offset(skip).limit(limit)
+
         result = await self.session.execute(stmt)
         jobs = list(result.scalars().unique().all())
 
@@ -554,7 +567,8 @@ class JobRepository(BaseRepository[Job]):
                     )
                     if dist <= radius:
                         filtered.append(j)
-            return filtered
+            # Apply pagination to filtered list
+            return filtered[skip : skip + limit]
 
         return jobs
 

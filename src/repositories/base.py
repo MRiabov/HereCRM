@@ -41,8 +41,8 @@ class BaseRepository(Generic[T]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_all(self, business_id: int) -> List[T]:
-        query = select(self.model).where(self.model.business_id == business_id)
+    async def get_all(self, business_id: int, skip: int = 0, limit: int = 100) -> List[T]:
+        query = select(self.model).where(self.model.business_id == business_id).offset(skip).limit(limit)
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
