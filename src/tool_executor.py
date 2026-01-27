@@ -614,6 +614,7 @@ class ToolExecutor:
         # 2. Pre-process line items and value
         job_value = tool.price
         inferred_items = []
+        items_dicts = []
         if tool.line_items:
             inference_service = InferenceService(self.session)
             inferred_items = await inference_service.infer_line_items(
@@ -621,6 +622,16 @@ class ToolExecutor:
             )
             # Ensure price consistency: if line items exist, they define the value.
             job_value = round(sum(li.total_price for li in inferred_items), 2)
+
+            # Convert inferred LineItem objects to dictionaries for CRMService
+            for item in inferred_items:
+                items_dicts.append({
+                    "service_id": item.service_id,
+                    "description": item.description,
+                    "quantity": item.quantity,
+                    "unit_price": item.unit_price,
+                    "total_price": item.total_price
+                })
 
         # 3. Handle scheduling if time provided
         scheduled_at = None
@@ -666,7 +677,7 @@ class ToolExecutor:
             location=tool.location,
             status=status or ("scheduled" if tool.time else "pending"),
             scheduled_at=scheduled_at,
-            line_items=inferred_items,
+            items=items_dicts,
             postal_code=postal_code,
             estimated_duration=tool.estimated_duration or 60,
         )
