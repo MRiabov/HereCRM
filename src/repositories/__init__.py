@@ -296,6 +296,10 @@ class CustomerRepository(BaseRepository[Customer]):
     def add(self, item: Customer):
         if item.name:
             item.name = item.name.title()
+        if item.first_name:
+            item.first_name = item.first_name.title()
+        if item.last_name:
+            item.last_name = item.last_name.title()
         if item.phone:
             item.phone = normalize_phone(item.phone)
         super().add(item)
@@ -520,12 +524,15 @@ class JobRepository(BaseRepository[Job]):
             conditions.append(eff_lon.between(lon_min, lon_max))
 
             stmt = select(Job).join(Job.customer).options(
-                contains_eager(Job.customer).joinedload(Customer.availability), joinedload(Job.line_items)
+                contains_eager(Job.customer).joinedload(Customer.availability), 
+                joinedload(Job.line_items),
+                joinedload(Job.employee)
             ).where(and_(*conditions))
         else:
             stmt = select(Job).join(Job.customer).options(
                 contains_eager(Job.customer).joinedload(Customer.availability), 
-                joinedload(Job.line_items)
+                joinedload(Job.line_items),
+                joinedload(Job.employee)
             ).where(and_(*conditions))
 
         result = await self.session.execute(stmt)
@@ -559,7 +566,8 @@ class JobRepository(BaseRepository[Job]):
             .options(
                 joinedload(Job.customer),
                 joinedload(Job.line_items),
-                joinedload(Job.business)
+                joinedload(Job.business),
+                joinedload(Job.employee)
             )
             .where(Job.customer_id == customer_id, Job.business_id == business_id)
             .order_by(Job.id.desc())
@@ -580,7 +588,11 @@ class JobRepository(BaseRepository[Job]):
     async def get_with_line_items(self, job_id: int, business_id: int) -> Optional[Job]:
         stmt = (
             select(Job)
-            .options(joinedload(Job.line_items), joinedload(Job.customer))
+            .options(
+                joinedload(Job.line_items), 
+                joinedload(Job.customer),
+                joinedload(Job.employee)
+            )
             .where(Job.id == job_id, Job.business_id == business_id)
         )
         result = await self.session.execute(stmt)
@@ -589,7 +601,11 @@ class JobRepository(BaseRepository[Job]):
     async def get_by_customer(self, customer_id: int, business_id: int) -> List[Job]:
         stmt = (
             select(Job)
-            .options(joinedload(Job.line_items))
+            .options(
+                joinedload(Job.line_items),
+                joinedload(Job.customer),
+                joinedload(Job.employee)
+            )
             .where(Job.customer_id == customer_id, Job.business_id == business_id)
             .order_by(Job.scheduled_at.desc())
         )
@@ -673,21 +689,15 @@ def update_job_value(mapper, connection, target):
         return
 
     # Use a direct SQL update for the database
-    # We use a scalar subquery to get the sum of line items
-    # To avoid MissingGreenlet, we ensure we use the connection correctly
+    # We use connection.execute directly which is safe in synchronous flush
     try:
-        # Calculate new total using a subquery that is compatible with direct execution
-        # Note: We use the connection directly to avoid session-related lazy loading
-        result = connection.execute(
-            select(func.sum(LineItem.total_price))
-            .where(LineItem.job_id == job_id)
-        )
-        new_total = result.scalar() or 0.0
-
+        # Calculate new total using a scalar subquery that is compatible with direct execution
+        new_total_stmt = select(func.sum(LineItem.total_price)).where(LineItem.job_id == job_id).scalar_subquery()
+        
         connection.execute(
             Job.__table__.update()
             .where(Job.id == job_id)
-            .values(value=new_total)
+            .values(value=new_total_stmt)
         )
 
         # Stale Object State Fix: Update the Job object in the session if it exists
@@ -700,8 +710,9 @@ def update_job_value(mapper, connection, target):
             key = identity_key(Job, (job_id,))
             job = session.identity_map.get(key)
             if job:
-                # Update the object attribute directly without marking as dirty
-                set_committed_value(job, "value", new_total)
+                # We can't easily get the new_total here without a sync query (which triggers the error)
+                # But we can at least mark it as expired so it reloads correctly next time it's accessed
+                session.expire(job, ['value'])
     except Exception:
         # Listeners should be robust
         pass
