@@ -85,6 +85,7 @@ class TestSMSSegmentBilling:
             
             mock_business = MagicMock()
             mock_business.message_count_current_period = 10
+            mock_business.message_credits = 1000
             mock_business.stripe_subscription_id = None # Skip Stripe report for simple unit test
             mock_repo.get_by_id_global.return_value = mock_business
             

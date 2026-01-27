@@ -117,27 +117,34 @@ async def test_enqueue_message():
 @pytest.mark.asyncio
 async def test_process_queue():
     """Test that process_queue processes messages from the queue."""
-    service = MessagingService()
+    # Use a mock session factory to avoid real DB hits during queue processing test
+    mock_session = AsyncMock()
+    mock_factory = MagicMock(return_value=mock_session)
+    service = MessagingService(session_factory=mock_factory)
     
-    # Enqueue a message
-    await service.enqueue_message(
-        recipient_phone="+1234567890",
-        content="Queued message",
-        channel="whatsapp",
-        trigger_source="test",
-    )
-    
-    # Start the service
-    await service.start()
-    
-    # Wait for the message to be processed
-    await asyncio.sleep(0.5)
-    
-    # Stop the service
-    await service.stop()
-    
-    # Verify queue is empty
-    assert service._queue.qsize() == 0
+    # Mock _send_whatsapp to succeed immediately
+    with patch.object(MessagingService, "_send_whatsapp", return_value=(True, "mock_id")):
+        # Enqueue a message
+        await service.enqueue_message(
+            recipient_phone="+1234567890",
+            content="Queued message",
+            channel="whatsapp",
+            trigger_source="test",
+        )
+        
+        # Start the service
+        await service.start()
+        
+        # Wait for the message to be processed using join() on the queue
+        # Since process_queue calls task_done(), this is the most reliable way.
+        # But join() is blocking, so we wrap it in wait_for
+        await asyncio.wait_for(service._queue.join(), timeout=2.0)
+        
+        # Stop the service
+        await service.stop()
+        
+        # Verify queue is empty
+        assert service._queue.qsize() == 0
 
 
 @pytest.mark.asyncio

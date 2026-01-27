@@ -95,7 +95,7 @@ async def test_parse_add_request_explicit(mock_parser):
     mock_tool_call.function.name = "AddRequestTool"
     mock_tool_call.function.arguments = json.dumps(
         {
-            "content": "john wanted his windows cleaned tomorrow, 12 windows",
+            "description": "john wanted his windows cleaned tomorrow, 12 windows",
         }
     )
 
@@ -109,7 +109,7 @@ async def test_parse_add_request_explicit(mock_parser):
         "add request: john wanted his windows cleaned tomorrow, 12 windows"
     )
     assert isinstance(result, AddRequestTool)
-    assert "windows cleaned" in result.content
+    assert "windows cleaned" in result.description
 
 
 @pytest.mark.asyncio

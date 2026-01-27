@@ -34,8 +34,16 @@ async def test_customer_pov_scenarios():
             
             # Pre-create User records to avoid "is_new_user" onboarding flow in tests
             owner_user = User(phone_number="+111222333", business_id=biz.id, role=UserRole.OWNER, name="Owner Bob")
-            tech_user = User(phone_number="+444555666", business_id=biz.id, role=UserRole.EMPLOYEE, name="Tech Tom")
-            cust_user = User(phone_number="+777888999", business_id=biz.id, role=UserRole.EMPLOYEE, name="Alice User")
+            tech_user = User(
+                phone_number="+444555666", 
+                business_id=biz.id, 
+                role=UserRole.EMPLOYEE, 
+                name="Tech Tom",
+                current_latitude=53.3501,
+                current_longitude=-6.2661,
+                location_updated_at=datetime.now(timezone.utc)
+            )
+            cust_user = User(phone_number="+777888999", business_id=biz.id, role=UserRole.MANAGER, name="Alice User")
             db.add(owner_user)
             db.add(tech_user)
             db.add(cust_user)

@@ -48,7 +48,7 @@ async def test_add_lead_uses_defaults(db_session, setup_user):
     with patch("src.tool_executor.GeocodingService") as MockGeo:
         mock_geo_instance = MockGeo.return_value
         
-        async def side_effect(address, default_city=None, default_country=None):
+        async def side_effect(address, default_city=None, default_country=None, **kwargs):
             city = default_city
             country = default_country
             return 10.0, 20.0, "Street", city, country, "12345", f"Street, {city}, {country}, 12345"
@@ -65,7 +65,9 @@ async def test_add_lead_uses_defaults(db_session, setup_user):
         mock_geo_instance.geocode.assert_called_with(
             "Some Address",
             default_city="DefaultCity",
-            default_country="DefaultCountry"
+            default_country="DefaultCountry",
+            safeguard_enabled=False,
+            max_distance_km=100.0
         )
         
         # Verify customer created with defaults
@@ -90,11 +92,14 @@ async def test_add_job_creates_customer_with_defaults(db_session, setup_user):
         tool = AddJobTool(customer_name="New Customer", customer_phone="111", location="Test Loc")
         await executor.execute(tool)
 
-        # Verify geocode called
-        mock_geo_instance.geocode.assert_called_with(
+        # Verify geocode called (can be called multiple times, once by tool_executor and once by crm_service)
+        # So we check it was called at least once with the expected args
+        mock_geo_instance.geocode.assert_any_call(
             "Test Loc",
             default_city="DefaultCity",
-            default_country="DefaultCountry"
+            default_country="DefaultCountry",
+            session=db_session,
+            user_id=user.id
         )
 
         from src.repositories import CustomerRepository

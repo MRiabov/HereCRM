@@ -31,6 +31,7 @@ async def test_track_message_sent(billing_service):
     
     mock_business = MagicMock()
     mock_business.message_count_current_period = 10
+    mock_business.message_credits = 0
     mock_business.stripe_subscription_id = "sub_123"
     mock_repo.get_by_id_global.return_value = mock_business
     
@@ -68,6 +69,7 @@ async def test_get_billing_status_with_usage(billing_service):
     mock_business = MagicMock()
     mock_business.subscription_status = "active"
     mock_business.message_count_current_period = 1050
+    mock_business.message_credits = -50
     mock_business.stripe_customer_id = "cus_123"
     mock_business.seat_limit = 1
     mock_business.active_addons = []

@@ -13,13 +13,13 @@ def mock_session():
 
 @pytest.fixture
 def mock_s3_service():
-    with patch("src.services.quote_service.S3Service") as mock:
-        yield mock.return_value
+    with patch("src.services.quote_service.storage_service") as mock:
+        yield mock
 
 @pytest.fixture
 def mock_pdf_generator():
-    with patch("src.services.quote_service.PDFGenerator") as mock:
-        yield mock.return_value
+    with patch("src.services.quote_service.pdf_generator") as mock:
+        yield mock
 
 @pytest.mark.asyncio
 async def test_send_quote_success(mock_session, mock_s3_service, mock_pdf_generator):
