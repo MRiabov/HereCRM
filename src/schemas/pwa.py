@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional, Any, Dict
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from src.models import JobStatus
 
 # --- Shared / Base Schemas ---
@@ -11,8 +11,7 @@ class WageConfigurationSchema(BaseModel):
     tax_withholding_rate: float
     allow_expense_claims: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UserSchema(BaseModel):
     id: int
@@ -27,8 +26,7 @@ class UserSchema(BaseModel):
     default_start_location_lng: Optional[float] = None
     wage_config: Optional[WageConfigurationSchema] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class CustomerSchema(BaseModel):
     id: int
@@ -46,8 +44,7 @@ class CustomerSchema(BaseModel):
     job_count: int = 0
     total_value: float = 0.0
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LineItemSchema(BaseModel):
@@ -58,8 +55,7 @@ class LineItemSchema(BaseModel):
     total_price: float
     service_id: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class LineItemCreate(BaseModel):
     description: str
@@ -82,8 +78,7 @@ class JobSchema(BaseModel):
     employee: Optional[UserSchema] = None
     line_items: List[LineItemSchema] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # --- Dashboard Schemas ---
 
@@ -132,15 +127,20 @@ class JobUpdate(BaseModel):
 # --- Chat Schemas ---
 
 class ChatMessage(BaseModel):
+    id: Optional[int] = None
     role: str
     content: str
     timestamp: datetime
     is_outbound: bool
     is_executed: bool = False
 
+class ChatMessageUpdate(BaseModel):
+    message: str
+
 class ChatSendRequest(BaseModel):
     customer_id: int
     message: str
+    retry_id: Optional[str] = None
 
 class ChatExecuteRequest(BaseModel):
     tool_name: str
@@ -177,8 +177,7 @@ class InvoiceSchema(BaseModel):
     public_url: str
     customer_name: Optional[str] = None # Enriched
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class InvoiceCreate(BaseModel):
     job_id: int
@@ -194,8 +193,7 @@ class QuoteLineItemSchema(BaseModel):
     total: float
     service_id: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class QuoteSchema(BaseModel):
     id: int
@@ -208,8 +206,7 @@ class QuoteSchema(BaseModel):
     items: List[QuoteLineItemSchema] = []
     customer: Optional[CustomerSchema] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class QuoteCreate(BaseModel):
     customer_id: int
@@ -235,8 +232,7 @@ class RequestSchema(BaseModel):
     created_at: datetime
     customer: Optional[CustomerSchema] = None
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class RequestCreate(BaseModel):
     customer_id: Optional[int] = None
@@ -265,8 +261,7 @@ class ServiceSchema(BaseModel):
     default_price: float
     estimated_duration: int
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ServiceCreate(BaseModel):
     name: str
@@ -285,8 +280,7 @@ class ExpenseSchema(BaseModel):
     receipt_url: Optional[str] = None
     job_id: Optional[int] = None
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ExpenseCreate(BaseModel):
     amount: float
@@ -304,8 +298,7 @@ class LedgerEntrySchema(BaseModel):
     description: str
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # --- Settings & Workflow ---
 
@@ -333,6 +326,7 @@ class BusinessSettingsSchema(BaseModel):
     seat_count: int
     invite_code: Optional[str] = None
     billing_cycle_anchor: Optional[datetime] = None
+    marketing_settings: Optional[Dict[str, Any]] = None
 
 class BusinessSettingsUpdate(BaseModel):
     workflow_invoicing: Optional[str] = None
@@ -352,6 +346,7 @@ class BusinessSettingsUpdate(BaseModel):
     default_city: Optional[str] = None
     default_country: Optional[str] = None
     default_tax_rate: Optional[float] = None
+    marketing_settings: Optional[Dict[str, Any]] = None
 
 class WageConfigurationUpdate(BaseModel):
     model_type: Optional[str] = None
@@ -419,8 +414,7 @@ class ImportJobSchema(BaseModel):
     created_at: datetime
     completed_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ExportRequestSchema(BaseModel):
     id: int
@@ -430,8 +424,7 @@ class ExportRequestSchema(BaseModel):
     public_url: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class DataActivitySchema(BaseModel):
     imports: List[ImportJobSchema]
@@ -454,8 +447,7 @@ class CampaignSchema(BaseModel):
     created_at: datetime
     sent_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class CampaignCreate(BaseModel):
     name: str

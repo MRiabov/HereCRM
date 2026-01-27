@@ -15,7 +15,7 @@ from sqlalchemy import select
 from src.database import get_db
 from src.services.crm_service import CRMService
 from src.services.messaging_service import messaging_service
-from src.schemas.pwa import ChatMessage, ChatSendRequest, ChatExecuteRequest
+from src.schemas.pwa import ChatMessage, ChatSendRequest, ChatExecuteRequest, ChatMessageUpdate
 from src.models import Message, MessageRole, User, Service, ConversationState, ConversationStatus, Business
 from src.api.dependencies.clerk_auth import get_current_user
 
@@ -52,7 +52,8 @@ async def get_assistant_history(
             content=msg.body,
             timestamp=msg.created_at,
             is_outbound=(msg.role == MessageRole.ASSISTANT),
-            is_executed=msg.is_executed
+            is_executed=msg.is_executed,
+            id=msg.id
         )
         for msg in messages
     ]
@@ -94,7 +95,8 @@ async def get_chat_history(
             content=msg.body,
             timestamp=msg.created_at,
             is_outbound=(msg.role == MessageRole.ASSISTANT),
-            is_executed=msg.is_executed
+            is_executed=msg.is_executed,
+            id=msg.id
         )
         for msg in messages
     ]
@@ -233,13 +235,18 @@ async def send_message(
                             if full_address and full_address != location_query:
                                 if is_job_tool:
                                     tool_call.location = full_address
-                                    if city: tool_call.city = city
-                                    if country: tool_call.country = country
+                                    if city:
+                                        tool_call.city = city
+                                    if country:
+                                        tool_call.country = country
                                 elif is_lead_tool:
-                                    if tool_call.street: tool_call.street = street or tool_call.street
+                                    if tool_call.street:
+                                        tool_call.street = street or tool_call.street
                                     tool_call.location = full_address
-                                    if city: tool_call.city = city
-                                    if country: tool_call.country = country
+                                    if city:
+                                        tool_call.city = city
+                                    if country:
+                                        tool_call.country = country
                                 elif is_edit_customer_tool:
                                     tool_call.location = full_address
                     except Exception as e:
@@ -442,3 +449,27 @@ async def execute_tool(
     await service.session.commit()
     
     return {"status": "sent", "content": response_text, "tool": request.tool_name, "data": data, "is_executed": True}
+
+
+@router.patch("/message/{message_id}")
+async def update_message(
+    message_id: int,
+    update_data: ChatMessageUpdate,
+    service: CRMService = Depends(get_crm_service),
+    current_user: User = Depends(get_current_user)
+):
+    stmt = select(Message).where(Message.id == message_id, Message.business_id == service.business_id)
+    result = await service.session.execute(stmt)
+    message = result.scalar_one_or_none()
+    
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+        
+    if message.user_id != current_user.id:
+         # Only allow users to edit their own messages
+        raise HTTPException(status_code=403, detail="You can only edit your own messages")
+
+    message.body = update_data.message
+    await service.session.commit()
+    
+    return {"status": "updated", "id": message.id, "content": message.body}
