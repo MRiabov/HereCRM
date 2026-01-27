@@ -89,6 +89,10 @@ class DashboardService:
                 Job.scheduled_at.is_(None)
             ),
             Job.status.in_(["pending", "open"])
+        ).options(
+            selectinload(Job.customer),
+            selectinload(Job.employee),
+            selectinload(Job.line_items)
         ).order_by(Job.created_at.desc())
 
         result = await self.session.execute(stmt)

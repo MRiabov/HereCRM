@@ -197,7 +197,7 @@ class RequestRepository(BaseRepository[Request]):
                 sa.cast(Request.customer_details, sa.String).ilike(f"%{query}%"),
                 # Join with customer to search by name
                 Customer.name.ilike(f"%{query}%"),
-                Customer.phone.ilike(f"%{query}%")
+                Customer.phone.ilike(f"%{norm_query}%" if (norm_query := normalize_phone(query)) else f"%{query}%")
             ))
 
         if status:
@@ -211,9 +211,24 @@ class RequestRepository(BaseRepository[Request]):
         if max_date:
             conditions.append(Request.created_at <= max_date)
 
-        stmt = select(Request).outerjoin(Customer, Request.customer_id == Customer.id).where(and_(*conditions)).order_by(Request.created_at.desc())
+        stmt = (
+            select(Request)
+            .outerjoin(Customer, Request.customer_id == Customer.id)
+            .options(contains_eager(Request.customer))
+            .where(and_(*conditions))
+            .order_by(Request.created_at.desc())
+        )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def get_by_id(self, id: int, business_id: int) -> Optional[Request]:
+        query = (
+            select(Request)
+            .options(joinedload(Request.customer))
+            .where(Request.id == id, Request.business_id == business_id)
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
 
 
 class CustomerAvailabilityRepository(BaseRepository[CustomerAvailability]):
