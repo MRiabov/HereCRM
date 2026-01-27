@@ -38,7 +38,8 @@ paths:
       tags:
       - PWA - Onboarding
       summary: Process Onboarding Choice
-      description: Handle the user's choice to either keep their auto-created business or join an existing one via invite code.
+      description: Handle the user's choice to either keep their auto-created business
+        or join an existing one via invite code.
       operationId: process_onboarding_choice_api_v1_pwa_onboarding_choice_post
       requestBody:
         content:
@@ -78,6 +79,30 @@ paths:
             format: date
           - type: 'null'
           title: Date From
+      - name: customer_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Customer Id
+      - name: employee_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Employee Id
+      - name: search
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Search
       - name: date_to
         in: query
         required: false
@@ -87,20 +112,15 @@ paths:
             format: date
           - type: 'null'
           title: Date To
-      - name: employee_id
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: integer
-          - type: 'null'
-          title: Employee Id
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobListResponse'
                 $ref: '#/components/schemas/JobListResponse'
         '422':
           description: Validation Error
@@ -206,6 +226,22 @@ paths:
         schema:
           anyOf:
           - type: string
+          - type: 'null'
+          title: Search
+      - name: pipeline_stage
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Pipeline Stage
+      - name: search
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
             minLength: 1
           - type: 'null'
           title: Search
@@ -291,20 +327,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /api/v1/pwa/chat/history/{user_id}:
-    get:
+    patch:
       tags:
-      - PWA - Chat
-      summary: Get Chat History
-      description: Get message history for a specific user/customer.
-      operationId: get_chat_history_api_v1_pwa_chat_history__user_id__get
+      - PWA - Customers
+      summary: Update Customer
+      description: Update customer details.
+      operationId: update_customer_api_v1_pwa_customers__customer_id__patch
       parameters:
-      - name: user_id
+      - name: customer_id
         in: path
         required: true
         schema:
           type: integer
-          title: User Id
+          title: Customer Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerSchema'
+  /api/v1/pwa/chat/history/{customer_id}:
+    get:
+      tags:
+      - PWA - Chat
+      summary: Get Chat History
+      description: Get message history for a specific customer or system (customer_id=0).
+      operationId: get_chat_history_api_v1_pwa_chat_history__customer_id__get
+      parameters:
+      - name: customer_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Customer Id
       responses:
         '200':
           description: Successful Response
@@ -314,7 +376,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ChatMessage'
-                title: Response Get Chat History Api V1 Pwa Chat History  User Id  Get
         '422':
           description: Validation Error
           content:
@@ -347,6 +408,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/pwa/chat/execute:
+    post:
+      tags:
+      - PWA - Chat
+      summary: Execute Tool
+      description: Execute a proposed tool call.
+      operationId: execute_tool_api_v1_pwa_chat_execute_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatExecuteRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
   /api/v1/pwa/invoices/:
     get:
       tags:
@@ -354,6 +431,15 @@ paths:
       summary: List Invoices
       description: List all invoices.
       operationId: list_invoices_api_v1_pwa_invoices__get
+      parameters:
+      - name: search
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Search
       responses:
         '200':
           description: Successful Response
@@ -397,6 +483,15 @@ paths:
       - PWA - Quotes
       summary: List Quotes
       operationId: list_quotes_api_v1_pwa_quotes_get
+      parameters:
+      - name: search
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Search
       responses:
         '200':
           description: Successful Response
@@ -424,6 +519,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QuoteSchema'
+  /api/v1/pwa/quotes/{quote_id}:
+    get:
+      tags:
+      - PWA - Quotes
+      summary: Get Quote
+      operationId: get_quote_api_v1_pwa_quotes__quote_id__get
+      parameters:
+      - name: quote_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Quote Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteSchema'
   /api/v1/pwa/requests/:
     get:
       tags:
@@ -439,6 +554,43 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/RequestSchema'
+      parameters:
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+          title: Search
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          title: Status
+      - name: urgency
+        in: query
+        required: false
+        schema:
+          type: string
+          title: Urgency
+    post:
+      tags:
+      - PWA - Requests
+      summary: Create Request
+      operationId: create_request_api_v1_pwa_requests_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestCreate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestSchema'
   /api/v1/pwa/services/:
     get:
       tags:
@@ -530,6 +682,15 @@ paths:
       - PWA - Finance
       summary: List Expenses
       operationId: list_expenses_api_v1_pwa_finance_expenses_get
+      parameters:
+      - name: search
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Search
       responses:
         '200':
           description: Successful Response
@@ -554,6 +715,361 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/LedgerEntrySchema'
+  /api/v1/pwa/billing/prices:
+    get:
+      tags:
+      - PWA - Billing
+      summary: Get Billing Prices
+      operationId: get_billing_prices_api_v1_pwa_billing_prices_get
+      responses:
+        '200':
+          description: Successful Response
+  /api/v1/pwa/billing/checkout:
+    post:
+      tags:
+      - PWA - Billing
+      summary: Create Checkout Session
+      operationId: create_checkout_session_api_v1_pwa_billing_checkout_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutSessionRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+  /api/v1/pwa/quickbooks/connect:
+    get:
+      tags:
+      - PWA - QuickBooks
+      summary: Connect QuickBooks
+      operationId: connect_quickbooks_api_v1_pwa_quickbooks_connect_get
+      responses:
+        '200':
+          description: Successful Response
+  /api/v1/pwa/quickbooks/callback:
+    get:
+      tags:
+      - PWA - QuickBooks
+      summary: QuickBooks Callback
+      operationId: quickbooks_callback_api_v1_pwa_quickbooks_callback_get
+      parameters:
+      - name: code
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: realmId
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: state
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '307':
+          description: Temporary Redirect
+  /api/v1/pwa/quickbooks/disconnect:
+    post:
+      tags:
+      - PWA - QuickBooks
+      summary: Disconnect QuickBooks
+      operationId: disconnect_quickbooks_api_v1_pwa_quickbooks_disconnect_post
+      responses:
+        '200':
+          description: Successful Response
+  /api/v1/pwa/quickbooks/sync:
+    post:
+      tags:
+      - PWA - QuickBooks
+      summary: Trigger Sync
+      operationId: trigger_sync_api_v1_pwa_quickbooks_sync_post
+      responses:
+        '200':
+          description: Successful Response
+  /api/v1/pwa/user/integrations:
+    get:
+      tags:
+      - PWA - User
+      summary: Get Integrations
+      operationId: get_integrations_api_v1_pwa_user_integrations_get
+      responses:
+        '200':
+          description: Successful Response
+  /api/v1/pwa/user/integrations/google-calendar/auth-url:
+    get:
+      tags:
+      - PWA - User
+      summary: Get Google Calendar Auth Url
+      operationId: get_google_calendar_auth_url_api_v1_pwa_user_integrations_google_calendar_auth_url_get
+      parameters:
+      - name: success_url
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Success Url
+      responses:
+        '200':
+          description: Successful Response
+  /api/v1/pwa/user/integrations/google-calendar:
+    delete:
+      tags:
+      - PWA - User
+      summary: Disconnect Google Calendar
+      operationId: disconnect_google_calendar_api_v1_pwa_user_integrations_google_calendar_delete
+      responses:
+        '200':
+          description: Successful Response
+  /api/v1/pwa/business/employees:
+    get:
+      tags:
+      - PWA - Business
+      summary: List Employees
+      operationId: list_employees_api_v1_pwa_business_employees_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserSchema'
+  /api/v1/pwa/business/employees/{employee_id}/wage-config:
+    patch:
+      tags:
+      - PWA - Business
+      summary: Update Wage Config
+      operationId: update_wage_config_api_v1_pwa_business_employees__employee_id__wage_config_patch
+      parameters:
+      - name: employee_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Employee Id
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WageConfigurationUpdate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+  /api/v1/pwa/business/info:
+    get:
+      tags:
+      - PWA - Business
+      summary: Get Business Info
+      operationId: get_business_info_api_v1_pwa_business_info_get
+      responses:
+        '200':
+          description: Successful Response
+  /api/v1/pwa/addresses/:
+    get:
+      tags:
+      - PWA - Addresses
+      summary: Search Addresses
+      operationId: search_addresses_api_v1_pwa_addresses__get
+      parameters:
+      - name: search
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Search
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AddressSearchResult'
+  /api/v1/pwa/routing/geocode:
+    get:
+      tags:
+      - PWA - Routing
+      summary: Geocode Address
+      operationId: geocode_address_api_v1_pwa_routing_geocode_get
+      parameters:
+      - name: address
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: city
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+      - name: country
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeocodeResponse'
+  /api/v1/pwa/routing/:
+    get:
+      tags:
+      - PWA - Routing
+      summary: Get Routing Preview
+      operationId: get_routing_preview_api_v1_pwa_routing__get
+      parameters:
+      - name: date
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutingResponse'
+  /api/v1/pwa/routing/apply:
+    post:
+      tags:
+      - PWA - Routing
+      summary: Apply Routing
+      operationId: apply_routing_api_v1_pwa_routing_apply_post
+      parameters:
+      - name: date
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+      - name: notify
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: true
+      responses:
+        '200':
+          description: Successful Response
+  /api/v1/pwa/chat/history/{user_id}:
+    get:
+      tags:
+      - PWA - Chat
+      summary: Get Chat History
+      description: Get message history for a specific user/customer.
+      operationId: get_chat_history_api_v1_pwa_chat_history__user_id__get
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatMessage'
+                title: Response Get Chat History Api V1 Pwa Chat History  User Id  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/pwa/requests/{request_id}:
+    get:
+      tags:
+      - PWA - Requests
+      summary: Get Request
+      operationId: get_request_api_v1_pwa_requests__request_id__get
+      parameters:
+      - name: request_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Request Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestSchema'
+    patch:
+      tags:
+      - PWA - Requests
+      summary: Update Request
+      operationId: update_request_api_v1_pwa_requests__request_id__patch
+      parameters:
+      - name: request_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Request Id
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestUpdate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestSchema'
+    delete:
+      tags:
+      - PWA - Requests
+      summary: Delete Request
+      operationId: delete_request_api_v1_pwa_requests__request_id__delete
+      parameters:
+      - name: request_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Request Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
 components:
   schemas:
     ChatMessage:
@@ -591,6 +1107,16 @@ components:
       - customer_id
       - message
       title: ChatSendRequest
+    ChatExecuteRequest:
+      properties:
+        tool_name:
+          type: string
+        arguments:
+          type: object
+      type: object
+      required:
+      - tool_name
+      - arguments
     CustomerCreate:
       properties:
         name:
@@ -620,6 +1146,35 @@ components:
       required:
       - name
       title: CustomerCreate
+    CustomerUpdate:
+      properties:
+        name:
+          type: string
+          title: Name
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
+        email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Email
+        street:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Street
+        city:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: City
+        pipeline_stage:
+          type: string
+          title: Pipeline Stage
+      type: object
     CustomerSchema:
       properties:
         id:
@@ -771,6 +1326,11 @@ components:
           - type: string
           - type: 'null'
           title: Location
+        employee_id:
+          type: integer
+        estimated_duration:
+          type: integer
+          default: 60
       type: object
       required:
       - customer_id
@@ -890,6 +1450,8 @@ components:
           - type: integer
           - type: 'null'
           title: Employee Id
+        estimated_duration:
+          type: integer
       type: object
       title: JobUpdate
     RecentActivity:
@@ -969,6 +1531,8 @@ components:
           - type: number
           - type: 'null'
           title: Default Start Location Lng
+        wage_config:
+          $ref: '#/components/schemas/WageConfigurationSchema'
       type: object
       required:
       - id
@@ -977,6 +1541,17 @@ components:
       - phone_number
       - role
       title: UserSchema
+    WageConfigurationSchema:
+      properties:
+        model_type:
+          type: string
+        rate_value:
+          type: number
+        tax_withholding_rate:
+          type: number
+        allow_expense_claims:
+          type: boolean
+      type: object
     ValidationError:
       properties:
         loc:
@@ -1123,12 +1698,45 @@ components:
           - type: integer
           - type: 'null'
           title: Customer Id
+        description:
+          type: string
+          title: Description
+        urgency:
+          type: string
+          title: Urgency
+        expected_value:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Expected Value
+        expected_line_items:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Expected Line Items
+        follow_up_date:
+          anyOf:
+          - type: string
+          - type: 'null'
+          format: date-time
+          title: Follow Up Date
+        customer_details:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Customer Details
+        customer:
+          anyOf:
+          - $ref: '#/components/schemas/CustomerSchema'
+          - type: 'null'
       type: object
       required:
       - id
       - content
       - status
       - created_at
+      - description
+      - urgency
       title: RequestSchema
     ServiceSchema:
       properties:
@@ -1164,23 +1772,32 @@ components:
         description:
           type: string
           title: Description
+        category:
+          type: string
         amount:
           type: number
           title: Amount
-        date:
+        created_at:
           type: string
           format: date-time
-          title: Date
+        receipt_url:
+          type: string
         job_id:
           anyOf:
           - type: integer
           - type: 'null'
           title: Job Id
+        date:
+          type: string
+          format: date-time
+          title: Date
       type: object
       required:
       - id
-      - description
+      - category
       - amount
+      - created_at
+      - description
       - date
       title: ExpenseSchema
     LedgerEntrySchema:
@@ -1250,12 +1867,28 @@ components:
           - type: string
           - type: 'null'
           title: Payment Link
+        default_city:
+          type: string
+        default_country:
+          type: string
+        quickbooks_connected:
+          type: boolean
+        quickbooks_last_sync:
+          type: string
+          format: date-time
         stripe_connected:
           type: boolean
           title: Stripe Connected
+        seat_count:
+          type: integer
+        billing_cycle_anchor:
+          type: string
+          format: date-time
       type: object
       required:
       - stripe_connected
+      - quickbooks_connected
+      - seat_count
       title: BusinessSettingsSchema
     QuoteCreate:
       properties:
@@ -1335,8 +1968,23 @@ components:
           - type: string
           - type: 'null'
           title: Payment Link
+        default_city:
+          type: string
+        default_country:
+          type: string
       type: object
       title: BusinessSettingsUpdate
+    WageConfigurationUpdate:
+      properties:
+        model_type:
+          type: string
+        rate_value:
+          type: number
+        tax_withholding_rate:
+          type: number
+        allow_expense_claims:
+          type: boolean
+      type: object
     SearchResult:
       properties:
         type:
@@ -1384,6 +2032,11 @@ components:
         choice:
           type: string
           title: Choice
+        business_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Business Name
         invite_code:
           anyOf:
           - type: string
@@ -1406,4 +2059,201 @@ components:
       - status
       - message
       title: StatusResponse
-
+    CheckoutSessionRequest:
+      properties:
+        item_type:
+          type: string
+        item_id:
+          type: string
+        success_url:
+          type: string
+        cancel_url:
+          type: string
+      type: object
+      required:
+      - item_type
+      - success_url
+      - cancel_url
+    AddressSearchResult:
+      properties:
+        id:
+          type: integer
+        address:
+          type: string
+        customer:
+          type: string
+        type:
+          type: string
+      type: object
+      required:
+      - id
+      - address
+      - customer
+      - type
+    GeocodeResponse:
+      properties:
+        latitude:
+          type: number
+        longitude:
+          type: number
+        street:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        postal_code:
+          type: string
+        full_address:
+          type: string
+      type: object
+    RoutingMetrics:
+      properties:
+        total_distance:
+          type: number
+        total_duration:
+          type: number
+        jobs_assigned:
+          type: integer
+        unassigned_count:
+          type: integer
+      type: object
+      required:
+      - total_distance
+      - total_duration
+      - jobs_assigned
+      - unassigned_count
+    RoutingStep:
+      properties:
+        job_id:
+          type: integer
+        arrival_time:
+          type: string
+          format: date-time
+        departure_time:
+          type: string
+          format: date-time
+        distance_to_next:
+          type: number
+        duration_to_next:
+          type: number
+        job:
+          $ref: '#/components/schemas/JobSchema'
+      type: object
+      required:
+      - job_id
+      - job
+    RouteSchema:
+      properties:
+        employee_id:
+          type: integer
+        employee_name:
+          type: string
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoutingStep'
+      type: object
+      required:
+      - employee_id
+      - employee_name
+      - steps
+    RoutingResponse:
+      properties:
+        date:
+          type: string
+        metrics:
+          $ref: '#/components/schemas/RoutingMetrics'
+        routes:
+          type: array
+          items:
+            $ref: '#/components/schemas/RouteSchema'
+        unassigned_jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobSchema'
+      type: object
+      required:
+      - date
+      - metrics
+      - routes
+      - unassigned_jobs
+    RequestCreate:
+      properties:
+        customer_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Customer Id
+        description:
+          type: string
+          title: Description
+        urgency:
+          type: string
+          title: Urgency
+          default: Medium
+        expected_value:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Expected Value
+        expected_line_items:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Expected Line Items
+        follow_up_date:
+          anyOf:
+          - type: string
+          - type: 'null'
+          format: date-time
+          title: Follow Up Date
+        customer_details:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Customer Details
+      type: object
+      required:
+      - description
+      title: RequestCreate
+    RequestUpdate:
+      properties:
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+        urgency:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Urgency
+        expected_value:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Expected Value
+        expected_line_items:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Expected Line Items
+        follow_up_date:
+          anyOf:
+          - type: string
+          - type: 'null'
+          format: date-time
+          title: Follow Up Date
+        customer_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Customer Id
+      type: object
+      title: RequestUpdate
