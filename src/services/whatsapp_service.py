@@ -644,11 +644,11 @@ class WhatsappService:
                 job = await job_repo.get_by_id(entity_id, user.business_id)
                 if job:
                     # Re-create the request
-                    old_content = metadata.get("old_request_content")
-                    if old_content:
+                    old_description = metadata.get("old_request_description")
+                    if old_description:
                         req = Request(
                             business_id=user.business_id,
-                            content=cast(str, old_content),
+                            description=cast(str, old_description),
                             status="pending",
                         )
                         self.session.add(req)
@@ -697,8 +697,6 @@ class WhatsappService:
             details_list.append(location)
         if description := metadata.get("description"):
             details_list.append(description)
-        if content := metadata.get("content"):
-            details_list.append(content[:50])
 
         details = ", ".join(details_list) if details_list else "no details"
         return self.template_service.render(
@@ -855,7 +853,7 @@ class WhatsappService:
                 "request_summary",
                 client_details=client_details,
                 time=tool_call.time,
-                content=tool_call.description,
+                description=tool_call.description,
             )
 
         if isinstance(tool_call, GetPipelineTool):

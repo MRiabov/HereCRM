@@ -54,13 +54,13 @@ async def test_core_crud_operations(async_session):
     quote = await quote_service.create_quote(
         business_id=business.id,
         customer_id=customer.id,
-        items=[{"description": "Service 1", "quantity": 1, "unit_price": 50.0}]
+        lines=[{"description": "Service 1", "quantity": 1, "unit_price": 50.0}]
     )
     assert quote.id is not None
     assert quote.total_amount == 50.0
 
     # 5. Edit Customer
-    await customer_repo.update(customer.id, business.id, name="Updated Customer")
+    await crm_service.update_customer(customer.id, name="Updated Customer")
     updated_customer = await customer_repo.get_by_id(customer.id, business.id)
     assert updated_customer.name == "Updated Customer"
 
@@ -88,8 +88,8 @@ async def test_core_crud_operations(async_session):
     
     # Check if our job is in there (might be under 'unassigned' if no employee set)
     all_jobs = []
-    for jobs in schedules.values():
-        all_jobs.extend(jobs)
+    for user_jobs in schedules.values():
+        all_jobs.extend(user_jobs)
     
     # Also check unscheduled if it wasn't scheduled correctly
     unscheduled = await dashboard_service.get_unscheduled_jobs(business.id)

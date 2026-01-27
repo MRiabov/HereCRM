@@ -104,7 +104,7 @@ class SearchService:
                 serialized_results.append({
                     "type": "request",
                     "id": item.id,
-                    "content": item.content,
+                    "description": item.description,
                     "status": item.status,
                     "created_at": item.created_at.isoformat() if hasattr(item, 'created_at') and item.created_at else None
                 })
@@ -122,9 +122,9 @@ class SearchService:
         for item in results:
             if hasattr(item, 'phone'): # Customer
                 lines.append(self._format_customer(item, detailed))
-            elif hasattr(item, 'description'): # Job
+            elif hasattr(item, 'scheduled_at'): # Job
                 lines.append(self._format_job(item, detailed))
-            elif hasattr(item, 'content'): # Request
+            elif hasattr(item, 'urgency'): # Request (unique field)
                 lines.append(self._format_request(item, detailed))
             else:
                 lines.append(str(item))
@@ -189,7 +189,7 @@ class SearchService:
         return base
 
     def _format_request(self, r, detailed: bool) -> str:
-        base = f"Request: {r.content} (Status: {r.status})"
+        base = f"Request: {r.description} (Status: {r.status})"
         # Request doesn't have much extra detail yet
         return base
 

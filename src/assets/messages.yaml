@@ -62,7 +62,7 @@ request_summary: |
   Request details:
   {client_details}
   - Time: {time}
-  - Content: {content}
+  - Description: {description}
 confirm_prompt: "Please confirm: {summary}\n(Reply 'Yes' to confirm, 'No' to cancel)"
 confirm_edit_prompt: "Review changes: {summary}\n(Reply 'Yes' to update, 'No' to cancel)"
 warning_no_contact_details: "⚠️ Warning: could not find a contact detail to send the {type}! Generate the {type} without sending?"
@@ -72,7 +72,7 @@ undo_hint: "(Reply 'undo' to revert)"
 # Tool Execution Success
 job_added: "✔ {category} added: {name} – {location}{price_info} (Reply 'undo' or 'edit last')"
 job_scheduled: "✔ Scheduled {name} for {time}"
-request_stored: "✔ Request stored: {content}..."
+request_stored: "✔ Request stored: {description}..."
 setting_updated: "✔ Updated setting '{key}' to '{value}'"
 search_no_results: "No results found for '{query}'"
 

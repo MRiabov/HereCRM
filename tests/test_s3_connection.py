@@ -1,7 +1,7 @@
 import pytest
 from src.services.storage import S3Service, storage_service
 from src.config import settings
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, ANY
 
 @patch('boto3.client')
 def test_s3_service_initialization(mock_boto_client):
@@ -10,7 +10,8 @@ def test_s3_service_initialization(mock_boto_client):
     with patch.object(settings, 's3_endpoint_url', 'http://localhost:9000'), \
          patch.object(settings, 's3_access_key_id', 'test_id'), \
          patch.object(settings, 's3_secret_access_key', 'test_secret'), \
-         patch.object(settings, 's3_bucket_name', 'test_bucket'):
+         patch.object(settings, 's3_bucket_name', 'test_bucket'), \
+         patch.object(settings, 's3_region_name', 'us-east-1'):
         
         service = S3Service()
         assert service.s3_client is not None
@@ -19,14 +20,19 @@ def test_s3_service_initialization(mock_boto_client):
             endpoint_url='http://localhost:9000',
             aws_access_key_id='test_id',
             aws_secret_access_key='test_secret',
-            region_name='us-east-1'
+            region_name='us-east-1',
+            config=ANY
         )
 
 def test_get_public_url():
     """Test public URL construction."""
     with patch.object(settings, 's3_endpoint_url', 'https://s3.backblazeb2.com'), \
+         patch.object(settings, 's3_access_key_id', 'id'), \
+         patch.object(settings, 's3_secret_access_key', 'secret'), \
          patch.object(settings, 's3_bucket_name', 'my-bucket'):
         service = S3Service()
+        # Mock presigned URL generation since s3_client is now initialized
+        service.s3_client.generate_presigned_url = MagicMock(return_value='https://s3.backblazeb2.com/my-bucket/test_key.pdf')
         url = service.get_public_url('test_key.pdf')
         assert url == 'https://s3.backblazeb2.com/my-bucket/test_key.pdf'
 
@@ -39,11 +45,15 @@ def test_upload_file(mock_boto_client):
     with patch.object(settings, 's3_endpoint_url', 'http://localhost:9000'), \
          patch.object(settings, 's3_access_key_id', 'id'), \
          patch.object(settings, 's3_secret_access_key', 'secret'), \
-         patch.object(settings, 's3_bucket_name', 'bucket'):
+         patch.object(settings, 's3_bucket_name', 'bucket'), \
+         patch.object(settings, 's3_region_name', 'us-east-1'):
         
         service = S3Service()
         file_content = b"fake pdf content"
         key = "invoice_1.pdf"
+        
+        # Mock presigned URL generation
+        mock_s3.generate_presigned_url.return_value = "http://presigned.url/invoice_1.pdf"
         
         url = service.upload_file(file_content, key)
         
@@ -53,4 +63,4 @@ def test_upload_file(mock_boto_client):
             Body=file_content,
             ContentType='application/pdf'
         )
-        assert "invoice_1.pdf" in url
+        assert url == "http://presigned.url/invoice_1.pdf"

@@ -100,6 +100,8 @@ async def test_dashboard_service_schedules(test_session: AsyncSession):
     
     # Check jobs
     for user, jobs in schedules.items():
+        if user is None:
+            continue
         if user.id == user1.id:
             assert len(jobs) == 1
             assert jobs[0].description == "Job 1"

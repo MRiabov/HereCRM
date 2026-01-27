@@ -212,7 +212,7 @@ async def test_undo_promotion(
             "action": "promote",
             "entity": "job",
             "id": job.id,
-            "old_request_content": "Original request content",
+            "old_request_description": "Original request content",
         },
     )
     test_session.add(state)
@@ -235,7 +235,7 @@ async def test_undo_promotion(
     # Verify request re-created
     res = await test_session.execute(select(Request))
     req = res.scalar_one()
-    assert req.content == "Original request content"
+    assert req.description == "Original request content"
 
 
 @pytest.mark.asyncio

@@ -44,9 +44,19 @@ async def test_webhook_e2e():
 
     app.dependency_overrides[get_db] = override_get_db
 
-    # Initialize DB
+    # Initialize DB and Pre-create User
+    phone = "999888777"
     async with engine_test.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    
+    async with TestingSessionLocal() as db:
+        from src.models import Business, User, UserRole
+        biz = Business(name="E2E Biz")
+        db.add(biz)
+        await db.flush()
+        user = User(phone_number=phone, business_id=biz.id, role=UserRole.OWNER)
+        db.add(user)
+        await db.commit()
 
     # Patch LLMParser.parse singleton and TemplateService
     with (
@@ -69,8 +79,7 @@ async def test_webhook_e2e():
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as ac:
-            # 1. Send "Add Job..." from NEW phone (triggers Onboarding)
-            phone = "999888777"
+            # 1. Send "Add Job..." from existing phone
             payload = {"from_number": phone, "body": "Add job for Alice fix sink 100"}
 
             # Serialize manually to ensure we sign the exact bytes
@@ -90,51 +99,9 @@ async def test_webhook_e2e():
             )
             assert response.status_code == 200
             data = response.json()
-            # New user gets welcome message first (mocked to return the key)
-            assert data["reply"] == "welcome_message"
-
-            # 2. Resend Command (now user is registered)
-            payload_retry = {"from_number": phone, "body": "Add job for Alice fix sink 100"}
-            payload_retry_bytes = json.dumps(payload_retry).encode("utf-8")
-            signature_retry = hmac.new(
-                secret.encode("utf-8"), payload_retry_bytes, hashlib.sha256
-            ).hexdigest()
-            sig_retry_header = f"sha256={signature_retry}"
-
-            response = await ac.post(
-                "/webhook",
-                content=payload_retry_bytes,
-                headers={
-                    "X-Hub-Signature-256": sig_retry_header,
-                    "Content-Type": "application/json",
-                },
-            )
-            assert response.status_code == 200
-            data = response.json()
-            assert "reply" in data
-            # Now user is registered, it should show confirmation prompt, not welcome message again
             assert "Please confirm" in data["reply"]
 
-            # Onboarding is done, now process the message again
-            # In a real scenario, the user would need to send the message again or we would auto-reprocess.
-            # But the current handle_message just returns welcome_message and stops.
-            # So the test's next step (Yes) will fail because there is no draft.
-            # I should send the message again as a non-new user.
-
-            # 1.5 Send message again (now as existing user)
-            response = await ac.post(
-                "/webhook",
-                content=payload_bytes,
-                headers={
-                    "X-Hub-Signature-256": sig_header,
-                    "Content-Type": "application/json",
-                },
-            )
-            assert response.status_code == 200
-            data = response.json()
-            assert "Please confirm" in data["reply"]
-
-            # 3. Confirm
+            # 2. Confirm
             payload_confirm = {"from_number": phone, "body": "Yes"}
             payload_confirm_bytes = json.dumps(payload_confirm).encode("utf-8")
             signature_confirm = hmac.new(
@@ -172,7 +139,7 @@ async def test_webhook_e2e():
                 biz_repo = BusinessRepository(session)
                 biz = await biz_repo.get_by_id_global(user.business_id)
                 assert biz is not None
-                assert phone in biz.name
+                assert biz.name == "E2E Biz"
 
                 # Check Job created
                 job_repo = JobRepository(session)

@@ -1,7 +1,7 @@
 import pytest
 import asyncio
 from datetime import datetime, timezone
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock, MagicMock
 
 from src.services.messaging_service import MessagingService
 from src.models import MessageStatus, MessageType, Business, Customer, MessageLog

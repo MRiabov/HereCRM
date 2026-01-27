@@ -815,7 +815,7 @@ class ToolExecutor:
                     {"customer_id": customer.id, "business_id": self.business_id}
                 )
         return self.template_service.render(
-            "request_stored", content=tool.description[:50]
+            "request_stored", description=tool.description[:50]
         ), {
             "action": "create",
             "entity": "request",

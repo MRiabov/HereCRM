@@ -273,7 +273,7 @@ async def send_message(
                     
                     proposal_data = {
                         "status": "proposed",
-                        "content": "I've prepared a draft for you. Please confirm below.",
+                        "description": "I've prepared a draft for you. Please confirm below.",
                         "tool": tool_call.__class__.__name__,
                         "data": tool_call.dict()
                     }

@@ -28,8 +28,8 @@ async def db_session():
 @pytest.fixture
 def mock_geocoding_service():
     service = MagicMock(spec=GeocodingService)
-    # Default to returning 6 Nones
-    service.geocode = AsyncMock(return_value=(None, None, None, None, None, None))
+    # Default to returning 7 Nones
+    service.geocode = AsyncMock(return_value=(None, None, None, None, None, None, None))
     return service
 
 @pytest_asyncio.fixture
@@ -101,7 +101,7 @@ async def test_search_proximity_job_filtering(search_service, setup_data):
         radius=5000.0
     )
     
-    result = await search_service.search(params, business_id=business_id)
+    result, _ = await search_service.search(params, business_id=business_id)
     assert "London Job" in result
     assert "Dublin Job" not in result
 
@@ -118,7 +118,7 @@ async def test_search_proximity_customer_filtering(search_service, setup_data):
         radius=5000.0
     )
     
-    result = await search_service.search(params, business_id=business_id)
+    result, _ = await search_service.search(params, business_id=business_id)
     assert "Dublin Customer" in result
     assert "London Customer" not in result
     assert "Cork Lead" not in result
@@ -135,7 +135,7 @@ async def test_search_proximity_generic_aggregation(search_service, setup_data):
         radius=5000.0
     )
     
-    result = await search_service.search(params, business_id=business_id)
+    result, _ = await search_service.search(params, business_id=business_id)
     assert "London Customer" in result
     assert "London Job" in result
     assert "Dublin Customer" not in result
@@ -146,8 +146,8 @@ async def test_search_proximity_generic_aggregation(search_service, setup_data):
 async def test_search_with_geocoding_trigger(search_service, setup_data, mock_geocoding_service):
     business_id = setup_data
     
-    # Mock Geocoding response for "London" - 6 values
-    mock_geocoding_service.geocode.return_value = (51.5074, -0.1278, "Street", "City", "Country", "SW1A")
+    # Mock Geocoding response for "London" - 7 values
+    mock_geocoding_service.geocode.return_value = (51.5074, -0.1278, "Street", "City", "Country", "SW1A", "London")
     
     params = SearchTool(
         query="all",
@@ -155,10 +155,16 @@ async def test_search_with_geocoding_trigger(search_service, setup_data, mock_ge
         radius=10000.0
     )
     
-    result = await search_service.search(params, business_id=business_id)
+    result, _ = await search_service.search(params, business_id=business_id)
     
     # Check geocode was called
-    mock_geocoding_service.geocode.assert_awaited_once_with("London")
+    mock_geocoding_service.geocode.assert_awaited_once_with(
+        "London",
+        default_city=None,
+        default_country=None,
+        safeguard_enabled=False,
+        max_distance_km=100.0
+    )
     
     # Check fallback logic worked (found London items)
     assert "London Job" in result

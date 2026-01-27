@@ -13,6 +13,8 @@ async def test_lead_address_resolution():
     template_service = TemplateService()
     
     # Mock Repository
+    mock_biz = MagicMock(default_city=None, default_country=None)
+    session.get = AsyncMock(return_value=mock_biz)
     executor = ToolExecutor(session, business_id, user_id, user_phone, template_service)
     executor.customer_repo = AsyncMock()
     executor.customer_repo.get_by_name.return_value = None
