@@ -1,25 +1,31 @@
 from fastapi import APIRouter, Depends
-from src.api.v1.pwa import dashboard, jobs, customers, chat, invoices, settings, onboarding, billing, routing, expenses, quickbooks, user, business, quotes, addresses, services, data_management, requests
+from src.api.v1.pwa import dashboard, jobs, customers, chat, invoices, settings, onboarding, billing, routing, expenses, quickbooks, user, business, quotes, addresses, services, data_management, requests, analytics_proxy
 from src.api.dependencies.clerk_auth import verify_token
 
-router = APIRouter(dependencies=[Depends(verify_token)])
+router = APIRouter()
 
-router.include_router(dashboard.router, prefix="/dashboard", tags=["pwa-dashboard"])
-router.include_router(onboarding.router, prefix="/onboarding", tags=["pwa-onboarding"])
-router.include_router(jobs.router, prefix="/jobs", tags=["pwa-jobs"])
-router.include_router(customers.router, prefix="/customers", tags=["pwa-customers"])
-router.include_router(requests.router, prefix="/requests", tags=["pwa-requests"])
-router.include_router(chat.router, prefix="/chat", tags=["pwa-chat"])
-router.include_router(invoices.router, prefix="/invoices", tags=["pwa-invoices"])
-router.include_router(quotes.router, prefix="/quotes", tags=["pwa-quotes"])
-router.include_router(addresses.router, prefix="/addresses", tags=["pwa-addresses"])
-router.include_router(services.router, prefix="/services", tags=["pwa-services"])
-router.include_router(settings.router, prefix="/settings", tags=["pwa-settings"])
-router.include_router(billing.router, prefix="/billing", tags=["pwa-billing"])
-router.include_router(routing.router, prefix="/routing", tags=["pwa-routing"])
-router.include_router(expenses.router, prefix="/expenses", tags=["pwa-expenses"])
+# Public endpoints
+router.include_router(analytics_proxy.router, prefix="/analytics/proxy", tags=["pwa-analytics"])
 
-router.include_router(quickbooks.router, prefix="/quickbooks", tags=["pwa-quickbooks"])
-router.include_router(user.router, prefix="/user", tags=["pwa-user"])
-router.include_router(business.router, prefix="/business", tags=["pwa-business"])
-router.include_router(data_management.router, prefix="/data-management", tags=["pwa-data-management"])
+# Protected endpoints
+protected_router = APIRouter(dependencies=[Depends(verify_token)])
+protected_router.include_router(dashboard.router, prefix="/dashboard", tags=["pwa-dashboard"])
+protected_router.include_router(onboarding.router, prefix="/onboarding", tags=["pwa-onboarding"])
+protected_router.include_router(jobs.router, prefix="/jobs", tags=["pwa-jobs"])
+protected_router.include_router(customers.router, prefix="/customers", tags=["pwa-customers"])
+protected_router.include_router(requests.router, prefix="/requests", tags=["pwa-requests"])
+protected_router.include_router(chat.router, prefix="/chat", tags=["pwa-chat"])
+protected_router.include_router(invoices.router, prefix="/invoices", tags=["pwa-invoices"])
+protected_router.include_router(quotes.router, prefix="/quotes", tags=["pwa-quotes"])
+protected_router.include_router(addresses.router, prefix="/addresses", tags=["pwa-addresses"])
+protected_router.include_router(services.router, prefix="/services", tags=["pwa-services"])
+protected_router.include_router(settings.router, prefix="/settings", tags=["pwa-settings"])
+protected_router.include_router(billing.router, prefix="/billing", tags=["pwa-billing"])
+protected_router.include_router(routing.router, prefix="/routing", tags=["pwa-routing"])
+protected_router.include_router(expenses.router, prefix="/expenses", tags=["pwa-expenses"])
+protected_router.include_router(quickbooks.router, prefix="/quickbooks", tags=["pwa-quickbooks"])
+protected_router.include_router(user.router, prefix="/user", tags=["pwa-user"])
+protected_router.include_router(business.router, prefix="/business", tags=["pwa-business"])
+protected_router.include_router(data_management.router, prefix="/data-management", tags=["pwa-data-management"])
+
+router.include_router(protected_router)
