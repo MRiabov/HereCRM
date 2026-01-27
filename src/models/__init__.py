@@ -7,6 +7,7 @@ from src.database import Base
 from src.models.integration_config import IntegrationConfig, IntegrationType
 from src.models.document import Document, DocumentType
 from src.models.campaign import Campaign, CampaignRecipient, CampaignStatus, CampaignChannel
+from src.models.whatsapp_template import WhatsAppTemplate, WhatsAppTemplateStatus, WhatsAppTemplateCategory
 
 
 class UserRole(str, enum.Enum):
@@ -176,6 +177,7 @@ class Business(Base):
     sync_logs: Mapped[List["SyncLog"]] = relationship(back_populates="business")
     invitations: Mapped[List["Invitation"]] = relationship(back_populates="business")
     campaigns: Mapped[List["Campaign"]] = relationship(back_populates="business")
+    whatsapp_templates: Mapped[List["WhatsAppTemplate"]] = relationship(back_populates="business")
 
 
 

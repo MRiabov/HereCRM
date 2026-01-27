@@ -455,3 +455,22 @@ class CampaignCreate(BaseModel):
     body: str
     subject: Optional[str] = None
     recipient_query: str = "all"
+
+
+class WhatsAppTemplateSchema(BaseModel):
+    id: int
+    name: str
+    language: str
+    category: str
+    status: str
+    components: List[Dict[str, Any]]
+    meta_template_id: Optional[str] = None
+    rejection_reason: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+class WhatsAppTemplateCreate(BaseModel):
+    name: str
+    category: str
+    components: List[Dict[str, Any]]
+    language: str = "en_US"
