@@ -6,6 +6,7 @@ import enum
 from src.database import Base
 from src.models.integration_config import IntegrationConfig, IntegrationType
 from src.models.document import Document, DocumentType
+from src.models.campaign import Campaign, CampaignRecipient, CampaignStatus, CampaignChannel
 
 
 class UserRole(str, enum.Enum):
@@ -160,6 +161,7 @@ class Business(Base):
     quotes: Mapped[List["Quote"]] = relationship(back_populates="business")
     sync_logs: Mapped[List["SyncLog"]] = relationship(back_populates="business")
     invitations: Mapped[List["Invitation"]] = relationship(back_populates="business")
+    campaigns: Mapped[List["Campaign"]] = relationship(back_populates="business")
 
 
 
@@ -261,7 +263,9 @@ class Customer(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
-    name: Mapped[str] = mapped_column(String, index=True)
+    name: Mapped[Optional[str]] = mapped_column(String, index=True, nullable=True)
+    first_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    last_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     phone: Mapped[Optional[str]] = mapped_column(String)
     email: Mapped[Optional[str]] = mapped_column(String, index=True)
     details: Mapped[Optional[str]] = mapped_column(Text)

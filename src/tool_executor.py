@@ -1,17 +1,25 @@
-from typing import Union, Optional, Tuple, Dict, Any
+import asyncio
 import logging
+from typing import Union, Optional, Tuple, Dict, Any
+from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime, timedelta, timezone
+
 from src.models import (
     Customer,
     Request,
     Business,
     Service,
     Job,
+    User,
     UserRole,
     InvoicingWorkflow,
     QuotingWorkflow,
     PaymentTiming,
     JobCreationDefault,
+    PipelineStage,
+    CampaignChannel
 )
 from src.events import event_bus
 from src.repositories import (
@@ -27,6 +35,8 @@ from src.services.template_service import TemplateService
 from src.services.geocoding import GeocodingService
 from src.services.inference_service import InferenceService
 from src.services.search_service import SearchService
+from src.services.campaign_service import CampaignService
+from src.services.postmark_service import PostmarkService
 from src.services.chat_utils import format_line_items
 from src.services.billing_service import BillingService
 from src.services.dashboard_service import DashboardService
@@ -34,6 +44,8 @@ from src.services.assignment_service import AssignmentService
 from src.services.rbac_service import RBACService
 from src.services.workflow import WorkflowSettingsService
 from src.services.expenses import ExpenseService
+from src.services.time_tracking import TimeTrackingService
+from src.services.quote_service import QuoteService
 from src.lib.text_formatter import render_employee_dashboard
 from src.uimodels import (
     AddJobTool,
@@ -55,6 +67,7 @@ from src.uimodels import (
     SendStatusTool,
     ManageEmployeesTool,
     MassEmailTool,
+    ExecuteBlastTool,
     ExportQueryTool,
     ExitDataManagementTool,
     GetBillingStatusTool,
@@ -78,19 +91,13 @@ from src.uimodels import (
     FinishJobTool,
     AddExpenseTool,
 )
-from src.services.expenses import ExpenseService
 from src.tools.expenses import ExpenseTools
 from src.services.accounting.accounting_tools import AccountingToolsHandler
-from src.services.time_tracking import TimeTrackingService
 from src.tools.shifts import ShiftTools
 from src.tools.jobs_time import JobTimeTools
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.quote_tools import QuoteCreationHandler
 from src.tools.routing_tools import AutorouteToolExecutor
-from src.services.quote_service import QuoteService
-from sqlalchemy import select
-from sqlalchemy.orm import joinedload
-from datetime import datetime, timedelta, timezone
 from src.tools.employee_management import (
     ShowScheduleTool, 
     AssignJobTool,
@@ -128,6 +135,7 @@ class ToolExecutor:
         self.service_repo = ServiceRepository(session)
         self.geocoding_service = GeocodingService()
         self.search_service = SearchService(session, self.geocoding_service)
+        self.campaign_service = CampaignService(session, self.search_service, PostmarkService())
         self.invoice_service = InvoiceService(session)
         self.billing_service = BillingService(session)
         self.dashboard_service = DashboardService(session)
@@ -326,7 +334,27 @@ class ToolExecutor:
         elif isinstance(tool_call, ManageEmployeesTool):
             return f"✔ Access granted to Employee Management: {tool_call.action}", None
         elif isinstance(tool_call, MassEmailTool):
-            return f"✔ Access granted to Campaigns: Subject '{tool_call.subject}' sent to '{tool_call.recipient_query}'", None
+            campaign = await self.campaign_service.create_campaign(
+                business_id=self.business_id,
+                name=f"Mass Message: {tool_call.subject[:30]}...",
+                channel=CampaignChannel(tool_call.channel),
+                body=tool_call.body,
+                subject=tool_call.subject,
+                recipient_query=tool_call.recipient_query
+            )
+            count = await self.campaign_service.prepare_audience(campaign.id)
+            return (
+                f"✔ Broadcast Prepared (ID: {campaign.id}): Targeting {count} recipients "
+                f"for '{tool_call.subject}' via {tool_call.channel}.\n\n"
+                f"**Blast Protocol Active**: Please type 'EXECUTE BLAST for campaign {campaign.id}' to begin sending."
+            ), None
+
+        elif isinstance(tool_call, ExecuteBlastTool):
+            # Run in background to avoid blocking the chat response? 
+            # Actually, execute_campaign iterates and commits, might be slow.
+            # For now, let's start it and return success message.
+            asyncio.create_task(self.campaign_service.execute_campaign(tool_call.campaign_id))
+            return f"🚀 Blast Execution Started for Campaign {tool_call.campaign_id}. I'll notify you when complete.", None
         elif isinstance(tool_call, ExportQueryTool):
             return "✔ Access granted to Data Export. Starting export...", None
         elif isinstance(tool_call, ExitDataManagementTool):

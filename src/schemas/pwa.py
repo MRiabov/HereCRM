@@ -414,3 +414,26 @@ class DataActivitySchema(BaseModel):
 class ExportCreateRequest(BaseModel):
     query: Optional[str] = None
     format: str # 'CSV', 'Excel', 'JSON'
+
+# --- Marketing Schemas ---
+
+class CampaignSchema(BaseModel):
+    id: int
+    name: str
+    channel: str
+    status: str
+    total_recipients: int
+    sent_count: int
+    failed_count: int
+    created_at: datetime
+    sent_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class CampaignCreate(BaseModel):
+    name: str
+    channel: str
+    body: str
+    subject: Optional[str] = None
+    recipient_query: str = "all"

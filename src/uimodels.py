@@ -410,13 +410,18 @@ class ExitDataManagementTool(BaseModel):
 
 
 class MassEmailTool(BaseModel):
-
     """Send a mass email or message to multiple customers.
     Requires 'campaigns' addon."""
     required_scope: ClassVar[str] = "campaigns"
     subject: str = Field(..., description="Subject of the email")
     body: str = Field(..., description="Content of the message")
     recipient_query: str = Field("all", description="Filter for recipients (e.g. 'all', 'Dublin customers')")
+    channel: str = Field("whatsapp", description="Channel: 'whatsapp', 'email', 'sms'")
+
+class ExecuteBlastTool(BaseModel):
+    """Execute a previously prepared broadcast campaign.
+    Triggered when user says 'EXECUTE BLAST', 'SEND IT', or 'CONFIRM BROADCAST'."""
+    campaign_id: int = Field(..., description="ID of the campaign to execute.")
 
 class ManageEmployeesTool(BaseModel):
     """Access employee management features (shifts, roles).
