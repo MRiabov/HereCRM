@@ -61,6 +61,9 @@ class Settings(BaseSettings):
     posthog_api_key: Optional[str] = None
     posthog_host: str = "https://eu.i.posthog.com"
 
+    # Dev Mode
+    dev_mode: bool = False
+
     # Security
     secret_key: str = "dev_secret_key_change_me_in_production"
 

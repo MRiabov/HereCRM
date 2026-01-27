@@ -52,6 +52,12 @@ class ExportStatus(str, enum.Enum):
     FAILED = "failed"
 
 
+class ExportFormat(str, enum.Enum):
+    CSV = "CSV"
+    EXCEL = "Excel"
+    JSON = "JSON"
+
+
 class PaymentStatus(str, enum.Enum):
     PENDING = "pending"
     COMPLETED = "completed"
@@ -131,13 +137,13 @@ class LedgerEntryType(str, enum.Enum):
 
 
 class JobStatus(str, enum.Enum):
-    PENDING = "pending"
-    SCHEDULED = "scheduled"
-    BOOKED = "booked"
-    IN_PROGRESS = "in_progress"
-    PAUSED = "paused"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
+    pending = "pending"
+    scheduled = "scheduled"
+    booked = "booked"
+    in_progress = "in_progress"
+    paused = "paused"
+    completed = "completed"
+    cancelled = "cancelled"
 
 
 class Business(Base):
@@ -370,10 +376,7 @@ class Job(Base):
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), index=True)
     description: Mapped[Optional[str]] = mapped_column(Text)
-    status: Mapped[JobStatus] = mapped_column(
-        SAEnum(JobStatus, values_callable=lambda obj: [e.value for e in obj]), 
-        default=JobStatus.PENDING
-    )
+    status: Mapped[JobStatus] = mapped_column(SAEnum(JobStatus), default=JobStatus.pending)
     value: Mapped[Optional[float]] = mapped_column(Float)
 
     # Tax Information (Snapshot)

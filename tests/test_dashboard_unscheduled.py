@@ -20,7 +20,7 @@ async def test_get_unscheduled_jobs_logic(async_session: AsyncSession):
         business_id=business_id,
         customer_id=customer.id,
         description="Unscheduled Job",
-        status=JobStatus.PENDING,
+        status=JobStatus.pending,
         scheduled_at=None,
         employee_id=1
     )
@@ -30,7 +30,7 @@ async def test_get_unscheduled_jobs_logic(async_session: AsyncSession):
         business_id=business_id,
         customer_id=customer.id,
         description="Unassigned Job",
-        status=JobStatus.PENDING,
+        status=JobStatus.pending,
         scheduled_at=datetime.now(timezone.utc),
         employee_id=None
     )
@@ -40,7 +40,7 @@ async def test_get_unscheduled_jobs_logic(async_session: AsyncSession):
         business_id=business_id,
         customer_id=customer.id,
         description="Properly Scheduled Job",
-        status=JobStatus.PENDING,
+        status=JobStatus.pending,
         scheduled_at=datetime.now(timezone.utc),
         employee_id=1
     )
@@ -50,7 +50,7 @@ async def test_get_unscheduled_jobs_logic(async_session: AsyncSession):
         business_id=business_id,
         customer_id=customer.id,
         description="Completed Job",
-        status=JobStatus.COMPLETED,
+        status=JobStatus.completed,
         scheduled_at=None,
         employee_id=None
     )

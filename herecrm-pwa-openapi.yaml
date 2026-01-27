@@ -121,7 +121,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/JobListResponse'
-                $ref: '#/components/schemas/JobListResponse'
         '422':
           description: Validation Error
           content:
@@ -233,18 +232,9 @@ paths:
         required: false
         schema:
           anyOf:
-          - type: string
+          - $ref: '#/components/schemas/PipelineStage'
           - type: 'null'
           title: Pipeline Stage
-      - name: search
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: string
-            minLength: 1
-          - type: 'null'
-          title: Search
       - name: page
         in: query
         required: false
@@ -565,8 +555,7 @@ paths:
         in: query
         required: false
         schema:
-          type: string
-          title: Status
+          $ref: '#/components/schemas/RequestStatus'
       - name: urgency
         in: query
         required: false
@@ -976,36 +965,6 @@ paths:
       responses:
         '200':
           description: Successful Response
-  /api/v1/pwa/chat/history/{user_id}:
-    get:
-      tags:
-      - PWA - Chat
-      summary: Get Chat History
-      description: Get message history for a specific user/customer.
-      operationId: get_chat_history_api_v1_pwa_chat_history__user_id__get
-      parameters:
-      - name: user_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: User Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ChatMessage'
-                title: Response Get Chat History Api V1 Pwa Chat History  User Id  Get
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/pwa/requests/{request_id}:
     get:
       tags:
@@ -1072,6 +1031,122 @@ paths:
                 type: object
 components:
   schemas:
+    PipelineStage:
+      type: string
+      enum:
+        - new_lead
+        - not_contacted
+        - contacted
+        - converted_once
+        - converted_recurrent
+        - not_interested
+        - lost
+    JobStatus:
+      type: string
+      enum:
+        - pending
+        - scheduled
+        - booked
+        - in_progress
+        - paused
+        - completed
+        - cancelled
+    QuoteStatus:
+      type: string
+      enum:
+        - draft
+        - sent
+        - accepted
+        - rejected
+        - expired
+    InvoiceStatus:
+      type: string
+      enum:
+        - pending
+        - sent
+        - paid
+        - overdue
+        - cancelled
+    RequestStatus:
+      type: string
+      enum:
+        - pending
+        - converted
+        - dismissed
+    ExportStatus:
+      type: string
+      enum:
+        - pending
+        - processing
+        - completed
+        - failed
+    ExportFormat:
+      type: string
+      enum:
+        - CSV
+        - Excel
+        - JSON
+    InvoicingWorkflow:
+      type: string
+      enum:
+        - never
+        - manual
+        - automatic
+    QuotingWorkflow:
+      type: string
+      enum:
+        - never
+        - manual
+        - automatic
+    PaymentTiming:
+      type: string
+      enum:
+        - always_paid_on_spot
+        - usually_paid_on_spot
+        - paid_later
+    JobCreationDefault:
+      type: string
+      enum:
+        - mark_done
+        - unscheduled
+        - auto_schedule
+        - scheduled_today
+    WageModelType:
+      type: string
+      enum:
+        - commission
+        - hourly_per_job
+        - hourly_per_shift
+        - fixed_daily
+    CampaignStatus:
+      type: string
+      enum:
+        - draft
+        - scheduled
+        - sending
+        - sent
+        - completed
+        - failed
+        - cancelled
+    CampaignChannel:
+      type: string
+      enum:
+        - whatsapp
+        - sms
+        - email
+    WhatsAppTemplateStatus:
+      type: string
+      enum:
+        - pending
+        - approved
+        - rejected
+        - deleted
+    WhatsAppTemplateCategory:
+      type: string
+      enum:
+        - utility
+        - marketing
+        - authentication
     ChatMessage:
       properties:
         role:
@@ -1142,6 +1217,8 @@ components:
           - type: string
           - type: 'null'
           title: City
+        pipeline_stage:
+          $ref: '#/components/schemas/PipelineStage'
       type: object
       required:
       - name
@@ -1172,8 +1249,7 @@ components:
           - type: 'null'
           title: City
         pipeline_stage:
-          type: string
-          title: Pipeline Stage
+          $ref: '#/components/schemas/PipelineStage'
       type: object
     CustomerSchema:
       properties:
@@ -1204,8 +1280,7 @@ components:
           - type: 'null'
           title: City
         pipeline_stage:
-          type: string
-          title: Pipeline Stage
+          $ref: '#/components/schemas/PipelineStage'
         postal_code:
           anyOf:
           - type: string
@@ -1270,8 +1345,7 @@ components:
           type: number
           title: Total Amount
         status:
-          type: string
-          title: Status
+          $ref: '#/components/schemas/InvoiceStatus'
         created_at:
           type: string
           format: date-time
@@ -1307,9 +1381,7 @@ components:
           type: string
           title: Description
         status:
-          type: string
-          title: Status
-          default: pending
+          $ref: '#/components/schemas/JobStatus'
         scheduled_at:
           anyOf:
           - type: string
@@ -1362,8 +1434,7 @@ components:
           - type: 'null'
           title: Description
         status:
-          type: string
-          title: Status
+          $ref: '#/components/schemas/JobStatus'
         scheduled_at:
           anyOf:
           - type: string
@@ -1430,10 +1501,7 @@ components:
           - type: 'null'
           title: Description
         status:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Status
+          $ref: '#/components/schemas/JobStatus'
         scheduled_at:
           anyOf:
           - type: string
@@ -1544,7 +1612,7 @@ components:
     WageConfigurationSchema:
       properties:
         model_type:
-          type: string
+          $ref: '#/components/schemas/WageModelType'
         rate_value:
           type: number
         tax_withholding_rate:
@@ -1645,8 +1713,7 @@ components:
           type: number
           title: Total Amount
         status:
-          type: string
-          title: Status
+          $ref: '#/components/schemas/QuoteStatus'
         external_token:
           type: string
           title: External Token
@@ -1683,12 +1750,8 @@ components:
         id:
           type: integer
           title: Id
-        content:
-          type: string
-          title: Content
         status:
-          type: string
-          title: Status
+          $ref: '#/components/schemas/RequestStatus'
         created_at:
           type: string
           format: date-time
@@ -1732,7 +1795,6 @@ components:
       type: object
       required:
       - id
-      - content
       - status
       - created_at
       - description
@@ -1834,17 +1896,17 @@ components:
       properties:
         workflow_invoicing:
           anyOf:
-          - type: string
+          - $ref: '#/components/schemas/InvoicingWorkflow'
           - type: 'null'
           title: Workflow Invoicing
         workflow_quoting:
           anyOf:
-          - type: string
+          - $ref: '#/components/schemas/QuotingWorkflow'
           - type: 'null'
           title: Workflow Quoting
         workflow_payment_timing:
           anyOf:
-          - type: string
+          - $ref: '#/components/schemas/PaymentTiming'
           - type: 'null'
           title: Workflow Payment Timing
         workflow_tax_inclusive:
@@ -1862,6 +1924,18 @@ components:
           - type: boolean
           - type: 'null'
           title: Workflow Enable Reminders
+        workflow_show_whatsapp_button:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Workflow Show Whatsapp Button
+        workflow_job_creation_default:
+          $ref: '#/components/schemas/JobCreationDefault'
+        workflow_distance_unit:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Workflow Distance Unit
         payment_link:
           anyOf:
           - type: string
@@ -1896,9 +1970,7 @@ components:
           type: integer
           title: Customer Id
         status:
-          type: string
-          title: Status
-          default: draft
+          $ref: '#/components/schemas/QuoteStatus'
         items:
           items:
             type: object
@@ -1935,17 +2007,17 @@ components:
       properties:
         workflow_invoicing:
           anyOf:
-          - type: string
+          - $ref: '#/components/schemas/InvoicingWorkflow'
           - type: 'null'
           title: Workflow Invoicing
         workflow_quoting:
           anyOf:
-          - type: string
+          - $ref: '#/components/schemas/QuotingWorkflow'
           - type: 'null'
           title: Workflow Quoting
         workflow_payment_timing:
           anyOf:
-          - type: string
+          - $ref: '#/components/schemas/PaymentTiming'
           - type: 'null'
           title: Workflow Payment Timing
         workflow_tax_inclusive:
@@ -1963,6 +2035,18 @@ components:
           - type: boolean
           - type: 'null'
           title: Workflow Enable Reminders
+        workflow_show_whatsapp_button:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Workflow Show Whatsapp Button
+        workflow_job_creation_default:
+          $ref: '#/components/schemas/JobCreationDefault'
+        workflow_distance_unit:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Workflow Distance Unit
         payment_link:
           anyOf:
           - type: string
@@ -1977,7 +2061,7 @@ components:
     WageConfigurationUpdate:
       properties:
         model_type:
-          type: string
+          $ref: '#/components/schemas/WageModelType'
         rate_value:
           type: number
         tax_withholding_rate:
@@ -2003,7 +2087,8 @@ components:
           title: Subtitle
         metadata:
           anyOf:
-          - type: object
+          - additionalProperties: true
+            type: object
           - type: 'null'
           title: Metadata
       type: object
@@ -2027,157 +2112,180 @@ components:
       - query
       - results
       title: GlobalSearchResponse
-    OnboardingChoice:
-      properties:
-        choice:
-          type: string
-          title: Choice
-        business_name:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Business Name
-        invite_code:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Invite Code
-      type: object
-      required:
-      - choice
-      title: OnboardingChoice
-    StatusResponse:
-      properties:
-        status:
-          type: string
-          title: Status
-        message:
-          type: string
-          title: Message
-      type: object
-      required:
-      - status
-      - message
-      title: StatusResponse
-    CheckoutSessionRequest:
-      properties:
-        item_type:
-          type: string
-        item_id:
-          type: string
-        success_url:
-          type: string
-        cancel_url:
-          type: string
-      type: object
-      required:
-      - item_type
-      - success_url
-      - cancel_url
     AddressSearchResult:
       properties:
-        id:
-          type: integer
-        address:
+        full_address:
           type: string
-        customer:
-          type: string
-        type:
-          type: string
+          title: Full Address
+        latitude:
+          type: number
+          title: Latitude
+        longitude:
+          type: number
+          title: Longitude
+        street:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Street
+        city:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: City
+        country:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Country
+        postal_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Postal Code
       type: object
       required:
-      - id
-      - address
-      - customer
-      - type
+      - full_address
+      - latitude
+      - longitude
+      title: AddressSearchResult
     GeocodeResponse:
       properties:
         latitude:
-          type: number
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Latitude
         longitude:
-          type: number
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Longitude
         street:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Street
         city:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: City
         country:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Country
         postal_code:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Postal Code
         full_address:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Full Address
       type: object
-    RoutingMetrics:
-      properties:
-        total_distance:
-          type: number
-        total_duration:
-          type: number
-        jobs_assigned:
-          type: integer
-        unassigned_count:
-          type: integer
-      type: object
-      required:
-      - total_distance
-      - total_duration
-      - jobs_assigned
-      - unassigned_count
+      title: GeocodeResponse
     RoutingStep:
       properties:
         job_id:
           type: integer
+          title: Job Id
         arrival_time:
-          type: string
-          format: date-time
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Arrival Time
         departure_time:
-          type: string
-          format: date-time
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Departure Time
         distance_to_next:
-          type: number
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Distance To Next
         duration_to_next:
-          type: number
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Duration To Next
         job:
           $ref: '#/components/schemas/JobSchema'
       type: object
       required:
       - job_id
       - job
+      title: RoutingStep
     RouteSchema:
       properties:
         employee_id:
           type: integer
+          title: Employee Id
         employee_name:
           type: string
+          title: Employee Name
         steps:
-          type: array
           items:
             $ref: '#/components/schemas/RoutingStep'
+          type: array
+          title: Steps
       type: object
       required:
       - employee_id
       - employee_name
       - steps
+      title: RouteSchema
+    RoutingMetrics:
+      properties:
+        total_distance:
+          type: number
+          title: Total Distance
+        total_duration:
+          type: number
+          title: Total Duration
+        jobs_assigned:
+          type: integer
+          title: Jobs Assigned
+        unassigned_count:
+          type: integer
+          title: Unassigned Count
+      type: object
+      required:
+      - total_distance
+      - total_duration
+      - jobs_assigned
+      - unassigned_count
+      title: RoutingMetrics
     RoutingResponse:
       properties:
         date:
           type: string
+          title: Date
         metrics:
           $ref: '#/components/schemas/RoutingMetrics'
         routes:
-          type: array
           items:
             $ref: '#/components/schemas/RouteSchema'
-        unassigned_jobs:
           type: array
+          title: Routes
+        unassigned_jobs:
           items:
             $ref: '#/components/schemas/JobSchema'
+          type: array
+          title: Unassigned Jobs
       type: object
       required:
       - date
       - metrics
       - routes
       - unassigned_jobs
+      title: RoutingResponse
     RequestCreate:
       properties:
         customer_id:
@@ -2205,8 +2313,8 @@ components:
         follow_up_date:
           anyOf:
           - type: string
+            format: date-time
           - type: 'null'
-          format: date-time
           title: Follow Up Date
         customer_details:
           anyOf:
@@ -2225,10 +2333,7 @@ components:
           - type: 'null'
           title: Description
         status:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Status
+          $ref: '#/components/schemas/RequestStatus'
         urgency:
           anyOf:
           - type: string
@@ -2247,8 +2352,8 @@ components:
         follow_up_date:
           anyOf:
           - type: string
+            format: date-time
           - type: 'null'
-          format: date-time
           title: Follow Up Date
         customer_id:
           anyOf:
@@ -2257,3 +2362,35 @@ components:
           title: Customer Id
       type: object
       title: RequestUpdate
+    OnboardingChoice:
+      properties:
+        choice:
+          type: string
+          enum:
+            - keep
+            - join
+        invite_code:
+          type: string
+          nullable: true
+      required:
+        - choice
+    StatusResponse:
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+      required:
+        - status
+    CheckoutSessionRequest:
+      properties:
+        price_id:
+          type: string
+        success_url:
+          type: string
+        cancel_url:
+          type: string
+      required:
+        - price_id
+        - success_url
+        - cancel_url

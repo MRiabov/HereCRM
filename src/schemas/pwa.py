@@ -1,12 +1,18 @@
 from datetime import datetime
 from typing import List, Optional, Any, Dict
 from pydantic import BaseModel, ConfigDict
-from src.models import JobStatus
+from src.models import (
+    JobStatus, PipelineStage, InvoicingWorkflow, QuotingWorkflow, 
+    PaymentTiming, JobCreationDefault, WageModelType, LedgerEntryType,
+    QuoteStatus, QuickBooksSyncStatus, SyncType, SyncLogStatus,
+    CampaignStatus, CampaignChannel, WhatsAppTemplateStatus, WhatsAppTemplateCategory,
+    InvoiceStatus, ExportStatus, ExportFormat, RequestStatus
+)
 
 # --- Shared / Base Schemas ---
 
 class WageConfigurationSchema(BaseModel):
-    model_type: str
+    model_type: WageModelType
     rate_value: float
     tax_withholding_rate: float
     allow_expense_claims: bool
@@ -40,7 +46,7 @@ class CustomerSchema(BaseModel):
     postal_code: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
-    pipeline_stage: str
+    pipeline_stage: PipelineStage
     job_count: int = 0
     total_value: float = 0.0
 
@@ -104,7 +110,7 @@ class JobListResponse(BaseModel):
 class JobCreate(BaseModel):
     customer_id: int
     description: Optional[str] = None
-    status: JobStatus = JobStatus.PENDING
+    status: JobStatus = JobStatus.pending
     scheduled_at: Optional[datetime] = None
     value: Optional[float] = None
     location: Optional[str] = None
@@ -156,7 +162,7 @@ class CustomerCreate(BaseModel):
     email: Optional[str] = None
     street: Optional[str] = None
     city: Optional[str] = None
-    pipeline_stage: Optional[str] = None
+    pipeline_stage: Optional[PipelineStage] = None
 
 class CustomerUpdate(BaseModel):
     name: Optional[str] = None
@@ -166,13 +172,13 @@ class CustomerUpdate(BaseModel):
     email: Optional[str] = None
     street: Optional[str] = None
     city: Optional[str] = None
-    pipeline_stage: Optional[str] = None
+    pipeline_stage: Optional[PipelineStage] = None
 
 class InvoiceSchema(BaseModel):
     id: int
     job_id: int
     total_amount: float
-    status: str
+    status: InvoiceStatus
     created_at: datetime
     public_url: str
     customer_name: Optional[str] = None # Enriched
@@ -199,7 +205,7 @@ class QuoteSchema(BaseModel):
     id: int
     customer_id: int
     total_amount: float
-    status: str
+    status: QuoteStatus
     external_token: str
     public_url: Optional[str]
     created_at: datetime
@@ -215,14 +221,14 @@ class QuoteCreate(BaseModel):
     notes: Optional[str] = None
     items: List[dict] # Simplified for creation
     total_amount: Optional[float] = None
-    status: str = "draft"
+    status: QuoteStatus = QuoteStatus.DRAFT
 
 # --- Request Schemas ---
 
 class RequestSchema(BaseModel):
     id: int
     description: str
-    status: str
+    status: RequestStatus
     urgency: str
     expected_value: Optional[float] = None
     expected_line_items: Optional[str] = None
@@ -245,7 +251,7 @@ class RequestCreate(BaseModel):
 
 class RequestUpdate(BaseModel):
     description: Optional[str] = None
-    status: Optional[str] = None
+    status: Optional[RequestStatus] = None
     urgency: Optional[str] = None
     expected_value: Optional[float] = None
     expected_line_items: Optional[str] = None
@@ -303,13 +309,14 @@ class LedgerEntrySchema(BaseModel):
 # --- Settings & Workflow ---
 
 class BusinessSettingsSchema(BaseModel):
-    workflow_invoicing: Optional[str]
-    workflow_quoting: Optional[str]
-    workflow_payment_timing: Optional[str]
+    workflow_invoicing: Optional[InvoicingWorkflow]
+    workflow_quoting: Optional[QuotingWorkflow]
+    workflow_payment_timing: Optional[PaymentTiming]
     workflow_tax_inclusive: Optional[bool]
     workflow_include_payment_terms: Optional[bool]
     workflow_enable_reminders: Optional[bool]
     workflow_show_whatsapp_button: Optional[bool]
+    workflow_job_creation_default: Optional[JobCreationDefault] = JobCreationDefault.UNSCHEDULED
     workflow_distance_unit: Optional[str] = "mi"
     workflow_auto_quote_followup: bool
     workflow_quote_followup_delay_hrs: int
@@ -329,13 +336,14 @@ class BusinessSettingsSchema(BaseModel):
     marketing_settings: Optional[Dict[str, Any]] = None
 
 class BusinessSettingsUpdate(BaseModel):
-    workflow_invoicing: Optional[str] = None
-    workflow_quoting: Optional[str] = None
-    workflow_payment_timing: Optional[str] = None
+    workflow_invoicing: Optional[InvoicingWorkflow] = None
+    workflow_quoting: Optional[QuotingWorkflow] = None
+    workflow_payment_timing: Optional[PaymentTiming] = None
     workflow_tax_inclusive: Optional[bool] = None
     workflow_include_payment_terms: Optional[bool] = None
     workflow_enable_reminders: Optional[bool] = None
     workflow_show_whatsapp_button: Optional[bool] = None
+    workflow_job_creation_default: Optional[JobCreationDefault] = None
     workflow_distance_unit: Optional[str] = None
     workflow_auto_quote_followup: Optional[bool] = None
     workflow_quote_followup_delay_hrs: Optional[int] = None
@@ -349,7 +357,7 @@ class BusinessSettingsUpdate(BaseModel):
     marketing_settings: Optional[Dict[str, Any]] = None
 
 class WageConfigurationUpdate(BaseModel):
-    model_type: Optional[str] = None
+    model_type: Optional[WageModelType] = None
     rate_value: Optional[float] = None
     tax_withholding_rate: Optional[float] = None
     allow_expense_claims: Optional[bool] = None
@@ -410,7 +418,7 @@ class ImportJobSchema(BaseModel):
     id: int
     filename: Optional[str]
     record_count: int
-    status: str
+    status: SyncLogStatus
     created_at: datetime
     completed_at: Optional[datetime] = None
 
@@ -419,8 +427,8 @@ class ImportJobSchema(BaseModel):
 class ExportRequestSchema(BaseModel):
     id: int
     query: str
-    format: str
-    status: str
+    format: ExportFormat
+    status: ExportStatus
     public_url: Optional[str] = None
     created_at: datetime
 
@@ -432,15 +440,15 @@ class DataActivitySchema(BaseModel):
 
 class ExportCreateRequest(BaseModel):
     query: Optional[str] = None
-    format: str # 'CSV', 'Excel', 'JSON'
+    format: ExportFormat # 'CSV', 'Excel', 'JSON'
 
 # --- Marketing Schemas ---
 
 class CampaignSchema(BaseModel):
     id: int
     name: str
-    channel: str
-    status: str
+    channel: CampaignChannel
+    status: CampaignStatus
     total_recipients: int
     sent_count: int
     failed_count: int
@@ -451,7 +459,7 @@ class CampaignSchema(BaseModel):
 
 class CampaignCreate(BaseModel):
     name: str
-    channel: str
+    channel: CampaignChannel
     body: str
     subject: Optional[str] = None
     recipient_query: str = "all"
@@ -461,8 +469,8 @@ class WhatsAppTemplateSchema(BaseModel):
     id: int
     name: str
     language: str
-    category: str
-    status: str
+    category: WhatsAppTemplateCategory
+    status: WhatsAppTemplateStatus
     components: List[Dict[str, Any]]
     meta_template_id: Optional[str] = None
     rejection_reason: Optional[str] = None
@@ -471,6 +479,6 @@ class WhatsAppTemplateSchema(BaseModel):
 
 class WhatsAppTemplateCreate(BaseModel):
     name: str
-    category: str
+    category: WhatsAppTemplateCategory
     components: List[Dict[str, Any]]
     language: str = "en_US"

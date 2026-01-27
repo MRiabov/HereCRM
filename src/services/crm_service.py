@@ -63,7 +63,7 @@ class CRMService:
         description: Optional[str] = None,
         value: Optional[float] = None,
         location: Optional[str] = None,
-        status: str | JobStatus = JobStatus.PENDING,
+        status: str | JobStatus = JobStatus.pending,
         scheduled_at: Optional[datetime] = None,
         items: Optional[list] = None,
         postal_code: Optional[str] = None,
@@ -155,7 +155,7 @@ class CRMService:
                 JOB_ASSIGNED,
                 {"job_id": job.id, "employee_id": job.employee_id, "business_id": self.business_id},
             )
-        if status == JobStatus.BOOKED:
+        if status == JobStatus.booked:
             await event_bus.emit(
                 JOB_BOOKED,
                 {"job_id": job.id, "customer_id": customer_id, "business_id": self.business_id, "value": job.value},
@@ -272,7 +272,7 @@ class CRMService:
             job = await self.create_job(
                 customer_id=customer_id,
                 description=f"Converted from request: {req.description}. Time: {time or 'N/A'}",
-                status=JobStatus.SCHEDULED if time else JobStatus.PENDING,
+                status=JobStatus.scheduled if time else JobStatus.pending,
                 scheduled_at=scheduled_at,
             )
             await self.session.delete(req)
@@ -499,24 +499,24 @@ class CRMService:
             
             # Map 'done' to 'completed' for backward compatibility or ease of use
             if status == "done":
-                status = JobStatus.COMPLETED
+                status = JobStatus.completed
             
             # Special case for 'paid' status which might come from some integrations
             if status == "paid":
                 job.paid = True
-                status = JobStatus.COMPLETED # Fallback status
+                status = JobStatus.completed # Fallback status
             
             try:
                 new_status = JobStatus(status) if isinstance(status, str) else status
             except ValueError:
                 # Fallback for unknown status strings
-                new_status = JobStatus.PENDING
+                new_status = JobStatus.pending
             
-            if new_status == JobStatus.IN_PROGRESS and old_status != JobStatus.IN_PROGRESS:
+            if new_status == JobStatus.in_progress and old_status != JobStatus.in_progress:
                 await tt_service.start_job(job.id, self.user_id or job.employee_id)
-            elif new_status == JobStatus.PAUSED and old_status == JobStatus.IN_PROGRESS:
+            elif new_status == JobStatus.paused and old_status == JobStatus.in_progress:
                 await tt_service.pause_job(job.id)
-            elif new_status == JobStatus.COMPLETED and old_status in [JobStatus.IN_PROGRESS, JobStatus.PAUSED]:
+            elif new_status == JobStatus.completed and old_status in [JobStatus.in_progress, JobStatus.paused]:
                 await tt_service.finish_job(job.id)
             else:
                 job.status = new_status
@@ -600,7 +600,7 @@ class CRMService:
             )
 
         # Emit JOB_BOOKED if status changed to 'booked'
-        if status == JobStatus.BOOKED and old_status != JobStatus.BOOKED:
+        if status == JobStatus.booked and old_status != JobStatus.booked:
             await event_bus.emit(
                 JOB_BOOKED,
                 {

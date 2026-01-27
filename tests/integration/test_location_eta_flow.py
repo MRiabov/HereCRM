@@ -51,7 +51,7 @@ async def test_location_and_eta_flow(async_session):
         latitude=53.30,
         longitude=-6.20,
         location="123 Test St",
-        status=JobStatus.IN_PROGRESS
+        status=JobStatus.in_progress
     )
     async_session.add(job)
     await async_session.commit()

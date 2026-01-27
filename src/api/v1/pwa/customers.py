@@ -19,7 +19,7 @@ async def get_crm_service(
 @router.get("/", response_model=List[CustomerSchema])
 async def list_customers(
     search: Optional[str] = None,
-    pipeline_stage: Optional[str] = None,
+    pipeline_stage: Optional[PipelineStage] = None,
     page: int = 1,
     limit: int = 50,
     service: CRMService = Depends(get_crm_service)

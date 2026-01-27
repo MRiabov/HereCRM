@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from src.api.v1.pwa import dashboard, jobs, customers, chat, invoices, settings, onboarding, billing, routing, expenses, quickbooks, user, business, quotes, addresses, services, data_management, requests, analytics_proxy, marketing, templates
+from src.api.v1.pwa import dashboard, jobs, customers, chat, invoices, settings, onboarding, billing, routing, expenses, quickbooks, user, business, quotes, addresses, services, data_management, requests, analytics_proxy, marketing, templates, dev
 from src.api.dependencies.clerk_auth import verify_token
 
 router = APIRouter()
@@ -29,5 +29,6 @@ protected_router.include_router(business.router, prefix="/business", tags=["pwa-
 protected_router.include_router(data_management.router, prefix="/data-management", tags=["pwa-data-management"])
 protected_router.include_router(marketing.router, prefix="/marketing", tags=["pwa-marketing"])
 protected_router.include_router(templates.router, prefix="/templates", tags=["pwa-templates"])
+protected_router.include_router(dev.router, prefix="/dev", tags=["pwa-dev"])
 
 router.include_router(protected_router)

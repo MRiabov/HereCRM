@@ -72,6 +72,16 @@ class WorkflowSettingsService:
 
         for key, value in settings.items():
             if key in allowed_keys:
+                # Convert string values to Enums if necessary
+                if key == "workflow_invoicing" and isinstance(value, str):
+                    value = InvoicingWorkflow(value.lower())
+                elif key == "workflow_quoting" and isinstance(value, str):
+                    value = QuotingWorkflow(value.lower())
+                elif key == "workflow_payment_timing" and isinstance(value, str):
+                    value = PaymentTiming(value.lower())
+                elif key == "workflow_job_creation_default" and isinstance(value, str):
+                    value = JobCreationDefault(value.lower())
+                
                 setattr(business, key, value)
         
         await self.session.flush()

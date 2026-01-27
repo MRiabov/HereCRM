@@ -535,13 +535,13 @@ class JobRepository(BaseRepository[Job]):
             stmt = select(Job).join(Job.customer).options(
                 contains_eager(Job.customer).joinedload(Customer.availability), 
                 joinedload(Job.line_items),
-                joinedload(Job.employee)
+                joinedload(Job.employee).joinedload(User.wage_config)
             ).where(and_(*conditions))
         else:
             stmt = select(Job).join(Job.customer).options(
                 contains_eager(Job.customer).joinedload(Customer.availability), 
                 joinedload(Job.line_items),
-                joinedload(Job.employee)
+                joinedload(Job.employee).joinedload(User.wage_config)
             ).where(and_(*conditions))
 
         # If no radius filtering, apply pagination in DB
