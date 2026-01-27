@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import Customer, Job, Invoice, Business, User, UserRole
+from src.models import Customer, Job, JobStatus, Invoice, Business, User, UserRole
 from src.services.invoice_service import InvoiceService
 from src.tool_executor import ToolExecutor
 from src.tools.invoice_tools import SendInvoiceTool
@@ -45,7 +45,7 @@ async def test_create_invoice_success(session: AsyncSession, mock_s3_service, mo
     session.add(customer)
     await session.flush()
     
-    job = Job(customer_id=customer.id, business_id=biz.id, description="Test Job", value=100.0, status="done")
+    job = Job(customer_id=customer.id, business_id=biz.id, description="Test Job", value=100.0, status=JobStatus.COMPLETED)
     session.add(job)
     await session.commit()
     
@@ -83,7 +83,7 @@ async def test_send_invoice_tool_success(session: AsyncSession, mock_s3_service,
     session.add(customer)
     await session.flush()
     
-    job = Job(customer_id=customer.id, business_id=biz.id, description="Roof Repair", value=500.0, status="done")
+    job = Job(customer_id=customer.id, business_id=biz.id, description="Roof Repair", value=500.0, status=JobStatus.COMPLETED)
     session.add(job)
     await session.commit()
     
