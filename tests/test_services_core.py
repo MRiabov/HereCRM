@@ -91,9 +91,10 @@ async def test_dashboard_service_schedules(test_session: AsyncSession):
     dashboard_service = DashboardService(test_session)
     schedules = await dashboard_service.get_employee_schedules(biz.id, today)
     
-    assert len(schedules) == 2
+    # schedules contains user1, user2 AND None (for unassigned)
+    assert len(schedules) == 3
     # Check if user1 and user2 are in keys
-    user_ids = [u.id for u in schedules.keys()]
+    user_ids = [u.id for u in schedules.keys() if u is not None]
     assert user1.id in user_ids
     assert user2.id in user_ids
     
@@ -117,8 +118,12 @@ async def test_dashboard_service_unscheduled(test_session: AsyncSession):
     test_session.add(customer)
     await test_session.flush()
 
+    user = User(business_id=biz.id, phone_number="999", role=UserRole.EMPLOYEE)
+    test_session.add(user)
+    await test_session.flush()
+
     job1 = Job(business_id=biz.id, customer_id=customer.id, description="Unscheduled Job", employee_id=None, status="pending")
-    job2 = Job(business_id=biz.id, customer_id=customer.id, description="Scheduled Job", employee_id=999, status="pending")
+    job2 = Job(business_id=biz.id, customer_id=customer.id, description="Scheduled Job", employee_id=user.id, status="pending", scheduled_at=datetime.now())
     test_session.add_all([job1, job2])
     await test_session.commit()
 

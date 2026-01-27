@@ -64,7 +64,7 @@ async def test_convert_request_progression(session: AsyncSession):
     name = "Target Customer"
     customer = Customer(name=name, business_id=business_id)
     from src.models import Request
-    req = Request(business_id=business_id, content=f"Request from {name}", status="pending")
+    req = Request(business_id=business_id, description=f"Request from {name}", status="pending")
     session.add(customer)
     session.add(req)
     await session.commit()

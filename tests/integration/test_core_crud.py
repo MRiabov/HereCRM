@@ -27,12 +27,15 @@ async def test_core_crud_operations(async_session):
     job_repo = JobRepository(async_session)
 
     # 2. Add Customer
-    customer = await customer_repo.create({
-        "name": "Test Customer",
-        "phone": "+1234567890",
-        "business_id": business.id,
-        "street": "123 Main St"
-    })
+    customer = Customer(
+        name="Test Customer",
+        phone="+1234567890",
+        business_id=business.id,
+        street="123 Main St"
+    )
+    customer_repo.add(customer)
+    await async_session.commit()
+    await async_session.refresh(customer)
     assert customer.id is not None
     assert customer.name == "Test Customer"
 

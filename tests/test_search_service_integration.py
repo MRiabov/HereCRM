@@ -82,7 +82,7 @@ async def setup_data(db_session: AsyncSession):
     db_session.add_all([j1, j2])
     
     # Request (No location)
-    r1 = Request(content="Site visit request", business_id=bus.id)
+    r1 = Request(description="Site visit request", business_id=bus.id)
     db_session.add(r1)
 
     await db_session.commit()

@@ -756,7 +756,7 @@ class ToolExecutor:
                 description=tool.description or (f"{job.description} (Scheduled: {tool.time})" if job.description and "(Scheduled:" not in job.description else job.description or f"(Scheduled: {tool.time})"),
                 status=JobStatus.SCHEDULED,
                 value=tool.price,
-                line_items=tool.line_items,
+                items=tool.line_items,
             )
 
             return self.template_service.render(

@@ -65,7 +65,7 @@ async def test_search_jobs_delegation(search_service):
 @pytest.mark.asyncio
 async def test_search_requests_delegation(search_service):
     # Setup
-    search_service.request_repo.search.return_value = [Request(content="Need help")]
+    search_service.request_repo.search.return_value = [Request(description="Need help")]
     params = SearchTool(query="help", entity_type="request")
     
     # Execute
@@ -81,7 +81,7 @@ async def test_search_aggregation_all(search_service):
     # Setup
     search_service.customer_repo.search.return_value = [Customer(name="C1")]
     search_service.job_repo.search.return_value = [Job(description="J1")]
-    search_service.request_repo.search.return_value = [Request(content="R1")]
+    search_service.request_repo.search.return_value = [Request(description="R1")]
     params = SearchTool(query="all") # entity_type is None
     
     # Execute

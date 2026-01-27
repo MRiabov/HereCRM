@@ -39,8 +39,8 @@ class TaxCalculator:
         # Calculate raw total from lines
         raw_total = 0.0
         for line in lines:
-            qty = line.get("quantity", 0)
-            price = line.get("unit_price", 0)
+            qty = line.get("quantity", 1.0)
+            price = line.get("unit_price", 0.0)
             raw_total += qty * price
 
         if business.workflow_tax_inclusive:

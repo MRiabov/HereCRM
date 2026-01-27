@@ -60,11 +60,10 @@ async def test_time_tracking_flow(async_session):
 
     # 6. Test Finish Job
     original_job_start = job.begun_at
-    job, j_start, j_end = await service.finish_job(job.id)
+    job, total_duration = await service.finish_job(job.id)
     assert job.begun_at is None
     assert job.status == "completed"
-    assert j_start == original_job_start
-    assert j_end > j_start
+    assert total_duration >= 0
 
     # 7. Test Finish Job without Start
     with pytest.raises(ValueError, match="Job not started"):

@@ -131,16 +131,16 @@ async def create_request(
         await db.flush()
     
     # 2. Create Request
-    # Request model has business_id and content
+    # Request model has business_id and description
     content = f"Service: {payload.service_type or 'General'}\n"
     content += f"Address: {payload.address or 'N/A'}\n"
     content += f"Notes: {payload.notes or 'N/A'}\n"
-    # Link customer info in content since model doesn't have customer_id
+    # Link customer info in description since model might not have customer_id or we want to keep it simple
     full_content = f"Lead: {customer.name} ({customer.phone})\n{content}"
     
     request = Request(
         business_id=business_id,
-        content=full_content,
+        description=full_content,
         status="pending"
     )
     request_repo.add(request)

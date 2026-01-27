@@ -134,11 +134,11 @@ tool_descriptions:
     Store a general request or note.
     Examples of when to call:
     - User: "Remind me to call Dave tomorrow"
-      -> AddRequestTool(content="call Dave", customer_name="Dave", time="tomorrow")
+      -> AddRequestTool(description="call Dave", customer_name="Dave", time="tomorrow")
     - User: "Note: order more supplies"
-      -> AddRequestTool(content="order more supplies")
+      -> AddRequestTool(description="order more supplies")
     - User: "Customer Alice requested a callback"
-      -> AddRequestTool(content="requested a callback", customer_name="Alice")
+      -> AddRequestTool(description="requested a callback", customer_name="Alice")
 
   SearchTool: |
     Search for jobs, customers, or requests.

@@ -7,23 +7,25 @@ from src.services.geocoding import GeocodingService
 async def test_nominatim_parsing_success():
     service = GeocodingService()
     
-    mock_response = [
-        {
-            "lat": "53.344",
-            "lon": "-6.267",
-            "address": {
-                "house_number": "34",
-                "road": "High Street",
-                "suburb": "The Liberties",
+    mock_response = {
+        "results": [
+            {
+                "lat": 53.344,
+                "lon": -6.267,
+                "street": "High Street",
+                "housenumber": "34",
                 "city": "Dublin",
                 "country": "Ireland",
-                "postcode": "D08"
+                "postcode": "D08",
+                "formatted": "34 High Street, Dublin, Ireland, D08"
             }
-        }
-    ]
+        ]
+    }
     
-    with patch("httpx.AsyncClient.get") as mock_get:
-        mock_get.return_value = AsyncMock(
+    with patch("src.services.geocoding.GeocodingService.get_client") as mock_get_client:
+        mock_client = AsyncMock()
+        mock_get_client.return_value = mock_client
+        mock_client.get.return_value = AsyncMock(
             status_code=200,
             json=lambda: mock_response,
             raise_for_status=lambda: None
@@ -44,16 +46,20 @@ async def test_nominatim_parsing_fallback():
     service = GeocodingService()
     
     # Simulate missing details but successful lat/lon
-    mock_response = [
-        {
-            "lat": "53.344",
-            "lon": "-6.267",
-            # No address key
-        }
-    ]
+    mock_response = {
+        "results": [
+            {
+                "lat": 53.344,
+                "lon": -6.267,
+                # No other fields
+            }
+        ]
+    }
     
-    with patch("httpx.AsyncClient.get") as mock_get:
-        mock_get.return_value = AsyncMock(
+    with patch("src.services.geocoding.GeocodingService.get_client") as mock_get_client:
+        mock_client = AsyncMock()
+        mock_get_client.return_value = mock_client
+        mock_client.get.return_value = AsyncMock(
             status_code=200,
             json=lambda: mock_response,
             raise_for_status=lambda: None

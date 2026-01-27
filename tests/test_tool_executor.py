@@ -90,7 +90,7 @@ async def test_execute_convert_request(
     await test_session.flush()
 
     # Pre-existing request
-    req = Request(business_id=biz.id, content="I want to fix my roof", status="pending")
+    req = Request(business_id=biz.id, description="I want to fix my roof", status="pending")
     test_session.add(req)
     await test_session.flush()
 
@@ -127,7 +127,7 @@ async def test_execute_log_request(
     await test_session.flush()
 
     # Pre-existing request
-    req = Request(business_id=biz.id, content="Info only request", status="pending")
+    req = Request(business_id=biz.id, description="Info only request", status="pending")
     test_session.add(req)
     await test_session.flush()
 
