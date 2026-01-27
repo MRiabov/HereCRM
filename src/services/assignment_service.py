@@ -1,19 +1,20 @@
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_, and_
-from pydantic import BaseModel
+from sqlalchemy import select, or_
+from pydantic import BaseModel, ConfigDict
 
 from src.models import Job, User
 from src.repositories import JobRepository, UserRepository
 from src.events import event_bus, JOB_ASSIGNED, JOB_UNASSIGNED
+
 
 class AssignmentResult(BaseModel):
     success: bool
     warning: Optional[str] = None
     job: Optional[Job] = None
     error: Optional[str] = None
-    class Config:
-        arbitrary_types_allowed = True
+    
+    model_config = ConfigDict(arbitrary_types_allowed=True) # Replaced class Config with model_config
 
 class AssignmentService:
     def __init__(self, session: AsyncSession, business_id: int):
