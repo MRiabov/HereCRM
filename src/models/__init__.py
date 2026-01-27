@@ -141,6 +141,8 @@ class Business(Base):
     default_city: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     default_country: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
+    invite_code: Mapped[Optional[str]] = mapped_column(String(20), unique=True, nullable=True, index=True)
+
     # T020 - Usage-Based Billing
     message_count_current_period: Mapped[int] = mapped_column(Integer, default=0)
     billing_cycle_anchor: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)

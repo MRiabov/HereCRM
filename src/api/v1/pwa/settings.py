@@ -24,11 +24,21 @@ async def get_workflow_settings(
         
     settings = await service.get_settings(current_user.business_id)
     
+    # Generate invite_code if missing
+    if not business.invite_code:
+        import secrets
+        import string
+        # Generate a 6-character alphanumeric code
+        code = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(6))
+        business.invite_code = code
+        await service.session.commit()
+    
     return BusinessSettingsSchema(
         **settings,
         quickbooks_connected=business.quickbooks_connected,
         quickbooks_last_sync=business.quickbooks_last_sync,
-        stripe_connected=business.stripe_customer_id is not None
+        stripe_connected=business.stripe_customer_id is not None,
+        invite_code=business.invite_code
     )
 
 @router.patch("/workflow", response_model=BusinessSettingsSchema)
@@ -54,5 +64,6 @@ async def update_workflow_settings(
         **settings,
         quickbooks_connected=business.quickbooks_connected,
         quickbooks_last_sync=business.quickbooks_last_sync,
-        stripe_connected=business.stripe_customer_id is not None
+        stripe_connected=business.stripe_customer_id is not None,
+        invite_code=business.invite_code
     )

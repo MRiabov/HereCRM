@@ -305,6 +305,7 @@ class BusinessSettingsSchema(BaseModel):
     quickbooks_last_sync: Optional[datetime] = None
     stripe_connected: bool
     seat_count: int
+    invite_code: Optional[str] = None
     billing_cycle_anchor: Optional[datetime] = None
 
 class BusinessSettingsUpdate(BaseModel):

@@ -79,9 +79,20 @@ class InvitationService:
         """
         invite = None
         if code:
-            invite = await self.invitation_repo.get_by_token(code)
-            if not invite or invite.status != InvitationStatus.PENDING:
-                return False, "Invalid or expired invitation code.", None
+            # First check if it's a persistent business invite code
+            business = await self.business_repo.get_by_invite_code(code)
+            if business:
+                # Create a shim 'invite' object or handle logic directly
+                # For consistency with existing logic, let's just use business_id from it
+                business_id = business.id
+            else:
+                # Fall back to checking Invitation token
+                invite = await self.invitation_repo.get_by_token(code)
+                if not invite or invite.status != InvitationStatus.PENDING:
+                    return False, "Invalid or expired invitation code.", None
+                business_id = invite.business_id
+                # Mark as accepted
+                invite.status = InvitationStatus.ACCEPTED
         else:
             pending = await self.invitation_repo.get_pending_by_identifier(identifier)
             if not pending:
@@ -89,9 +100,9 @@ class InvitationService:
             # Logic for multiple pending invites:
             # For this MVP we'll take the most recent one.
             invite = pending[0]
-        
-        # Mark as accepted
-        invite.status = InvitationStatus.ACCEPTED
+            business_id = invite.business_id
+            # Mark as accepted
+            invite.status = InvitationStatus.ACCEPTED
         
         # Create or Update User
         existing_user = await self.user_repo.get_by_phone(identifier)
@@ -102,14 +113,14 @@ class InvitationService:
         if existing_user:
             # If user exists, we transfer them to the new business
             # This implicitly removes them from the old business
-            existing_user.business_id = invite.business_id
+            existing_user.business_id = business_id
             existing_user.role = UserRole.EMPLOYEE
             existing_user.preferences = {"confirm_by_default": False} # Reset or keep? Let's keep existing props but ensuring basics
         else:
             # Create new user
             user = User(
                 phone_number=identifier,
-                business_id=invite.business_id,
+                business_id=business_id,
                 role=UserRole.EMPLOYEE,
                 timezone="UTC"
             )
@@ -119,7 +130,7 @@ class InvitationService:
         await self.session.refresh(user)
         
         # Fetch business name for welcome message
-        business = await self.business_repo.get_by_id_global(invite.business_id)
+        business = await self.business_repo.get_by_id_global(business_id)
         business_name = business.name if business else "the business"
         
         return True, f"Welcome to {business_name}! You are now added to the team.", user

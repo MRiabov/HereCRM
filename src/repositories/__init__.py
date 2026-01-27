@@ -41,8 +41,8 @@ class UserRepository(BaseRepository[User]):
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_by_id(self, user_id: int) -> Optional[User]:
-        query = select(User).where(User.id == user_id)
+    async def get_by_id(self, id: int) -> Optional[User]:
+        query = select(User).where(User.id == id)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -63,10 +63,10 @@ class UserRepository(BaseRepository[User]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    def add(self, user: User):
-        if user.phone_number:
-            user.phone_number = normalize_phone(user.phone_number)
-        self.session.add(user)
+    def add(self, item: User):
+        if item.phone_number:
+            item.phone_number = normalize_phone(item.phone_number)
+        self.session.add(item)
 
     async def update_preferences(
         self, user_id: int, key: str, value: Any
@@ -100,8 +100,13 @@ class BusinessRepository(BaseRepository[Business]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    def add(self, business: Business):
-        self.session.add(business)
+    async def get_by_invite_code(self, invite_code: str) -> Optional[Business]:
+        query = select(Business).where(Business.invite_code == invite_code.upper())
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    def add(self, item: Business):
+        self.session.add(item)
 
 
 class ServiceRepository(BaseRepository[Service]):
