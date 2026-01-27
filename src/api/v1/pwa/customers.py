@@ -14,7 +14,7 @@ async def get_crm_service(
     session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> CRMService:
-    return CRMService(session, business_id=current_user.business_id)
+    return CRMService(session, business_id=current_user.business_id, user_id=current_user.id)
 
 @router.get("/", response_model=List[CustomerSchema])
 async def list_customers(
@@ -59,16 +59,20 @@ async def create_customer(
     data: CustomerCreate,
     service: CRMService = Depends(get_crm_service)
 ):
-    # Check if exists? (Optional validation)
-    
+    full_name = data.name
+    if not full_name and (data.first_name or data.last_name):
+        full_name = f"{data.first_name or ''} {data.last_name or ''}".strip()
+
     new_customer = Customer(
         business_id=service.business_id,
-        name=data.name,
+        name=full_name,
+        first_name=data.first_name,
+        last_name=data.last_name,
         phone=data.phone,
         email=data.email,
         street=data.street,
         city=data.city,
-        pipeline_stage=PipelineStage.NOT_CONTACTED
+        pipeline_stage=data.pipeline_stage or PipelineStage.NOT_CONTACTED
     )
     service.customer_repo.add(new_customer)
     await service.session.commit()
@@ -85,6 +89,8 @@ async def update_customer(
         updated_customer = await service.update_customer(
             customer_id=customer_id,
             name=data.name,
+            first_name=data.first_name,
+            last_name=data.last_name,
             phone=data.phone,
             email=data.email,
             street=data.street,

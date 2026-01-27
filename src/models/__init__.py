@@ -131,6 +131,7 @@ class Business(Base):
     workflow_enable_reminders: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     workflow_show_whatsapp_button: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=False)
     workflow_job_creation_default: Mapped[Optional[JobCreationDefault]] = mapped_column(SAEnum(JobCreationDefault), nullable=True)
+    workflow_distance_unit: Mapped[str] = mapped_column(String, default="mi")
 
     # Automatic Messaging Settings (Feature 003)
     workflow_auto_quote_followup: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -197,6 +198,9 @@ class User(Base):
 
     # Financial / Wage fields
     current_shift_start: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    # Usage tracking
+    geocoding_count: Mapped[int] = mapped_column(Integer, default=0)
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="users")

@@ -31,7 +31,9 @@ class UserSchema(BaseModel):
 
 class CustomerSchema(BaseModel):
     id: int
-    name: str
+    name: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
     street: Optional[str] = None
@@ -57,6 +59,12 @@ class LineItemSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+class LineItemCreate(BaseModel):
+    description: str
+    quantity: float = 1.0
+    unit_price: float
+    service_id: Optional[int] = None
 
 class JobSchema(BaseModel):
     id: int
@@ -105,8 +113,9 @@ class JobCreate(BaseModel):
     value: Optional[float] = None
     location: Optional[str] = None
     employee_id: Optional[int] = None
-    estimated_duration: int = 60
+    estimated_duration: Optional[int] = None # Optional now, will be auto-calculated if items provided
     postal_code: Optional[str] = None
+    items: Optional[List[LineItemCreate]] = None
 
 class JobUpdate(BaseModel):
     description: Optional[str] = None
@@ -117,6 +126,7 @@ class JobUpdate(BaseModel):
     estimated_duration: Optional[int] = None
     location: Optional[str] = None
     postal_code: Optional[str] = None
+    items: Optional[List[LineItemCreate]] = None
 
 # --- Chat Schemas ---
 
@@ -138,14 +148,19 @@ class ChatExecuteRequest(BaseModel):
 # --- Customer Schemas ---
 
 class CustomerCreate(BaseModel):
-    name: str
+    name: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
     street: Optional[str] = None
     city: Optional[str] = None
+    pipeline_stage: Optional[str] = None
 
 class CustomerUpdate(BaseModel):
     name: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
     street: Optional[str] = None
@@ -293,6 +308,7 @@ class BusinessSettingsSchema(BaseModel):
     workflow_include_payment_terms: Optional[bool]
     workflow_enable_reminders: Optional[bool]
     workflow_show_whatsapp_button: Optional[bool]
+    workflow_distance_unit: Optional[str] = "mi"
     workflow_auto_quote_followup: bool
     workflow_quote_followup_delay_hrs: int
     workflow_auto_review_requests: bool
@@ -317,6 +333,7 @@ class BusinessSettingsUpdate(BaseModel):
     workflow_include_payment_terms: Optional[bool] = None
     workflow_enable_reminders: Optional[bool] = None
     workflow_show_whatsapp_button: Optional[bool] = None
+    workflow_distance_unit: Optional[str] = None
     workflow_auto_quote_followup: Optional[bool] = None
     workflow_quote_followup_delay_hrs: Optional[int] = None
     workflow_auto_review_requests: Optional[bool] = None
