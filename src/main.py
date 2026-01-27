@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from src.database import engine, Base
 from src.api.routes import router as webhook_router
 from src.api.webhooks.stripe_webhook import router as stripe_router
@@ -55,6 +56,16 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+# CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify actual origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(webhook_router)
 app.include_router(stripe_router, prefix="/webhooks", tags=["webhooks"])
 app.include_router(clerk_router, prefix="/webhooks", tags=["webhooks"])

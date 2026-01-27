@@ -19,10 +19,11 @@ class MessagingService:
     Uses an async queue for buffering messages and processes them asynchronously.
     """
 
-    def __init__(self):
+    def __init__(self, session_factory=None):
         self._queue: asyncio.Queue = asyncio.Queue()
         self._running = False
         self._worker_task: Optional[asyncio.Task] = None
+        self.session_factory = session_factory or AsyncSessionLocal
 
     async def send_message(
         self,
@@ -44,8 +45,9 @@ class MessagingService:
             content = normalize_to_gsm7(content)
             
         # Use a single session for the entire message sending process to avoid detachment issues
-        async with AsyncSessionLocal() as db:
-            db.sync_session.expire_on_commit = False
+        async with self.session_factory() as db:
+            if hasattr(db, "sync_session"):
+                db.sync_session.expire_on_commit = False
             # 1. Create MessageLog entry with PENDING status
             message_log = MessageLog(
                 business_id=business_id,
@@ -216,6 +218,11 @@ class MessagingService:
                     self._queue.get(), timeout=1.0
                 )
                 
+                # Check for sentinel value (None) used for stopping
+                if message_data is None:
+                    self._queue.task_done()
+                    break
+
                 # Process the message
                 await self.send_message(**message_data)
                 
@@ -239,7 +246,12 @@ class MessagingService:
 
     async def stop(self):
         """Stop the background queue processor."""
+        if not self._running:
+            return
+            
         self._running = False
+        # Put sentinel to wake up the getter if it's waiting
+        await self._queue.put(None)
         if self._worker_task:
             await self._worker_task
             logger.info("MessagingService stopped")
@@ -260,7 +272,7 @@ class MessagingService:
             
         logger.info(f"Handling JOB_CREATED for job {job_id}")
         
-        async with AsyncSessionLocal() as db:
+        async with self.session_factory() as db:
             customer_repo = CustomerRepository(db)
             customer = await customer_repo.get_by_id(customer_id, business_id)
             
@@ -292,7 +304,7 @@ class MessagingService:
             
         logger.info(f"Handling JOB_SCHEDULED for job {job_id}")
         
-        async with AsyncSessionLocal() as db:
+        async with self.session_factory() as db:
             customer_repo = CustomerRepository(db)
             customer = await customer_repo.get_by_id(customer_id, business_id)
             
@@ -323,7 +335,7 @@ class MessagingService:
             
         logger.info(f"Handling ON_MY_WAY for customer {customer_id}")
         
-        async with AsyncSessionLocal() as db:
+        async with self.session_factory() as db:
             customer_repo = CustomerRepository(db)
             customer = await customer_repo.get_by_id(customer_id, business_id)
             

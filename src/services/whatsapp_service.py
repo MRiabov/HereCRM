@@ -855,7 +855,7 @@ class WhatsappService:
                 "request_summary",
                 client_details=client_details,
                 time=tool_call.time,
-                content=tool_call.content,
+                content=tool_call.description,
             )
 
         if isinstance(tool_call, GetPipelineTool):
