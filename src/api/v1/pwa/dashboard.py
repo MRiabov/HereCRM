@@ -27,9 +27,7 @@ async def get_dashboard_stats(
     pipeline_data = await crm_service.get_pipeline_summary()
     
     # Calculate totals
-    # TODO: Implement real revenue calculation in CRMService or BillingService.
-    # For now, mocking revenue to match UI or simple calculation if easy.
-    revenue = 12450.00 # Placeholder from UI
+    revenue = await dashboard_service.get_monthly_revenue(crm_service.business_id)
     
     active_leads = 0
     needs_followup = 0
@@ -52,22 +50,6 @@ async def get_dashboard_stats(
 async def get_recent_activity(
     services: tuple[CRMService, DashboardService] = Depends(get_dashboard_services)
 ):
-    # TODO: Fetch real activity logs (MessageLog, Job updates, etc.)
-    # For now returning empty list or mocks could be better
-    from datetime import datetime, timezone, timedelta
-    
-    # Mock data to match UI feel for now
-    return [
-        RecentActivity(
-            type="invoice",
-            title="Invoice Sent",
-            description="Invoice #1024 sent to Alice Smith for $120.00",
-            timestamp=datetime.now(timezone.utc) - timedelta(minutes=2)
-        ),
-        RecentActivity(
-            type="lead",
-            title="New Lead",
-            description="Contact from John O'Connor regarding 'Leaky Faucet'",
-            timestamp=datetime.now(timezone.utc) - timedelta(hours=3)
-        )
-    ]
+    crm_service, dashboard_service = services
+    activities = await dashboard_service.get_recent_activity(crm_service.business_id)
+    return [RecentActivity(**a) for a in activities]

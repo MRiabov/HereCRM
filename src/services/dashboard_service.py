@@ -1,14 +1,93 @@
 from datetime import date, datetime, timezone
 from typing import List, Dict, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select, or_, func, desc
+from sqlalchemy.orm import selectinload, joinedload
 
-from src.models import Job, User, UserRole
+from src.models import Job, User, UserRole, Invoice, Customer
 
 class DashboardService:
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    async def get_monthly_revenue(self, business_id: int) -> float:
+        """
+        Sum of job values for jobs scheduled in the current month that are not cancelled.
+        """
+        now = datetime.now(timezone.utc)
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        stmt = select(func.sum(Job.value)).where(
+            Job.business_id == business_id,
+            Job.scheduled_at >= start_of_month,
+            Job.status != "cancelled"
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0.0
+
+    async def get_recent_activity(self, business_id: int, limit: int = 10) -> List[dict]:
+        """
+        Fetch recent activities across jobs, invoices, and customers.
+        """
+        activities = []
+        
+        # 1. Recent Invoices
+        stmt = (
+            select(Invoice)
+            .join(Job)
+            .where(Job.business_id == business_id)
+            .options(joinedload(Invoice.job).joinedload(Job.customer))
+            .order_by(desc(Invoice.created_at))
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        invoices = result.scalars().unique().all()
+        for inv in invoices:
+            activities.append({
+                "type": "invoice",
+                "title": "Invoice Generated",
+                "description": f"Invoice generated for {inv.job.customer.name} - ${inv.job.value or 0.0:.2f}",
+                "timestamp": inv.created_at
+            })
+            
+        # 2. Recent Jobs
+        stmt = (
+            select(Job)
+            .where(Job.business_id == business_id)
+            .options(joinedload(Job.customer))
+            .order_by(desc(Job.created_at))
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        jobs = result.scalars().unique().all()
+        for job in jobs:
+            activities.append({
+                "type": "job",
+                "title": "New Job",
+                "description": f"Job created for {job.customer.name}: {job.description}",
+                "timestamp": job.created_at
+            })
+            
+        # 3. Recent Customers
+        stmt = (
+            select(Customer)
+            .where(Customer.business_id == business_id)
+            .order_by(desc(Customer.created_at))
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        customers = result.scalars().all()
+        for cust in customers:
+            activities.append({
+                "type": "lead",
+                "title": "New Customer",
+                "description": f"Customer {cust.name} added to pipeline",
+                "timestamp": cust.created_at
+            })
+            
+        # Sort combined and limit
+        activities.sort(key=lambda x: x["timestamp"], reverse=True)
+        return activities[:limit]
 
     async def get_employee_schedules(self, business_id: int, target_date: date, timezone_str: str = "UTC") -> Dict[Optional[User], List[Job]]:
         """
