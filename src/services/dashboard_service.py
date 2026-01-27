@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
-from typing import List, Dict
+from typing import List, Dict, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
 
 from src.models import Job, User, UserRole
@@ -10,11 +10,11 @@ class DashboardService:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_employee_schedules(self, business_id: int, target_date: date) -> Dict[User, List[Job]]:
+    async def get_employee_schedules(self, business_id: int, target_date: date) -> Dict[Optional[User], List[Job]]:
         """
         Query all users with roles member or owner for the business.
-        Query all jobs for the given date assigned to these users.
-        Return a structured dict: {employee_obj: [job_list]}.
+        Query all jobs for the given date assigned to these users OR unassigned.
+        Return a structured dict: {user_obj_or_None: [job_list]}.
         """
         # 1. Fetch all employees (Owners and Members)
         stmt = select(User).where(
@@ -30,16 +30,18 @@ class DashboardService:
         end_of_day = datetime.combine(target_date, datetime.max.time()).replace(tzinfo=timezone.utc)
 
         # Pre-initialize the schedule map
-        schedule: Dict[User, List[Job]] = {emp: [] for emp in employees}
+        schedule: Dict[Optional[User], List[Job]] = {emp: [] for emp in employees}
+        schedule[None] = []  # Entry for unassigned jobs
 
-        # Query jobs assigned to any of these employees on this date
+        # Query jobs assigned to any of these employees OR unassigned on this date
         employee_ids = [emp.id for emp in employees]
-        if not employee_ids:
-            return {}
-
+        
         job_stmt = select(Job).where(
             Job.business_id == business_id,
-            Job.employee_id.in_(employee_ids),
+            or_(
+                Job.employee_id.in_(employee_ids) if employee_ids else False,
+                Job.employee_id.is_(None)
+            ),
             Job.scheduled_at >= start_of_day,
             Job.scheduled_at <= end_of_day
         ).options(
@@ -53,6 +55,10 @@ class DashboardService:
 
         # Group jobs by employee
         for job in jobs:
+            if job.employee_id is None:
+                schedule[None].append(job)
+                continue
+                
             for emp in employees:
                 if job.employee_id == emp.id:
                     schedule[emp].append(job)
