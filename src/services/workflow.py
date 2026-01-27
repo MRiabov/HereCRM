@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.repositories import BusinessRepository
 from src.models import InvoicingWorkflow, QuotingWorkflow, PaymentTiming, JobCreationDefault
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 class WorkflowSettingsService:
     def __init__(self, session: AsyncSession):
@@ -33,6 +33,7 @@ class WorkflowSettingsService:
             "payment_link": business.payment_link,
             "default_city": business.default_city,
             "default_country": business.default_country,
+            "default_tax_rate": business.default_tax_rate,
             "seat_count": business.seat_limit,
             "billing_cycle_anchor": business.billing_cycle_anchor,
         }
@@ -62,6 +63,7 @@ class WorkflowSettingsService:
             "workflow_job_creation_default",
             "default_city",
             "default_country",
+            "default_tax_rate",
         }
 
         for key, value in settings.items():

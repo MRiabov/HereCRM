@@ -140,6 +140,7 @@ class Business(Base):
 
     default_city: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     default_country: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    default_tax_rate: Mapped[float] = mapped_column(Float, default=0.0)
 
     invite_code: Mapped[Optional[str]] = mapped_column(String(20), unique=True, nullable=True, index=True)
 

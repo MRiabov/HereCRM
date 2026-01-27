@@ -301,6 +301,7 @@ class BusinessSettingsSchema(BaseModel):
     payment_link: Optional[str]
     default_city: Optional[str] = None
     default_country: Optional[str] = None
+    default_tax_rate: Optional[float] = 0.0
     quickbooks_connected: bool
     quickbooks_last_sync: Optional[datetime] = None
     stripe_connected: bool
@@ -324,6 +325,7 @@ class BusinessSettingsUpdate(BaseModel):
     payment_link: Optional[str] = None
     default_city: Optional[str] = None
     default_country: Optional[str] = None
+    default_tax_rate: Optional[float] = None
 
 class WageConfigurationUpdate(BaseModel):
     model_type: Optional[str] = None

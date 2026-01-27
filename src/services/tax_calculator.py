@@ -33,9 +33,8 @@ class TaxCalculator:
 
         # Determine tax rate
         # TODO: Integrate with Stripe Tax API here using customer location
-        # For now, we use a default rate, or 0 if not configured.
-        # We can simulate tax rate lookup.
-        tax_rate = self.default_tax_rate
+        # Priority: Business preference -> Default calculator rate
+        tax_rate = business.default_tax_rate if business.default_tax_rate is not None else self.default_tax_rate
 
         # Calculate raw total from lines
         raw_total = 0.0
