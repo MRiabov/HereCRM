@@ -165,6 +165,10 @@ class GeocodingService:
         city = details.get("city") or details.get("municipality") or default_city
         country = details.get("country") or default_country
         postcode = details.get("postcode")
-        full_address = details.get("formatted") or address
+        
+        full_address = details.get("formatted")
+        if not full_address:
+            addr_parts = [p for p in [street, city, country, postcode] if p]
+            full_address = ", ".join(addr_parts) if addr_parts else address
 
         return lat, lon, street, city, country, postcode, full_address

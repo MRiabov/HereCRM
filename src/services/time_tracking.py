@@ -76,6 +76,9 @@ class TimeTrackingService:
         if not job:
             raise ValueError(f"Job {job_id} not found")
         
+        if job.status not in [JobStatus.IN_PROGRESS, JobStatus.PAUSED]:
+            raise ValueError("Job not started")
+
         total_duration = job.total_actual_duration_seconds
         
         if job.status == JobStatus.IN_PROGRESS and job.begun_at:
