@@ -25,6 +25,7 @@ async def list_jobs(
     customer_id: Optional[int] = None,
     employee_id: Optional[int] = None,
     search: Optional[str] = None,
+    unscheduled: bool = False,
     services: tuple[CRMService, DashboardService] = Depends(get_services),
     current_user: User = Depends(get_current_user)
 ):
@@ -32,9 +33,19 @@ async def list_jobs(
     List jobs.
     If search is provided, returns jobs matching the query.
     If customer_id is provided, returns job history for that customer grouped by date.
+    If unscheduled is true, returns jobs without schedule or assignment.
     Otherwise, returns daily schedule for employees (defaults to today).
     """
     crm_service, dashboard_service = services
+
+    if unscheduled:
+        jobs = await dashboard_service.get_unscheduled_jobs(crm_service.business_id)
+        return [
+            JobListResponse(
+                date="Unscheduled",
+                jobs=[JobSchema.model_validate(j) for j in jobs]
+            )
+        ]
 
     if search is not None:
         jobs = await crm_service.job_repo.search(query=search, business_id=crm_service.business_id)

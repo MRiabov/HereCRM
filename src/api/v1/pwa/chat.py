@@ -16,7 +16,7 @@ from src.database import get_db
 from src.services.crm_service import CRMService
 from src.services.messaging_service import messaging_service
 from src.schemas.pwa import ChatMessage, ChatSendRequest, ChatExecuteRequest
-from src.models import Message, MessageRole, User, Service, ConversationState, ConversationStatus
+from src.models import Message, MessageRole, User, Service, ConversationState, ConversationStatus, Business
 from src.api.dependencies.clerk_auth import get_current_user
 
 router = APIRouter()
@@ -27,6 +27,36 @@ async def get_crm_service(
 ) -> CRMService:
     return CRMService(session, business_id=current_user.business_id)
 
+@router.get("/history", response_model=List[ChatMessage])
+async def get_assistant_history(
+    service: CRMService = Depends(get_crm_service),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Returns AI Assistant history for the current user (where from_number/to_number is 'system').
+    """
+    stmt = (
+        select(Message)
+        .where(
+            Message.business_id == service.business_id,
+            Message.user_id == current_user.id,
+            (Message.from_number == "system") | (Message.to_number == "system")
+        )
+        .order_by(Message.created_at.asc())
+    )
+    result = await service.session.execute(stmt)
+    messages = result.scalars().all()
+    return [
+        ChatMessage(
+            role=msg.role,
+            content=msg.body,
+            timestamp=msg.created_at,
+            is_outbound=(msg.role == MessageRole.ASSISTANT),
+            is_executed=msg.is_executed
+        )
+        for msg in messages
+    ]
+
 @router.get("/history/{customer_id}", response_model=List[ChatMessage])
 async def get_chat_history(
     customer_id: int,
@@ -34,28 +64,8 @@ async def get_chat_history(
     current_user: User = Depends(get_current_user)
 ):
     if customer_id == 0:
-        # AI Assistant history for this user
-        stmt = (
-            select(Message)
-            .where(
-                Message.business_id == service.business_id,
-                Message.user_id == current_user.id,
-                (Message.from_number == "system") | (Message.to_number == "system")
-            )
-            .order_by(Message.created_at.asc())
-        )
-        result = await service.session.execute(stmt)
-        messages = result.scalars().all()
-        return [
-            ChatMessage(
-                role=msg.role,
-                content=msg.body,
-                timestamp=msg.created_at,
-                is_outbound=(msg.role == MessageRole.ASSISTANT),
-                is_executed=msg.is_executed
-            )
-            for msg in messages
-        ]
+        # Backward compatibility: forward to get_assistant_history logic
+        return await get_assistant_history(service, current_user)
 
     # 1. Get Customer to find phone number/User ID
     customer = await service.customer_repo.get_by_id(customer_id, service.business_id)
@@ -132,6 +142,7 @@ async def send_message(
 
         feedback = None
         tool_call = None
+        response_text = ""
         
         for attempt in range(2): # Up to 2 attempts
             tool_call = await parser.parse(

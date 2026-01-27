@@ -80,11 +80,14 @@ class DashboardService:
 
     async def get_unscheduled_jobs(self, business_id: int) -> List[Job]:
         """
-        Query all jobs where employee_id is None AND status is pending/open.
+        Query all jobs where (employee_id is None OR scheduled_at is None) AND status is pending/open.
         """
         stmt = select(Job).where(
             Job.business_id == business_id,
-            Job.employee_id.is_(None),
+            or_(
+                Job.employee_id.is_(None),
+                Job.scheduled_at.is_(None)
+            ),
             Job.status.in_(["pending", "open"])
         ).order_by(Job.created_at.desc())
 
