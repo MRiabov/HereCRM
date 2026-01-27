@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List, Optional, Any, Dict
 from pydantic import BaseModel
+from src.models import JobStatus
 
 # --- Shared / Base Schemas ---
 
@@ -69,7 +70,7 @@ class LineItemCreate(BaseModel):
 class JobSchema(BaseModel):
     id: int
     description: Optional[str]
-    status: str
+    status: JobStatus
     scheduled_at: Optional[datetime]
     value: Optional[float]
     location: Optional[str]
@@ -108,7 +109,7 @@ class JobListResponse(BaseModel):
 class JobCreate(BaseModel):
     customer_id: int
     description: Optional[str] = None
-    status: str = "pending"
+    status: JobStatus = JobStatus.PENDING
     scheduled_at: Optional[datetime] = None
     value: Optional[float] = None
     location: Optional[str] = None
@@ -119,7 +120,7 @@ class JobCreate(BaseModel):
 
 class JobUpdate(BaseModel):
     description: Optional[str] = None
-    status: Optional[str] = None
+    status: Optional[JobStatus] = None
     scheduled_at: Optional[datetime] = None
     value: Optional[float] = None
     employee_id: Optional[int] = None
@@ -178,6 +179,10 @@ class InvoiceSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+class InvoiceCreate(BaseModel):
+    job_id: int
+    force_regenerate: bool = False
 
 # --- Quote Schemas ---
 
