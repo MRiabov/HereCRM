@@ -2,6 +2,8 @@ import httpx
 import math
 from typing import Optional, Tuple
 import logging
+from sqlalchemy.ext.asyncio import AsyncSession
+from src.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -82,13 +84,30 @@ class GeocodingService:
             logger.error(f"Error parsing geocoding response: {e}")
             return None, None, None
 
+    async def _check_usage(self, session: Optional[AsyncSession], user_id: Optional[int]) -> bool:
+        if not session or not user_id:
+            return True
+        
+        user = await session.get(User, user_id)
+        if not user:
+            return True
+        
+        if user.geocoding_count >= 1000:
+            logger.warning(f"User {user_id} reached geocoding limit.")
+            return False
+            
+        user.geocoding_count += 1
+        return True
+
     async def geocode(
         self, 
         address: str,
         default_city: Optional[str] = None,
         default_country: Optional[str] = None,
         safeguard_enabled: bool = False,
-        max_distance_km: float = 100.0
+        max_distance_km: float = 100.0,
+        session: Optional[AsyncSession] = None,
+        user_id: Optional[int] = None
     ) -> Tuple[
         Optional[float], Optional[float], Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]
     ]:
@@ -96,6 +115,9 @@ class GeocodingService:
         Geocodes an address and returns (lat, lon, street, city, country, postal_code, full_address).
         If safeguard is enabled and default_city is provided, ensures result is within max_distance_km.
         """
+        if not await self._check_usage(session, user_id):
+            return None, None, None, None, None, None, None
+
         query_address = address
         parts = []
         if default_city:
