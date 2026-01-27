@@ -768,9 +768,9 @@ async def quickbooks_callback(
         await auth_service.handle_callback(code, realmId, state)
         
         return {"status": "success", "message": "QuickBooks connected successfully! You can close this window."}
-    except Exception as e:
-        logger.error(f"QuickBooks callback failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Connection failed: {str(e)}")
+    except Exception:
+        logger.exception("QuickBooks callback failed")
+        raise HTTPException(status_code=500, detail="Connection failed")
 
 
 @router.get("/auth/google/login")
@@ -785,9 +785,9 @@ async def google_login(
         # In a real app, we should sign the state to prevent tampering
         auth_url, _ = service.get_auth_url(state=str(user_id))
         return RedirectResponse(url=auth_url)
-    except Exception as e:
-        logger.error(f"Google login failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        logger.exception("Google login failed")
+        raise HTTPException(status_code=500, detail="Internal Error")
 
 
 @router.get("/auth/google/callback")
@@ -870,9 +870,9 @@ async def google_callback(
         else:
             logger.error(f"Google Auth failed for user {user_id}: User not found")
             raise HTTPException(status_code=404, detail="User not found")
-    except Exception as e:
-        logger.exception(f"Google callback failed: {e}")
+    except Exception:
+        logger.exception("Google callback failed")
         if success_url:
             error_url = success_url + ("&" if "?" in success_url else "?") + "error=google_auth_failed"
             return RedirectResponse(url=error_url)
-        raise HTTPException(status_code=500, detail=f"Connection failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Connection failed")
