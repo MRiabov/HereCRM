@@ -49,6 +49,8 @@ async def lifespan(app: FastAPI):
     await messaging_service.stop()
     from src.services.geocoding import GeocodingService
     await GeocodingService.close_client()
+    from src.api.v1.pwa.analytics_proxy import close_client as close_analytics_client
+    await close_analytics_client()
     await engine.dispose()
 
 
