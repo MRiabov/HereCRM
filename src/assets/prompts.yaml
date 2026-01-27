@@ -189,10 +189,8 @@ tool_descriptions:
       -> SendStatusTool(query="John", status_type="on_way")
     - User: "Tell Mary I'm running late"
       -> SendStatusTool(query="Mary", status_type="running_late", message_content="running late")
-    - User: "Done #101"
+      - User: "Done #101"
       -> SendStatusTool(query="101", status_type="finish_job")
-  
-#FIXME: next_scheduled_client? why not search?
 
   GetPipelineTool: |
     Get a summary of the sales pipeline (funnel counts).
@@ -313,8 +311,7 @@ tool_descriptions:
   DeleteServiceTool: "Delete a service from the catalog."
   ListServicesTool: "List all available services."
   ExitSettingsTool: "Exit the settings mode."
-  #import/export tools
-  # TODO
+
 service_catalog_matching: |
   
   SERVICE CATALOG MATCHING:
