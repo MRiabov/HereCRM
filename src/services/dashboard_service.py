@@ -10,12 +10,20 @@ class DashboardService:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_employee_schedules(self, business_id: int, target_date: date) -> Dict[Optional[User], List[Job]]:
+    async def get_employee_schedules(self, business_id: int, target_date: date, timezone_str: str = "UTC") -> Dict[Optional[User], List[Job]]:
         """
         Query all users with roles member or owner for the business.
         Query all jobs for the given date assigned to these users OR unassigned.
         Return a structured dict: {user_obj_or_None: [job_list]}.
+        
+        The query is timezone-aware: target_date is interpreted in timezone_str.
         """
+        import pytz
+        try:
+            tz = pytz.timezone(timezone_str)
+        except Exception:
+            tz = pytz.UTC
+
         # 1. Fetch all employees (Owners and Members)
         stmt = select(User).where(
             User.business_id == business_id,
@@ -25,9 +33,13 @@ class DashboardService:
         employees = result.scalars().all()
 
         # 2. Fetch jobs for these employees on the target date
-        # We assume scheduled_at is a datetime, so we check the date part
-        start_of_day = datetime.combine(target_date, datetime.min.time()).replace(tzinfo=timezone.utc)
-        end_of_day = datetime.combine(target_date, datetime.max.time()).replace(tzinfo=timezone.utc)
+        # Convert local date range to UTC
+        local_start = datetime.combine(target_date, datetime.min.time())
+        local_end = datetime.combine(target_date, datetime.max.time())
+        
+        # Localize and then normalize to UTC
+        start_of_day = tz.localize(local_start).astimezone(pytz.UTC)
+        end_of_day = tz.localize(local_end).astimezone(pytz.UTC)
 
         # Pre-initialize the schedule map
         schedule: Dict[Optional[User], List[Job]] = {emp: [] for emp in employees}

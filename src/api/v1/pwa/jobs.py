@@ -25,7 +25,8 @@ async def list_jobs(
     customer_id: Optional[int] = None,
     employee_id: Optional[int] = None,
     search: Optional[str] = None,
-    services: tuple[CRMService, DashboardService] = Depends(get_services)
+    services: tuple[CRMService, DashboardService] = Depends(get_services),
+    current_user: User = Depends(get_current_user)
 ):
     """
     List jobs.
@@ -80,7 +81,11 @@ async def list_jobs(
     
     # Get schedules for all employees
     # DashboardService returns {User: [Job]}
-    schedules = await dashboard_service.get_employee_schedules(crm_service.business_id, target_date)
+    schedules = await dashboard_service.get_employee_schedules(
+        crm_service.business_id, 
+        target_date,
+        timezone_str=current_user.timezone
+    )
     
     daily_jobs = []
     seen_job_ids = set()
