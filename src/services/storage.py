@@ -1,5 +1,6 @@
 import boto3
 from botocore.exceptions import ClientError
+from botocore.config import Config
 import logging
 from typing import Optional
 
@@ -26,7 +27,8 @@ class S3Service:
                 endpoint_url=self.endpoint_url,
                 aws_access_key_id=self.access_key,
                 aws_secret_access_key=self.secret_key,
-                region_name=self.region
+                region_name=self.region,
+                config=Config(s3={'addressing_style': 'path'})
             )
         else:
             logger.warning("S3 credentials not fully configured. S3Service will be inoperable.")
@@ -52,20 +54,24 @@ class S3Service:
 
     def get_public_url(self, key: str) -> str:
         """
-        Constructs the public URL for a given key.
-        Note: This assumes the bucket/object has public read access or is configured for public access.
+        Generates a presigned URL for the given key.
         """
-        if not self.endpoint_url:
-            raise StorageError("S3 endpoint URL not configured.")
+        if not self.s3_client:
+            raise StorageError("S3 client not initialized.")
         
-        # Construct URL based on endpoint and bucket
-        # Common format for B2/S3: {endpoint}/{bucket}/{key}
-        # Or {bucket}.{endpoint}/{key}
-        # We'll use the one that matches most S3-compatible APIs
-        if "backblazeb2.com" in self.endpoint_url:
-            return f"{self.endpoint_url}/{self.bucket_name}/{key}"
-        
-        return f"{self.endpoint_url.rstrip('/')}/{self.bucket_name}/{key}"
+        try:
+            url = self.s3_client.generate_presigned_url(
+                'get_object',
+                Params={'Bucket': self.bucket_name, 'Key': key},
+                ExpiresIn=604800 # 7 days
+            )
+            return url
+        except ClientError as e:
+            logger.error(f"Failed to generate presigned URL: {e}")
+            # Fallback to manual construction if presigning fails
+            if "backblazeb2.com" in (self.endpoint_url or ""):
+                return f"{self.endpoint_url}/{self.bucket_name}/{key}"
+            return f"{self.endpoint_url.rstrip('/')}/{self.bucket_name}/{key}"
 
 storage_service = S3Service()
 

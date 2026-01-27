@@ -7,10 +7,43 @@ from sqlalchemy.orm import joinedload
 
 from src.database import get_db
 from src.models import Invoice, Job, Customer, User
-from src.schemas.pwa import InvoiceSchema
+from src.schemas.pwa import InvoiceSchema, InvoiceCreate
 from src.api.dependencies.clerk_auth import get_current_user
+from src.services.invoice_service import InvoiceService
 
 router = APIRouter()
+
+@router.post("/", response_model=InvoiceSchema)
+async def create_invoice(
+    invoice_data: InvoiceCreate,
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Verify job belongs to business
+    stmt = select(Job).where(Job.id == invoice_data.job_id, Job.business_id == current_user.business_id)
+    result = await session.execute(stmt)
+    job = result.scalar_one_or_none()
+    
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    invoice_service = InvoiceService(session)
+    try:
+        invoice = await invoice_service.create_invoice(job, force_regenerate=invoice_data.force_regenerate)
+        await session.commit()
+        
+        return InvoiceSchema(
+            id=invoice.id,
+            job_id=invoice.job_id,
+            total_amount=job.value or 0.0,
+            status=invoice.status,
+            created_at=invoice.created_at,
+            public_url=invoice.public_url,
+            customer_name=job.customer.name if job and job.customer else "Unknown"
+        )
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/", response_model=List[InvoiceSchema])
 async def list_invoices(
