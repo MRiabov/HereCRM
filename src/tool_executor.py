@@ -664,7 +664,7 @@ class ToolExecutor:
              if default_setting == JobCreationDefault.MARK_DONE:
                  status = JobStatus.COMPLETED
              elif default_setting == JobCreationDefault.AUTO_SCHEDULE:
-                 status = JobStatus.PENDING # TODO: Hook into auto-scheduler
+                 status = JobStatus.PENDING
              elif default_setting == JobCreationDefault.SCHEDULED_TODAY:
                  status = JobStatus.SCHEDULED
                  # Set scheduled_at to now if not provided
@@ -1604,25 +1604,50 @@ class ToolExecutor:
         # Get business status
         business = await self.session.get(Business, self.business_id)
         
-        # Get last sync logs/stats from SyncManager or similar
-        # For MVP, we use business fields and basic check
+        # Get last sync logs/stats from SyncLog table
+        from src.models import SyncLog
+        from sqlalchemy import select, desc
+        
+        stmt = (
+            select(SyncLog)
+            .where(SyncLog.business_id == self.business_id)
+            .order_by(desc(SyncLog.sync_timestamp))
+            .limit(1)
+        )
+        result = await self.session.execute(stmt)
+        last_log = result.scalar_one_or_none()
+        
         connected = "Yes" if business.quickbooks_connected else "No"
         last_sync = business.quickbooks_last_sync.strftime("%Y-%m-%d %H:%M") if business.quickbooks_last_sync else "Never"
         
-        # We could query SyncLog for errors
+        sync_status = "Idle"
         errors = "None"
-        # TODO: Implement deeper error reporting from SyncLog table if needed
+        
+        if last_log:
+            sync_status = last_log.status.value.replace("_", " ").title()
+            if last_log.records_failed > 0:
+                errors = f"{last_log.records_failed} records failed"
+                if last_log.error_details:
+                    # Just show first few characters of error if it's a string or summary if dict
+                    err_str = str(last_log.error_details)
+                    if len(err_str) > 50:
+                        errors += f": {err_str[:47]}..."
+                    else:
+                        errors += f": {err_str}"
+            elif last_log.status.value == "failed":
+                errors = "Last sync failed completely"
         
         return self.template_service.render(
             "quickbooks_status",
             connected=connected,
             last_sync=last_sync,
-            sync_status="Idle", # Placeholder
+            sync_status=sync_status,
             errors=errors
         ), {
             "action": "quickbooks_status",
             "connected": business.quickbooks_connected,
-            "last_sync": business.quickbooks_last_sync
+            "last_sync": business.quickbooks_last_sync,
+            "last_log_id": last_log.id if last_log else None
         }
 
     async def _execute_sync_quickbooks(

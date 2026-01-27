@@ -213,7 +213,11 @@ class QuoteSchema(BaseModel):
 
 class QuoteCreate(BaseModel):
     customer_id: int
+    title: Optional[str] = None
+    location: Optional[str] = None
+    notes: Optional[str] = None
     items: List[dict] # Simplified for creation
+    total_amount: Optional[float] = None
     status: str = "draft"
 
 # --- Request Schemas ---

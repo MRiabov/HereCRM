@@ -143,6 +143,7 @@ class CRMService:
         await self.session.commit() # Must commit for other sessions (handlers) to see it
         # Reload with relationships for schema validation
         job = await self.job_repo.get_with_line_items(job.id, self.business_id)
+        assert job is not None
 
         # Emit events
         await event_bus.emit(
@@ -225,8 +226,8 @@ class CRMService:
                 
         return None
 
-    async def get_jobs_for_customer(self, customer_id: int) -> list:
-        return await self.job_repo.get_by_customer(customer_id, self.business_id)
+    async def get_jobs_for_customer(self, customer_id: int, skip: int = 0, limit: int = 100) -> list:
+        return await self.job_repo.get_by_customer(customer_id, self.business_id, skip=skip, limit=limit)
 
     async def convert_request(
         self,
@@ -500,7 +501,16 @@ class CRMService:
             if status == "done":
                 status = JobStatus.COMPLETED
             
-            new_status = JobStatus(status) if isinstance(status, str) else status
+            # Special case for 'paid' status which might come from some integrations
+            if status == "paid":
+                job.paid = True
+                status = JobStatus.COMPLETED # Fallback status
+            
+            try:
+                new_status = JobStatus(status) if isinstance(status, str) else status
+            except ValueError:
+                # Fallback for unknown status strings
+                new_status = JobStatus.PENDING
             
             if new_status == JobStatus.IN_PROGRESS and old_status != JobStatus.IN_PROGRESS:
                 await tt_service.start_job(job.id, self.user_id or job.employee_id)

@@ -1,3 +1,4 @@
+import uuid
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -6,8 +7,8 @@ from sqlalchemy import select, desc, or_
 from sqlalchemy.orm import joinedload
 
 from src.database import get_db
-from src.models import Quote, Customer, User, QuoteLineItem
-from src.schemas.pwa import QuoteSchema
+from src.models import Quote, Customer, User, QuoteLineItem, QuoteStatus
+from src.schemas.pwa import QuoteSchema, QuoteCreate
 from src.api.dependencies.clerk_auth import get_current_user
 
 router = APIRouter()
@@ -70,3 +71,65 @@ async def get_quote(
         raise HTTPException(status_code=404, detail="Quote not found")
 
     return quote
+
+@router.post("/", response_model=QuoteSchema)
+async def create_quote(
+    quote_in: QuoteCreate,
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Verify customer belongs to business
+    customer_stmt = select(Customer).where(
+        Customer.id == quote_in.customer_id,
+        Customer.business_id == current_user.business_id
+    )
+    customer_res = await session.execute(customer_stmt)
+    customer = customer_res.scalar_one_or_none()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    # Calculate total
+    total = 0.0
+    line_items = []
+    for item in quote_in.items:
+        qty = float(item.get("quantity", 1))
+        price = float(item.get("unit_price", 0))
+        item_total = qty * price
+        total += item_total
+        
+        line_items.append(QuoteLineItem(
+            description=item.get("description", ""),
+            quantity=qty,
+            unit_price=price,
+            total=item_total,
+            service_id=item.get("service_id")
+        ))
+
+    quote = Quote(
+        customer_id=quote_in.customer_id,
+        business_id=current_user.business_id,
+        title=quote_in.title,
+        location=quote_in.location,
+        notes=quote_in.notes,
+        total_amount=quote_in.total_amount or total,
+        status=QuoteStatus(quote_in.status),
+        external_token=uuid.uuid4().hex,
+        items=line_items
+    )
+
+    session.add(quote)
+    await session.commit()
+    await session.refresh(quote)
+    
+    # Reload with items and customer for response
+    stmt = (
+        select(Quote)
+        .options(
+            joinedload(Quote.customer),
+            joinedload(Quote.items)
+        )
+        .where(Quote.id == quote.id)
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one()
+

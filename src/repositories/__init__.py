@@ -612,7 +612,7 @@ class JobRepository(BaseRepository[Job]):
         result = await self.session.execute(stmt)
         return result.unique().scalar_one_or_none()
 
-    async def get_by_customer(self, customer_id: int, business_id: int) -> List[Job]:
+    async def get_by_customer(self, customer_id: int, business_id: int, skip: int = 0, limit: int = 100) -> List[Job]:
         stmt = (
             select(Job)
             .options(
@@ -622,6 +622,8 @@ class JobRepository(BaseRepository[Job]):
             )
             .where(Job.customer_id == customer_id, Job.business_id == business_id)
             .order_by(Job.scheduled_at.desc())
+            .offset(skip)
+            .limit(limit)
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().unique().all())

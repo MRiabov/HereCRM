@@ -107,7 +107,7 @@ class JobStatus(str, enum.Enum):
     IN_PROGRESS = "in_progress"
     PAUSED = "paused"
     COMPLETED = "completed"
-    CANCELED = "canceled"
+    CANCELLED = "cancelled"
 
 
 class Business(Base):
@@ -509,6 +509,10 @@ class Quote(Base):
     subtotal: Mapped[float] = mapped_column(Float, default=0.0)
     tax_amount: Mapped[float] = mapped_column(Float, default=0.0)
     tax_rate: Mapped[float] = mapped_column(Float, default=0.0)
+
+    title: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    location: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     external_token: Mapped[str] = mapped_column(String, unique=True, index=True)
     blob_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)

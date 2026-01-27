@@ -26,6 +26,8 @@ async def list_jobs(
     employee_id: Optional[int] = None,
     search: Optional[str] = None,
     unscheduled: bool = False,
+    page: int = 1,
+    limit: int = 50,
     services: tuple[CRMService, DashboardService] = Depends(get_services),
     current_user: User = Depends(get_current_user)
 ):
@@ -37,18 +39,25 @@ async def list_jobs(
     Otherwise, returns daily schedule for employees (defaults to today).
     """
     crm_service, dashboard_service = services
+    skip = (page - 1) * limit
 
     if unscheduled:
         jobs = await dashboard_service.get_unscheduled_jobs(crm_service.business_id)
+        # Apply manual pagination for unscheduled as it's a specialized query
         return [
             JobListResponse(
                 date="Unscheduled",
-                jobs=[JobSchema.model_validate(j) for j in jobs]
+                jobs=[JobSchema.model_validate(j) for j in jobs[skip : skip + limit]]
             )
         ]
 
     if search is not None:
-        jobs = await crm_service.job_repo.search(query=search, business_id=crm_service.business_id)
+        jobs = await crm_service.job_repo.search(
+            query=search, 
+            business_id=crm_service.business_id,
+            skip=skip,
+            limit=limit
+        )
         # Group search results by date
         from itertools import groupby
         jobs.sort(key=lambda x: x.scheduled_at.date() if x.scheduled_at else date.min, reverse=True)
@@ -63,7 +72,7 @@ async def list_jobs(
         return response
 
     if customer_id:
-        jobs = await crm_service.get_jobs_for_customer(customer_id)
+        jobs = await crm_service.get_jobs_for_customer(customer_id, skip=skip, limit=limit)
         
         # Group by date
         from itertools import groupby
