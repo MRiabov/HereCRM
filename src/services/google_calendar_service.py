@@ -105,10 +105,12 @@ class GoogleCalendarService:
         if not user.google_calendar_credentials:
             return None
         
-        creds = Credentials.from_authorized_user_info(
-            user.google_calendar_credentials,
-            self.scopes
-        )
+        # Use scopes from credentials if they exist to avoid invalid_scope errors on refresh
+        # if the user hasn't authorized the new expanded scopes yet.
+        info = user.google_calendar_credentials
+        scopes = info.get("scopes") or self.scopes
+        
+        creds = Credentials.from_authorized_user_info(info, scopes)
         
         if creds.expired and creds.refresh_token:
             try:

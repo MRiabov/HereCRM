@@ -1,5 +1,6 @@
 import logging
 from typing import Any
+from datetime import datetime
 from sqlalchemy import select
 from src.events import event_bus, JOB_CREATED, JOB_UPDATED, JOB_ASSIGNED, JOB_UNASSIGNED, JOB_SCHEDULED
 from src.database import AsyncSessionLocal
@@ -71,6 +72,7 @@ class CalendarSyncHandler:
 
             # Fetch all upcoming jobs for this user
             from sqlalchemy import and_
+            from sqlalchemy.orm import selectinload
             stmt = (
                 select(Job)
                 .where(
@@ -79,6 +81,7 @@ class CalendarSyncHandler:
                     Job.status != 'completed',
                     Job.status != 'cancelled'
                 )
+                .options(selectinload(Job.customer))
             )
             result = await db.execute(stmt)
             jobs = result.scalars().all()

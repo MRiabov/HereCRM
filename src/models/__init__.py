@@ -28,6 +28,7 @@ class ConversationStatus(str, enum.Enum):
 
 
 class PipelineStage(str, enum.Enum):
+    NEW_LEAD = "new_lead"
     NOT_CONTACTED = "not_contacted"
     CONTACTED = "contacted"
     CONVERTED_ONCE = "converted_once"
@@ -36,12 +37,40 @@ class PipelineStage(str, enum.Enum):
     LOST = "lost"
 
 
+class InvoiceStatus(str, enum.Enum):
+    PENDING = "pending"
+    SENT = "sent"
+    PAID = "paid"
+    OVERDUE = "overdue"
+    CANCELLED = "cancelled"
+
+
+class ExportStatus(str, enum.Enum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class PaymentStatus(str, enum.Enum):
+    PENDING = "pending"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    REFUNDED = "refunded"
+
+
 class QuoteStatus(str, enum.Enum):
     DRAFT = "draft"
     SENT = "sent"
     ACCEPTED = "accepted"
     REJECTED = "rejected"
     EXPIRED = "expired"
+
+
+class RequestStatus(str, enum.Enum):
+    PENDING = "pending"
+    CONVERTED = "converted"
+    DISMISSED = "dismissed"
 
 
 class QuickBooksSyncStatus(str, enum.Enum):
@@ -341,7 +370,10 @@ class Job(Base):
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), index=True)
     description: Mapped[Optional[str]] = mapped_column(Text)
-    status: Mapped[JobStatus] = mapped_column(SAEnum(JobStatus), default=JobStatus.PENDING)
+    status: Mapped[JobStatus] = mapped_column(
+        SAEnum(JobStatus, values_callable=lambda obj: [e.value for e in obj]), 
+        default=JobStatus.PENDING
+    )
     value: Mapped[Optional[float]] = mapped_column(Float)
 
     # Tax Information (Snapshot)
@@ -391,7 +423,7 @@ class Request(Base):
     # Original field renamed or mapped to description? 
     # Frontend uses 'description', Request model had 'content'. I will use 'description' for consistency.
     description: Mapped[str] = mapped_column(Text)
-    status: Mapped[str] = mapped_column(String, default="pending")
+    status: Mapped[RequestStatus] = mapped_column(SAEnum(RequestStatus), default=RequestStatus.PENDING)
     urgency: Mapped[str] = mapped_column(String, default="Medium")
     expected_value: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     expected_line_items: Mapped[Optional[str]] = mapped_column(String, nullable=True)
@@ -439,7 +471,7 @@ class Invoice(Base):
     s3_key: Mapped[str] = mapped_column(String)
     public_url: Mapped[str] = mapped_column(String)
     payment_link: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    status: Mapped[str] = mapped_column(String, default="SENT")
+    status: Mapped[InvoiceStatus] = mapped_column(SAEnum(InvoiceStatus), default=InvoiceStatus.SENT)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
@@ -566,7 +598,7 @@ class ExportRequest(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
-    status: Mapped[str] = mapped_column(String, default="pending")  # 'pending', 'processing', 'completed', 'failed'
+    status: Mapped[ExportStatus] = mapped_column(SAEnum(ExportStatus), default=ExportStatus.PENDING)
     query: Mapped[str] = mapped_column(Text)
     format: Mapped[str] = mapped_column(String)  # 'csv', 'excel', 'json'
     s3_key: Mapped[Optional[str]] = mapped_column(String)
@@ -621,7 +653,7 @@ class Payment(Base):
     amount: Mapped[float] = mapped_column(Float)
     payment_date: Mapped[datetime] = mapped_column(DateTime)
     payment_method: Mapped[str] = mapped_column(String)  # 'cash', 'card', 'bank_transfer', etc.
-    status: Mapped[str] = mapped_column(String, default="completed")
+    status: Mapped[PaymentStatus] = mapped_column(SAEnum(PaymentStatus), default=PaymentStatus.COMPLETED)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
