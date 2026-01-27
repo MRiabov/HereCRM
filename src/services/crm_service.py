@@ -1,11 +1,12 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from src.models import Job, Customer, PipelineStage, Business, PaymentTiming
+from src.models import Job, Customer, PipelineStage, Business, PaymentTiming, Request
 from src.repositories import JobRepository, CustomerRepository, RequestRepository
-from src.events import event_bus, JOB_CREATED, JOB_BOOKED, JOB_SCHEDULED, JOB_UPDATED
+from src.events import event_bus, JOB_CREATED, JOB_BOOKED, JOB_SCHEDULED, JOB_UPDATED, JOB_ASSIGNED, JOB_UNASSIGNED, JOB_PAID
 from datetime import datetime, timedelta, timezone
 from src.services.quote_service import QuoteService
+from src.services.geocoding import GeocodingService
 
 
 class CRMService:
@@ -56,6 +57,23 @@ class CRMService:
             estimated_duration=estimated_duration,
             employee_id=employee_id if employee_id and employee_id > 0 else None,
         )
+
+        # Automatic Geocoding
+        if location and (not job.latitude or not job.longitude):
+            geocoder = GeocodingService()
+            lat, lon, street, city, country, postcode, full_address = await geocoder.geocode(
+                location,
+                default_city=business.default_city if business else None,
+                default_country=business.default_country if business else None
+            )
+            if lat and lon:
+                job.latitude = lat
+                job.longitude = lon
+                if street:
+                    job.location = full_address # Update with normalized address
+                if postcode:
+                    job.postal_code = postcode
+
         self.job_repo.add(job)
         await self.session.flush() # Generate ID for default description
         
@@ -80,6 +98,31 @@ class CRMService:
                 {"job_id": job.id, "customer_id": customer_id, "business_id": self.business_id, "value": job.value},
             )
         return job
+
+    async def create_request(
+        self,
+        description: str,
+        customer_id: Optional[int] = None,
+        urgency: str = "Medium",
+        expected_value: Optional[float] = None,
+        expected_line_items: Optional[str] = None,
+        follow_up_date: Optional[datetime] = None,
+        customer_details: Optional[dict] = None,
+    ) -> Request:
+        request = Request(
+            business_id=self.business_id,
+            customer_id=customer_id,
+            description=description,
+            urgency=urgency,
+            expected_value=expected_value,
+            expected_line_items=expected_line_items,
+            follow_up_date=follow_up_date,
+            customer_details=customer_details,
+            status="pending"
+        )
+        self.request_repo.add(request)
+        await self.session.commit()
+        return request
 
     async def get_active_job_for_customer(self, phone_number: str) -> Optional[Job]:
         customer = await self.customer_repo.get_by_phone(phone_number, self.business_id)
@@ -165,7 +208,7 @@ class CRMService:
 
             job = await self.create_job(
                 customer_id=customer_id,
-                description=f"Converted from request: {req.content}. Time: {time or 'N/A'}",
+                description=f"Converted from request: {req.description}. Time: {time or 'N/A'}",
                 status="scheduled" if time else "pending",
                 scheduled_at=scheduled_at,
             )
@@ -177,14 +220,14 @@ class CRMService:
                 "action": "promote",
                 "entity": "job",
                 "id": job.id,
-                "old_request_content": req.content,
+                "old_request_description": req.description,
                 "description": job.description,
             }
 
         elif action == "complete":
             old_status = req.status
             req.status = "completed"
-            return f"✔ Request marked as completed: {req.content[:30]}", {
+            return f"✔ Request marked as completed: {req.description[:30]}", {
                 "action": "update",
                 "entity": "request",
                 "id": req.id,
@@ -194,7 +237,7 @@ class CRMService:
         elif action == "log":
              old_status = req.status
              req.status = "logged"
-             return f"✔ Request logged: {req.content[:30]}", {
+             return f"✔ Request logged: {req.description[:30]}", {
                  "action": "update",
                  "entity": "request",
                  "id": req.id,
@@ -229,11 +272,11 @@ class CRMService:
             await self.session.commit()
             await self.session.refresh(quote)
 
-            return f"✔ Converted Request to Quote: {req.content[:50]}", {
+            return f"✔ Converted Request to Quote: {req.description[:50]}", {
                 "action": "promote",
                 "entity": "quote",
                 "id": quote.id,
-                "old_request_content": req.content,
+                "old_request_description": req.description,
                 "customer_name": customers[0].name if customers else "General Customer",
             }
 
@@ -244,10 +287,12 @@ class CRMService:
         return {
             stage.value: {
                 "count": data["count"],
+                "value": data["value"],
                 "examples": [c.name for c in data["examples"]],
             }
             for stage, data in summary_data.items()
         }
+
 
     async def format_pipeline_summary(self) -> str:
         summary = await self.get_pipeline_summary()
@@ -331,6 +376,8 @@ class CRMService:
         line_items: Optional[list] = None,
         estimated_duration: Optional[int] = None,
         employee_id: Optional[int] = None,
+        location: Optional[str] = None,
+        postal_code: Optional[str] = None,
     ) -> Job:
         job = await self.job_repo.get_by_id(job_id, self.business_id)
         if not job:
@@ -340,6 +387,9 @@ class CRMService:
         old_status = job.status
         old_employee_id = job.employee_id
         old_paid = job.paid
+        old_location = job.location
+        old_latitude = job.latitude
+        old_longitude = job.longitude
 
         if description is not None:
             job.description = description
@@ -348,6 +398,10 @@ class CRMService:
             # If status explicitly set to 'paid', update the flag too
             if status.lower() == 'paid':
                 job.paid = True
+        if location is not None:
+            job.location = location
+        if postal_code is not None:
+            job.postal_code = postal_code
         if scheduled_at is not None:
             job.scheduled_at = scheduled_at
         if value is not None:
@@ -361,12 +415,29 @@ class CRMService:
             new_emp_id = employee_id if employee_id > 0 else None
             job.employee_id = new_emp_id
 
+        # Automatic Geocoding on Update
+        addr_to_geocode = location or job.location
+        if ((location is not None and location != old_location) or (job.location and (old_latitude is None or old_longitude is None))) and addr_to_geocode:
+            business = await self.session.get(Business, self.business_id)
+            geocoder = GeocodingService()
+            lat, lon, street, city, country, postcode, full_address = await geocoder.geocode(
+                addr_to_geocode,
+                default_city=business.default_city if business else None,
+                default_country=business.default_country if business else None
+            )
+            if lat and lon:
+                job.latitude = lat
+                job.longitude = lon
+                if street:
+                    job.location = full_address
+                if postcode:
+                    job.postal_code = postcode
+
         await self.session.commit()
         await self.session.refresh(job)
 
         # Emit JOB_PAID if paid status changed to True
         if job.paid and not old_paid:
-            from src.events import JOB_PAID
             await event_bus.emit(JOB_PAID, {
                 "job_id": job.id,
                 "customer_id": job.customer_id,
@@ -376,7 +447,6 @@ class CRMService:
 
         # Handle Assignment Events
         if employee_id is not None and job.employee_id != old_employee_id:
-            from src.events import JOB_ASSIGNED, JOB_UNASSIGNED
             if old_employee_id:
                 await event_bus.emit(JOB_UNASSIGNED, {
                     "job_id": job.id,

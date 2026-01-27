@@ -40,9 +40,12 @@ class CustomerSchema(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     pipeline_stage: str
+    job_count: int = 0
+    total_value: float = 0.0
 
     class Config:
         from_attributes = True
+
 
 class LineItemSchema(BaseModel):
     id: int
@@ -103,6 +106,7 @@ class JobCreate(BaseModel):
     location: Optional[str] = None
     employee_id: Optional[int] = None
     estimated_duration: int = 60
+    postal_code: Optional[str] = None
 
 class JobUpdate(BaseModel):
     description: Optional[str] = None
@@ -111,6 +115,8 @@ class JobUpdate(BaseModel):
     value: Optional[float] = None
     employee_id: Optional[int] = None
     estimated_duration: Optional[int] = None
+    location: Optional[str] = None
+    postal_code: Optional[str] = None
 
 # --- Chat Schemas ---
 
@@ -194,13 +200,37 @@ class QuoteCreate(BaseModel):
 
 class RequestSchema(BaseModel):
     id: int
-    content: str
+    description: str
     status: str
+    urgency: str
+    expected_value: Optional[float] = None
+    expected_line_items: Optional[str] = None
+    follow_up_date: Optional[datetime] = None
+    customer_id: Optional[int] = None
+    customer_details: Optional[Dict[str, Any]] = None
     created_at: datetime
-    customer_id: Optional[int] = None # Inferred from context usually
+    customer: Optional[CustomerSchema] = None
     
     class Config:
         from_attributes = True
+
+class RequestCreate(BaseModel):
+    customer_id: Optional[int] = None
+    description: str
+    urgency: str = "Medium"
+    expected_value: Optional[float] = None
+    expected_line_items: Optional[str] = None
+    follow_up_date: Optional[datetime] = None
+    customer_details: Optional[Dict[str, Any]] = None
+
+class RequestUpdate(BaseModel):
+    description: Optional[str] = None
+    status: Optional[str] = None
+    urgency: Optional[str] = None
+    expected_value: Optional[float] = None
+    expected_line_items: Optional[str] = None
+    follow_up_date: Optional[datetime] = None
+    customer_id: Optional[int] = None
 
 # --- Service Catalog Schemas ---
 

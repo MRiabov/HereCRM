@@ -276,7 +276,12 @@ class Customer(Base):
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
 
+    # Transient fields for API enrichment
+    job_count: int = 0
+    total_value: float = 0.0
+
     # Relationships
+
     business: Mapped["Business"] = relationship(back_populates="customers")
     jobs: Mapped[List["Job"]] = relationship(back_populates="customer")
     quotes: Mapped[List["Quote"]] = relationship(back_populates="customer")
@@ -348,14 +353,27 @@ class Request(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
-    content: Mapped[str] = mapped_column(Text)
+    customer_id: Mapped[Optional[int]] = mapped_column(ForeignKey("customers.id"), nullable=True, index=True)
+    
+    # Original field renamed or mapped to description? 
+    # Frontend uses 'description', Request model had 'content'. I will use 'description' for consistency.
+    description: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String, default="pending")
+    urgency: Mapped[str] = mapped_column(String, default="Medium")
+    expected_value: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    expected_line_items: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    follow_up_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    
+    # For leads where we haven't created a customer record yet
+    customer_details: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="requests")
+    customer: Mapped[Optional["Customer"]] = relationship()
 
 
 class ConversationState(Base):

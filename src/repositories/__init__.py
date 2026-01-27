@@ -176,21 +176,37 @@ class RequestRepository(BaseRepository[Request]):
         min_date: Optional[datetime] = None,
         max_date: Optional[datetime] = None,
         status: Optional[str] = None,
+        urgency: Optional[str] = None,
     ) -> List[Request]:
         conditions = [Request.business_id == business_id]
 
-        if query and query.strip().lower() not in ["all", "requests", "show requests"]:
-            conditions.append(Request.content.ilike(f"%{query}%"))
+        ignore_keywords = ["all", "requests", "show requests", "list requests"]
+        if query and query.strip().lower() not in ignore_keywords:
+            # Search in description and customer_details (JSON) or linked customer name
+            conditions.append(or_(
+                Request.description.ilike(f"%{query}%"),
+                Request.expected_line_items.ilike(f"%{query}%"),
+                # JSON search for customer_details (Postgres/SQLite specific but ilike usually works on strings)
+                # For SQLite/PG JSON search we might need something more specific if this fails, 
+                # but often cast to string works for basic search.
+                sa.cast(Request.customer_details, sa.String).ilike(f"%{query}%"),
+                # Join with customer to search by name
+                Customer.name.ilike(f"%{query}%"),
+                Customer.phone.ilike(f"%{query}%")
+            ))
 
         if status:
             conditions.append(Request.status == status)
+        
+        if urgency:
+            conditions.append(Request.urgency == urgency)
 
         if min_date:
             conditions.append(Request.created_at >= min_date)
         if max_date:
             conditions.append(Request.created_at <= max_date)
 
-        stmt = select(Request).where(and_(*conditions))
+        stmt = select(Request).outerjoin(Customer, Request.customer_id == Customer.id).where(and_(*conditions)).order_by(Request.created_at.desc())
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
@@ -214,6 +230,22 @@ class CustomerAvailabilityRepository(BaseRepository[CustomerAvailability]):
 class CustomerRepository(BaseRepository[Customer]):
     def __init__(self, session: AsyncSession):
         super().__init__(session, Customer)
+
+    async def get_stats_for_customers(self, customer_ids: List[int]) -> dict[int, dict]:
+        if not customer_ids:
+            return {}
+        stmt = (
+            select(
+                Job.customer_id,
+                func.count(Job.id),
+                func.sum(Job.value)
+            )
+            .where(Job.customer_id.in_(customer_ids))
+            .group_by(Job.customer_id)
+        )
+        result = await self.session.execute(stmt)
+        return {row[0]: {"job_count": row[1], "total_value": row[2] or 0.0} for row in result.all()}
+
 
     async def get_by_name(self, name: str, business_id: int) -> Optional[Customer]:
         query = select(Customer).where(
@@ -373,14 +405,19 @@ class CustomerRepository(BaseRepository[Customer]):
         return customers
 
     async def get_pipeline_summary(self, business_id: int, example_limit: int = 5) -> dict[PipelineStage, dict]:
-        # Aggregate counts directly in the database
-        count_stmt = (
-            select(Customer.pipeline_stage, func.count(Customer.id))
+        # Aggregate counts and total job values directly in the database
+        stats_stmt = (
+            select(
+                Customer.pipeline_stage, 
+                func.count(Customer.id.distinct()),
+                func.sum(Job.value)
+            )
+            .outerjoin(Job, Customer.id == Job.customer_id)
             .where(Customer.business_id == business_id)
             .group_by(Customer.pipeline_stage)
         )
-        result = await self.session.execute(count_stmt)
-        counts = dict(result.all())
+        result = await self.session.execute(stats_stmt)
+        stats = {row[0]: {"count": row[1], "value": row[2] or 0.0} for row in result.all()}
 
         summary = {}
         for stage in PipelineStage:
@@ -393,11 +430,14 @@ class CustomerRepository(BaseRepository[Customer]):
             example_result = await self.session.execute(example_stmt)
             examples = list(example_result.scalars().all())
 
+            stage_stats = stats.get(stage, {"count": 0, "value": 0.0})
             summary[stage] = {
-                "count": counts.get(stage, 0),
+                "count": stage_stats["count"],
+                "value": stage_stats["value"],
                 "examples": examples
             }
         return summary
+
 
 
     async def get_leads(self, business_id: int) -> List[Customer]:
