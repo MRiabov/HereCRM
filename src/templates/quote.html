@@ -142,16 +142,14 @@
 <!-- Totals Section -->
 <div class="flex justify-end mt-8">
 <div class="w-64 space-y-3">
-<!--
 <div class="flex justify-between text-sm">
 <span class="text-gray-500">Subtotal</span>
-<span class="font-medium">$825.00</span>
+<span class="font-medium">${{ "%.2f"|format(quote.subtotal) }}</span>
 </div>
 <div class="flex justify-between text-sm">
-<span class="text-gray-500">Tax (10%)</span>
-<span class="font-medium">$82.50</span>
+<span class="text-gray-500">Tax ({{ "%.0f"|format(quote.tax_rate * 100) }}%)</span>
+<span class="font-medium">${{ "%.2f"|format(quote.tax_amount) }}</span>
 </div>
--->
 <div class="flex justify-between items-center pt-3">
 <span class="text-base font-bold">Grand Total</span>
 <span class="text-2xl font-black text-primary">${{ "%.2f"|format(quote.total_amount) }}</span>

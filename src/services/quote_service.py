@@ -5,9 +5,10 @@ from datetime import datetime
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from src.models import Quote, QuoteLineItem, QuoteStatus, Job, LineItem, Request
+from src.models import Quote, QuoteLineItem, QuoteStatus, Job, LineItem, Request, Business, Customer
 from src.services.pdf_generator import pdf_generator
 from src.services.storage import storage_service
+from src.services.tax_calculator import tax_calculator
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,9 @@ class QuoteService:
             status="pending",
             description=f"Job from Quote #{quote.id}",
             value=quote.total_amount,
+            subtotal=quote.subtotal,
+            tax_amount=quote.tax_amount,
+            tax_rate=quote.tax_rate,
             line_items=[
                 LineItem(
                     description=item.description,
@@ -80,14 +84,22 @@ class QuoteService:
         """
         logger.info(f"Creating quote for customer {customer_id}, business {business_id}")
         
-        total_amount = 0.0
-        quote_items = []
+        # Fetch business to check tax settings
+        business = await self.session.get(Business, business_id)
+        if not business:
+             raise ValueError(f"Business {business_id} not found")
 
+        # Fetch customer (for future location-based tax)
+        customer = await self.session.get(Customer, customer_id)
+
+        # Calculate taxes
+        tax_result = tax_calculator.calculate_quote_tax(lines, business, customer)
+
+        quote_items = []
         for line in lines:
             quantity = line.get("quantity", 1.0)
             unit_price = line.get("unit_price", 0.0)
             line_total = quantity * unit_price
-            total_amount += line_total
 
             item = QuoteLineItem(
                 service_id=line.get("service_id"),
@@ -102,7 +114,10 @@ class QuoteService:
             customer_id=customer_id,
             business_id=business_id,
             status=QuoteStatus.DRAFT,
-            total_amount=total_amount,
+            total_amount=tax_result["total_amount"],
+            subtotal=tax_result["subtotal"],
+            tax_amount=tax_result["tax_amount"],
+            tax_rate=tax_result["tax_rate"],
             external_token=secrets.token_urlsafe(32),
             items=quote_items,
         )

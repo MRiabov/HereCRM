@@ -317,6 +317,12 @@ class Job(Base):
     description: Mapped[Optional[str]] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String, default="pending")
     value: Mapped[Optional[float]] = mapped_column(Float)
+
+    # Tax Information (Snapshot)
+    subtotal: Mapped[Optional[float]] = mapped_column(Float, default=0.0)
+    tax_amount: Mapped[Optional[float]] = mapped_column(Float, default=0.0)
+    tax_rate: Mapped[Optional[float]] = mapped_column(Float, default=0.0)
+
     location: Mapped[Optional[str]] = mapped_column(String)
     latitude: Mapped[Optional[float]] = mapped_column(Float)
     longitude: Mapped[Optional[float]] = mapped_column(Float)
@@ -476,6 +482,12 @@ class Quote(Base):
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     status: Mapped[QuoteStatus] = mapped_column(SAEnum(QuoteStatus), default=QuoteStatus.DRAFT)
     total_amount: Mapped[float] = mapped_column(Float, default=0.0)
+
+    # Tax Information
+    subtotal: Mapped[float] = mapped_column(Float, default=0.0)
+    tax_amount: Mapped[float] = mapped_column(Float, default=0.0)
+    tax_rate: Mapped[float] = mapped_column(Float, default=0.0)
+
     external_token: Mapped[str] = mapped_column(String, unique=True, index=True)
     blob_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True)

@@ -36,6 +36,9 @@ class CRMService:
         postal_code: Optional[str] = None,
         estimated_duration: int = 60,
         employee_id: Optional[int] = None,
+        subtotal: Optional[float] = 0.0,
+        tax_amount: Optional[float] = 0.0,
+        tax_rate: Optional[float] = 0.0,
     ) -> Job:
         # [T009] Check payment timing
         paid = False
@@ -48,6 +51,9 @@ class CRMService:
             customer_id=customer_id,
             description=description,
             value=value,
+            subtotal=subtotal,
+            tax_amount=tax_amount,
+            tax_rate=tax_rate,
             location=location,
             status=status,
             scheduled_at=scheduled_at,
