@@ -16,7 +16,11 @@ logger = logging.getLogger(__name__)
 
 class GoogleCalendarService:
     def __init__(self):
-        self.scopes = ['https://www.googleapis.com/auth/calendar']
+        self.scopes = [
+            'https://www.googleapis.com/auth/calendar',
+            'https://www.googleapis.com/auth/userinfo.email',
+            'openid'
+        ]
         
         # Check if Google credentials are configured
         self.is_configured = all([
