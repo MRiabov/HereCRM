@@ -150,6 +150,9 @@ class Business(Base):
     workflow_review_request_delay_hrs: Mapped[int] = mapped_column(Integer, default=2)
     workflow_review_link: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
+    # Automatic Messaging Templates & Triggers
+    marketing_settings: Mapped[dict] = mapped_column(JSON, default={})
+
     default_city: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     default_country: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     default_tax_rate: Mapped[float] = mapped_column(Float, default=0.0)

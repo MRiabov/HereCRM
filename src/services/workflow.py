@@ -37,6 +37,7 @@ class WorkflowSettingsService:
             "default_tax_rate": business.default_tax_rate,
             "seat_count": business.seat_limit,
             "billing_cycle_anchor": business.billing_cycle_anchor,
+            "marketing_settings": business.marketing_settings or {},
         }
 
     async def update_settings(self, business_id: int, **settings) -> Dict[str, Any]:
@@ -66,6 +67,7 @@ class WorkflowSettingsService:
             "default_city",
             "default_country",
             "default_tax_rate",
+            "marketing_settings",
         }
 
         for key, value in settings.items():
