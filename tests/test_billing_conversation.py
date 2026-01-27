@@ -7,7 +7,11 @@ from src.uimodels import GetBillingStatusTool, RequestUpgradeTool
 
 @pytest.fixture
 def mock_session():
-    return AsyncMock()
+    session = AsyncMock()
+    session.add = MagicMock()
+    session.delete = MagicMock()
+    session.refresh = AsyncMock()
+    return session
 
 @pytest.fixture
 def mock_parser():

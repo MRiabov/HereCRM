@@ -9,6 +9,8 @@ async def test_update_wage_config():
     Test updating an employee's wage configuration.
     """
     mock_db = AsyncMock()
+    mock_db.add = MagicMock()
+    mock_db.delete = MagicMock()
     mock_user = MagicMock(spec=User)
     mock_user.id = 1
     mock_user.business_id = 1

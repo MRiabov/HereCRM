@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 from src.tool_executor import ToolExecutor
 from src.uimodels import CheckETATool, LocateEmployeeTool
-from src.models import User, Job, Customer, UserRole, Business
+from src.models import User, Job, Customer, UserRole, Business, JobStatus
 from src.services.location_service import LocationService
 from datetime import datetime, timezone, timedelta
 
@@ -51,7 +51,7 @@ async def test_location_and_eta_flow(async_session):
         latitude=53.30,
         longitude=-6.20,
         location="123 Test St",
-        status="active"
+        status=JobStatus.IN_PROGRESS
     )
     async_session.add(job)
     await async_session.commit()

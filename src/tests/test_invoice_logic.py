@@ -143,7 +143,7 @@ async def test_existing_invoice_warning(session: AsyncSession, mock_s3_service, 
     session.add(customer)
     await session.flush()
     
-    job = Job(customer_id=customer.id, business_id=biz.id, description="Plumbing", value=200.0, status="done")
+    job = Job(customer_id=customer.id, business_id=biz.id, description="Plumbing", value=200.0, status=JobStatus.COMPLETED)
     session.add(job)
     await session.flush()
     

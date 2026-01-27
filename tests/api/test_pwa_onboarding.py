@@ -31,11 +31,9 @@ async def client(async_session):
     # Override get_current_user
     app.dependency_overrides[get_current_user] = mock_auth
     
-    # We need to find the router's dependencies and override the VerifyToken instance
-    from src.api.v1.pwa.router import router as pwa_router
-    for dep in pwa_router.dependencies:
-        # dep is a Depends object
-        app.dependency_overrides[dep.dependency] = mock_auth
+    # Override the verify_token dependency which is applied at router level
+    from src.api.dependencies.clerk_auth import verify_token
+    app.dependency_overrides[verify_token] = mock_auth
     
     app.dependency_overrides[get_db] = lambda: async_session
 
