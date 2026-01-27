@@ -63,7 +63,7 @@ class CRMService:
         description: Optional[str] = None,
         value: Optional[float] = None,
         location: Optional[str] = None,
-        status: str = JobStatus.PENDING,
+        status: str | JobStatus = JobStatus.PENDING,
         scheduled_at: Optional[datetime] = None,
         items: Optional[list] = None,
         postal_code: Optional[str] = None,
@@ -443,7 +443,7 @@ class CRMService:
         self,
         job_id: int,
         description: Optional[str] = None,
-        status: Optional[str] = None,
+        status: Optional[str | JobStatus] = None,
         scheduled_at: Optional[datetime] = None,
         value: Optional[float] = None,
         items: Optional[list] = None,
@@ -496,14 +496,20 @@ class CRMService:
             from src.services.time_tracking import TimeTrackingService
             tt_service = TimeTrackingService(self.session)
             
-            if status == JobStatus.IN_PROGRESS and old_status != JobStatus.IN_PROGRESS:
+            # Map 'done' to 'completed' for backward compatibility or ease of use
+            if status == "done":
+                status = JobStatus.COMPLETED
+            
+            new_status = JobStatus(status) if isinstance(status, str) else status
+            
+            if new_status == JobStatus.IN_PROGRESS and old_status != JobStatus.IN_PROGRESS:
                 await tt_service.start_job(job.id, self.user_id or job.employee_id)
-            elif status == JobStatus.PAUSED and old_status == JobStatus.IN_PROGRESS:
+            elif new_status == JobStatus.PAUSED and old_status == JobStatus.IN_PROGRESS:
                 await tt_service.pause_job(job.id)
-            elif status == JobStatus.COMPLETED and old_status in [JobStatus.IN_PROGRESS, JobStatus.PAUSED]:
+            elif new_status == JobStatus.COMPLETED and old_status in [JobStatus.IN_PROGRESS, JobStatus.PAUSED]:
                 await tt_service.finish_job(job.id)
             else:
-                job.status = status
+                job.status = new_status
                 
             # If status explicitly set to 'paid', update the flag too
             if status.lower() == 'paid':
