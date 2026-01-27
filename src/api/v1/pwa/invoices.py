@@ -21,8 +21,8 @@ async def list_invoices(
     # Retrieve invoices with Job and Customer info
     stmt = (
         select(Invoice)
-        .join(Job)
-        .join(Customer)
+        .join(Invoice.job)
+        .join(Job.customer)
         .where(Job.business_id == current_user.business_id)
         .options(
             joinedload(Invoice.job).joinedload(Job.customer)

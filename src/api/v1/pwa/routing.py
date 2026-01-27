@@ -28,14 +28,19 @@ async def geocode_address(
     address: str,
     city: Optional[str] = None,
     country: Optional[str] = None,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     geocoder = GeocodingService()
     lat, lon, street, city_res, country_res, postal_code, full_address = await geocoder.geocode(
         address,
         default_city=city or (current_user.preferences.get("default_city") if current_user.preferences else None),
-        default_country=country or (current_user.preferences.get("default_country") if current_user.preferences else None)
+        default_country=country or (current_user.preferences.get("default_country") if current_user.preferences else None),
+        session=db,
+        user_id=current_user.id
     )
+    
+    await db.commit() # Important to commit the geocoding count increment
     
     return GeocodeResponse(
         latitude=lat,

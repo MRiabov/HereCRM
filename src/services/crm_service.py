@@ -1,7 +1,7 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from src.models import Job, Customer, PipelineStage, Business, PaymentTiming, Request, LineItem, Service
+from src.models import Job, Customer, PipelineStage, Business, PaymentTiming, Request, LineItem, Service, User
 from src.repositories import JobRepository, CustomerRepository, RequestRepository
 from src.events import event_bus, JOB_CREATED, JOB_BOOKED, JOB_SCHEDULED, JOB_UPDATED, JOB_ASSIGNED, JOB_UNASSIGNED, JOB_PAID
 from datetime import datetime, timedelta, timezone
@@ -10,9 +10,10 @@ from src.services.geocoding import GeocodingService
 
 
 class CRMService:
-    def __init__(self, session: AsyncSession, business_id: int):
+    def __init__(self, session: AsyncSession, business_id: int, user_id: Optional[int] = None):
         self.session = session
         self.business_id = business_id
+        self.user_id = user_id
         self.job_repo = JobRepository(session)
         self.customer_repo = CustomerRepository(session)
         self.request_repo = RequestRepository(session)
@@ -121,7 +122,9 @@ class CRMService:
             lat, lon, street, city, country, postcode, full_address = await geocoder.geocode(
                 location,
                 default_city=business.default_city if business else None,
-                default_country=business.default_country if business else None
+                default_country=business.default_country if business else None,
+                session=self.session,
+                user_id=self.user_id
             )
             if lat and lon:
                 job.latitude = lat
@@ -516,7 +519,9 @@ class CRMService:
             lat, lon, street, city, country, postcode, full_address = await geocoder.geocode(
                 addr_to_geocode,
                 default_city=business.default_city if business else None,
-                default_country=business.default_country if business else None
+                default_country=business.default_country if business else None,
+                session=self.session,
+                user_id=self.user_id
             )
             if lat and lon:
                 job.latitude = lat

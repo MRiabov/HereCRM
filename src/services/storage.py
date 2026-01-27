@@ -46,9 +46,9 @@ class S3Service:
                 ContentType=content_type
             )
             return self.get_public_url(key)
-        except ClientError as e:
+        except Exception as e:
             logger.error(f"Failed to upload file to S3: {e}")
-            raise StorageError(f"S3 upload failed: {e}")
+            raise StorageError(f"S3 upload failed: {str(e)}")
 
     def get_public_url(self, key: str) -> str:
         """
