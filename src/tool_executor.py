@@ -19,7 +19,12 @@ from src.models import (
     PaymentTiming,
     JobCreationDefault,
     PipelineStage,
-    CampaignChannel
+    CampaignChannel,
+    JobStatus, # Added JobStatus
+    ConversationStatus, # Added ConversationStatus
+    QuoteStatus, # Added QuoteStatus
+    SyncType, # Added SyncType
+    SyncLogStatus, # Added SyncLogStatus
 )
 from src.events import event_bus
 from src.repositories import (
@@ -657,16 +662,16 @@ class ToolExecutor:
              default_setting = settings.get("workflow_job_creation_default") or JobCreationDefault.UNSCHEDULED
              
              if default_setting == JobCreationDefault.MARK_DONE:
-                 status = "done"
+                 status = JobStatus.COMPLETED
              elif default_setting == JobCreationDefault.AUTO_SCHEDULE:
-                 status = "pending" # TODO: Hook into auto-scheduler
+                 status = JobStatus.PENDING # TODO: Hook into auto-scheduler
              elif default_setting == JobCreationDefault.SCHEDULED_TODAY:
-                 status = "scheduled"
+                 status = JobStatus.SCHEDULED
                  # Set scheduled_at to now if not provided
                  if not scheduled_at:
                      scheduled_at = datetime.now(timezone.utc)
              else:
-                 status = "pending"
+                 status = JobStatus.PENDING
 
         # 4. Create job using CRMService to ensure events are fired
         crm_service = CRMService(self.session, self.business_id)
@@ -675,7 +680,7 @@ class ToolExecutor:
             description=description,
             value=job_value,
             location=tool.location,
-            status=status or ("scheduled" if tool.time else "pending"),
+            status=status or (JobStatus.SCHEDULED if tool.time else JobStatus.PENDING),
             scheduled_at=scheduled_at,
             items=items_dicts,
             postal_code=postal_code,
@@ -749,7 +754,7 @@ class ToolExecutor:
                 job_id=job.id,
                 scheduled_at=scheduled_at,
                 description=tool.description or (f"{job.description} (Scheduled: {tool.time})" if job.description and "(Scheduled:" not in job.description else job.description or f"(Scheduled: {tool.time})"),
-                status="scheduled",
+                status=JobStatus.SCHEDULED,
                 value=tool.price,
                 line_items=tool.line_items,
             )
@@ -760,7 +765,7 @@ class ToolExecutor:
                 "action": "update",
                 "entity": "job",
                 "id": job.id,
-                "old_status": "pending",
+                "old_status": JobStatus.PENDING,
                 "customer_name": job.customer.name,
                 "description": job.description,
             }
@@ -773,7 +778,7 @@ class ToolExecutor:
                 location=tool.location,
                 price=tool.price,
                 description=tool.description,
-                status="scheduled",
+                status=JobStatus.SCHEDULED, # Changed from "scheduled" to JobStatus.SCHEDULED
                 line_items=tool.line_items,
                 time=tool.time,
                 iso_time=tool.iso_time,

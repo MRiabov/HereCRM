@@ -6,7 +6,7 @@ import logging
 from src.services.messaging_service import messaging_service
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import User, Business
+from src.models import User, Business, JobStatus
 from src.repositories import JobRepository, UserRepository
 from src.services.routing.base import RoutingServiceProvider, RoutingSolution, RoutingException
 from src.services.routing.ors import OpenRouteServiceAdapter
@@ -63,7 +63,7 @@ class AutorouteToolExecutor:
             return None, "No employees found to route."
 
         # Jobs
-        pending_jobs = await self.job_repo.search(query="all", business_id=self.business_id, status="pending")
+        pending_jobs = await self.job_repo.search(query="all", business_id=self.business_id, status=JobStatus.PENDING)
         
         start_of_day = datetime.combine(target_date, datetime.min.time())
         end_of_day = datetime.combine(target_date, datetime.max.time())
@@ -71,7 +71,7 @@ class AutorouteToolExecutor:
         scheduled_jobs = await self.job_repo.search(
             query="all", 
             business_id=self.business_id, 
-            status="scheduled",
+            status=JobStatus.SCHEDULED,
             min_date=start_of_day,
             max_date=end_of_day,
             query_type="scheduled"
@@ -126,7 +126,7 @@ class AutorouteToolExecutor:
                     job = step.job
                     # Update job fields
                     job.employee_id = emp_id
-                    job.status = "scheduled"
+                    job.status = JobStatus.SCHEDULED
                     
                     if step.arrival_time:
                         # Arrival time is when the technician is expected to start/arrive
