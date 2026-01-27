@@ -31,7 +31,18 @@ async def list_customers(
     else:
         # TODO: Implement pagination in repo
         customers = await service.customer_repo.get_all(service.business_id)
+        
+    # Enrich with job stats
+    if customers:
+        customer_ids = [c.id for c in customers]
+        stats = await service.customer_repo.get_stats_for_customers(customer_ids)
+        for c in customers:
+            c_stats = stats.get(c.id, {"job_count": 0, "total_value": 0.0})
+            c.job_count = c_stats["job_count"]
+            c.total_value = c_stats["total_value"]
+            
     return customers
+
 
 @router.get("/{customer_id}", response_model=CustomerSchema)
 async def get_customer(

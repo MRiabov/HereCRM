@@ -751,7 +751,7 @@ class ToolExecutor:
         tool: AddRequestTool,  # Changed type hint from StoreRequestTool to AddRequestTool
     ) -> Tuple[str, Optional[Dict[str, Any]]]:  # Changed return type hint
         req = Request(
-            business_id=self.business_id, content=tool.content, status="pending"
+            business_id=self.business_id, description=tool.description, status="pending"
         )
         self.request_repo.add(req)
         await self.session.flush()
@@ -771,12 +771,12 @@ class ToolExecutor:
                     {"customer_id": customer.id, "business_id": self.business_id}
                 )
         return self.template_service.render(
-            "request_stored", content=tool.content[:50]
+            "request_stored", content=tool.description[:50]
         ), {
             "action": "create",
             "entity": "request",
             "id": req.id,
-            "content": tool.content,
+            "description": tool.description,
         }
 
     async def _execute_search(

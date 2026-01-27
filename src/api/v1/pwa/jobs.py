@@ -86,7 +86,7 @@ async def list_jobs(
     seen_job_ids = set()
     
     for user, jobs in schedules.items():
-        if employee_id and user.id != employee_id:
+        if employee_id and user and user.id != employee_id:
             continue
             
         for job in jobs:
@@ -130,7 +130,8 @@ async def create_job(
             status=job_data.status,
             scheduled_at=job_data.scheduled_at,
             estimated_duration=job_data.estimated_duration,
-            employee_id=job_data.employee_id
+            employee_id=job_data.employee_id,
+            postal_code=job_data.postal_code
         )
     
         # Reload with customer for schema validation
@@ -158,7 +159,9 @@ async def update_job(
             status=job_update.status,
             scheduled_at=job_update.scheduled_at,
             estimated_duration=job_update.estimated_duration,
-            employee_id=job_update.employee_id
+            employee_id=job_update.employee_id,
+            location=job_update.location,
+            postal_code=job_update.postal_code
         )
         return job
     except ValueError as e:

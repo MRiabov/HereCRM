@@ -214,11 +214,11 @@ class QuoteService:
             # Add a reference to the source request in description if possible
             # (Quote model doesn't have a long description, but QuoteLineItem has)
         else:
-            # Create a draft quote with a single descriptive item from the request content
+            # Create a draft quote with a single descriptive item from the request description
             quote = await self.create_quote(
                 customer_id, 
                 request.business_id, 
-                [{"description": f"Request: {request.content}", "quantity": 1, "unit_price": 0.0}]
+                [{"description": f"Request: {request.description}", "quantity": 1, "unit_price": 0.0}]
             )
 
         # Update request status instead of deleting (or follow Job conversion pattern)
