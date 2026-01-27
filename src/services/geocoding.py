@@ -26,9 +26,10 @@ def calculate_haversine_distance(lat1: float, lon1: float, lat2: float, lon2: fl
 class GeocodingService:
     _shared_client: Optional[httpx.AsyncClient] = None
 
-    def __init__(self, user_agent: str = "WhatsAppCRM/1.0"):
-        self.base_url = "https://nominatim.openstreetmap.org/search"
-        self.user_agent = user_agent
+    def __init__(self):
+        from src.config import settings
+        self.base_url = "https://api.geoapify.com/v1/geocode/search"
+        self.api_key = settings.geoapify_key
 
     @classmethod
     def get_client(cls) -> httpx.AsyncClient:
@@ -46,28 +47,30 @@ class GeocodingService:
         self, address: str
     ) -> Tuple[Optional[float], Optional[float], Optional[dict]]:
         """
-        Resolve an address string using Nominatim API.
-        Returns: (latitude, longitude, address_details) or (None, None, None).
+        Resolve an address string using GeoApify API.
+        Returns: (latitude, longitude, properties) or (None, None, None).
         """
-        if not address:
+        if not address or not self.api_key:
+            if not self.api_key:
+                logger.error("GeoApify API key is missing.")
             return None, None, None
 
-        params = {"q": address, "format": "json", "limit": 1, "addressdetails": 1}
-        headers = {"User-Agent": self.user_agent}
+        params = {"text": address, "format": "json", "limit": 1, "apiKey": self.api_key}
 
         try:
             client = self.get_client()
             response = await client.get(
-                self.base_url, params=params, headers=headers
+                self.base_url, params=params
             )
             response.raise_for_status()
             data = response.json()
 
-            if data and isinstance(data, list) and len(data) > 0:
-                lat = float(data[0]["lat"])
-                lon = float(data[0]["lon"])
-                details = data[0].get("address", {})
-                return lat, lon, details
+            if data and "results" in data and len(data["results"]) > 0:
+                result = data["results"][0]
+                lat = float(result["lat"])
+                lon = float(result["lon"])
+                # GeoApify returns details in the result object itself
+                return lat, lon, result
 
             logger.info(f"No results found for address: {address}")
             return None, None, None
@@ -117,8 +120,6 @@ class GeocodingService:
                 distance = calculate_haversine_distance(ref_lat, ref_lon, lat, lon)
                 if distance > max_distance_km:
                     logger.warning(f"Geocoding result for '{address}' is {distance:.2f}km away from {default_city}, exceeding safeguard limit of {max_distance_km}km.")
-                    # If it's too far, we treat it as not found or we could return a specific error
-                    # For now, returning None to trigger potential retries or error handling in caller
                     return None, None, None, None, None, None, None
 
         if not details:
@@ -131,17 +132,17 @@ class GeocodingService:
             full_address = ", ".join(addr_parts) if addr_parts else address
             return lat, lon, street, city, country, postcode, full_address
 
-        # Parse address details
-        street_name = details.get("road")
-        house_number = details.get("house_number")
-        street = f"{house_number} {street_name}" if house_number and street_name else (street_name or house_number)
+        # Parse GeoApify address details
+        street = details.get("street")
+        house_number = details.get("housenumber") or details.get("house_number")
+        if house_number and street:
+            street = f"{house_number} {street}"
+        elif house_number:
+            street = house_number
         
-        city = details.get("city") or details.get("town") or details.get("village") or details.get("suburb") or default_city
+        city = details.get("city") or details.get("municipality") or default_city
         country = details.get("country") or default_country
         postcode = details.get("postcode")
-
-        # Construct full address: "street, city, country, postcode"
-        addr_parts = [p for p in [street, city, country, postcode] if p]
-        full_address = ", ".join(addr_parts) if addr_parts else address
+        full_address = details.get("formatted") or address
 
         return lat, lon, street, city, country, postcode, full_address

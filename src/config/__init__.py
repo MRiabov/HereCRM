@@ -49,6 +49,9 @@ class Settings(BaseSettings):
     # OpenRouteService
     openrouteservice_api_key: Optional[str] = None
 
+    # GeoApify
+    geoapify_key: Optional[str] = None
+
     # Google Calendar Integration
     google_client_id: Optional[str] = None
     google_client_secret: Optional[str] = None
