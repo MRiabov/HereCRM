@@ -162,6 +162,7 @@ class DataManagementService:
         """
         Process an export request with structured filters and S3 upload.
         """
+        query = query or ""
         filters = filters or {}
         export_req = ExportRequest(
             business_id=business_id,
@@ -190,9 +191,11 @@ class DataManagementService:
                     pass
 
             data = []
+            headers = []
             
             # Dispatch to appropriate repository
             if entity_type == "job" or (query and "job" in query.lower()):
+                headers = ["id", "customer", "description", "status", "value", "scheduled_at", "location", "created_at"]
                 jobs = await self.job_repo.search(
                     query=query,
                     business_id=business_id,
@@ -215,6 +218,7 @@ class DataManagementService:
                     data.append(row)
 
             elif entity_type == "expense" or (query and "expense" in query.lower()):
+                headers = ["date", "amount", "category", "description", "job_id"]
                 from src.models import Expense
                 stmt = select(Expense).where(Expense.business_id == business_id)
                 if min_date: stmt = stmt.where(Expense.date >= min_date)
@@ -231,6 +235,7 @@ class DataManagementService:
                     })
 
             elif entity_type == "ledger" or (query and any(k in query.lower() for k in ["payroll", "ledger", "payout"])):
+                headers = ["date", "employee_id", "amount", "type", "description"]
                 from src.models import LedgerEntry
                 stmt = select(LedgerEntry).where(LedgerEntry.business_id == business_id)
                 if min_date: stmt = stmt.where(LedgerEntry.date >= min_date)
@@ -248,6 +253,7 @@ class DataManagementService:
             
             else:
                 # Default to Customer/Lead
+                headers = ["id", "name", "phone", "address", "notes", "stage", "created_at"]
                 customers = await self.customer_repo.search(
                     query=query, 
                     business_id=business_id,
@@ -270,7 +276,10 @@ class DataManagementService:
                     }
                     data.append(row)
 
-            df = pd.DataFrame(data)
+            if not data:
+                df = pd.DataFrame(columns=headers)
+            else:
+                df = pd.DataFrame(data)
 
             # 3. Format
             output = io.BytesIO()

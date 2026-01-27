@@ -29,9 +29,11 @@ async def trigger_export(
         export_format = "xlsx"
         
     # We'll trigger it directly for now since it's already async and handles its own status
+    query_text = payload.query or ""
+    
     export_req = await service.export_data(
         business_id=current_user.business_id,
-        query=payload.query or "",
+        query=query_text,
         format=export_format
     )
     
