@@ -21,9 +21,8 @@ class JobTimeTools:
 
     async def finish_job(self, tool: FinishJobTool) -> str:
         try:
-            job, start, end = await self.service.finish_job(tool.job_id)
-            duration = end - start
-            minutes = duration.total_seconds() / 60
-            return f"Job {job.id} finished. Duration: {minutes:.0f} minutes."
+            job, total_seconds = await self.service.finish_job(tool.job_id)
+            minutes = total_seconds / 60
+            return f"Job {job.id} finished. Total duration: {minutes:.0f} minutes."
         except ValueError as e:
             return f"Error: {str(e)}"

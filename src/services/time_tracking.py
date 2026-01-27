@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from src.models import User, Job
+from src.models import User, Job, JobStatus
 from typing import Optional, Tuple
 
 class TimeTrackingService:
@@ -42,30 +42,55 @@ class TimeTrackingService:
         if not job:
             raise ValueError(f"Job {job_id} not found")
         
-        # Use begun_at instead of started_at as per WP02 implementation
+        # If resuming from paused, begun_at will be set to now
         job.begun_at = datetime.now(timezone.utc)
-        job.status = "in_progress"
+        job.status = JobStatus.IN_PROGRESS
         job.employee_id = user_id
         await self.session.commit()
         return job
 
-    async def finish_job(self, job_id: int) -> Tuple[Job, datetime, datetime]:
+    async def pause_job(self, job_id: int) -> Job:
         job = await self.session.get(Job, job_id)
         if not job:
             raise ValueError(f"Job {job_id} not found")
         
-        if not job.begun_at:
-            raise ValueError("Job not started")
-        
+        if job.status != JobStatus.IN_PROGRESS or not job.begun_at:
+            return job # Already not in progress
+            
         # Ensure aware
         start_time = job.begun_at
         if start_time.tzinfo is None:
             start_time = start_time.replace(tzinfo=timezone.utc)
             
         end_time = datetime.now(timezone.utc)
+        duration = end_time - start_time
         
+        job.total_actual_duration_seconds += int(duration.total_seconds())
         job.begun_at = None
-        job.status = "completed"
+        job.status = JobStatus.PAUSED
+        await self.session.commit()
+        return job
+
+    async def finish_job(self, job_id: int) -> Tuple[Job, int]:
+        job = await self.session.get(Job, job_id)
+        if not job:
+            raise ValueError(f"Job {job_id} not found")
+        
+        total_duration = job.total_actual_duration_seconds
+        
+        if job.status == JobStatus.IN_PROGRESS and job.begun_at:
+            # Ensure aware
+            start_time = job.begun_at
+            if start_time.tzinfo is None:
+                start_time = start_time.replace(tzinfo=timezone.utc)
+                
+            end_time = datetime.now(timezone.utc)
+            duration = end_time - start_time
+            total_duration += int(duration.total_seconds())
+        
+        job.total_actual_duration_seconds = total_duration
+        job.begun_at = None
+        job.status = JobStatus.COMPLETED
         await self.session.commit()
         
-        return job, start_time, end_time
+        return job, total_duration

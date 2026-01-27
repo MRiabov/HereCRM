@@ -14,14 +14,20 @@ class CommissionStrategy(WageStrategy):
 
 class HourlyJobStrategy(WageStrategy):
     def calculate(self, config: WageConfiguration, context: Dict[str, Any]) -> float:
-        start_time = context.get("start_time")
-        end_time = context.get("end_time")
-        
-        if not start_time or not end_time:
-            raise KeyError("HourlyJobStrategy requires 'start_time' and 'end_time' in context")
-        
-        duration = end_time - start_time
-        duration_hours = duration.total_seconds() / 3600.0
+        # Check if actual duration is provided in seconds (preferred)
+        total_seconds = context.get("total_actual_duration_seconds")
+        if total_seconds is not None:
+            duration_hours = total_seconds / 3600.0
+        else:
+            # Fallback to start/end times
+            start_time = context.get("start_time")
+            end_time = context.get("end_time")
+            
+            if not start_time or not end_time:
+                raise KeyError("HourlyJobStrategy requires 'total_actual_duration_seconds' or 'start_time' and 'end_time' in context")
+            
+            duration = end_time - start_time
+            duration_hours = duration.total_seconds() / 3600.0
         
         if duration_hours < 0:
             return 0.0

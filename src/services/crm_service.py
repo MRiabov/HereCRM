@@ -1,7 +1,7 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from src.models import Job, Customer, PipelineStage, Business, PaymentTiming, Request, LineItem, Service, User
+from src.models import Job, JobStatus, Customer, PipelineStage, Business, PaymentTiming, Request, LineItem, Service, User
 from src.repositories import JobRepository, CustomerRepository, RequestRepository
 from src.events import event_bus, JOB_CREATED, JOB_BOOKED, JOB_SCHEDULED, JOB_UPDATED, JOB_ASSIGNED, JOB_UNASSIGNED, JOB_PAID
 from datetime import datetime, timedelta, timezone
@@ -63,7 +63,7 @@ class CRMService:
         description: Optional[str] = None,
         value: Optional[float] = None,
         location: Optional[str] = None,
-        status: str = "pending",
+        status: str = JobStatus.PENDING,
         scheduled_at: Optional[datetime] = None,
         items: Optional[list] = None,
         postal_code: Optional[str] = None,
@@ -154,7 +154,7 @@ class CRMService:
                 JOB_ASSIGNED,
                 {"job_id": job.id, "employee_id": job.employee_id, "business_id": self.business_id},
             )
-        if status == "booked":
+        if status == JobStatus.BOOKED:
             await event_bus.emit(
                 JOB_BOOKED,
                 {"job_id": job.id, "customer_id": customer_id, "business_id": self.business_id, "value": job.value},
@@ -271,7 +271,7 @@ class CRMService:
             job = await self.create_job(
                 customer_id=customer_id,
                 description=f"Converted from request: {req.description}. Time: {time or 'N/A'}",
-                status="scheduled" if time else "pending",
+                status=JobStatus.SCHEDULED if time else JobStatus.PENDING,
                 scheduled_at=scheduled_at,
             )
             await self.session.delete(req)
@@ -492,7 +492,19 @@ class CRMService:
         if description is not None:
             job.description = description
         if status is not None:
-            job.status = status
+            # Handle Time Tracking transitions
+            from src.services.time_tracking import TimeTrackingService
+            tt_service = TimeTrackingService(self.session)
+            
+            if status == JobStatus.IN_PROGRESS and old_status != JobStatus.IN_PROGRESS:
+                await tt_service.start_job(job.id, self.user_id or job.employee_id)
+            elif status == JobStatus.PAUSED and old_status == JobStatus.IN_PROGRESS:
+                await tt_service.pause_job(job.id)
+            elif status == JobStatus.COMPLETED and old_status in [JobStatus.IN_PROGRESS, JobStatus.PAUSED]:
+                await tt_service.finish_job(job.id)
+            else:
+                job.status = status
+                
             # If status explicitly set to 'paid', update the flag too
             if status.lower() == 'paid':
                 job.paid = True
@@ -572,7 +584,7 @@ class CRMService:
             )
 
         # Emit JOB_BOOKED if status changed to 'booked'
-        if status == "booked" and old_status != "booked":
+        if status == JobStatus.BOOKED and old_status != JobStatus.BOOKED:
             await event_bus.emit(
                 JOB_BOOKED,
                 {

@@ -100,6 +100,16 @@ class LedgerEntryType(str, enum.Enum):
     EXPENSE_REIMBURSEMENT = "expense_reimbursement"
 
 
+class JobStatus(str, enum.Enum):
+    PENDING = "pending"
+    SCHEDULED = "scheduled"
+    BOOKED = "booked"
+    IN_PROGRESS = "in_progress"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+    CANCELED = "canceled"
+
+
 class Business(Base):
     __tablename__ = "businesses"
 
@@ -326,7 +336,7 @@ class Job(Base):
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), index=True)
     description: Mapped[Optional[str]] = mapped_column(Text)
-    status: Mapped[str] = mapped_column(String, default="pending")
+    status: Mapped[JobStatus] = mapped_column(SAEnum(JobStatus), default=JobStatus.PENDING)
     value: Mapped[Optional[float]] = mapped_column(Float)
 
     # Tax Information (Snapshot)
@@ -348,6 +358,7 @@ class Job(Base):
     )
     estimated_duration: Mapped[int] = mapped_column(Integer, default=60)
     begun_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    total_actual_duration_seconds: Mapped[int] = mapped_column(Integer, default=0)
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="jobs")
