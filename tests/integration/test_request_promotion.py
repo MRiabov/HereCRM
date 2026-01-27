@@ -22,7 +22,7 @@ async def test_request_to_quote_promotion(async_session):
     # Include Alice in content so search works
     request = Request(
         business_id=business.id,
-        content="Alice: I need a quote for a new terrace",
+        description="Alice: I need a quote for a new terrace",
         status="pending"
     )
     async_session.add(request)
@@ -78,7 +78,7 @@ async def test_request_to_quote_promotion_with_id(async_session):
     
     request = Request(
         business_id=business.id,
-        content="Bob: Fix my window please",
+        description="Bob: Fix my window please",
         status="pending"
     )
     async_session.add(request)
