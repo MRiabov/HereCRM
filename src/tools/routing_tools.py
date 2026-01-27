@@ -6,11 +6,12 @@ import logging
 from src.services.messaging_service import messaging_service
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import User
+from src.models import User, Business
 from src.repositories import JobRepository, UserRepository
 from src.services.routing.base import RoutingServiceProvider, RoutingSolution, RoutingException
 from src.services.routing.ors import OpenRouteServiceAdapter
 from src.services.routing.mock import MockRoutingService
+from src.services.geocoding import GeocodingService
 from src.uimodels import AutorouteTool
 from src.config import settings
 from src.services.template_service import TemplateService
@@ -81,6 +82,23 @@ class AutorouteToolExecutor:
             all_jobs_map[j.id] = j
             
         all_jobs = list(all_jobs_map.values())
+        
+        # 1.5 Geocode missing locations
+        if all_jobs:
+            geocoder = GeocodingService()
+            business = await self.session.get(Business, self.business_id)
+            for job in all_jobs:
+                if job.location and (not job.latitude or not job.longitude):
+                    lat, lon, street, city, country, postcode, full_address = await geocoder.geocode(
+                        job.location,
+                        default_city=business.default_city if business else None,
+                        default_country=business.default_country if business else None
+                    )
+                    if lat and lon:
+                        job.latitude = lat
+                        job.longitude = lon
+                        if postcode and not job.postal_code:
+                            job.postal_code = postcode
         
         if not all_jobs:
             return None, f"No jobs found to route for {target_date} (checked pending and scheduled)."
