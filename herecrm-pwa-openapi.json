@@ -5,203 +5,6 @@
     "version": "1.0.0"
   },
   "paths": {
-    "/api/v1/pwa/analytics/proxy/{path}": {
-      "patch": {
-        "tags": [
-          "pwa-analytics"
-        ],
-        "summary": "Proxy Posthog",
-        "description": "Proxies requests to PostHog to bypass ad-blockers and avoid console errors.",
-        "operationId": "proxy_posthog_api_v1_pwa_analytics_proxy__path__patch",
-        "parameters": [
-          {
-            "name": "path",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "pwa-analytics"
-        ],
-        "summary": "Proxy Posthog",
-        "description": "Proxies requests to PostHog to bypass ad-blockers and avoid console errors.",
-        "operationId": "proxy_posthog_api_v1_pwa_analytics_proxy__path__patch",
-        "parameters": [
-          {
-            "name": "path",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "pwa-analytics"
-        ],
-        "summary": "Proxy Posthog",
-        "description": "Proxies requests to PostHog to bypass ad-blockers and avoid console errors.",
-        "operationId": "proxy_posthog_api_v1_pwa_analytics_proxy__path__patch",
-        "parameters": [
-          {
-            "name": "path",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "pwa-analytics"
-        ],
-        "summary": "Proxy Posthog",
-        "description": "Proxies requests to PostHog to bypass ad-blockers and avoid console errors.",
-        "operationId": "proxy_posthog_api_v1_pwa_analytics_proxy__path__patch",
-        "parameters": [
-          {
-            "name": "path",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "pwa-analytics"
-        ],
-        "summary": "Proxy Posthog",
-        "description": "Proxies requests to PostHog to bypass ad-blockers and avoid console errors.",
-        "operationId": "proxy_posthog_api_v1_pwa_analytics_proxy__path__patch",
-        "parameters": [
-          {
-            "name": "path",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/pwa/dashboard/stats": {
       "get": {
         "tags": [
@@ -241,6 +44,46 @@
                   },
                   "type": "array",
                   "title": "Response Get Recent Activity Api V1 Pwa Dashboard Recent Activity Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pwa/onboarding/choice/": {
+      "post": {
+        "tags": [
+          "pwa-onboarding"
+        ],
+        "summary": "Process Onboarding Choice",
+        "description": "Handle the user's choice to either keep their auto-created business \nor join an existing one via invite code.",
+        "operationId": "process_onboarding_choice_api_v1_pwa_onboarding_choice__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingChoice"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -2746,10 +2589,216 @@
           }
         }
       }
+    },
+    "/api/v1/pwa/analytics/proxy/{path}": {
+      "put": {
+        "tags": [
+          "pwa-analytics"
+        ],
+        "summary": "Proxy Posthog",
+        "description": "Proxies requests to PostHog to bypass ad-blockers and avoid console errors.",
+        "operationId": "proxy_posthog_api_v1_pwa_analytics_proxy__path__put",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Path"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "pwa-analytics"
+        ],
+        "summary": "Proxy Posthog",
+        "description": "Proxies requests to PostHog to bypass ad-blockers and avoid console errors.",
+        "operationId": "proxy_posthog_api_v1_pwa_analytics_proxy__path__put",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Path"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "pwa-analytics"
+        ],
+        "summary": "Proxy Posthog",
+        "description": "Proxies requests to PostHog to bypass ad-blockers and avoid console errors.",
+        "operationId": "proxy_posthog_api_v1_pwa_analytics_proxy__path__put",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Path"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "pwa-analytics"
+        ],
+        "summary": "Proxy Posthog",
+        "description": "Proxies requests to PostHog to bypass ad-blockers and avoid console errors.",
+        "operationId": "proxy_posthog_api_v1_pwa_analytics_proxy__path__put",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Path"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "pwa-analytics"
+        ],
+        "summary": "Proxy Posthog",
+        "description": "Proxies requests to PostHog to bypass ad-blockers and avoid console errors.",
+        "operationId": "proxy_posthog_api_v1_pwa_analytics_proxy__path__put",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Path"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "ActivityType": {
+        "type": "string",
+        "enum": [
+          "invoice",
+          "job",
+          "lead"
+        ],
+        "title": "ActivityType"
+      },
       "AddressSearchResult": {
         "properties": {
           "id": {
@@ -2758,25 +2807,40 @@
           },
           "address": {
             "type": "string",
+            "maxLength": 255,
             "title": "Address"
           },
           "customer": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Customer"
           },
           "type": {
-            "type": "string",
-            "title": "Type"
+            "$ref": "#/components/schemas/AddressSearchType"
           }
         },
         "type": "object",
         "required": [
           "id",
           "address",
-          "customer",
           "type"
         ],
         "title": "AddressSearchResult"
+      },
+      "AddressSearchType": {
+        "type": "string",
+        "enum": [
+          "customer",
+          "job"
+        ],
+        "title": "AddressSearchType"
       },
       "BusinessSettingsSchema": {
         "properties": {
@@ -2854,6 +2918,10 @@
             ],
             "title": "Workflow Show Whatsapp Button"
           },
+          "workflow_pipeline_quoted_stage": {
+            "type": "boolean",
+            "title": "Workflow Pipeline Quoted Stage"
+          },
           "workflow_job_creation_default": {
             "anyOf": [
               {
@@ -2868,7 +2936,8 @@
           "workflow_distance_unit": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 10
               },
               {
                 "type": "null"
@@ -2896,7 +2965,9 @@
           "workflow_review_link": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
               },
               {
                 "type": "null"
@@ -2907,7 +2978,9 @@
           "payment_link": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
               },
               {
                 "type": "null"
@@ -2918,7 +2991,8 @@
           "default_city": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -2929,7 +3003,8 @@
           "default_country": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -2976,7 +3051,8 @@
           "invite_code": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 50
               },
               {
                 "type": "null"
@@ -3018,12 +3094,11 @@
           "workflow_include_payment_terms",
           "workflow_enable_reminders",
           "workflow_show_whatsapp_button",
+          "workflow_pipeline_quoted_stage",
           "workflow_auto_quote_followup",
           "workflow_quote_followup_delay_hrs",
           "workflow_auto_review_requests",
           "workflow_review_request_delay_hrs",
-          "workflow_review_link",
-          "payment_link",
           "quickbooks_connected",
           "stripe_connected",
           "seat_count"
@@ -3106,6 +3181,17 @@
             ],
             "title": "Workflow Show Whatsapp Button"
           },
+          "workflow_pipeline_quoted_stage": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Pipeline Quoted Stage"
+          },
           "workflow_job_creation_default": {
             "anyOf": [
               {
@@ -3119,7 +3205,8 @@
           "workflow_distance_unit": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 10
               },
               {
                 "type": "null"
@@ -3174,7 +3261,9 @@
           "workflow_review_link": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
               },
               {
                 "type": "null"
@@ -3185,7 +3274,9 @@
           "payment_link": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
               },
               {
                 "type": "null"
@@ -3196,7 +3287,8 @@
           "default_city": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -3207,7 +3299,8 @@
           "default_country": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -3255,6 +3348,7 @@
         "properties": {
           "name": {
             "type": "string",
+            "maxLength": 100,
             "title": "Name"
           },
           "channel": {
@@ -3262,12 +3356,14 @@
           },
           "body": {
             "type": "string",
+            "maxLength": 5000,
             "title": "Body"
           },
           "subject": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 200
               },
               {
                 "type": "null"
@@ -3277,6 +3373,7 @@
           },
           "recipient_query": {
             "type": "string",
+            "maxLength": 500,
             "title": "Recipient Query",
             "default": "all"
           }
@@ -3297,6 +3394,7 @@
           },
           "name": {
             "type": "string",
+            "maxLength": 100,
             "title": "Name"
           },
           "channel": {
@@ -3364,6 +3462,7 @@
         "properties": {
           "tool_name": {
             "type": "string",
+            "maxLength": 100,
             "title": "Tool Name"
           },
           "arguments": {
@@ -3393,11 +3492,11 @@
             "title": "Id"
           },
           "role": {
-            "type": "string",
-            "title": "Role"
+            "$ref": "#/components/schemas/MessageRole"
           },
           "content": {
             "type": "string",
+            "maxLength": 5000,
             "title": "Content"
           },
           "timestamp": {
@@ -3428,6 +3527,7 @@
         "properties": {
           "message": {
             "type": "string",
+            "maxLength": 5000,
             "title": "Message"
           }
         },
@@ -3445,12 +3545,14 @@
           },
           "message": {
             "type": "string",
+            "maxLength": 5000,
             "title": "Message"
           },
           "retry_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -3505,7 +3607,8 @@
           "name": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 200
               },
               {
                 "type": "null"
@@ -3516,7 +3619,8 @@
           "first_name": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -3527,7 +3631,8 @@
           "last_name": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -3538,7 +3643,8 @@
           "phone": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^\\+?[1-9]\\d{1,14}$"
               },
               {
                 "type": "null"
@@ -3549,7 +3655,8 @@
           "email": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
               },
               {
                 "type": "null"
@@ -3560,7 +3667,8 @@
           "street": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 255
               },
               {
                 "type": "null"
@@ -3571,7 +3679,8 @@
           "city": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -3602,7 +3711,8 @@
           "name": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 200
               },
               {
                 "type": "null"
@@ -3613,7 +3723,8 @@
           "first_name": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -3624,7 +3735,8 @@
           "last_name": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -3635,7 +3747,8 @@
           "phone": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^\\+?[1-9]\\d{1,14}$"
               },
               {
                 "type": "null"
@@ -3646,7 +3759,8 @@
           "email": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
               },
               {
                 "type": "null"
@@ -3657,7 +3771,8 @@
           "street": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 255
               },
               {
                 "type": "null"
@@ -3668,7 +3783,8 @@
           "city": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -3679,7 +3795,8 @@
           "postal_code": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 20
               },
               {
                 "type": "null"
@@ -3735,7 +3852,8 @@
           "name": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 200
               },
               {
                 "type": "null"
@@ -3746,7 +3864,8 @@
           "first_name": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -3757,7 +3876,8 @@
           "last_name": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -3768,7 +3888,8 @@
           "phone": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^\\+?[1-9]\\d{1,14}$"
               },
               {
                 "type": "null"
@@ -3779,7 +3900,8 @@
           "email": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
               },
               {
                 "type": "null"
@@ -3790,7 +3912,8 @@
           "street": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 255
               },
               {
                 "type": "null"
@@ -3801,7 +3924,8 @@
           "city": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -3884,12 +4008,14 @@
           },
           "category": {
             "type": "string",
+            "maxLength": 100,
             "title": "Category"
           },
           "description": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 500
               },
               {
                 "type": "null"
@@ -3911,7 +4037,8 @@
           "vendor": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -3948,7 +4075,8 @@
           "description": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 500
               },
               {
                 "type": "null"
@@ -3958,6 +4086,7 @@
           },
           "category": {
             "type": "string",
+            "maxLength": 100,
             "title": "Category"
           },
           "amount": {
@@ -3972,7 +4101,8 @@
           "receipt_url": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 500
               },
               {
                 "type": "null"
@@ -4006,7 +4136,8 @@
           "query": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 500
               },
               {
                 "type": "null"
@@ -4041,6 +4172,7 @@
           },
           "query": {
             "type": "string",
+            "maxLength": 500,
             "title": "Query"
           },
           "format": {
@@ -4052,7 +4184,8 @@
           "public_url": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 500
               },
               {
                 "type": "null"
@@ -4113,7 +4246,8 @@
           "street": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 255
               },
               {
                 "type": "null"
@@ -4124,7 +4258,8 @@
           "city": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -4135,7 +4270,8 @@
           "country": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -4146,7 +4282,8 @@
           "postal_code": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 20
               },
               {
                 "type": "null"
@@ -4157,7 +4294,8 @@
           "full_address": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 500
               },
               {
                 "type": "null"
@@ -4169,12 +4307,7 @@
         "type": "object",
         "required": [
           "latitude",
-          "longitude",
-          "street",
-          "city",
-          "country",
-          "postal_code",
-          "full_address"
+          "longitude"
         ],
         "title": "GeocodeResponse"
       },
@@ -4200,7 +4333,8 @@
           "filename": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 255
               },
               {
                 "type": "null"
@@ -4236,7 +4370,6 @@
         "type": "object",
         "required": [
           "id",
-          "filename",
           "record_count",
           "status",
           "created_at"
@@ -4253,6 +4386,66 @@
             "type": "boolean",
             "title": "Force Regenerate",
             "default": false
+          },
+          "invoice_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Number"
+          },
+          "issued_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issued At"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/LineItemCreate"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
           }
         },
         "type": "object",
@@ -4285,12 +4478,14 @@
           },
           "public_url": {
             "type": "string",
+            "maxLength": 500,
             "title": "Public Url"
           },
           "customer_name": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 200
               },
               {
                 "type": "null"
@@ -4339,7 +4534,8 @@
           "description": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 1000
               },
               {
                 "type": "null"
@@ -4377,7 +4573,8 @@
           "location": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 255
               },
               {
                 "type": "null"
@@ -4410,7 +4607,8 @@
           "postal_code": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 20
               },
               {
                 "type": "null"
@@ -4453,6 +4651,7 @@
         "properties": {
           "date": {
             "type": "string",
+            "maxLength": 10,
             "title": "Date"
           },
           "jobs": {
@@ -4479,7 +4678,8 @@
           "description": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 1000
               },
               {
                 "type": "null"
@@ -4516,7 +4716,8 @@
           "location": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 255
               },
               {
                 "type": "null"
@@ -4556,6 +4757,23 @@
             "title": "Estimated Duration",
             "default": 60
           },
+          "begun_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Begun At"
+          },
+          "total_actual_duration_seconds": {
+            "type": "integer",
+            "title": "Total Actual Duration Seconds",
+            "default": 0
+          },
           "customer": {
             "anyOf": [
               {
@@ -4588,11 +4806,9 @@
         "type": "object",
         "required": [
           "id",
-          "description",
           "status",
           "scheduled_at",
           "value",
-          "location",
           "customer"
         ],
         "title": "JobSchema"
@@ -4615,7 +4831,8 @@
           "description": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 1000
               },
               {
                 "type": "null"
@@ -4681,7 +4898,8 @@
           "location": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 255
               },
               {
                 "type": "null"
@@ -4692,7 +4910,8 @@
           "postal_code": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 20
               },
               {
                 "type": "null"
@@ -4722,6 +4941,7 @@
         "properties": {
           "description": {
             "type": "string",
+            "maxLength": 500,
             "title": "Description"
           },
           "quantity": {
@@ -4760,6 +4980,7 @@
           },
           "description": {
             "type": "string",
+            "maxLength": 500,
             "title": "Description"
           },
           "quantity": {
@@ -4795,6 +5016,14 @@
           "total_price"
         ],
         "title": "LineItemSchema"
+      },
+      "MessageRole": {
+        "type": "string",
+        "enum": [
+          "user",
+          "assistant"
+        ],
+        "title": "MessageRole"
       },
       "OnboardingChoice": {
         "properties": {
@@ -4846,6 +5075,7 @@
           "new_lead",
           "not_contacted",
           "contacted",
+          "quoted",
           "converted_once",
           "converted_recurrent",
           "not_interested",
@@ -4862,7 +5092,8 @@
           "title": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 200
               },
               {
                 "type": "null"
@@ -4873,7 +5104,8 @@
           "location": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 255
               },
               {
                 "type": "null"
@@ -4884,7 +5116,8 @@
           "notes": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 1000
               },
               {
                 "type": "null"
@@ -4931,6 +5164,7 @@
           },
           "description": {
             "type": "string",
+            "maxLength": 500,
             "title": "Description"
           },
           "quantity": {
@@ -4986,12 +5220,14 @@
           },
           "external_token": {
             "type": "string",
+            "maxLength": 100,
             "title": "External Token"
           },
           "public_url": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 500
               },
               {
                 "type": "null"
@@ -5030,7 +5266,6 @@
           "total_amount",
           "status",
           "external_token",
-          "public_url",
           "created_at"
         ],
         "title": "QuoteSchema"
@@ -5058,15 +5293,16 @@
       "RecentActivity": {
         "properties": {
           "type": {
-            "type": "string",
-            "title": "Type"
+            "$ref": "#/components/schemas/ActivityType"
           },
           "title": {
             "type": "string",
+            "maxLength": 200,
             "title": "Title"
           },
           "description": {
             "type": "string",
+            "maxLength": 500,
             "title": "Description"
           },
           "timestamp": {
@@ -5111,11 +5347,11 @@
           },
           "description": {
             "type": "string",
+            "maxLength": 2000,
             "title": "Description"
           },
           "urgency": {
-            "type": "string",
-            "title": "Urgency",
+            "$ref": "#/components/schemas/Urgency",
             "default": "Medium"
           },
           "expected_value": {
@@ -5129,16 +5365,55 @@
             ],
             "title": "Expected Value"
           },
-          "expected_line_items": {
+          "subtotal": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Expected Line Items"
+            "title": "Subtotal",
+            "default": 0.0
+          },
+          "tax_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Amount",
+            "default": 0.0
+          },
+          "tax_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Rate",
+            "default": 0.0
+          },
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/LineItemCreate"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
           },
           "follow_up_date": {
             "anyOf": [
@@ -5179,14 +5454,14 @@
           },
           "description": {
             "type": "string",
+            "maxLength": 2000,
             "title": "Description"
           },
           "status": {
             "$ref": "#/components/schemas/RequestStatus"
           },
           "urgency": {
-            "type": "string",
-            "title": "Urgency"
+            "$ref": "#/components/schemas/Urgency"
           },
           "expected_value": {
             "anyOf": [
@@ -5199,16 +5474,20 @@
             ],
             "title": "Expected Value"
           },
-          "expected_line_items": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expected Line Items"
+          "subtotal": {
+            "type": "number",
+            "title": "Subtotal",
+            "default": 0.0
+          },
+          "tax_amount": {
+            "type": "number",
+            "title": "Tax Amount",
+            "default": 0.0
+          },
+          "tax_rate": {
+            "type": "number",
+            "title": "Tax Rate",
+            "default": 0.0
           },
           "follow_up_date": {
             "anyOf": [
@@ -5259,6 +5538,14 @@
                 "type": "null"
               }
             ]
+          },
+          "line_items": {
+            "items": {
+              "$ref": "#/components/schemas/LineItemSchema"
+            },
+            "type": "array",
+            "title": "Line Items",
+            "default": []
           }
         },
         "type": "object",
@@ -5285,7 +5572,8 @@
           "description": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2000
               },
               {
                 "type": "null"
@@ -5306,13 +5594,12 @@
           "urgency": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/Urgency"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Urgency"
+            ]
           },
           "expected_value": {
             "anyOf": [
@@ -5325,16 +5612,52 @@
             ],
             "title": "Expected Value"
           },
-          "expected_line_items": {
+          "subtotal": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Expected Line Items"
+            "title": "Subtotal"
+          },
+          "tax_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Amount"
+          },
+          "tax_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Rate"
+          },
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/LineItemCreate"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
           },
           "follow_up_date": {
             "anyOf": [
@@ -5371,6 +5694,7 @@
           },
           "employee_name": {
             "type": "string",
+            "maxLength": 100,
             "title": "Employee Name"
           },
           "steps": {
@@ -5421,6 +5745,7 @@
         "properties": {
           "date": {
             "type": "string",
+            "maxLength": 10,
             "title": "Date"
           },
           "metrics": {
@@ -5519,12 +5844,14 @@
         "properties": {
           "name": {
             "type": "string",
+            "maxLength": 100,
             "title": "Name"
           },
           "description": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 500
               },
               {
                 "type": "null"
@@ -5557,12 +5884,14 @@
           },
           "name": {
             "type": "string",
+            "maxLength": 100,
             "title": "Name"
           },
           "description": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 500
               },
               {
                 "type": "null"
@@ -5583,7 +5912,6 @@
         "required": [
           "id",
           "name",
-          "description",
           "default_price",
           "estimated_duration"
         ],
@@ -5599,6 +5927,24 @@
         ],
         "title": "SyncLogStatus"
       },
+      "Urgency": {
+        "type": "string",
+        "enum": [
+          "Low",
+          "Medium",
+          "High"
+        ],
+        "title": "Urgency"
+      },
+      "UserRole": {
+        "type": "string",
+        "enum": [
+          "owner",
+          "manager",
+          "employee"
+        ],
+        "title": "UserRole"
+      },
       "UserSchema": {
         "properties": {
           "id": {
@@ -5608,7 +5954,8 @@
           "name": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -5619,7 +5966,8 @@
           "email": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
               },
               {
                 "type": "null"
@@ -5630,7 +5978,8 @@
           "phone_number": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^\\+?[1-9]\\d{1,14}$"
               },
               {
                 "type": "null"
@@ -5639,8 +5988,7 @@
             "title": "Phone Number"
           },
           "role": {
-            "type": "string",
-            "title": "Role"
+            "$ref": "#/components/schemas/UserRole"
           },
           "current_latitude": {
             "anyOf": [
@@ -5712,9 +6060,6 @@
         "type": "object",
         "required": [
           "id",
-          "name",
-          "email",
-          "phone_number",
           "role"
         ],
         "title": "UserSchema"
@@ -5851,6 +6196,7 @@
         "properties": {
           "name": {
             "type": "string",
+            "maxLength": 100,
             "title": "Name"
           },
           "category": {
@@ -5866,6 +6212,7 @@
           },
           "language": {
             "type": "string",
+            "maxLength": 10,
             "title": "Language",
             "default": "en_US"
           }
@@ -5886,10 +6233,12 @@
           },
           "name": {
             "type": "string",
+            "maxLength": 100,
             "title": "Name"
           },
           "language": {
             "type": "string",
+            "maxLength": 10,
             "title": "Language"
           },
           "category": {
@@ -5909,7 +6258,8 @@
           "meta_template_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -5920,7 +6270,8 @@
           "rejection_reason": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 500
               },
               {
                 "type": "null"

@@ -3,137 +3,6 @@ info:
   title: HereCRM PWA API
   version: 1.0.0
 paths:
-  /api/v1/pwa/analytics/proxy/{path}:
-    patch:
-      tags:
-      - pwa-analytics
-      summary: Proxy Posthog
-      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
-        errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__patch
-      parameters:
-      - name: path
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    delete:
-      tags:
-      - pwa-analytics
-      summary: Proxy Posthog
-      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
-        errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__patch
-      parameters:
-      - name: path
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    post:
-      tags:
-      - pwa-analytics
-      summary: Proxy Posthog
-      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
-        errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__patch
-      parameters:
-      - name: path
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    put:
-      tags:
-      - pwa-analytics
-      summary: Proxy Posthog
-      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
-        errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__patch
-      parameters:
-      - name: path
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    get:
-      tags:
-      - pwa-analytics
-      summary: Proxy Posthog
-      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
-        errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__patch
-      parameters:
-      - name: path
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/pwa/dashboard/stats:
     get:
       tags:
@@ -164,6 +33,32 @@ paths:
                 type: array
                 title: Response Get Recent Activity Api V1 Pwa Dashboard Recent Activity
                   Get
+  /api/v1/pwa/onboarding/choice/:
+    post:
+      tags:
+      - pwa-onboarding
+      summary: Process Onboarding Choice
+      description: "Handle the user's choice to either keep their auto-created business\
+        \ \nor join an existing one via invite code."
+      operationId: process_onboarding_choice_api_v1_pwa_onboarding_choice__post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingChoice'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/pwa/onboarding/choice:
     post:
       tags:
@@ -1708,8 +1603,146 @@ paths:
           content:
             application/json:
               schema: {}
+  /api/v1/pwa/analytics/proxy/{path}:
+    put:
+      tags:
+      - pwa-analytics
+      summary: Proxy Posthog
+      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
+        errors.
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__put
+      parameters:
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - pwa-analytics
+      summary: Proxy Posthog
+      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
+        errors.
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__put
+      parameters:
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - pwa-analytics
+      summary: Proxy Posthog
+      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
+        errors.
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__put
+      parameters:
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - pwa-analytics
+      summary: Proxy Posthog
+      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
+        errors.
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__put
+      parameters:
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    patch:
+      tags:
+      - pwa-analytics
+      summary: Proxy Posthog
+      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
+        errors.
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__put
+      parameters:
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
 components:
   schemas:
+    ActivityType:
+      type: string
+      enum:
+      - invoice
+      - job
+      - lead
+      title: ActivityType
     AddressSearchResult:
       properties:
         id:
@@ -1717,20 +1750,28 @@ components:
           title: Id
         address:
           type: string
+          maxLength: 255
           title: Address
         customer:
-          type: string
+          anyOf:
+          - type: string
+            maxLength: 200
+          - type: 'null'
           title: Customer
         type:
-          type: string
-          title: Type
+          $ref: '#/components/schemas/AddressSearchType'
       type: object
       required:
       - id
       - address
-      - customer
       - type
       title: AddressSearchResult
+    AddressSearchType:
+      type: string
+      enum:
+      - customer
+      - job
+      title: AddressSearchType
     BusinessSettingsSchema:
       properties:
         workflow_invoicing:
@@ -1765,6 +1806,9 @@ components:
           - type: boolean
           - type: 'null'
           title: Workflow Show Whatsapp Button
+        workflow_pipeline_quoted_stage:
+          type: boolean
+          title: Workflow Pipeline Quoted Stage
         workflow_job_creation_default:
           anyOf:
           - $ref: '#/components/schemas/JobCreationDefault'
@@ -1773,6 +1817,7 @@ components:
         workflow_distance_unit:
           anyOf:
           - type: string
+            maxLength: 10
           - type: 'null'
           title: Workflow Distance Unit
           default: mi
@@ -1791,21 +1836,27 @@ components:
         workflow_review_link:
           anyOf:
           - type: string
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Workflow Review Link
         payment_link:
           anyOf:
           - type: string
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Payment Link
         default_city:
           anyOf:
           - type: string
+            maxLength: 100
           - type: 'null'
           title: Default City
         default_country:
           anyOf:
           - type: string
+            maxLength: 100
           - type: 'null'
           title: Default Country
         default_tax_rate:
@@ -1832,6 +1883,7 @@ components:
         invite_code:
           anyOf:
           - type: string
+            maxLength: 50
           - type: 'null'
           title: Invite Code
         billing_cycle_anchor:
@@ -1855,12 +1907,11 @@ components:
       - workflow_include_payment_terms
       - workflow_enable_reminders
       - workflow_show_whatsapp_button
+      - workflow_pipeline_quoted_stage
       - workflow_auto_quote_followup
       - workflow_quote_followup_delay_hrs
       - workflow_auto_review_requests
       - workflow_review_request_delay_hrs
-      - workflow_review_link
-      - payment_link
       - quickbooks_connected
       - stripe_connected
       - seat_count
@@ -1899,6 +1950,11 @@ components:
           - type: boolean
           - type: 'null'
           title: Workflow Show Whatsapp Button
+        workflow_pipeline_quoted_stage:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Workflow Pipeline Quoted Stage
         workflow_job_creation_default:
           anyOf:
           - $ref: '#/components/schemas/JobCreationDefault'
@@ -1906,6 +1962,7 @@ components:
         workflow_distance_unit:
           anyOf:
           - type: string
+            maxLength: 10
           - type: 'null'
           title: Workflow Distance Unit
         workflow_auto_quote_followup:
@@ -1931,21 +1988,27 @@ components:
         workflow_review_link:
           anyOf:
           - type: string
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Workflow Review Link
         payment_link:
           anyOf:
           - type: string
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Payment Link
         default_city:
           anyOf:
           - type: string
+            maxLength: 100
           - type: 'null'
           title: Default City
         default_country:
           anyOf:
           - type: string
+            maxLength: 100
           - type: 'null'
           title: Default Country
         default_tax_rate:
@@ -1972,19 +2035,23 @@ components:
       properties:
         name:
           type: string
+          maxLength: 100
           title: Name
         channel:
           $ref: '#/components/schemas/CampaignChannel'
         body:
           type: string
+          maxLength: 5000
           title: Body
         subject:
           anyOf:
           - type: string
+            maxLength: 200
           - type: 'null'
           title: Subject
         recipient_query:
           type: string
+          maxLength: 500
           title: Recipient Query
           default: all
       type: object
@@ -2000,6 +2067,7 @@ components:
           title: Id
         name:
           type: string
+          maxLength: 100
           title: Name
         channel:
           $ref: '#/components/schemas/CampaignChannel'
@@ -2049,6 +2117,7 @@ components:
       properties:
         tool_name:
           type: string
+          maxLength: 100
           title: Tool Name
         arguments:
           additionalProperties: true
@@ -2067,10 +2136,10 @@ components:
           - type: 'null'
           title: Id
         role:
-          type: string
-          title: Role
+          $ref: '#/components/schemas/MessageRole'
         content:
           type: string
+          maxLength: 5000
           title: Content
         timestamp:
           type: string
@@ -2094,6 +2163,7 @@ components:
       properties:
         message:
           type: string
+          maxLength: 5000
           title: Message
       type: object
       required:
@@ -2106,10 +2176,12 @@ components:
           title: Customer Id
         message:
           type: string
+          maxLength: 5000
           title: Message
         retry_id:
           anyOf:
           - type: string
+            maxLength: 100
           - type: 'null'
           title: Retry Id
       type: object
@@ -2144,36 +2216,43 @@ components:
         name:
           anyOf:
           - type: string
+            maxLength: 200
           - type: 'null'
           title: Name
         first_name:
           anyOf:
           - type: string
+            maxLength: 100
           - type: 'null'
           title: First Name
         last_name:
           anyOf:
           - type: string
+            maxLength: 100
           - type: 'null'
           title: Last Name
         phone:
           anyOf:
           - type: string
+            pattern: ^\+?[1-9]\d{1,14}$
           - type: 'null'
           title: Phone
         email:
           anyOf:
           - type: string
+            pattern: ^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$
           - type: 'null'
           title: Email
         street:
           anyOf:
           - type: string
+            maxLength: 255
           - type: 'null'
           title: Street
         city:
           anyOf:
           - type: string
+            maxLength: 100
           - type: 'null'
           title: City
         pipeline_stage:
@@ -2190,41 +2269,49 @@ components:
         name:
           anyOf:
           - type: string
+            maxLength: 200
           - type: 'null'
           title: Name
         first_name:
           anyOf:
           - type: string
+            maxLength: 100
           - type: 'null'
           title: First Name
         last_name:
           anyOf:
           - type: string
+            maxLength: 100
           - type: 'null'
           title: Last Name
         phone:
           anyOf:
           - type: string
+            pattern: ^\+?[1-9]\d{1,14}$
           - type: 'null'
           title: Phone
         email:
           anyOf:
           - type: string
+            pattern: ^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$
           - type: 'null'
           title: Email
         street:
           anyOf:
           - type: string
+            maxLength: 255
           - type: 'null'
           title: Street
         city:
           anyOf:
           - type: string
+            maxLength: 100
           - type: 'null'
           title: City
         postal_code:
           anyOf:
           - type: string
+            maxLength: 20
           - type: 'null'
           title: Postal Code
         latitude:
@@ -2257,36 +2344,43 @@ components:
         name:
           anyOf:
           - type: string
+            maxLength: 200
           - type: 'null'
           title: Name
         first_name:
           anyOf:
           - type: string
+            maxLength: 100
           - type: 'null'
           title: First Name
         last_name:
           anyOf:
           - type: string
+            maxLength: 100
           - type: 'null'
           title: Last Name
         phone:
           anyOf:
           - type: string
+            pattern: ^\+?[1-9]\d{1,14}$
           - type: 'null'
           title: Phone
         email:
           anyOf:
           - type: string
+            pattern: ^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$
           - type: 'null'
           title: Email
         street:
           anyOf:
           - type: string
+            maxLength: 255
           - type: 'null'
           title: Street
         city:
           anyOf:
           - type: string
+            maxLength: 100
           - type: 'null'
           title: City
         pipeline_stage:
@@ -2341,10 +2435,12 @@ components:
           title: Amount
         category:
           type: string
+          maxLength: 100
           title: Category
         description:
           anyOf:
           - type: string
+            maxLength: 500
           - type: 'null'
           title: Description
         job_id:
@@ -2355,6 +2451,7 @@ components:
         vendor:
           anyOf:
           - type: string
+            maxLength: 100
           - type: 'null'
           title: Vendor
         date:
@@ -2376,10 +2473,12 @@ components:
         description:
           anyOf:
           - type: string
+            maxLength: 500
           - type: 'null'
           title: Description
         category:
           type: string
+          maxLength: 100
           title: Category
         amount:
           type: number
@@ -2391,6 +2490,7 @@ components:
         receipt_url:
           anyOf:
           - type: string
+            maxLength: 500
           - type: 'null'
           title: Receipt Url
         job_id:
@@ -2410,6 +2510,7 @@ components:
         query:
           anyOf:
           - type: string
+            maxLength: 500
           - type: 'null'
           title: Query
         format:
@@ -2432,6 +2533,7 @@ components:
           title: Id
         query:
           type: string
+          maxLength: 500
           title: Query
         format:
           $ref: '#/components/schemas/ExportFormat'
@@ -2440,6 +2542,7 @@ components:
         public_url:
           anyOf:
           - type: string
+            maxLength: 500
           - type: 'null'
           title: Public Url
         created_at:
@@ -2477,37 +2580,37 @@ components:
         street:
           anyOf:
           - type: string
+            maxLength: 255
           - type: 'null'
           title: Street
         city:
           anyOf:
           - type: string
+            maxLength: 100
           - type: 'null'
           title: City
         country:
           anyOf:
           - type: string
+            maxLength: 100
           - type: 'null'
           title: Country
         postal_code:
           anyOf:
           - type: string
+            maxLength: 20
           - type: 'null'
           title: Postal Code
         full_address:
           anyOf:
           - type: string
+            maxLength: 500
           - type: 'null'
           title: Full Address
       type: object
       required:
       - latitude
       - longitude
-      - street
-      - city
-      - country
-      - postal_code
-      - full_address
       title: GeocodeResponse
     HTTPValidationError:
       properties:
@@ -2526,6 +2629,7 @@ components:
         filename:
           anyOf:
           - type: string
+            maxLength: 255
           - type: 'null'
           title: Filename
         record_count:
@@ -2546,7 +2650,6 @@ components:
       type: object
       required:
       - id
-      - filename
       - record_count
       - status
       - created_at
@@ -2560,6 +2663,35 @@ components:
           type: boolean
           title: Force Regenerate
           default: false
+        invoice_number:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Invoice Number
+        issued_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Issued At
+        due_date:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Due Date
+        notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Notes
+        items:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/LineItemCreate'
+            type: array
+          - type: 'null'
+          title: Items
       type: object
       required:
       - job_id
@@ -2583,10 +2715,12 @@ components:
           title: Created At
         public_url:
           type: string
+          maxLength: 500
           title: Public Url
         customer_name:
           anyOf:
           - type: string
+            maxLength: 200
           - type: 'null'
           title: Customer Name
       type: object
@@ -2622,6 +2756,7 @@ components:
         description:
           anyOf:
           - type: string
+            maxLength: 1000
           - type: 'null'
           title: Description
         status:
@@ -2641,6 +2776,7 @@ components:
         location:
           anyOf:
           - type: string
+            maxLength: 255
           - type: 'null'
           title: Location
         employee_id:
@@ -2656,6 +2792,7 @@ components:
         postal_code:
           anyOf:
           - type: string
+            maxLength: 20
           - type: 'null'
           title: Postal Code
         items:
@@ -2681,6 +2818,7 @@ components:
       properties:
         date:
           type: string
+          maxLength: 10
           title: Date
         jobs:
           items:
@@ -2700,6 +2838,7 @@ components:
         description:
           anyOf:
           - type: string
+            maxLength: 1000
           - type: 'null'
           title: Description
         status:
@@ -2718,6 +2857,7 @@ components:
         location:
           anyOf:
           - type: string
+            maxLength: 255
           - type: 'null'
           title: Location
         latitude:
@@ -2738,6 +2878,16 @@ components:
           type: integer
           title: Estimated Duration
           default: 60
+        begun_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Begun At
+        total_actual_duration_seconds:
+          type: integer
+          title: Total Actual Duration Seconds
+          default: 0
         customer:
           anyOf:
           - $ref: '#/components/schemas/CustomerSchema'
@@ -2755,11 +2905,9 @@ components:
       type: object
       required:
       - id
-      - description
       - status
       - scheduled_at
       - value
-      - location
       - customer
       title: JobSchema
     JobStatus:
@@ -2778,6 +2926,7 @@ components:
         description:
           anyOf:
           - type: string
+            maxLength: 1000
           - type: 'null'
           title: Description
         status:
@@ -2808,11 +2957,13 @@ components:
         location:
           anyOf:
           - type: string
+            maxLength: 255
           - type: 'null'
           title: Location
         postal_code:
           anyOf:
           - type: string
+            maxLength: 20
           - type: 'null'
           title: Postal Code
         items:
@@ -2828,6 +2979,7 @@ components:
       properties:
         description:
           type: string
+          maxLength: 500
           title: Description
         quantity:
           type: number
@@ -2853,6 +3005,7 @@ components:
           title: Id
         description:
           type: string
+          maxLength: 500
           title: Description
         quantity:
           type: number
@@ -2876,6 +3029,12 @@ components:
       - unit_price
       - total_price
       title: LineItemSchema
+    MessageRole:
+      type: string
+      enum:
+      - user
+      - assistant
+      title: MessageRole
     OnboardingChoice:
       properties:
         choice:
@@ -2908,6 +3067,7 @@ components:
       - new_lead
       - not_contacted
       - contacted
+      - quoted
       - converted_once
       - converted_recurrent
       - not_interested
@@ -2921,16 +3081,19 @@ components:
         title:
           anyOf:
           - type: string
+            maxLength: 200
           - type: 'null'
           title: Title
         location:
           anyOf:
           - type: string
+            maxLength: 255
           - type: 'null'
           title: Location
         notes:
           anyOf:
           - type: string
+            maxLength: 1000
           - type: 'null'
           title: Notes
         items:
@@ -2959,6 +3122,7 @@ components:
           title: Id
         description:
           type: string
+          maxLength: 500
           title: Description
         quantity:
           type: number
@@ -2997,10 +3161,12 @@ components:
           $ref: '#/components/schemas/QuoteStatus'
         external_token:
           type: string
+          maxLength: 100
           title: External Token
         public_url:
           anyOf:
           - type: string
+            maxLength: 500
           - type: 'null'
           title: Public Url
         created_at:
@@ -3024,7 +3190,6 @@ components:
       - total_amount
       - status
       - external_token
-      - public_url
       - created_at
       title: QuoteSchema
     QuoteStatus:
@@ -3046,13 +3211,14 @@ components:
     RecentActivity:
       properties:
         type:
-          type: string
-          title: Type
+          $ref: '#/components/schemas/ActivityType'
         title:
           type: string
+          maxLength: 200
           title: Title
         description:
           type: string
+          maxLength: 500
           title: Description
         timestamp:
           type: string
@@ -3080,9 +3246,11 @@ components:
           title: Customer Id
         description:
           type: string
+          maxLength: 2000
           title: Description
         urgency:
           $ref: '#/components/schemas/Urgency'
+          default: Medium
         expected_value:
           anyOf:
           - type: number
@@ -3108,9 +3276,9 @@ components:
           default: 0.0
         items:
           anyOf:
-          - type: array
-            items:
+          - items:
               $ref: '#/components/schemas/LineItemCreate'
+            type: array
           - type: 'null'
           title: Items
         follow_up_date:
@@ -3136,6 +3304,7 @@ components:
           title: Id
         description:
           type: string
+          maxLength: 2000
           title: Description
         status:
           $ref: '#/components/schemas/RequestStatus'
@@ -3184,9 +3353,9 @@ components:
           - $ref: '#/components/schemas/CustomerSchema'
           - type: 'null'
         line_items:
-          type: array
           items:
             $ref: '#/components/schemas/LineItemSchema'
+          type: array
           title: Line Items
           default: []
       type: object
@@ -3209,6 +3378,7 @@ components:
         description:
           anyOf:
           - type: string
+            maxLength: 2000
           - type: 'null'
           title: Description
         status:
@@ -3241,9 +3411,9 @@ components:
           title: Tax Rate
         items:
           anyOf:
-          - type: array
-            items:
+          - items:
               $ref: '#/components/schemas/LineItemCreate'
+            type: array
           - type: 'null'
           title: Items
         follow_up_date:
@@ -3266,6 +3436,7 @@ components:
           title: Employee Id
         employee_name:
           type: string
+          maxLength: 100
           title: Employee Name
         steps:
           items:
@@ -3303,6 +3474,7 @@ components:
       properties:
         date:
           type: string
+          maxLength: 10
           title: Date
         metrics:
           $ref: '#/components/schemas/RoutingMetrics'
@@ -3363,10 +3535,12 @@ components:
       properties:
         name:
           type: string
+          maxLength: 100
           title: Name
         description:
           anyOf:
           - type: string
+            maxLength: 500
           - type: 'null'
           title: Description
         default_price:
@@ -3388,10 +3562,12 @@ components:
           title: Id
         name:
           type: string
+          maxLength: 100
           title: Name
         description:
           anyOf:
           - type: string
+            maxLength: 500
           - type: 'null'
           title: Description
         default_price:
@@ -3404,7 +3580,6 @@ components:
       required:
       - id
       - name
-      - description
       - default_price
       - estimated_duration
       title: ServiceSchema
@@ -3416,6 +3591,20 @@ components:
       - partial_success
       - failed
       title: SyncLogStatus
+    Urgency:
+      type: string
+      enum:
+      - Low
+      - Medium
+      - High
+      title: Urgency
+    UserRole:
+      type: string
+      enum:
+      - owner
+      - manager
+      - employee
+      title: UserRole
     UserSchema:
       properties:
         id:
@@ -3424,21 +3613,23 @@ components:
         name:
           anyOf:
           - type: string
+            maxLength: 100
           - type: 'null'
           title: Name
         email:
           anyOf:
           - type: string
+            pattern: ^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$
           - type: 'null'
           title: Email
         phone_number:
           anyOf:
           - type: string
+            pattern: ^\+?[1-9]\d{1,14}$
           - type: 'null'
           title: Phone Number
         role:
-          type: string
-          title: Role
+          $ref: '#/components/schemas/UserRole'
         current_latitude:
           anyOf:
           - type: number
@@ -3472,9 +3663,6 @@ components:
       type: object
       required:
       - id
-      - name
-      - email
-      - phone_number
       - role
       title: UserSchema
     ValidationError:
@@ -3498,13 +3686,6 @@ components:
       - msg
       - type
       title: ValidationError
-    Urgency:
-      type: string
-      enum:
-      - Low
-      - Medium
-      - High
-      title: Urgency
     WageConfigurationSchema:
       properties:
         model_type:
@@ -3567,6 +3748,7 @@ components:
       properties:
         name:
           type: string
+          maxLength: 100
           title: Name
         category:
           $ref: '#/components/schemas/WhatsAppTemplateCategory'
@@ -3578,6 +3760,7 @@ components:
           title: Components
         language:
           type: string
+          maxLength: 10
           title: Language
           default: en_US
       type: object
@@ -3593,9 +3776,11 @@ components:
           title: Id
         name:
           type: string
+          maxLength: 100
           title: Name
         language:
           type: string
+          maxLength: 10
           title: Language
         category:
           $ref: '#/components/schemas/WhatsAppTemplateCategory'
@@ -3610,11 +3795,13 @@ components:
         meta_template_id:
           anyOf:
           - type: string
+            maxLength: 100
           - type: 'null'
           title: Meta Template Id
         rejection_reason:
           anyOf:
           - type: string
+            maxLength: 500
           - type: 'null'
           title: Rejection Reason
       type: object
