@@ -326,11 +326,13 @@ service_catalog_matching: |
   MATCHING RULES:
   1. If a line item matches a service in the CATALOG (semantically or strictly - most of the time there is a match):
      - Set 'service_id' to the integer ID from the catalog.
-     - Set 'service_name' to the Name from the catalog.
+     - Set 'service_name' to the EXACT Name from the catalog.
+     - Set 'description' to the EXACT catalog service name. DO NOT shorten or abbreviate!
+       Example: If catalog has "Exterior Window Cleaning", use "Exterior Window Cleaning" - NOT "windows".
      - Set 'unit_price' to the catalog price (unless user specifies a custom overriding price).
      - ALWAYS leave 'total_price' as NULL; the backend will calculate it from quantity and unit price.
   2. If NO match is found in the catalog, leave 'service_id' and 'service_name' as null and extract details from text.
-
+  
 settings_current_services: |
   
   CURRENT SERVICES:
