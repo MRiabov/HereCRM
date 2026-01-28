@@ -774,6 +774,44 @@
       }
     },
     "/api/v1/pwa/requests/{request_id}": {
+      "delete": {
+        "tags": [
+          "pwa-requests"
+        ],
+        "summary": "Delete Request",
+        "operationId": "delete_request_api_v1_pwa_requests__request_id__delete",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
       "get": {
         "tags": [
           "pwa-requests"
@@ -849,44 +887,6 @@
                 "schema": {
                   "$ref": "#/components/schemas/RequestSchema"
                 }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "pwa-requests"
-        ],
-        "summary": "Delete Request",
-        "operationId": "delete_request_api_v1_pwa_requests__request_id__delete",
-        "parameters": [
-          {
-            "name": "request_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Request Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
               }
             }
           },
@@ -1104,45 +1104,6 @@
       }
     },
     "/api/v1/pwa/invoices/": {
-      "post": {
-        "tags": [
-          "pwa-invoices"
-        ],
-        "summary": "Create Invoice",
-        "operationId": "create_invoice_api_v1_pwa_invoices__post",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/InvoiceCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InvoiceSchema"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
       "get": {
         "tags": [
           "pwa-invoices"
@@ -1178,6 +1139,45 @@
                     "$ref": "#/components/schemas/InvoiceSchema"
                   },
                   "title": "Response List Invoices Api V1 Pwa Invoices  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "pwa-invoices"
+        ],
+        "summary": "Create Invoice",
+        "operationId": "create_invoice_api_v1_pwa_invoices__post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoiceCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceSchema"
                 }
               }
             }
@@ -2591,13 +2591,13 @@
       }
     },
     "/api/v1/pwa/analytics/proxy/{path}": {
-      "patch": {
+      "delete": {
         "tags": [
           "pwa-analytics"
         ],
         "summary": "Proxy Posthog",
         "description": "Proxies requests to PostHog to bypass ad-blockers and avoid console errors.",
-        "operationId": "proxy_posthog_api_v1_pwa_analytics_proxy__path__patch",
+        "operationId": "proxy_posthog_api_v1_pwa_analytics_proxy__path__delete",
         "parameters": [
           {
             "name": "path",
@@ -2630,7 +2630,46 @@
           }
         }
       },
-      "put": {
+      "get": {
+        "tags": [
+          "pwa-analytics"
+        ],
+        "summary": "Proxy Posthog",
+        "description": "Proxies requests to PostHog to bypass ad-blockers and avoid console errors.",
+        "operationId": "proxy_posthog_api_v1_pwa_analytics_proxy__path__get",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Path"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
         "tags": [
           "pwa-analytics"
         ],
@@ -2675,7 +2714,7 @@
         ],
         "summary": "Proxy Posthog",
         "description": "Proxies requests to PostHog to bypass ad-blockers and avoid console errors.",
-        "operationId": "proxy_posthog_api_v1_pwa_analytics_proxy__path__patch",
+        "operationId": "proxy_posthog_api_v1_pwa_analytics_proxy__path__post",
         "parameters": [
           {
             "name": "path",
@@ -2708,52 +2747,13 @@
           }
         }
       },
-      "delete": {
+      "put": {
         "tags": [
           "pwa-analytics"
         ],
         "summary": "Proxy Posthog",
         "description": "Proxies requests to PostHog to bypass ad-blockers and avoid console errors.",
-        "operationId": "proxy_posthog_api_v1_pwa_analytics_proxy__path__patch",
-        "parameters": [
-          {
-            "name": "path",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "pwa-analytics"
-        ],
-        "summary": "Proxy Posthog",
-        "description": "Proxies requests to PostHog to bypass ad-blockers and avoid console errors.",
-        "operationId": "proxy_posthog_api_v1_pwa_analytics_proxy__path__patch",
+        "operationId": "proxy_posthog_api_v1_pwa_analytics_proxy__path__put",
         "parameters": [
           {
             "name": "path",
@@ -2803,11 +2803,13 @@
         "properties": {
           "id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Id"
           },
           "address": {
             "type": "string",
             "maxLength": 255,
+            "minLength": 1,
             "title": "Address"
           },
           "customer": {
@@ -2950,6 +2952,7 @@
           },
           "workflow_quote_followup_delay_hrs": {
             "type": "integer",
+            "minimum": 0.0,
             "title": "Workflow Quote Followup Delay Hrs"
           },
           "workflow_auto_review_requests": {
@@ -2958,6 +2961,7 @@
           },
           "workflow_review_request_delay_hrs": {
             "type": "integer",
+            "minimum": 0.0,
             "title": "Workflow Review Request Delay Hrs"
           },
           "workflow_review_link": {
@@ -3013,7 +3017,8 @@
           "default_tax_rate": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -3044,6 +3049,7 @@
           },
           "seat_count": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Seat Count"
           },
           "invite_code": {
@@ -3073,14 +3079,12 @@
           "marketing_settings": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/MarketingSettingsSchema"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Marketing Settings"
+            ]
           }
         },
         "type": "object",
@@ -3307,7 +3311,8 @@
           "default_tax_rate": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -3318,14 +3323,12 @@
           "marketing_settings": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/MarketingSettingsSchema"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Marketing Settings"
+            ]
           }
         },
         "type": "object",
@@ -3335,7 +3338,7 @@
         "type": "string",
         "enum": [
           "WHATSAPP",
-          "email",
+          "EMAIL",
           "SMS"
         ],
         "title": "CampaignChannel"
@@ -3370,6 +3373,7 @@
           "recipient_query": {
             "type": "string",
             "maxLength": 500,
+            "minLength": 1,
             "title": "Recipient Query",
             "default": "all"
           }
@@ -3386,6 +3390,7 @@
         "properties": {
           "id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Id"
           },
           "name": {
@@ -3401,15 +3406,20 @@
           },
           "total_recipients": {
             "type": "integer",
+            "minimum": 0.0,
             "title": "Total Recipients"
           },
           "sent_count": {
             "type": "integer",
-            "title": "Sent Count"
+            "minimum": 0.0,
+            "title": "Sent Count",
+            "default": 0
           },
           "failed_count": {
             "type": "integer",
-            "title": "Failed Count"
+            "minimum": 0.0,
+            "title": "Failed Count",
+            "default": 0
           },
           "created_at": {
             "type": "string",
@@ -3436,8 +3446,6 @@
           "channel",
           "status",
           "total_recipients",
-          "sent_count",
-          "failed_count",
           "created_at"
         ],
         "title": "CampaignSchema"
@@ -3479,7 +3487,8 @@
           "id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -3508,6 +3517,16 @@
             "type": "boolean",
             "title": "Is Executed",
             "default": false
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChatMessageMetadataSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -3518,6 +3537,84 @@
           "is_outbound"
         ],
         "title": "ChatMessage"
+      },
+      "ChatMessageMetadataSchema": {
+        "properties": {
+          "tool_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Name"
+          },
+          "arguments": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arguments"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "tool": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "ChatMessageMetadataSchema"
       },
       "ChatMessageUpdate": {
         "properties": {
@@ -3537,6 +3634,7 @@
         "properties": {
           "customer_id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Customer Id"
           },
           "message": {
@@ -3698,10 +3796,101 @@
         "type": "object",
         "title": "CustomerCreate"
       },
+      "CustomerDetailsSchema": {
+        "properties": {
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "(^\\+?[1-9]\\d{1,14}$|^$)"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$|^$)"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "street": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Street"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "title": "CustomerDetailsSchema"
+      },
       "CustomerSchema": {
         "properties": {
           "id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Id"
           },
           "name": {
@@ -3827,11 +4016,13 @@
           },
           "job_count": {
             "type": "integer",
+            "minimum": 0.0,
             "title": "Job Count",
             "default": 0
           },
           "total_value": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Total Value",
             "default": 0.0
           }
@@ -3947,20 +4138,26 @@
         "properties": {
           "revenue_monthly": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Revenue Monthly"
           },
           "active_leads_count": {
             "type": "integer",
+            "minimum": 0.0,
             "title": "Active Leads Count"
           },
           "leads_need_followup": {
             "type": "integer",
+            "minimum": 0.0,
             "title": "Leads Need Followup"
           },
           "pipeline_breakdown": {
-            "additionalProperties": true,
+            "additionalProperties": {
+              "type": "integer"
+            },
             "type": "object",
-            "title": "Pipeline Breakdown"
+            "title": "Pipeline Breakdown",
+            "description": "Map of pipeline stage to count"
           }
         },
         "type": "object",
@@ -4020,6 +4217,7 @@
         "properties": {
           "amount": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Amount"
           },
           "category": {
@@ -4040,7 +4238,8 @@
           "job_id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -4084,6 +4283,7 @@
         "properties": {
           "id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Id"
           },
           "description": {
@@ -4181,6 +4381,7 @@
         "properties": {
           "id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Id"
           },
           "query": {
@@ -4248,7 +4449,9 @@
           "latitude": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "maximum": 90.0,
+                "minimum": -90.0
               },
               {
                 "type": "null"
@@ -4259,7 +4462,9 @@
           "longitude": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "maximum": 180.0,
+                "minimum": -180.0
               },
               {
                 "type": "null"
@@ -4329,10 +4534,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "latitude",
-          "longitude"
-        ],
         "title": "GeocodeResponse"
       },
       "HTTPValidationError": {
@@ -4352,6 +4553,7 @@
         "properties": {
           "id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Id"
           },
           "filename": {
@@ -4368,6 +4570,7 @@
           },
           "record_count": {
             "type": "integer",
+            "minimum": 0.0,
             "title": "Record Count"
           },
           "status": {
@@ -4404,6 +4607,7 @@
         "properties": {
           "job_id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Job Id"
           },
           "force_regenerate": {
@@ -4482,14 +4686,17 @@
         "properties": {
           "id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Id"
           },
           "job_id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Job Id"
           },
           "total_amount": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Total Amount"
           },
           "status": {
@@ -4554,6 +4761,7 @@
         "properties": {
           "customer_id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Customer Id"
           },
           "description": {
@@ -4587,7 +4795,8 @@
           "value": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -4610,7 +4819,8 @@
           "employee_id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -4621,7 +4831,8 @@
           "estimated_duration": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -4698,6 +4909,7 @@
         "properties": {
           "id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Id"
           },
           "description": {
@@ -4730,7 +4942,8 @@
           "value": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -4779,6 +4992,7 @@
           },
           "estimated_duration": {
             "type": "integer",
+            "minimum": 0.0,
             "title": "Estimated Duration",
             "default": 60
           },
@@ -4796,6 +5010,7 @@
           },
           "total_actual_duration_seconds": {
             "type": "integer",
+            "minimum": 0.0,
             "title": "Total Actual Duration Seconds",
             "default": 0
           },
@@ -4833,7 +5048,6 @@
           "id",
           "status",
           "scheduled_at",
-          "value",
           "customer"
         ],
         "title": "JobSchema"
@@ -4890,7 +5104,8 @@
           "value": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -4901,7 +5116,8 @@
           "employee_id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -4912,7 +5128,8 @@
           "estimated_duration": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -4967,21 +5184,25 @@
           "description": {
             "type": "string",
             "maxLength": 500,
+            "minLength": 1,
             "title": "Description"
           },
           "quantity": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Quantity",
             "default": 1.0
           },
           "unit_price": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Unit Price"
           },
           "service_id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -5001,29 +5222,35 @@
         "properties": {
           "id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Id"
           },
           "description": {
             "type": "string",
             "maxLength": 500,
+            "minLength": 1,
             "title": "Description"
           },
           "quantity": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Quantity"
           },
           "unit_price": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Unit Price"
           },
           "total_price": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Total Price"
           },
           "service_id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -5042,6 +5269,79 @@
         ],
         "title": "LineItemSchema"
       },
+      "MarketingSettingsSchema": {
+        "properties": {
+          "triggers": {
+            "$ref": "#/components/schemas/MarketingTriggerSettingsSchema"
+          },
+          "templates": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/MarketingTemplateSchema"
+            },
+            "type": "object",
+            "title": "Templates"
+          }
+        },
+        "type": "object",
+        "title": "MarketingSettingsSchema"
+      },
+      "MarketingTemplateSchema": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Name"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 5000,
+            "title": "Text"
+          },
+          "status": {
+            "type": "string",
+            "pattern": "^(DRAFT|PENDING|APPROVED|REJECTED)$",
+            "title": "Status",
+            "default": "DRAFT"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "text"
+        ],
+        "title": "MarketingTemplateSchema"
+      },
+      "MarketingTriggerSettingsSchema": {
+        "properties": {
+          "jobBooked": {
+            "type": "boolean",
+            "title": "Jobbooked",
+            "default": true
+          },
+          "onMyWay": {
+            "type": "boolean",
+            "title": "Onmyway",
+            "default": true
+          },
+          "jobCompleted": {
+            "type": "boolean",
+            "title": "Jobcompleted",
+            "default": false
+          },
+          "reviewRequest": {
+            "type": "boolean",
+            "title": "Reviewrequest",
+            "default": true
+          },
+          "quoteFollowup": {
+            "type": "boolean",
+            "title": "Quotefollowup",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "MarketingTriggerSettingsSchema"
+      },
       "MessageRole": {
         "type": "string",
         "enum": [
@@ -5053,13 +5353,14 @@
       "OnboardingChoice": {
         "properties": {
           "choice": {
-            "type": "string",
-            "title": "Choice"
+            "$ref": "#/components/schemas/OnboardingChoiceType"
           },
           "invite_code": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 50,
+                "minLength": 1
               },
               {
                 "type": "null"
@@ -5070,7 +5371,9 @@
           "business_name": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
               },
               {
                 "type": "null"
@@ -5084,6 +5387,14 @@
           "choice"
         ],
         "title": "OnboardingChoice"
+      },
+      "OnboardingChoiceType": {
+        "type": "string",
+        "enum": [
+          "create",
+          "join"
+        ],
+        "title": "OnboardingChoiceType"
       },
       "PaymentTiming": {
         "type": "string",
@@ -5112,6 +5423,7 @@
         "properties": {
           "customer_id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Customer Id"
           },
           "title": {
@@ -5152,8 +5464,7 @@
           },
           "items": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/LineItemCreate"
             },
             "type": "array",
             "title": "Items"
@@ -5161,7 +5472,8 @@
           "total_amount": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -5185,29 +5497,35 @@
         "properties": {
           "id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Id"
           },
           "description": {
             "type": "string",
             "maxLength": 500,
+            "minLength": 1,
             "title": "Description"
           },
           "quantity": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Quantity"
           },
           "unit_price": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Unit Price"
           },
           "total": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Total"
           },
           "service_id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -5230,14 +5548,17 @@
         "properties": {
           "id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Id"
           },
           "customer_id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Customer Id"
           },
           "total_amount": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Total Amount"
           },
           "status": {
@@ -5246,6 +5567,7 @@
           "external_token": {
             "type": "string",
             "maxLength": 100,
+            "minLength": 1,
             "title": "External Token"
           },
           "public_url": {
@@ -5362,7 +5684,8 @@
           "customer_id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -5373,6 +5696,7 @@
           "description": {
             "type": "string",
             "maxLength": 2000,
+            "minLength": 1,
             "title": "Description"
           },
           "urgency": {
@@ -5382,7 +5706,8 @@
           "expected_value": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -5393,7 +5718,8 @@
           "subtotal": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -5405,7 +5731,8 @@
           "tax_amount": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -5417,7 +5744,8 @@
           "tax_rate": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -5455,14 +5783,12 @@
           "customer_details": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/CustomerDetailsSchema"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Customer Details"
+            ]
           }
         },
         "type": "object",
@@ -5475,6 +5801,7 @@
         "properties": {
           "id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Id"
           },
           "description": {
@@ -5491,7 +5818,8 @@
           "expected_value": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -5501,16 +5829,19 @@
           },
           "subtotal": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Subtotal",
             "default": 0.0
           },
           "tax_amount": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Tax Amount",
             "default": 0.0
           },
           "tax_rate": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Tax Rate",
             "default": 0.0
           },
@@ -5529,7 +5860,8 @@
           "customer_id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -5540,14 +5872,12 @@
           "customer_details": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/CustomerDetailsSchema"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Customer Details"
+            ]
           },
           "created_at": {
             "type": "string",
@@ -5631,7 +5961,8 @@
           "expected_value": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -5642,7 +5973,8 @@
           "subtotal": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -5653,7 +5985,8 @@
           "tax_amount": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -5664,7 +5997,8 @@
           "tax_rate": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -5701,7 +6035,8 @@
           "customer_id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -5717,6 +6052,7 @@
         "properties": {
           "employee_id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Employee Id"
           },
           "employee_name": {
@@ -5744,18 +6080,22 @@
         "properties": {
           "total_distance": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Total Distance"
           },
           "total_duration": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Total Duration"
           },
           "jobs_assigned": {
             "type": "integer",
+            "minimum": 0.0,
             "title": "Jobs Assigned"
           },
           "unassigned_count": {
             "type": "integer",
+            "minimum": 0.0,
             "title": "Unassigned Count"
           }
         },
@@ -5806,6 +6146,7 @@
         "properties": {
           "job_id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Job Id"
           },
           "arrival_time": {
@@ -5835,7 +6176,8 @@
           "distance_to_next": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -5846,7 +6188,8 @@
           "duration_to_next": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -5872,6 +6215,7 @@
           "name": {
             "type": "string",
             "maxLength": 100,
+            "minLength": 1,
             "title": "Name"
           },
           "description": {
@@ -5888,10 +6232,12 @@
           },
           "default_price": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Default Price"
           },
           "estimated_duration": {
             "type": "integer",
+            "minimum": 0.0,
             "title": "Estimated Duration",
             "default": 60
           }
@@ -5907,11 +6253,13 @@
         "properties": {
           "id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Id"
           },
           "name": {
             "type": "string",
             "maxLength": 100,
+            "minLength": 1,
             "title": "Name"
           },
           "description": {
@@ -5928,10 +6276,12 @@
           },
           "default_price": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Default Price"
           },
           "estimated_duration": {
             "type": "integer",
+            "minimum": 0.0,
             "title": "Estimated Duration"
           }
         },
@@ -5976,6 +6326,7 @@
         "properties": {
           "id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Id"
           },
           "name": {
@@ -6131,10 +6482,13 @@
           },
           "rate_value": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Rate Value"
           },
           "tax_withholding_rate": {
             "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
             "title": "Tax Withholding Rate"
           },
           "allow_expense_claims": {
@@ -6219,6 +6573,71 @@
         ],
         "title": "WhatsAppTemplateCategory"
       },
+      "WhatsAppTemplateComponentSchema": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "pattern": "^(HEADER|BODY|FOOTER|BUTTONS)$",
+            "title": "Type"
+          },
+          "format": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(TEXT|IMAGE|VIDEO|DOCUMENT)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Format"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "example": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example"
+          },
+          "buttons": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buttons"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "title": "WhatsAppTemplateComponentSchema"
+      },
       "WhatsAppTemplateCreate": {
         "properties": {
           "name": {
@@ -6231,8 +6650,7 @@
           },
           "components": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/WhatsAppTemplateComponentSchema"
             },
             "type": "array",
             "title": "Components"
@@ -6256,6 +6674,7 @@
         "properties": {
           "id": {
             "type": "integer",
+            "minimum": 1.0,
             "title": "Id"
           },
           "name": {
@@ -6266,6 +6685,7 @@
           "language": {
             "type": "string",
             "maxLength": 10,
+            "pattern": "^[a-z]{2}(_[A-Z]{2,4})?$",
             "title": "Language"
           },
           "category": {
@@ -6276,8 +6696,7 @@
           },
           "components": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/WhatsAppTemplateComponentSchema"
             },
             "type": "array",
             "title": "Components"

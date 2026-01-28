@@ -477,6 +477,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/pwa/requests/{request_id}:
+    delete:
+      tags:
+      - pwa-requests
+      summary: Delete Request
+      operationId: delete_request_api_v1_pwa_requests__request_id__delete
+      parameters:
+      - name: request_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Request Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
     get:
       tags:
       - pwa-requests
@@ -527,30 +551,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RequestSchema'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    delete:
-      tags:
-      - pwa-requests
-      summary: Delete Request
-      operationId: delete_request_api_v1_pwa_requests__request_id__delete
-      parameters:
-      - name: request_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Request Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
         '422':
           description: Validation Error
           content:
@@ -685,30 +685,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/pwa/invoices/:
-    post:
-      tags:
-      - pwa-invoices
-      summary: Create Invoice
-      operationId: create_invoice_api_v1_pwa_invoices__post
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/InvoiceCreate'
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvoiceSchema'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
     get:
       tags:
       - pwa-invoices
@@ -733,6 +709,30 @@ paths:
                 items:
                   $ref: '#/components/schemas/InvoiceSchema'
                 title: Response List Invoices Api V1 Pwa Invoices  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - pwa-invoices
+      summary: Create Invoice
+      operationId: create_invoice_api_v1_pwa_invoices__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvoiceCreate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceSchema'
         '422':
           description: Validation Error
           content:
@@ -1604,13 +1604,13 @@ paths:
             application/json:
               schema: {}
   /api/v1/pwa/analytics/proxy/{path}:
-    patch:
+    delete:
       tags:
       - pwa-analytics
       summary: Proxy Posthog
       description: Proxies requests to PostHog to bypass ad-blockers and avoid console
         errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__patch
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__delete
       parameters:
       - name: path
         in: path
@@ -1630,7 +1630,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-    put:
+    get:
+      tags:
+      - pwa-analytics
+      summary: Proxy Posthog
+      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
+        errors.
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__get
+      parameters:
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    patch:
       tags:
       - pwa-analytics
       summary: Proxy Posthog
@@ -1662,7 +1688,7 @@ paths:
       summary: Proxy Posthog
       description: Proxies requests to PostHog to bypass ad-blockers and avoid console
         errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__patch
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__post
       parameters:
       - name: path
         in: path
@@ -1682,39 +1708,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-    delete:
+    put:
       tags:
       - pwa-analytics
       summary: Proxy Posthog
       description: Proxies requests to PostHog to bypass ad-blockers and avoid console
         errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__patch
-      parameters:
-      - name: path
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    get:
-      tags:
-      - pwa-analytics
-      summary: Proxy Posthog
-      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
-        errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__patch
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__put
       parameters:
       - name: path
         in: path
@@ -1747,10 +1747,12 @@ components:
       properties:
         id:
           type: integer
+          minimum: 1.0
           title: Id
         address:
           type: string
           maxLength: 255
+          minLength: 1
           title: Address
         customer:
           anyOf:
@@ -1824,12 +1826,14 @@ components:
           title: Workflow Auto Quote Followup
         workflow_quote_followup_delay_hrs:
           type: integer
+          minimum: 0.0
           title: Workflow Quote Followup Delay Hrs
         workflow_auto_review_requests:
           type: boolean
           title: Workflow Auto Review Requests
         workflow_review_request_delay_hrs:
           type: integer
+          minimum: 0.0
           title: Workflow Review Request Delay Hrs
         workflow_review_link:
           anyOf:
@@ -1860,6 +1864,7 @@ components:
         default_tax_rate:
           anyOf:
           - type: number
+            minimum: 0.0
           - type: 'null'
           title: Default Tax Rate
           default: 0.0
@@ -1877,6 +1882,7 @@ components:
           title: Stripe Connected
         seat_count:
           type: integer
+          minimum: 1.0
           title: Seat Count
         invite_code:
           anyOf:
@@ -1892,10 +1898,8 @@ components:
           title: Billing Cycle Anchor
         marketing_settings:
           anyOf:
-          - additionalProperties: true
-            type: object
+          - $ref: '#/components/schemas/MarketingSettingsSchema'
           - type: 'null'
-          title: Marketing Settings
       type: object
       required:
       - workflow_invoicing
@@ -2010,21 +2014,20 @@ components:
         default_tax_rate:
           anyOf:
           - type: number
+            minimum: 0.0
           - type: 'null'
           title: Default Tax Rate
         marketing_settings:
           anyOf:
-          - additionalProperties: true
-            type: object
+          - $ref: '#/components/schemas/MarketingSettingsSchema'
           - type: 'null'
-          title: Marketing Settings
       type: object
       title: BusinessSettingsUpdate
     CampaignChannel:
       type: string
       enum:
       - WHATSAPP
-      - email
+      - EMAIL
       - SMS
       title: CampaignChannel
     CampaignCreate:
@@ -2048,6 +2051,7 @@ components:
         recipient_query:
           type: string
           maxLength: 500
+          minLength: 1
           title: Recipient Query
           default: all
       type: object
@@ -2060,6 +2064,7 @@ components:
       properties:
         id:
           type: integer
+          minimum: 1.0
           title: Id
         name:
           type: string
@@ -2071,13 +2076,18 @@ components:
           $ref: '#/components/schemas/CampaignStatus'
         total_recipients:
           type: integer
+          minimum: 0.0
           title: Total Recipients
         sent_count:
           type: integer
+          minimum: 0.0
           title: Sent Count
+          default: 0
         failed_count:
           type: integer
+          minimum: 0.0
           title: Failed Count
+          default: 0
         created_at:
           type: string
           format: date-time
@@ -2095,8 +2105,6 @@ components:
       - channel
       - status
       - total_recipients
-      - sent_count
-      - failed_count
       - created_at
       title: CampaignSchema
     CampaignStatus:
@@ -2129,6 +2137,7 @@ components:
         id:
           anyOf:
           - type: integer
+            minimum: 1.0
           - type: 'null'
           title: Id
         role:
@@ -2148,6 +2157,10 @@ components:
           type: boolean
           title: Is Executed
           default: false
+        metadata:
+          anyOf:
+          - $ref: '#/components/schemas/ChatMessageMetadataSchema'
+          - type: 'null'
       type: object
       required:
       - role
@@ -2155,6 +2168,46 @@ components:
       - timestamp
       - is_outbound
       title: ChatMessage
+    ChatMessageMetadataSchema:
+      properties:
+        tool_name:
+          anyOf:
+          - type: string
+            maxLength: 100
+          - type: 'null'
+          title: Tool Name
+        arguments:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Arguments
+        status:
+          anyOf:
+          - type: string
+            maxLength: 50
+          - type: 'null'
+          title: Status
+        description:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Description
+        tool:
+          anyOf:
+          - type: string
+            maxLength: 100
+          - type: 'null'
+          title: Tool
+        data:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Data
+      type: object
+      title: ChatMessageMetadataSchema
     ChatMessageUpdate:
       properties:
         message:
@@ -2169,6 +2222,7 @@ components:
       properties:
         customer_id:
           type: integer
+          minimum: 1.0
           title: Customer Id
         message:
           type: string
@@ -2257,10 +2311,57 @@ components:
           - type: 'null'
       type: object
       title: CustomerCreate
+    CustomerDetailsSchema:
+      properties:
+        first_name:
+          anyOf:
+          - type: string
+            maxLength: 100
+          - type: 'null'
+          title: First Name
+        last_name:
+          anyOf:
+          - type: string
+            maxLength: 100
+          - type: 'null'
+          title: Last Name
+        phone:
+          anyOf:
+          - type: string
+            pattern: (^\+?[1-9]\d{1,14}$|^$)
+          - type: 'null'
+          title: Phone
+        email:
+          anyOf:
+          - type: string
+            pattern: (^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$|^$)
+          - type: 'null'
+          title: Email
+        street:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Street
+        city:
+          anyOf:
+          - type: string
+            maxLength: 100
+          - type: 'null'
+          title: City
+        notes:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Notes
+      type: object
+      title: CustomerDetailsSchema
     CustomerSchema:
       properties:
         id:
           type: integer
+          minimum: 1.0
           title: Id
         name:
           anyOf:
@@ -2324,10 +2425,12 @@ components:
           $ref: '#/components/schemas/PipelineStage'
         job_count:
           type: integer
+          minimum: 0.0
           title: Job Count
           default: 0
         total_value:
           type: number
+          minimum: 0.0
           title: Total Value
           default: 0.0
       type: object
@@ -2389,17 +2492,22 @@ components:
       properties:
         revenue_monthly:
           type: number
+          minimum: 0.0
           title: Revenue Monthly
         active_leads_count:
           type: integer
+          minimum: 0.0
           title: Active Leads Count
         leads_need_followup:
           type: integer
+          minimum: 0.0
           title: Leads Need Followup
         pipeline_breakdown:
-          additionalProperties: true
+          additionalProperties:
+            type: integer
           type: object
           title: Pipeline Breakdown
+          description: Map of pipeline stage to count
       type: object
       required:
       - revenue_monthly
@@ -2444,6 +2552,7 @@ components:
       properties:
         amount:
           type: number
+          minimum: 0.0
           title: Amount
         category:
           $ref: '#/components/schemas/ExpenseCategory'
@@ -2456,6 +2565,7 @@ components:
         job_id:
           anyOf:
           - type: integer
+            minimum: 1.0
           - type: 'null'
           title: Job Id
         vendor:
@@ -2479,6 +2589,7 @@ components:
       properties:
         id:
           type: integer
+          minimum: 1.0
           title: Id
         description:
           anyOf:
@@ -2539,6 +2650,7 @@ components:
       properties:
         id:
           type: integer
+          minimum: 1.0
           title: Id
         query:
           type: string
@@ -2584,11 +2696,15 @@ components:
         latitude:
           anyOf:
           - type: number
+            maximum: 90.0
+            minimum: -90.0
           - type: 'null'
           title: Latitude
         longitude:
           anyOf:
           - type: number
+            maximum: 180.0
+            minimum: -180.0
           - type: 'null'
           title: Longitude
         street:
@@ -2622,9 +2738,6 @@ components:
           - type: 'null'
           title: Full Address
       type: object
-      required:
-      - latitude
-      - longitude
       title: GeocodeResponse
     HTTPValidationError:
       properties:
@@ -2639,6 +2752,7 @@ components:
       properties:
         id:
           type: integer
+          minimum: 1.0
           title: Id
         filename:
           anyOf:
@@ -2648,6 +2762,7 @@ components:
           title: Filename
         record_count:
           type: integer
+          minimum: 0.0
           title: Record Count
         status:
           $ref: '#/components/schemas/SyncLogStatus'
@@ -2672,6 +2787,7 @@ components:
       properties:
         job_id:
           type: integer
+          minimum: 1.0
           title: Job Id
         force_regenerate:
           type: boolean
@@ -2714,12 +2830,15 @@ components:
       properties:
         id:
           type: integer
+          minimum: 1.0
           title: Id
         job_id:
           type: integer
+          minimum: 1.0
           title: Job Id
         total_amount:
           type: number
+          minimum: 0.0
           title: Total Amount
         status:
           $ref: '#/components/schemas/InvoiceStatus'
@@ -2767,6 +2886,7 @@ components:
       properties:
         customer_id:
           type: integer
+          minimum: 1.0
           title: Customer Id
         description:
           anyOf:
@@ -2786,6 +2906,7 @@ components:
         value:
           anyOf:
           - type: number
+            minimum: 0.0
           - type: 'null'
           title: Value
         location:
@@ -2797,11 +2918,13 @@ components:
         employee_id:
           anyOf:
           - type: integer
+            minimum: 1.0
           - type: 'null'
           title: Employee Id
         estimated_duration:
           anyOf:
           - type: integer
+            minimum: 0.0
           - type: 'null'
           title: Estimated Duration
         postal_code:
@@ -2849,6 +2972,7 @@ components:
       properties:
         id:
           type: integer
+          minimum: 1.0
           title: Id
         description:
           anyOf:
@@ -2867,6 +2991,7 @@ components:
         value:
           anyOf:
           - type: number
+            minimum: 0.0
           - type: 'null'
           title: Value
         location:
@@ -2891,6 +3016,7 @@ components:
           default: false
         estimated_duration:
           type: integer
+          minimum: 0.0
           title: Estimated Duration
           default: 60
         begun_at:
@@ -2901,6 +3027,7 @@ components:
           title: Begun At
         total_actual_duration_seconds:
           type: integer
+          minimum: 0.0
           title: Total Actual Duration Seconds
           default: 0
         customer:
@@ -2922,7 +3049,6 @@ components:
       - id
       - status
       - scheduled_at
-      - value
       - customer
       title: JobSchema
     JobStatus:
@@ -2957,16 +3083,19 @@ components:
         value:
           anyOf:
           - type: number
+            minimum: 0.0
           - type: 'null'
           title: Value
         employee_id:
           anyOf:
           - type: integer
+            minimum: 1.0
           - type: 'null'
           title: Employee Id
         estimated_duration:
           anyOf:
           - type: integer
+            minimum: 0.0
           - type: 'null'
           title: Estimated Duration
         location:
@@ -2995,17 +3124,21 @@ components:
         description:
           type: string
           maxLength: 500
+          minLength: 1
           title: Description
         quantity:
           type: number
+          minimum: 0.0
           title: Quantity
           default: 1.0
         unit_price:
           type: number
+          minimum: 0.0
           title: Unit Price
         service_id:
           anyOf:
           - type: integer
+            minimum: 1.0
           - type: 'null'
           title: Service Id
       type: object
@@ -3017,23 +3150,29 @@ components:
       properties:
         id:
           type: integer
+          minimum: 1.0
           title: Id
         description:
           type: string
           maxLength: 500
+          minLength: 1
           title: Description
         quantity:
           type: number
+          minimum: 0.0
           title: Quantity
         unit_price:
           type: number
+          minimum: 0.0
           title: Unit Price
         total_price:
           type: number
+          minimum: 0.0
           title: Total Price
         service_id:
           anyOf:
           - type: integer
+            minimum: 1.0
           - type: 'null'
           title: Service Id
       type: object
@@ -3044,6 +3183,61 @@ components:
       - unit_price
       - total_price
       title: LineItemSchema
+    MarketingSettingsSchema:
+      properties:
+        triggers:
+          $ref: '#/components/schemas/MarketingTriggerSettingsSchema'
+        templates:
+          additionalProperties:
+            $ref: '#/components/schemas/MarketingTemplateSchema'
+          type: object
+          title: Templates
+      type: object
+      title: MarketingSettingsSchema
+    MarketingTemplateSchema:
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          title: Name
+        text:
+          type: string
+          maxLength: 5000
+          title: Text
+        status:
+          type: string
+          pattern: ^(DRAFT|PENDING|APPROVED|REJECTED)$
+          title: Status
+          default: DRAFT
+      type: object
+      required:
+      - name
+      - text
+      title: MarketingTemplateSchema
+    MarketingTriggerSettingsSchema:
+      properties:
+        jobBooked:
+          type: boolean
+          title: Jobbooked
+          default: true
+        onMyWay:
+          type: boolean
+          title: Onmyway
+          default: true
+        jobCompleted:
+          type: boolean
+          title: Jobcompleted
+          default: false
+        reviewRequest:
+          type: boolean
+          title: Reviewrequest
+          default: true
+        quoteFollowup:
+          type: boolean
+          title: Quotefollowup
+          default: false
+      type: object
+      title: MarketingTriggerSettingsSchema
     MessageRole:
       type: string
       enum:
@@ -3053,22 +3247,31 @@ components:
     OnboardingChoice:
       properties:
         choice:
-          type: string
-          title: Choice
+          $ref: '#/components/schemas/OnboardingChoiceType'
         invite_code:
           anyOf:
           - type: string
+            maxLength: 50
+            minLength: 1
           - type: 'null'
           title: Invite Code
         business_name:
           anyOf:
           - type: string
+            maxLength: 100
+            minLength: 1
           - type: 'null'
           title: Business Name
       type: object
       required:
       - choice
       title: OnboardingChoice
+    OnboardingChoiceType:
+      type: string
+      enum:
+      - create
+      - join
+      title: OnboardingChoiceType
     PaymentTiming:
       type: string
       enum:
@@ -3092,6 +3295,7 @@ components:
       properties:
         customer_id:
           type: integer
+          minimum: 1.0
           title: Customer Id
         title:
           anyOf:
@@ -3113,13 +3317,13 @@ components:
           title: Notes
         items:
           items:
-            additionalProperties: true
-            type: object
+            $ref: '#/components/schemas/LineItemCreate'
           type: array
           title: Items
         total_amount:
           anyOf:
           - type: number
+            minimum: 0.0
           - type: 'null'
           title: Total Amount
         status:
@@ -3134,23 +3338,29 @@ components:
       properties:
         id:
           type: integer
+          minimum: 1.0
           title: Id
         description:
           type: string
           maxLength: 500
+          minLength: 1
           title: Description
         quantity:
           type: number
+          minimum: 0.0
           title: Quantity
         unit_price:
           type: number
+          minimum: 0.0
           title: Unit Price
         total:
           type: number
+          minimum: 0.0
           title: Total
         service_id:
           anyOf:
           - type: integer
+            minimum: 1.0
           - type: 'null'
           title: Service Id
       type: object
@@ -3165,18 +3375,22 @@ components:
       properties:
         id:
           type: integer
+          minimum: 1.0
           title: Id
         customer_id:
           type: integer
+          minimum: 1.0
           title: Customer Id
         total_amount:
           type: number
+          minimum: 0.0
           title: Total Amount
         status:
           $ref: '#/components/schemas/QuoteStatus'
         external_token:
           type: string
           maxLength: 100
+          minLength: 1
           title: External Token
         public_url:
           anyOf:
@@ -3257,11 +3471,13 @@ components:
         customer_id:
           anyOf:
           - type: integer
+            minimum: 1.0
           - type: 'null'
           title: Customer Id
         description:
           type: string
           maxLength: 2000
+          minLength: 1
           title: Description
         urgency:
           $ref: '#/components/schemas/Urgency'
@@ -3269,23 +3485,27 @@ components:
         expected_value:
           anyOf:
           - type: number
+            minimum: 0.0
           - type: 'null'
           title: Expected Value
         subtotal:
           anyOf:
           - type: number
+            minimum: 0.0
           - type: 'null'
           title: Subtotal
           default: 0.0
         tax_amount:
           anyOf:
           - type: number
+            minimum: 0.0
           - type: 'null'
           title: Tax Amount
           default: 0.0
         tax_rate:
           anyOf:
           - type: number
+            minimum: 0.0
           - type: 'null'
           title: Tax Rate
           default: 0.0
@@ -3304,10 +3524,8 @@ components:
           title: Follow Up Date
         customer_details:
           anyOf:
-          - additionalProperties: true
-            type: object
+          - $ref: '#/components/schemas/CustomerDetailsSchema'
           - type: 'null'
-          title: Customer Details
       type: object
       required:
       - description
@@ -3316,6 +3534,7 @@ components:
       properties:
         id:
           type: integer
+          minimum: 1.0
           title: Id
         description:
           type: string
@@ -3328,18 +3547,22 @@ components:
         expected_value:
           anyOf:
           - type: number
+            minimum: 0.0
           - type: 'null'
           title: Expected Value
         subtotal:
           type: number
+          minimum: 0.0
           title: Subtotal
           default: 0.0
         tax_amount:
           type: number
+          minimum: 0.0
           title: Tax Amount
           default: 0.0
         tax_rate:
           type: number
+          minimum: 0.0
           title: Tax Rate
           default: 0.0
         follow_up_date:
@@ -3351,14 +3574,13 @@ components:
         customer_id:
           anyOf:
           - type: integer
+            minimum: 1.0
           - type: 'null'
           title: Customer Id
         customer_details:
           anyOf:
-          - additionalProperties: true
-            type: object
+          - $ref: '#/components/schemas/CustomerDetailsSchema'
           - type: 'null'
-          title: Customer Details
         created_at:
           type: string
           format: date-time
@@ -3409,21 +3631,25 @@ components:
         expected_value:
           anyOf:
           - type: number
+            minimum: 0.0
           - type: 'null'
           title: Expected Value
         subtotal:
           anyOf:
           - type: number
+            minimum: 0.0
           - type: 'null'
           title: Subtotal
         tax_amount:
           anyOf:
           - type: number
+            minimum: 0.0
           - type: 'null'
           title: Tax Amount
         tax_rate:
           anyOf:
           - type: number
+            minimum: 0.0
           - type: 'null'
           title: Tax Rate
         items:
@@ -3442,6 +3668,7 @@ components:
         customer_id:
           anyOf:
           - type: integer
+            minimum: 1.0
           - type: 'null'
           title: Customer Id
       type: object
@@ -3450,6 +3677,7 @@ components:
       properties:
         employee_id:
           type: integer
+          minimum: 1.0
           title: Employee Id
         employee_name:
           type: string
@@ -3470,15 +3698,19 @@ components:
       properties:
         total_distance:
           type: number
+          minimum: 0.0
           title: Total Distance
         total_duration:
           type: number
+          minimum: 0.0
           title: Total Duration
         jobs_assigned:
           type: integer
+          minimum: 0.0
           title: Jobs Assigned
         unassigned_count:
           type: integer
+          minimum: 0.0
           title: Unassigned Count
       type: object
       required:
@@ -3516,6 +3748,7 @@ components:
       properties:
         job_id:
           type: integer
+          minimum: 1.0
           title: Job Id
         arrival_time:
           anyOf:
@@ -3532,11 +3765,13 @@ components:
         distance_to_next:
           anyOf:
           - type: number
+            minimum: 0.0
           - type: 'null'
           title: Distance To Next
         duration_to_next:
           anyOf:
           - type: number
+            minimum: 0.0
           - type: 'null'
           title: Duration To Next
         job:
@@ -3553,6 +3788,7 @@ components:
         name:
           type: string
           maxLength: 100
+          minLength: 1
           title: Name
         description:
           anyOf:
@@ -3562,9 +3798,11 @@ components:
           title: Description
         default_price:
           type: number
+          minimum: 0.0
           title: Default Price
         estimated_duration:
           type: integer
+          minimum: 0.0
           title: Estimated Duration
           default: 60
       type: object
@@ -3576,10 +3814,12 @@ components:
       properties:
         id:
           type: integer
+          minimum: 1.0
           title: Id
         name:
           type: string
           maxLength: 100
+          minLength: 1
           title: Name
         description:
           anyOf:
@@ -3589,9 +3829,11 @@ components:
           title: Description
         default_price:
           type: number
+          minimum: 0.0
           title: Default Price
         estimated_duration:
           type: integer
+          minimum: 0.0
           title: Estimated Duration
       type: object
       required:
@@ -3626,6 +3868,7 @@ components:
       properties:
         id:
           type: integer
+          minimum: 1.0
           title: Id
         name:
           anyOf:
@@ -3709,9 +3952,12 @@ components:
           $ref: '#/components/schemas/WageModelType'
         rate_value:
           type: number
+          minimum: 0.0
           title: Rate Value
         tax_withholding_rate:
           type: number
+          maximum: 1.0
+          minimum: 0.0
           title: Tax Withholding Rate
         allow_expense_claims:
           type: boolean
@@ -3761,6 +4007,42 @@ components:
       - UTILITY
       - AUTHENTICATION
       title: WhatsAppTemplateCategory
+    WhatsAppTemplateComponentSchema:
+      properties:
+        type:
+          type: string
+          pattern: ^(HEADER|BODY|FOOTER|BUTTONS)$
+          title: Type
+        format:
+          anyOf:
+          - type: string
+            pattern: ^(TEXT|IMAGE|VIDEO|DOCUMENT)$
+          - type: 'null'
+          title: Format
+        text:
+          anyOf:
+          - type: string
+            maxLength: 2000
+          - type: 'null'
+          title: Text
+        example:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Example
+        buttons:
+          anyOf:
+          - items:
+              additionalProperties: true
+              type: object
+            type: array
+          - type: 'null'
+          title: Buttons
+      type: object
+      required:
+      - type
+      title: WhatsAppTemplateComponentSchema
     WhatsAppTemplateCreate:
       properties:
         name:
@@ -3771,8 +4053,7 @@ components:
           $ref: '#/components/schemas/WhatsAppTemplateCategory'
         components:
           items:
-            additionalProperties: true
-            type: object
+            $ref: '#/components/schemas/WhatsAppTemplateComponentSchema'
           type: array
           title: Components
         language:
@@ -3790,6 +4071,7 @@ components:
       properties:
         id:
           type: integer
+          minimum: 1.0
           title: Id
         name:
           type: string
@@ -3798,6 +4080,7 @@ components:
         language:
           type: string
           maxLength: 10
+          pattern: ^[a-z]{2}(_[A-Z]{2,4})?$
           title: Language
         category:
           $ref: '#/components/schemas/WhatsAppTemplateCategory'
@@ -3805,8 +4088,7 @@ components:
           $ref: '#/components/schemas/WhatsAppTemplateStatus'
         components:
           items:
-            additionalProperties: true
-            type: object
+            $ref: '#/components/schemas/WhatsAppTemplateComponentSchema'
           type: array
           title: Components
         meta_template_id:
