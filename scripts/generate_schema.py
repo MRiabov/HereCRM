@@ -52,6 +52,12 @@ def generate_schema():
 
     schema = app.openapi()
 
+    # Sort methods for each path to ensure deterministic output
+    if "paths" in schema:
+        for path in schema["paths"]:
+            # sort keys (http methods)
+            schema["paths"][path] = dict(sorted(schema["paths"][path].items()))
+
     # Paths to save
     files_to_save = {
         "herecrm-pwa-openapi.json": lambda f: json.dump(schema, f, indent=2),
