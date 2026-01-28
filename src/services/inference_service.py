@@ -36,63 +36,79 @@ class InferenceService:
             if not matched_service:
                 matched_service = self._find_matching_service(raw.description, catalog)
             
-            quantity = raw.quantity or 1.0
+            # Start with raw values
+            # Note: LineItemInfo defaults quantity to 1.0 if not provided
+            quantity = raw.quantity if raw.quantity is not None else 1.0
             unit_price = raw.unit_price
             total_price = raw.total_price
+
+            explicit_total = raw.total_price is not None
 
             if matched_service:
                 # We found a match in the catalog
                 default_price = round(matched_service.default_price, 2)
 
                 if total_price is not None and unit_price is None and quantity == 1.0:
-                    # Case: Total price provided, but no unit price or quantity. 
-                    # Use default price to infer quantity.
+                    # Case: Total price provided, but no unit price or quantity (default 1.0).
+                    # Use default price to infer quantity (FR-004).
                     if default_price > 0:
-                        unit_price = default_price
-                        quantity = round(total_price / unit_price, 2)
-                        # Re-calculate total from rounded quantity to ensure consistency
-                        total_price = round(quantity * unit_price, 2)
+                        # Calculate quantity based on default price
+                        raw_qty = total_price / default_price
+                        quantity = round(raw_qty, 2)
+
+                        if quantity > 0:
+                            # Recalculate unit price to match total exactly
+                            # We accept that unit price might deviate slightly from default to satisfy Total = Qty * Unit
+                            unit_price = total_price / quantity
+                        else:
+                            # Edge case: quantity rounds to 0
+                            quantity = 1.0
+                            unit_price = total_price
                     else:
                         unit_price = 0.0
                         quantity = 1.0 # Fallback
-                        total_price = round(total_price, 2)
                 elif quantity is not None and total_price is None and unit_price is None:
                     # Case: Only quantity provided. Use catalog default price.
                     unit_price = default_price
                     quantity = round(quantity, 2)
                     total_price = round(quantity * unit_price, 2)
+                    explicit_total = False
                 elif quantity is not None and total_price is not None and unit_price is None:
                     # Case: Quantity and total provided. Calculate unit price.
                     quantity = round(quantity, 2)
                     if quantity > 0:
-                        unit_price = round(total_price / quantity, 2)
-                        # Re-adjust total to match rounded values
-                        total_price = round(quantity * unit_price, 2)
+                        unit_price = total_price / quantity
                     else:
                         unit_price = 0.0
-                        total_price = round(total_price, 2)
                 elif unit_price is not None and quantity is not None and total_price is None:
                     # Case: Unit price and quantity provided. Calculate total.
-                    unit_price = round(unit_price, 2)
+                    # Use input unit price precision
                     quantity = round(quantity, 2)
                     total_price = round(unit_price * quantity, 2)
+                    explicit_total = False
                 
-                # Fallback for unit price if still None - but respect user overrides if total was set differently above
+                # Fallback for unit price if still None
                 if unit_price is None:
                     unit_price = default_price
                 
+                # If we still don't have total_price
                 if total_price is None:
                     quantity = round(quantity, 2)
-                    unit_price = round(unit_price, 2)
                     total_price = round(quantity * unit_price, 2)
+                    explicit_total = False
+
+                # Final Consistency Check
+                final_total = total_price
+                if not explicit_total:
+                    final_total = round(quantity * unit_price, 2)
 
                 inferred_items.append(
                     LineItem(
                         service_id=matched_service.id,
                         description=matched_service.name, # Use catalog name
                         quantity=round(quantity, 2),
-                        unit_price=round(unit_price, 2),
-                        total_price=round(total_price, 2),
+                        unit_price=unit_price,
+                        total_price=final_total,
                     )
                 )
             else:
@@ -100,31 +116,36 @@ class InferenceService:
                 if total_price is not None and quantity is not None and unit_price is None:
                     quantity = round(quantity, 2)
                     if quantity > 0:
-                        unit_price = round(total_price / quantity, 2)
-                        total_price = round(quantity * unit_price, 2)
+                        unit_price = total_price / quantity
                     else:
                         unit_price = 0.0
-                        total_price = round(total_price, 2)
                 elif unit_price is not None and quantity is not None and total_price is None:
-                    unit_price = round(unit_price, 2)
                     quantity = round(quantity, 2)
                     total_price = round(unit_price * quantity, 2)
+                    explicit_total = False
                 
                 # Final fallbacks for ad-hoc
                 if unit_price is None:
                     unit_price = 0.0
+                if quantity is None:
+                    quantity = 1.0
+
                 if total_price is None:
                     quantity = round(quantity, 2)
-                    unit_price = round(unit_price, 2)
                     total_price = round(quantity * unit_price, 2)
+                    explicit_total = False
+
+                final_total = total_price
+                if not explicit_total:
+                     final_total = round(quantity * unit_price, 2)
 
                 inferred_items.append(
                     LineItem(
                         service_id=None,
                         description=raw.description,
                         quantity=round(quantity, 2),
-                        unit_price=round(unit_price, 2),
-                        total_price=round(total_price, 2),
+                        unit_price=unit_price,
+                        total_price=final_total,
                     )
                 )
 
