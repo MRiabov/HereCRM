@@ -54,3 +54,43 @@ The `AddJobTool` and `CreateQuoteTool` accept a list of `LineItemInfo`.
 
 > [!IMPORTANT]
 > To prevent line item shortening (e.g., "Exterior Window Cleaning" -> "windows"), the validation dataset MUST provide the `service_catalog` context and assert that the `description` in `line_items` matches the catalog's canonical name.
+
+## Validation Dataset Usage
+
+The `tests/data/llm_validation.json` file supports the following optional fields for each test case:
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `service_catalog` | `string` | Markdown-formatted service catalog (e.g., `"- ID 1: Service Name - €10.00"`). |
+| `system_time` | `string` | ISO 8601 timestamp for resolving relative times. |
+| `description` | `string` | Human-readable description of what the test validates. |
+| `user_context` | `object` | Contains `role`, `channel`, and any business/workflow settings. |
+
+### Example Test Case
+
+```json
+{
+  "id": "spec-004-line-item-catalog-match",
+  "feature_spec": "004-line-items",
+  "description": "Tests that service_catalog names are used verbatim in line items",
+  "service_catalog": "- ID 1: Exterior Window Cleaning - €15.00\n- ID 2: Gutter Cleaning - €25.00",
+  "system_time": "2025-06-04T10:00:00",
+  "user_context": { 
+    "role": "OWNER", 
+    "channel": "WHATSAPP",
+    "tax_inclusive": true,
+    "workflow_invoicing": "manual",
+    "employees": ["John", "Dave"]
+  },
+  "user_input": "Add job for Sarah, exterior window cleaning",
+  "expected_logic": {
+    "tool_called": "AddJobTool",
+    "expected_args": { 
+      "customer_name": "Sarah",
+      "line_items": [
+        { "description": "Exterior Window Cleaning", "service_id": 1  }
+      ]
+    }
+  }
+}
+```
