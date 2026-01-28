@@ -207,12 +207,13 @@ class DataManagementService:
         export_req = ExportRequest(
             business_id=business_id,
             query=query,
-            format=format.upper(),
+            format=format, # Store lowercase to match enum values
             status="processing",
             created_at=datetime.now(timezone.utc)
         )
         self.session.add(export_req)
-        await self.session.flush()
+        await self.session.commit() # Commit early so we have the record
+        await self.session.refresh(export_req)
 
         try:
             entity_type = filters.get("entity_type")
@@ -226,7 +227,6 @@ class DataManagementService:
                     for ent in entities:
                         df, name = await self._get_export_data(business_id, ent, query, filters)
                         if not df.empty:
-                            # Format based on a preference or just CSV for simplicity inside ZIP
                             csv_buffer = io.BytesIO()
                             df.to_csv(csv_buffer, index=False)
                             zip_file.writestr(f"{name}.csv", csv_buffer.getvalue())
@@ -235,7 +235,7 @@ class DataManagementService:
                 file_bytes = zip_buffer.read()
                 content_type = "application/zip"
                 filename = f"export_all_{business_id}_{int(datetime.now().timestamp())}.zip"
-                export_req.format = "ZIP"
+                export_req.format = "zip"
             else:
                 # Single file export
                 df, name = await self._get_export_data(business_id, entity_type, query, filters)
@@ -266,6 +266,7 @@ class DataManagementService:
         except Exception as e:
             logger.exception("Export failed")
             export_req.status = "failed"
+            export_req.error_log = str(e)
             
         await self.session.commit()
         return export_req

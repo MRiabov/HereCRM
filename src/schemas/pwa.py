@@ -123,7 +123,7 @@ class JobListResponse(BaseModel):
 class JobCreate(BaseModel):
     customer_id: int
     description: Optional[str] = Field(None, max_length=1000)
-    status: JobStatus = JobStatus.pending
+    status: JobStatus = JobStatus.PENDING
     scheduled_at: Optional[datetime] = None
     value: Optional[float] = None
     location: Optional[str] = Field(None, max_length=255)
@@ -469,6 +469,7 @@ class ExportRequestSchema(BaseModel):
     format: ExportFormat
     status: ExportStatus
     public_url: Optional[str] = Field(None, max_length=500)
+    error_log: Optional[str] = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

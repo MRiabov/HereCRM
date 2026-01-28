@@ -25,8 +25,8 @@ async def trigger_export(
     
     # We'll normalize format to lowercase as expected by service
     export_format = payload.format.lower()
-    if export_format == "excel":
-        export_format = "xlsx"
+    if export_format == "xlsx":
+        export_format = "excel"
         
     # We'll trigger it directly for now since it's already async and handles its own status
     query_text = payload.query or ""
