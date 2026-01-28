@@ -2222,7 +2222,7 @@ components:
       properties:
         customer_id:
           type: integer
-          minimum: 1.0
+          minimum: 0.0
           title: Customer Id
         message:
           type: string

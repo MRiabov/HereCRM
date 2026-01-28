@@ -10,6 +10,8 @@ load_dotenv(".env")
 CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY")
 DATABASE_PATH = "data/crm.db"
 TEST_USER_EMAIL = "debug+clerk_test@example.com"
+# Use a complex password to satisfy Clerk security checks
+TEST_USER_PASSWORD = "SecureTestPass123!@#" 
 TEST_USER_NAME = "Test E2E User"
 
 async def seed_user():
@@ -45,6 +47,18 @@ async def seed_user():
         if found_user:
             clerk_user_id = found_user.id
             print(f"Found existing user in Clerk: {clerk_user_id}")
+            # Ensure password is set for existing user
+            try:
+                print("Updating password for existing user...")
+                clerk_client.users.update(
+                    user_id=clerk_user_id,
+                    password=TEST_USER_PASSWORD,
+                    skip_password_checks=True
+                )
+                print("Password updated successfully.")
+            except Exception as e:
+                print(f"Failed to update password (maybe already set?): {e}")
+
         else:
             print("User not found in Clerk. Attempting to create...")
             # Note: create might fail depending on your Clerk settings (e.g. password required)
@@ -56,6 +70,7 @@ async def seed_user():
                 email_address=[TEST_USER_EMAIL],
                 first_name="Test",
                 last_name="E2E User",
+                password=TEST_USER_PASSWORD,
                 skip_password_checks=True,
                 skip_password_requirement=True,
                 legal_accepted_at=now_iso

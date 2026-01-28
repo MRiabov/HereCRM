@@ -172,7 +172,7 @@ class ChatMessageUpdate(BaseModel):
     message: str = Field(..., max_length=5000)
 
 class ChatSendRequest(BaseModel):
-    customer_id: int = Field(..., ge=1)
+    customer_id: int = Field(..., ge=0)
     message: str = Field(..., max_length=5000)
     retry_id: Optional[str] = Field(None, max_length=100)
 
