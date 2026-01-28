@@ -45,7 +45,7 @@ async def test_create_invoice_success(session: AsyncSession, mock_s3_service, mo
     session.add(customer)
     await session.flush()
     
-    job = Job(customer_id=customer.id, business_id=biz.id, description="Test Job", value=100.0, status=JobStatus.completed)
+    job = Job(customer_id=customer.id, business_id=biz.id, description="Test Job", value=100.0, status=JobStatus.COMPLETED)
     session.add(job)
     await session.commit()
     
@@ -83,7 +83,7 @@ async def test_send_invoice_tool_success(session: AsyncSession, mock_s3_service,
     session.add(customer)
     await session.flush()
     
-    job = Job(customer_id=customer.id, business_id=biz.id, description="Roof Repair", value=500.0, status=JobStatus.completed)
+    job = Job(customer_id=customer.id, business_id=biz.id, description="Roof Repair", value=500.0, status=JobStatus.COMPLETED)
     session.add(job)
     await session.commit()
     
@@ -143,7 +143,7 @@ async def test_existing_invoice_warning(session: AsyncSession, mock_s3_service, 
     session.add(customer)
     await session.flush()
     
-    job = Job(customer_id=customer.id, business_id=biz.id, description="Plumbing", value=200.0, status=JobStatus.completed)
+    job = Job(customer_id=customer.id, business_id=biz.id, description="Plumbing", value=200.0, status=JobStatus.COMPLETED)
     session.add(job)
     await session.flush()
     

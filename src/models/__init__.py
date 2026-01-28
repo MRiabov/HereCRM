@@ -11,146 +11,146 @@ from src.models.whatsapp_template import WhatsAppTemplate, WhatsAppTemplateStatu
 
 
 class UserRole(str, enum.Enum):
-    OWNER = "owner"
-    MANAGER = "manager"
-    EMPLOYEE = "employee"
+    OWNER = "OWNER"
+    MANAGER = "MANAGER"
+    EMPLOYEE = "EMPLOYEE"
 
 
 class ConversationStatus(str, enum.Enum):
-    IDLE = "idle"
-    ONBOARDING = "onboarding"
-    WAITING_CONFIRM = "waiting_confirm"
-    PENDING_AUTO_CONFIRM = "pending_auto_confirm"
-    SETTINGS = "settings"
-    DATA_MANAGEMENT = "data_management"
-    BILLING = "billing"
-    EMPLOYEE_MANAGEMENT = "employee_management"
+    IDLE = "IDLE"
+    ONBOARDING = "ONBOARDING"
+    WAITING_CONFIRM = "WAITING_CONFIRM"
+    PENDING_AUTO_CONFIRM = "PENDING_AUTO_CONFIRM"
+    SETTINGS = "SETTINGS"
+    DATA_MANAGEMENT = "DATA_MANAGEMENT"
+    BILLING = "BILLING"
+    EMPLOYEE_MANAGEMENT = "EMPLOYEE_MANAGEMENT"
 
 
 class PipelineStage(str, enum.Enum):
-    NEW_LEAD = "new_lead"
-    NOT_CONTACTED = "not_contacted"
-    CONTACTED = "contacted"
-    QUOTED = "quoted"
-    CONVERTED_ONCE = "converted_once"
-    CONVERTED_RECURRENT = "converted_recurrent"
-    NOT_INTERESTED = "not_interested"
-    LOST = "lost"
+    NEW_LEAD = "NEW_LEAD"
+    NOT_CONTACTED = "NOT_CONTACTED"
+    CONTACTED = "CONTACTED"
+    QUOTED = "QUOTED"
+    CONVERTED_ONCE = "CONVERTED_ONCE"
+    CONVERTED_RECURRENT = "CONVERTED_RECURRENT"
+    NOT_INTERESTED = "NOT_INTERESTED"
+    LOST = "LOST"
 
 
 class InvoiceStatus(str, enum.Enum):
-    PENDING = "pending"
-    SENT = "sent"
-    PAID = "paid"
-    OVERDUE = "overdue"
-    CANCELLED = "cancelled"
+    PENDING = "PENDING"
+    SENT = "SENT"
+    PAID = "PAID"
+    OVERDUE = "OVERDUE"
+    CANCELLED = "CANCELLED"
 
 
 class Urgency(str, enum.Enum):
-    LOW = "Low"
-    MEDIUM = "Medium"
-    HIGH = "High"
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
 
 
 class ExportStatus(str, enum.Enum):
-    PENDING = "pending"
-    PROCESSING = "processing"
-    COMPLETED = "completed"
-    FAILED = "failed"
+    PENDING = "PENDING"
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
 
 
 class ExportFormat(str, enum.Enum):
-    CSV = "CSV"
-    EXCEL = "Excel"
-    ZIP = "ZIP"
+    CSV = "csv"
+    EXCEL = "excel"
+    ZIP = "zip"
 
 
 class PaymentStatus(str, enum.Enum):
-    PENDING = "pending"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    REFUNDED = "refunded"
+    PENDING = "PENDING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    REFUNDED = "REFUNDED"
 
 
 class QuoteStatus(str, enum.Enum):
-    DRAFT = "draft"
-    SENT = "sent"
-    ACCEPTED = "accepted"
-    REJECTED = "rejected"
-    EXPIRED = "expired"
+    DRAFT = "DRAFT"
+    SENT = "SENT"
+    ACCEPTED = "ACCEPTED"
+    REJECTED = "REJECTED"
+    EXPIRED = "EXPIRED"
 
 
 class RequestStatus(str, enum.Enum):
-    PENDING = "pending"
-    CONVERTED = "converted"
-    DISMISSED = "dismissed"
+    PENDING = "PENDING"
+    CONVERTED = "CONVERTED"
+    DISMISSED = "DISMISSED"
 
 
 class QuickBooksSyncStatus(str, enum.Enum):
-    PENDING = "pending"
-    SYNCED = "synced"
-    FAILED = "failed"
-    SKIPPED = "skipped"
+    PENDING = "PENDING"
+    SYNCED = "SYNCED"
+    FAILED = "FAILED"
+    SKIPPED = "SKIPPED"
 
 
 class SyncType(str, enum.Enum):
-    SCHEDULED = "scheduled"
-    MANUAL = "manual"
+    SCHEDULED = "SCHEDULED"
+    MANUAL = "MANUAL"
 
 
 class SyncLogStatus(str, enum.Enum):
-    PROCESSING = "processing"
-    SUCCESS = "success"
-    PARTIAL_SUCCESS = "partial_success"
-    FAILED = "failed"
+    PROCESSING = "PROCESSING"
+    SUCCESS = "SUCCESS"
+    PARTIAL_SUCCESS = "PARTIAL_SUCCESS"
+    FAILED = "FAILED"
 
 
 class InvoicingWorkflow(str, enum.Enum):
-    NEVER = "never"
-    MANUAL = "manual"
-    AUTOMATIC = "automatic"
+    NEVER = "NEVER"
+    MANUAL = "MANUAL"
+    AUTOMATIC = "AUTOMATIC"
 
 
 class QuotingWorkflow(str, enum.Enum):
-    NEVER = "never"
-    MANUAL = "manual"
-    AUTOMATIC = "automatic"
+    NEVER = "NEVER"
+    MANUAL = "MANUAL"
+    AUTOMATIC = "AUTOMATIC"
 
 
 class PaymentTiming(str, enum.Enum):
-    ALWAYS_PAID_ON_SPOT = "always_paid_on_spot"
-    USUALLY_PAID_ON_SPOT = "usually_paid_on_spot"
-    PAID_LATER = "paid_later"
+    ALWAYS_PAID_ON_SPOT = "ALWAYS_PAID_ON_SPOT"
+    USUALLY_PAID_ON_SPOT = "USUALLY_PAID_ON_SPOT"
+    PAID_LATER = "PAID_LATER"
 
 
 class JobCreationDefault(str, enum.Enum):
-    MARK_DONE = "mark_done"
-    UNSCHEDULED = "unscheduled"
-    AUTO_SCHEDULE = "auto_schedule"
-    SCHEDULED_TODAY = "scheduled_today"
+    MARK_DONE = "MARK_DONE"
+    UNSCHEDULED = "UNSCHEDULED"
+    AUTO_SCHEDULE = "AUTO_SCHEDULE"
+    SCHEDULED_TODAY = "SCHEDULED_TODAY"
 
 
 class WageModelType(str, enum.Enum):
-    COMMISSION = "commission"
-    HOURLY_PER_JOB = "hourly_per_job"
-    HOURLY_PER_SHIFT = "hourly_per_shift"
-    FIXED_DAILY = "fixed_daily"
+    COMMISSION = "COMMISSION"
+    HOURLY_PER_JOB = "HOURLY_PER_JOB"
+    HOURLY_PER_SHIFT = "HOURLY_PER_SHIFT"
+    FIXED_DAILY = "FIXED_DAILY"
 
 
 class LedgerEntryType(str, enum.Enum):
-    WAGE = "wage"
-    PAYOUT = "payout"
-    EXPENSE_REIMBURSEMENT = "expense_reimbursement"
+    WAGE = "WAGE"
+    PAYOUT = "PAYOUT"
+    EXPENSE_REIMBURSEMENT = "EXPENSE_REIMBURSEMENT"
 
 
 class JobStatus(str, enum.Enum):
-    pending = "pending"
-    scheduled = "scheduled"
-    booked = "booked"
-    in_progress = "in_progress"
-    paused = "paused"
-    completed = "completed"
-    cancelled = "cancelled"
+    PENDING = "PENDING"
+    SCHEDULED = "SCHEDULED"
+    BOOKED = "BOOKED"
+    IN_PROGRESS = "IN_PROGRESS"
+    PAUSED = "PAUSED"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
 
 
 class Business(Base):
@@ -386,7 +386,7 @@ class Job(Base):
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), index=True)
     description: Mapped[Optional[str]] = mapped_column(Text)
-    status: Mapped[JobStatus] = mapped_column(SAEnum(JobStatus), default=JobStatus.pending)
+    status: Mapped[JobStatus] = mapped_column(SAEnum(JobStatus), default=JobStatus.PENDING)
     value: Mapped[Optional[float]] = mapped_column(Float)
 
     # Tax Information (Snapshot)
@@ -507,8 +507,8 @@ class Invoice(Base):
 
 
 class MessageRole(str, enum.Enum):
-    USER = "user"
-    ASSISTANT = "assistant"
+    USER = "USER"
+    ASSISTANT = "ASSISTANT"
 
 
 class Message(Base):
@@ -539,7 +539,7 @@ class ImportJob(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
-    status: Mapped[str] = mapped_column(String, default="pending")  # 'pending', 'processing', 'completed', 'failed'
+    status: Mapped[str] = mapped_column(String, default="PENDING")
     file_url: Mapped[str] = mapped_column(String)
     filename: Mapped[Optional[str]] = mapped_column(String)
     record_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -620,9 +620,10 @@ class ExportRequest(Base):
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     status: Mapped[ExportStatus] = mapped_column(SAEnum(ExportStatus), default=ExportStatus.PENDING)
     query: Mapped[str] = mapped_column(Text)
-    format: Mapped[str] = mapped_column(String)  # 'csv', 'excel', 'json'
+    format: Mapped[str] = mapped_column(String)  # 'csv', 'excel', 'zip'
     s3_key: Mapped[Optional[str]] = mapped_column(String)
     public_url: Mapped[Optional[str]] = mapped_column(String)
+    error_log: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
@@ -633,15 +634,15 @@ class ExportRequest(Base):
 
 
 class MessageType(str, enum.Enum):
-    WHATSAPP = "whatsapp"
-    SMS = "sms"
+    WHATSAPP = "WHATSAPP"
+    SMS = "SMS"
 
 
 class MessageStatus(str, enum.Enum):
-    PENDING = "pending"
-    SENT = "sent"
-    FAILED = "failed"
-    DRAFT = "draft"
+    PENDING = "PENDING"
+    SENT = "SENT"
+    FAILED = "FAILED"
+    DRAFT = "DRAFT"
 
 
 class MessageLog(Base):
@@ -724,10 +725,10 @@ class SyncLog(Base):
 
 
 class InvitationStatus(str, enum.Enum):
-    PENDING = "pending"
-    ACCEPTED = "accepted"
-    REJECTED = "rejected"
-    EXPIRED = "expired"
+    PENDING = "PENDING"
+    ACCEPTED = "ACCEPTED"
+    REJECTED = "REJECTED"
+    EXPIRED = "EXPIRED"
 
 
 class Invitation(Base):
@@ -802,4 +803,3 @@ class LedgerEntry(Base):
     # Relationships
     user: Mapped["User"] = relationship(back_populates="ledger_entries")
     job: Mapped[Optional["Job"]] = relationship()
-

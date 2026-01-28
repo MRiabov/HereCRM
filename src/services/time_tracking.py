@@ -35,7 +35,7 @@ class TimeTrackingService:
         # Fetch jobs completed during this shift
         stmt = select(Job).where(
             Job.employee_id == user_id,
-            Job.status == JobStatus.completed,
+            Job.status == JobStatus.COMPLETED,
             Job.completed_at >= start_time
         ).order_by(Job.completed_at.asc())
         
@@ -51,7 +51,7 @@ class TimeTrackingService:
         # [FEATURE-005] Enforce one running job at a time
         stmt = select(Job).where(
             Job.employee_id == user_id,
-            Job.status == JobStatus.in_progress,
+            Job.status == JobStatus.IN_PROGRESS,
             Job.id != job_id
         )
         result = await self.session.execute(stmt)
@@ -66,7 +66,7 @@ class TimeTrackingService:
         
         # If resuming from paused, begun_at will be set to now
         job.begun_at = datetime.now(timezone.utc)
-        job.status = JobStatus.in_progress
+        job.status = JobStatus.IN_PROGRESS
         job.employee_id = user_id
         await self.session.commit()
         return job
@@ -76,7 +76,7 @@ class TimeTrackingService:
         if not job:
             raise ValueError(f"Job {job_id} not found")
         
-        if job.status != JobStatus.in_progress or not job.begun_at:
+        if job.status != JobStatus.IN_PROGRESS or not job.begun_at:
             return job # Already not in progress
             
         # Ensure aware
@@ -89,7 +89,7 @@ class TimeTrackingService:
         
         job.total_actual_duration_seconds += int(duration.total_seconds())
         job.begun_at = None
-        job.status = JobStatus.paused
+        job.status = JobStatus.PAUSED
         await self.session.commit()
         return job
 
@@ -98,12 +98,12 @@ class TimeTrackingService:
         if not job:
             raise ValueError(f"Job {job_id} not found")
         
-        if job.status not in [JobStatus.in_progress, JobStatus.paused]:
+        if job.status not in [JobStatus.IN_PROGRESS, JobStatus.PAUSED]:
             raise ValueError("Job not started")
 
         total_duration = job.total_actual_duration_seconds
         
-        if job.status == JobStatus.in_progress and job.begun_at:
+        if job.status == JobStatus.IN_PROGRESS and job.begun_at:
             # Ensure aware
             start_time = job.begun_at
             if start_time.tzinfo is None:
@@ -115,7 +115,7 @@ class TimeTrackingService:
         
         job.total_actual_duration_seconds = total_duration
         job.begun_at = None
-        job.status = JobStatus.completed
+        job.status = JobStatus.COMPLETED
         job.completed_at = datetime.now(timezone.utc)
         await self.session.commit()
         

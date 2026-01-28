@@ -2545,6 +2545,11 @@ components:
             maxLength: 500
           - type: 'null'
           title: Public Url
+        error_log:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Error Log
         created_at:
           type: string
           format: date-time

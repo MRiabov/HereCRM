@@ -63,7 +63,7 @@ class AutorouteToolExecutor:
             return None, "No employees found to route."
 
         # Jobs
-        pending_jobs = await self.job_repo.search(query="all", business_id=self.business_id, status=JobStatus.pending)
+        pending_jobs = await self.job_repo.search(query="all", business_id=self.business_id, status=JobStatus.PENDING)
         
         start_of_day = datetime.combine(target_date, datetime.min.time())
         end_of_day = datetime.combine(target_date, datetime.max.time())
@@ -71,7 +71,7 @@ class AutorouteToolExecutor:
         scheduled_jobs = await self.job_repo.search(
             query="all", 
             business_id=self.business_id, 
-            status=JobStatus.scheduled,
+            status=JobStatus.SCHEDULED,
             min_date=start_of_day,
             max_date=end_of_day,
             query_type="scheduled"
@@ -126,7 +126,7 @@ class AutorouteToolExecutor:
                     job = step.job
                     # Update job fields
                     job.employee_id = emp_id
-                    job.status = JobStatus.scheduled
+                    job.status = JobStatus.SCHEDULED
                     
                     if step.arrival_time:
                         # Arrival time is when the technician is expected to start/arrive

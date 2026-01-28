@@ -29,7 +29,7 @@ async def test_start_job_constraint(session: AsyncSession):
     # Start first job
     await tt_service.start_job(job1.id, user.id)
     await session.refresh(job1)
-    assert job1.status == JobStatus.in_progress
+    assert job1.status == JobStatus.IN_PROGRESS
     
     # Try to start second job - should fail
     with pytest.raises(ValueError) as excinfo:
@@ -39,9 +39,9 @@ async def test_start_job_constraint(session: AsyncSession):
     # Pause first job
     await tt_service.pause_job(job1.id)
     await session.refresh(job1)
-    assert job1.status == JobStatus.paused
+    assert job1.status == JobStatus.PAUSED
     
     # Now starting second job should succeed
     await tt_service.start_job(job2.id, user.id)
     await session.refresh(job2)
-    assert job2.status == JobStatus.in_progress
+    assert job2.status == JobStatus.IN_PROGRESS
