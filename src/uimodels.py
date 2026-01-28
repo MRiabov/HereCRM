@@ -6,16 +6,33 @@ from src.models import (
     PipelineStage, 
     PromotionAction, 
     EntityType, 
+    ExportFormat,
+    MessageType,
+    ExpenseCategory,
     InvoicingWorkflow, 
     QuotingWorkflow, 
     PaymentTiming,
     JobCreationDefault
 )
-from src.models import (
-    JobStatus, Urgency, PipelineStage, ExportFormat, 
-    InvoicingWorkflow, QuotingWorkflow, PaymentTiming, 
-    JobCreationDefault, PromotionAction
-)
+import enum
+
+# --- Enums ---
+
+class StatusType(str, enum.Enum):
+    ON_WAY = "on_way"
+    RUNNING_LATE = "running_late"
+    START_JOB = "start_job"
+    FINISH_JOB = "finish_job"
+
+class UpgradeItemType(str, enum.Enum):
+    SEAT = "seat"
+    ADDON = "addon"
+    MESSAGING = "messaging"
+
+class EmployeeManageAction(str, enum.Enum):
+    LIST = "list"
+    ASSIGN_SHIFT = "assign_shift"
+    VIEW_AVAILABILITY = "view_availability"
 
 # --- Constants ---
 PHONE_PATTERN = r"^\+?[1-9]\d{1,14}$"
@@ -331,10 +348,9 @@ class SendStatusTool(BaseModel):
         description="Name or phone to find the customer (or 'next_scheduled_client')",
         max_length=100,
     )
-    status_type: str = Field(
-        "on_way",
-        description="Type of status: 'on_way', 'running_late', 'start_job', 'finish_job'",
-        max_length=20
+    status_type: StatusType = Field(
+        StatusType.ON_WAY,
+        description="Type of status: 'on_way', 'running_late', 'start_job', 'finish_job'"
     )
     message_content: Optional[str] = Field(
         None,
@@ -417,8 +433,8 @@ class ExportQueryTool(BaseModel):
 
     query: str = Field(..., description="The specific keywords to search for (e.g., 'Dublin' if the user says 'customers in Dublin', or 'all' for everything).", max_length=500)
     format: ExportFormat = Field(ExportFormat.CSV, description="The desired output format: 'csv', 'excel', or 'zip'.")
-    entity_type: Optional[str] = Field(None, description="Type of entity to export: 'customer', 'job', 'request', 'expense', 'ledger', or 'all'. If 'all' or unspecified with query 'all', it will export a ZIP with multiple files.", max_length=20)
-    status: Optional[str] = Field(None, description="Filter by status or pipeline stage (e.g., 'PENDING', 'LOST', 'COMPLETED').", max_length=50)
+    entity_type: Optional[EntityType] = Field(None, description="Type of entity to export.")
+    status: Optional[JobStatus] = Field(None, description="Filter by status (e.g., 'PENDING', 'COMPLETED').")
     min_date: Optional[str] = Field(None, description="Start date for filtering in ISO 8601 format.", max_length=30)
     max_date: Optional[str] = Field(None, description="End date for filtering in ISO 8601 format.", max_length=30)
 
@@ -438,15 +454,9 @@ class RequestUpgradeTool(BaseModel):
     """Request an upgrade for seats or addons.
     Triggered when user wants to 'buy seats', 'add user limit', 'purchase addon', or 'upgrade plan'."""
     
-    item_type: str = Field(..., description="Type of item: 'seat', 'addon', or 'messaging'", max_length=20)
+    item_type: UpgradeItemType = Field(..., description="Type of item: 'seat', 'addon', or 'messaging'")
     item_id: Optional[str] = Field(None, description="Specific addon ID if type is 'addon' (e.g., 'campaign_manager'). Leave empty for seats.", max_length=50)
     quantity: int = Field(1, description="Number of items to add")
-
-    @validator("item_type")
-    def validate_type(cls, v):
-        if v not in ["seat", "addon", "messaging"]:
-            raise ValueError("item_type must be 'seat', 'addon', or 'messaging'")
-        return v
 
 
 class ProServiceTool(BaseModel):
@@ -469,8 +479,8 @@ class MassEmailTool(BaseModel):
     required_scope: ClassVar[str] = "campaigns"
     subject: str = Field(..., description="Subject of the email", max_length=200)
     body: str = Field(..., description="Content of the message", max_length=5000)
-    recipient_query: str = Field("all", description="Filter for recipients (e.g. 'all', 'Dublin customers')", max_length=500)
-    channel: str = Field("WHATSAPP", description="Channel: 'WHATSAPP', 'email', 'SMS'", max_length=20)
+    recipient_query: str = Field("all", description="Filter for recipients (e.g. 'Dublin customers')", max_length=500)
+    channel: MessageType = Field(MessageType.WHATSAPP, description="Channel: 'WHATSAPP' or 'SMS'")
 
 class ExecuteBlastTool(BaseModel):
     """Execute a previously prepared broadcast campaign.
@@ -481,7 +491,7 @@ class ManageEmployeesTool(BaseModel):
     """Access employee management features (shifts, roles).
     Requires 'manage_employees' addon."""
     required_scope: ClassVar[str] = "manage_employees"
-    action: str = Field(..., description="Action: 'list', 'assign_shift', 'view_availability'", max_length=50)
+    action: EmployeeManageAction = Field(..., description="Action: 'list', 'assign_shift', 'view_availability'")
     details: Optional[str] = Field(None, description="Details for the action", max_length=500)
 
 
@@ -620,7 +630,7 @@ class AddExpenseTool(BaseModel):
 
     amount: float = Field(..., description="The amount spent")
     description: str = Field(..., description="What was the expense for?", max_length=500)
-    category: str = Field("General", description="Expense category (e.g., Fuel, Supplies, Parking)", max_length=100)
+    category: ExpenseCategory = Field(ExpenseCategory.GENERAL, description="Expense category")
     job_id: Optional[int] = Field(None, description="The ID of the job this expense is linked to, if any")
 
     @validator("amount")

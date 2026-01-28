@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 from src.api.dependencies.auth import get_api_key_auth
-from src.models import IntegrationConfig, IntegrationType, Customer, Request
+from src.models import IntegrationConfig, IntegrationType, Customer, Request, LeadSource, RequestStatus
 from src.repositories import CustomerRepository, RequestRepository
 from src.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,7 +23,7 @@ class LeadRequest(BaseModel):
     name: str = Field(..., max_length=100)
     phone: str = Field(..., max_length=20)
     email: Optional[str] = Field(None, max_length=100)
-    source: Optional[str] = Field("api", max_length=50)
+    source: LeadSource = Field(LeadSource.API)
 
 class ServiceRequest(BaseModel):
     name: str = Field(..., max_length=100)

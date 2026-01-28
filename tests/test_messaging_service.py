@@ -3,7 +3,7 @@ import asyncio
 from unittest.mock import patch, AsyncMock, MagicMock
 
 from src.services.messaging_service import MessagingService
-from src.models import MessageStatus, MessageType, Business, Customer, MessageLog
+from src.models import MessageStatus, MessageType, Business, Customer, MessageLog, MessageTriggerSource
 from src.database import AsyncSessionLocal
 from src.events import event_bus
 
@@ -19,8 +19,8 @@ async def test_send_message_creates_message_log():
         message_log = await service.send_message(
             recipient_phone="+1234567890",
             content="Test message",
-            channel="WHATSAPP",
-            trigger_source="test",
+            channel=MessageType.WHATSAPP,
+            trigger_source=MessageTriggerSource.API,
         )
     
     # Verify MessageLog was created
@@ -29,7 +29,7 @@ async def test_send_message_creates_message_log():
     assert message_log.recipient_phone == "+1234567890"
     assert message_log.content == "Test message"
     assert message_log.message_type == MessageType.WHATSAPP
-    assert message_log.trigger_source == "test"
+    assert message_log.trigger_source == MessageTriggerSource.API
     
     async with AsyncSessionLocal() as db:
         from sqlalchemy import select
@@ -52,8 +52,8 @@ async def test_send_message_sms_channel():
         message_log = await service.send_message(
             recipient_phone="+1234567890",
             content="Test SMS",
-            channel="SMS",
-            trigger_source="test",
+            channel=MessageType.SMS,
+            trigger_source=MessageTriggerSource.API,
         )
     
     async with AsyncSessionLocal() as db:
@@ -75,8 +75,8 @@ async def test_send_message_handles_errors():
         message_log = await service.send_message(
             recipient_phone="+1234567890",
             content="Test message",
-            channel="WHATSAPP",
-            trigger_source="test",
+            channel=MessageType.WHATSAPP,
+            trigger_source=MessageTriggerSource.API,
         )
     
     async with AsyncSessionLocal() as db:
@@ -98,8 +98,8 @@ async def test_enqueue_message():
     await service.enqueue_message(
         recipient_phone="+1234567890",
         content="Queued message",
-        channel="WHATSAPP",
-        trigger_source="test",
+        channel=MessageType.WHATSAPP,
+        trigger_source=MessageTriggerSource.API,
     )
     
     # Verify message was added to queue
@@ -109,8 +109,8 @@ async def test_enqueue_message():
     message_data = await service._queue.get()
     assert message_data["recipient_phone"] == "+1234567890"
     assert message_data["content"] == "Queued message"
-    assert message_data["channel"] == "WHATSAPP"
-    assert message_data["trigger_source"] == "test"
+    assert message_data["channel"] == MessageType.WHATSAPP
+    assert message_data["trigger_source"] == MessageTriggerSource.API
 
 
 @pytest.mark.asyncio
@@ -127,8 +127,8 @@ async def test_process_queue():
         await service.enqueue_message(
             recipient_phone="+1234567890",
             content="Queued message",
-            channel="WHATSAPP",
-            trigger_source="test",
+            channel=MessageType.WHATSAPP,
+            trigger_source=MessageTriggerSource.API,
         )
         
         # Start the service
@@ -184,7 +184,7 @@ async def test_handle_job_created_event():
     message_data = await service._queue.get()
     assert "+1234567890" in message_data["recipient_phone"]
     assert "1" in message_data["content"]
-    assert message_data["trigger_source"] == "job_booked"
+    assert message_data["trigger_source"] == MessageTriggerSource.JOB_BOOKED
 
 
 @pytest.mark.asyncio
@@ -225,9 +225,9 @@ async def test_handle_job_scheduled_event():
     # Get the message from queue
     message_data = await service._queue.get()
     assert "+1234567890" in message_data["recipient_phone"]
-    assert "SCHEDULED" in message_data["content"].lower()
+    assert "scheduled" in message_data["content"].lower()
     assert "2026-01-15T10:00:00Z" in message_data["content"]
-    assert message_data["trigger_source"] == "job_scheduled"
+    assert message_data["trigger_source"] == MessageTriggerSource.JOB_SCHEDULED
 
 
 @pytest.mark.asyncio
@@ -269,7 +269,7 @@ async def test_handle_on_my_way_event():
     assert "+1234567890" in message_data["recipient_phone"]
     assert "on our way" in message_data["content"].lower()
     assert "15" in message_data["content"]
-    assert message_data["trigger_source"] == "on_my_way"
+    assert message_data["trigger_source"] == MessageTriggerSource.ON_MY_WAY
 
 
 @pytest.mark.asyncio

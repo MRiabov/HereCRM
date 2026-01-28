@@ -16,7 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
-from src.models import Message, DocumentType, Customer
+from src.models import Message, DocumentType, Customer, MessageTriggerSource, LeadSource
 from src.services.auth_service import AuthService
 from src.services.whatsapp_service import WhatsappService
 from src.services.quote_service import QuoteService
@@ -54,7 +54,7 @@ class WebhookPayload(BaseModel):
 class GenericWebhookPayload(BaseModel):
     identity: str = Field(..., description="Phone number or email of the CRM user", max_length=100)
     message: str = Field(..., max_length=5000)
-    source: str = Field("generic", max_length=100)
+    source: LeadSource = Field(LeadSource.GENERIC)
 
 
 async def verify_signature(request: Request, x_hub_signature_256: str = Header(None)):
@@ -196,10 +196,10 @@ async def webhook(
                                 )
                                 from src.services.messaging_service import messaging_service
                                 await messaging_service.send_message(
-                                    recipient_phone=user.phone_number or "",
+                                    recipient_phone=from_number,
                                     content=response_text,
-                                    channel="WHATSAPP",
-                                    trigger_source="bot_reply"
+                                    trigger_source=MessageTriggerSource.BOT_REPLY,
+                                    business_id=user.business_id,
                                 )
                             
                             processed_count += 1
@@ -828,7 +828,7 @@ async def google_callback(
                     recipient_phone=user.phone_number,
                     content="✔ Google Calendar connected! Your assigned jobs will now appear on your calendar.",
                     channel=user.preferred_channel or "WHATSAPP",
-                    trigger_source="system_notification"
+                    trigger_source=MessageTriggerSource.SYSTEM_NOTIFICATION
                 )
 
             await db.commit()

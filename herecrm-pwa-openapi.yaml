@@ -407,7 +407,7 @@ paths:
         required: false
         schema:
           anyOf:
-          - type: string
+          - $ref: '#/components/schemas/RequestStatus'
           - type: 'null'
           title: Status
       - name: urgency
@@ -415,7 +415,7 @@ paths:
         required: false
         schema:
           anyOf:
-          - type: string
+          - $ref: '#/components/schemas/Urgency'
           - type: 'null'
           title: Urgency
       - name: min_date
@@ -1630,7 +1630,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-    get:
+    patch:
       tags:
       - pwa-analytics
       summary: Proxy Posthog
@@ -1682,7 +1682,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-    patch:
+    delete:
       tags:
       - pwa-analytics
       summary: Proxy Posthog
@@ -1708,7 +1708,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-    delete:
+    get:
       tags:
       - pwa-analytics
       summary: Proxy Posthog
@@ -2428,15 +2428,23 @@ components:
       - imports
       - exports
       title: DataActivitySchema
+    ExpenseCategory:
+      type: string
+      enum:
+      - FUEL
+      - TOOLS
+      - MATERIAL
+      - TRAVEL
+      - GENERAL
+      - OTHER
+      title: ExpenseCategory
     ExpenseCreate:
       properties:
         amount:
           type: number
           title: Amount
         category:
-          type: string
-          maxLength: 100
-          title: Category
+          $ref: '#/components/schemas/ExpenseCategory'
         description:
           anyOf:
           - type: string
@@ -2477,9 +2485,7 @@ components:
           - type: 'null'
           title: Description
         category:
-          type: string
-          maxLength: 100
-          title: Category
+          $ref: '#/components/schemas/ExpenseCategory'
         amount:
           type: number
           title: Amount

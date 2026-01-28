@@ -6,7 +6,7 @@ from src.database import Base
 from src.services.search_service import SearchService
 from src.services.geocoding import GeocodingService
 from src.uimodels import SearchTool
-from src.models import Business, User, Customer, Job, Request
+from src.models import Business, User, Customer, Job, Request, JobStatus
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 

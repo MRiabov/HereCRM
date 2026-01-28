@@ -38,6 +38,16 @@ class PipelineStage(str, enum.Enum):
     LOST = "LOST"
 
 
+class LeadSource(str, enum.Enum):
+    API = "api"
+    WEBHOOK = "webhook"
+    WHATSAPP = "whatsapp"
+    SMS = "sms"
+    PWA = "pwa"
+    MANUAL = "manual"
+    GENERIC = "generic"
+
+
 class InvoiceStatus(str, enum.Enum):
     PENDING = "PENDING"
     GENERATED = "GENERATED"
@@ -153,6 +163,7 @@ class PaymentMethod(str, enum.Enum):
 class MessageType(str, enum.Enum):
     WHATSAPP = "WHATSAPP"
     SMS = "SMS"
+    PWA_CHAT = "pwa_chat"
 
 
 class MessageStatus(str, enum.Enum):
@@ -176,10 +187,36 @@ class LedgerEntryType(str, enum.Enum):
 
 
 class PromotionAction(str, enum.Enum):
-    SCHEDULE = "schedule"
-    COMPLETE = "complete"
-    LOG = "log"
-    QUOTE = "quote"
+    SCHEDULE = "SCHEDULE"
+    COMPLETE = "COMPLETE"
+    LOG = "LOG"
+    QUOTE = "QUOTE"
+
+
+class MessageTriggerSource(str, enum.Enum):
+    MANUAL = "MANUAL"
+    BOT_REPLY = "BOT_REPLY"
+    SYSTEM_NOTIFICATION = "SYSTEM_NOTIFICATION"
+    INVITATION_FLOW = "INVITATION_FLOW"
+    QUOTE_SENT = "QUOTE_SENT"
+    QUOTE_FOLLOWUP = "QUOTE_FOLLOWUP"
+    REVIEW_REQUEST = "REVIEW_REQUEST"
+    SCHEDULER = "SCHEDULER"
+    EVENT = "EVENT"
+    JOB_BOOKED = "JOB_BOOKED"
+    JOB_SCHEDULED = "JOB_SCHEDULED"
+    ON_MY_WAY = "ON_MY_WAY"
+    AUTOROUTE_ASSIGNMENT = "AUTOROUTE_ASSIGNMENT"
+    API = "API"
+    PWA_CHAT_MANUAL = "PWA_CHAT_MANUAL"
+    CAMPAIGN = "CAMPAIGN"
+    STATUS_CHANGE = "STATUS_CHANGE"
+    INVITATION = "INVITATION"
+
+
+class TriggerSource(str, enum.Enum):
+    MANUAL = "MANUAL"
+    AUTO = "AUTO"
 
 
 class EntityType(str, enum.Enum):
@@ -687,6 +724,11 @@ class ExportRequest(Base):
     business: Mapped["Business"] = relationship(back_populates="export_requests")
 
 
+
+
+
+
+
 class MessageLog(Base):
     __tablename__ = "message_logs"
 
@@ -698,7 +740,7 @@ class MessageLog(Base):
     status: Mapped[MessageStatus] = mapped_column(
         SAEnum(MessageStatus), default=MessageStatus.PENDING
     )
-    trigger_source: Mapped[str] = mapped_column(String)
+    trigger_source: Mapped[MessageTriggerSource] = mapped_column(SAEnum(MessageTriggerSource))
     external_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     log_metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
@@ -813,6 +855,7 @@ class ExpenseCategory(str, enum.Enum):
     TOOLS = "TOOLS"
     MATERIAL = "MATERIAL"
     TRAVEL = "TRAVEL"
+    GENERAL = "GENERAL"
     OTHER = "OTHER"
 
 

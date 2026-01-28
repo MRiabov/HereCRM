@@ -646,7 +646,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "$ref": "#/components/schemas/RequestStatus"
                 },
                 {
                   "type": "null"
@@ -662,7 +662,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "$ref": "#/components/schemas/Urgency"
                 },
                 {
                   "type": "null"
@@ -2630,7 +2630,7 @@
           }
         }
       },
-      "get": {
+      "patch": {
         "tags": [
           "pwa-analytics"
         ],
@@ -2708,7 +2708,7 @@
           }
         }
       },
-      "patch": {
+      "delete": {
         "tags": [
           "pwa-analytics"
         ],
@@ -2747,7 +2747,7 @@
           }
         }
       },
-      "delete": {
+      "get": {
         "tags": [
           "pwa-analytics"
         ],
@@ -4000,6 +4000,18 @@
         ],
         "title": "DataActivitySchema"
       },
+      "ExpenseCategory": {
+        "type": "string",
+        "enum": [
+          "FUEL",
+          "TOOLS",
+          "MATERIAL",
+          "TRAVEL",
+          "GENERAL",
+          "OTHER"
+        ],
+        "title": "ExpenseCategory"
+      },
       "ExpenseCreate": {
         "properties": {
           "amount": {
@@ -4007,9 +4019,7 @@
             "title": "Amount"
           },
           "category": {
-            "type": "string",
-            "maxLength": 100,
-            "title": "Category"
+            "$ref": "#/components/schemas/ExpenseCategory"
           },
           "description": {
             "anyOf": [
@@ -4085,9 +4095,7 @@
             "title": "Description"
           },
           "category": {
-            "type": "string",
-            "maxLength": 100,
-            "title": "Category"
+            "$ref": "#/components/schemas/ExpenseCategory"
           },
           "amount": {
             "type": "number",

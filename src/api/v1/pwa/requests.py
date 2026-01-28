@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database import get_db
 from src.services.crm_service import CRMService
 from src.schemas.pwa import RequestSchema, RequestCreate, RequestUpdate
-from src.models import User
+from src.models import User, RequestStatus, Urgency
 from src.api.dependencies.clerk_auth import get_current_user
 
 router = APIRouter()
@@ -20,8 +20,8 @@ async def get_crm_service(
 @router.get("/", response_model=List[RequestSchema])
 async def list_requests(
     search: Optional[str] = None,
-    status: Optional[str] = None,
-    urgency: Optional[str] = None,
+    status: Optional[RequestStatus] = None,
+    urgency: Optional[Urgency] = None,
     min_date: Optional[datetime] = None,
     max_date: Optional[datetime] = None,
     service: CRMService = Depends(get_crm_service)

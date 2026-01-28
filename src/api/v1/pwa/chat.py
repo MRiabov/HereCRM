@@ -16,7 +16,7 @@ from src.database import get_db
 from src.services.crm_service import CRMService
 from src.services.messaging_service import messaging_service
 from src.schemas.pwa import ChatMessage, ChatSendRequest, ChatExecuteRequest, ChatMessageUpdate
-from src.models import Message, MessageRole, User, Service, ConversationState, ConversationStatus, Business
+from src.models import Message, MessageRole, User, Service, ConversationState, ConversationStatus, Business, MessageTriggerSource, MessageType
 from src.api.dependencies.clerk_auth import get_current_user
 
 router = APIRouter()
@@ -119,7 +119,7 @@ async def send_message(
             to_number="system",
             body=request.message,
             role=MessageRole.USER,
-            channel_type="pwa_chat"
+            channel_type=MessageType.PWA_CHAT
         )
         service.session.add(user_msg)
 
@@ -151,7 +151,7 @@ async def send_message(
                 text=request.message,
                 system_time=system_time,
                 service_catalog=service_catalog,
-                channel_name="pwa_chat",
+                channel_name=MessageType.PWA_CHAT.value,
                 user_context=user_context,
                 feedback=feedback
             )
@@ -175,7 +175,7 @@ async def send_message(
                         user_query=request.message,
                         business_id=service.business_id,
                         user_id=current_user.id,
-                        channel="pwa_chat"
+                        channel=MessageType.PWA_CHAT.value
                     )
                     break
                 else:
@@ -290,7 +290,7 @@ async def send_message(
             to_number=current_user.phone_number or "pwa_user",
             body=response_text,
             role=MessageRole.ASSISTANT,
-            channel_type="pwa_chat"
+            channel_type=MessageType.PWA_CHAT
         )
         service.session.add(ai_msg)
         
@@ -315,7 +315,7 @@ async def send_message(
         to_number=customer.phone,
         body=request.message,
         role=MessageRole.USER,
-        channel_type="pwa_chat"
+        channel_type=MessageType.PWA_CHAT
     )
     service.session.add(user_msg)
 
@@ -324,8 +324,8 @@ async def send_message(
     await messaging_service.send_message(
         recipient_phone=customer.phone,
         content=request.message,
-        channel="WHATSAPP",
-        trigger_source="pwa_chat_manual",
+        channel=MessageType.WHATSAPP,
+        trigger_source=MessageTriggerSource.PWA_CHAT_MANUAL,
         business_id=service.business_id
     )
     
@@ -339,7 +339,7 @@ async def send_message(
         to_number=customer.phone,
         body=request.message,
         role=MessageRole.ASSISTANT,
-        channel_type="WHATSAPP"
+        channel_type=MessageType.WHATSAPP
     )
     service.session.add(outbound_msg)
     await service.session.commit()
@@ -420,7 +420,7 @@ async def execute_tool(
         to_number=current_user.phone_number or "pwa_user",
         body=response_text,
         role=MessageRole.ASSISTANT,
-        channel_type="pwa_chat"
+        channel_type=MessageType.PWA_CHAT
     )
     service.session.add(ai_msg)
     

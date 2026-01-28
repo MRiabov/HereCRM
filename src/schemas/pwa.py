@@ -6,7 +6,8 @@ from src.models import (
     JobStatus, PipelineStage, InvoicingWorkflow, QuotingWorkflow, 
     PaymentTiming, JobCreationDefault, WageModelType, QuoteStatus, SyncLogStatus,
     CampaignStatus, CampaignChannel, WhatsAppTemplateStatus, WhatsAppTemplateCategory,
-    InvoiceStatus, ExportStatus, ExportFormat, RequestStatus, UserRole, MessageRole
+    InvoiceStatus, ExportStatus, ExportFormat, RequestStatus, UserRole, MessageRole,
+    ExpenseCategory, LedgerEntryType, EntityType, DistanceUnit
 )
 from enum import Enum
 
@@ -306,7 +307,7 @@ class ServiceCreate(BaseModel):
 class ExpenseSchema(BaseModel):
     id: int
     description: Optional[str] = Field(None, max_length=500)
-    category: str = Field(..., max_length=100)
+    category: ExpenseCategory
     amount: float
     created_at: datetime
     receipt_url: Optional[str] = Field(None, max_length=500)
@@ -316,7 +317,7 @@ class ExpenseSchema(BaseModel):
 
 class ExpenseCreate(BaseModel):
     amount: float
-    category: str = Field(..., max_length=100)
+    category: ExpenseCategory
     description: Optional[str] = Field(None, max_length=500)
     job_id: Optional[int] = None
     vendor: Optional[str] = Field(None, max_length=100)
@@ -326,7 +327,7 @@ class LedgerEntrySchema(BaseModel):
     id: int
     employee_id: int
     amount: float
-    type: str = Field(..., max_length=20) # credit/debit
+    type: LedgerEntryType
     description: str = Field(..., max_length=500)
     created_at: datetime
     

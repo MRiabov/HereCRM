@@ -35,7 +35,7 @@ class RBACService:
             # If tool is not in RBAC config, deny access by default for strictness
             return False
 
-        required_role_str = tool_config.get("role")
+        required_role_str = tool_config.get("role", "").upper()
         if not required_role_str:
             return False
 

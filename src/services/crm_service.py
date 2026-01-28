@@ -352,7 +352,7 @@ class CRMService:
         # Normalize action to enum
         if isinstance(action, str):
             try:
-                action = PromotionAction(action.lower())
+                action = PromotionAction(action.upper())
             except ValueError:
                 return f"Unknown action: {action}", None
 

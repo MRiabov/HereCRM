@@ -5,13 +5,16 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import (
-    Campaign, 
-    CampaignRecipient, 
-    CampaignStatus, 
-    CampaignChannel, 
-    RecipientStatus, 
+    Campaign,
+    CampaignRecipient,
+    CampaignStatus,
+    CampaignChannel,
+    RecipientStatus,
     Customer,
-    MessageStatus
+    MessageStatus,
+    EntityType,
+    MessageType,
+    MessageTriggerSource
 )
 from src.services.search_service import SearchService
 from src.services.messaging_service import messaging_service
@@ -63,7 +66,7 @@ class CampaignService:
         # Use SearchService to segment audience
         search_params = SearchTool(
             query=str(campaign.recipient_query) if campaign.recipient_query and campaign.recipient_query != "all" else "",
-            entity_type="CUSTOMER",
+            entity_type=EntityType.CUSTOMER,
             detailed=False,
             query_type="ALL",
             min_date=None,
@@ -75,15 +78,15 @@ class CampaignService:
             center_address=None,
             pipeline_stage=None
         )
-        
+
         # Note: We need a way to get all results from SearchService, not just top 10.
         # However, for now, let's assume we can get them or refactor SearchService slightly.
         # Actually, let's look at SearchService._search_customers.
-        
+
         results = await self.search_service._search_customers(
-            search_params, 
-            campaign.business_id, 
-            None, 
+            search_params,
+            campaign.business_id,
+            None,
             None
         )
 
@@ -158,9 +161,10 @@ class CampaignService:
                         msg_log = await messaging_service.send_message(
                             recipient_phone=customer.phone,
                             content=campaign.body,
-                            channel="WHATSAPP",
-                            trigger_source=f"campaign_{campaign_id}",
-                            business_id=campaign.business_id
+                            channel=MessageType.WHATSAPP,
+                            trigger_source=MessageTriggerSource.CAMPAIGN,
+                            business_id=campaign.business_id,
+                            log_metadata={"campaign_id": campaign.id}
                         )
                         success = msg_log.status == MessageStatus.SENT
                         external_id = msg_log.external_id
@@ -170,9 +174,10 @@ class CampaignService:
                         msg_log = await messaging_service.send_message(
                             recipient_phone=customer.phone,
                             content=campaign.body,
-                            channel="SMS",
-                            trigger_source=f"campaign_{campaign_id}",
-                            business_id=campaign.business_id
+                            channel=MessageType.SMS,
+                            trigger_source=MessageTriggerSource.CAMPAIGN,
+                            business_id=campaign.business_id,
+                            log_metadata={"campaign_id": campaign.id}
                         )
                         success = msg_log.status == MessageStatus.SENT
                         external_id = msg_log.external_id

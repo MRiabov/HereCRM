@@ -4,7 +4,7 @@ from datetime import datetime, timezone, timedelta
 from sqlalchemy import select
 from src.database import AsyncSessionLocal
 from src.models import (
-    Business, Job, Quote, QuoteStatus, MessageLog, MessageType, MessageStatus, Customer
+    Business, Job, Quote, QuoteStatus, MessageLog, MessageType, MessageStatus, Customer, MessageTriggerSource
 )
 from src.events import event_bus, QUOTE_SENT, JOB_PAID
 from src.services.messaging_service import messaging_service
@@ -93,7 +93,7 @@ class AutomationService:
                     # Check if we already drafted or sent a follow-up
                     stmt_check = select(MessageLog).where(
                         MessageLog.business_id == business.id,
-                        MessageLog.trigger_source == "quote_followup",
+                        MessageLog.trigger_source == MessageTriggerSource.QUOTE_FOLLOWUP,
                         MessageLog.log_metadata["quote_id"].as_integer() == quote.id
                     )
                     log_check = await db.execute(stmt_check)
@@ -113,7 +113,7 @@ class AutomationService:
                         content=draft_content,
                         message_type=MessageType.WHATSAPP,
                         status=MessageStatus.DRAFT,
-                        trigger_source="quote_followup",
+                        trigger_source=MessageTriggerSource.QUOTE_FOLLOWUP,
                         log_metadata={"quote_id": quote.id, "type": "quote_followup"}
                     )
                     db.add(draft)
@@ -149,7 +149,7 @@ class AutomationService:
                 for job in jobs:
                     stmt_check = select(MessageLog).where(
                         MessageLog.business_id == business.id,
-                        MessageLog.trigger_source == "review_request",
+                        MessageLog.trigger_source == MessageTriggerSource.REVIEW_REQUEST,
                         MessageLog.log_metadata["job_id"].as_integer() == job.id
                     )
                     log_check = await db.execute(stmt_check)
@@ -163,8 +163,8 @@ class AutomationService:
                     await messaging_service.enqueue_message(
                         recipient_phone=job.customer.phone or "",
                         content=content,
-                        channel="WHATSAPP",
-                        trigger_source="review_request",
+                        channel=MessageType.WHATSAPP,
+                        trigger_source=MessageTriggerSource.REVIEW_REQUEST,
                         business_id=business.id
                     )
                     
@@ -175,7 +175,7 @@ class AutomationService:
                         content=content,
                         message_type=MessageType.WHATSAPP,
                         status=MessageStatus.SENT,
-                        trigger_source="review_request",
+                        trigger_source=MessageTriggerSource.REVIEW_REQUEST,
                         log_metadata={"job_id": job.id, "type": "review_request"},
                         sent_at=datetime.now(timezone.utc)
                     )

@@ -5,7 +5,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select
 from src.database import AsyncSessionLocal
-from src.models import User, UserRole, Job, JobStatus
+from src.models import User, UserRole, Job, JobStatus, MessageType, MessageTriggerSource
 from src.services.messaging_service import messaging_service
 
 logger = logging.getLogger(__name__)
@@ -93,8 +93,8 @@ class SchedulerService:
                     await messaging_service.enqueue_message(
                         recipient_phone=employee.phone_number,
                         content=summary_text,
-                        channel="WHATSAPP",
-                        trigger_source="scheduler"
+                        channel=MessageType.WHATSAPP,
+                        trigger_source=MessageTriggerSource.SCHEDULER
                     )
                     logger.info(f"Enqueued shift summary for {employee.id}")
 

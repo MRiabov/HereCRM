@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime, timedelta, timezone
-from src.models import Job, Customer, Request, User, Business
+from src.models import Job, Customer, Request, User, Business, JobStatus
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from src.tool_executor import ToolExecutor
 from src.uimodels import SearchTool

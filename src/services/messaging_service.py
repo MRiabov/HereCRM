@@ -4,7 +4,7 @@ from typing import Optional
 from datetime import datetime, timezone
 import httpx
 
-from src.models import MessageLog, MessageType, MessageStatus
+from src.models import MessageLog, MessageType, MessageStatus, MessageTriggerSource
 from src.events import event_bus
 from src.database import AsyncSessionLocal
 from src.repositories import CustomerRepository
@@ -29,18 +29,19 @@ class MessagingService:
         self,
         recipient_phone: str,
         content: str,
-        channel: str = "WHATSAPP",
-        trigger_source: str = "MANUAL",
+        channel: MessageType = MessageType.WHATSAPP,
+        trigger_source: MessageTriggerSource = MessageTriggerSource.MANUAL,
         business_id: Optional[int] = None,
+        log_metadata: Optional[dict] = None,
     ) -> MessageLog:
         """
         Send a message to a recipient via the specified channel.
         """
         # Determine message type
-        message_type = MessageType.WHATSAPP if channel == "WHATSAPP" else MessageType.SMS
+        message_type = channel if isinstance(channel, MessageType) else (MessageType.WHATSAPP if channel == "WHATSAPP" else MessageType.SMS)
         
         # Mandatory GSM-7 normalization for SMS to avoid high costs (UCS-2)
-        if channel == "SMS":
+        if message_type == MessageType.SMS:
             from src.services.channels.sms_utils import normalize_to_gsm7
             content = normalize_to_gsm7(content)
             
@@ -56,6 +57,7 @@ class MessagingService:
                 message_type=message_type,
                 status=MessageStatus.PENDING,
                 trigger_source=trigger_source,
+                log_metadata=log_metadata,
             )
             try:
                 db.add(message_log)
@@ -70,9 +72,9 @@ class MessagingService:
                 success = False
                 external_id = None
                 
-                if channel == "WHATSAPP":
+                if message_type == MessageType.WHATSAPP:
                     success, external_id = await self._send_whatsapp(recipient_phone, content)
-                elif channel == "SMS":
+                elif message_type == MessageType.SMS:
                     success, external_id = await self._send_sms(recipient_phone, content)
                 
                 # 3. Update status and track usage
@@ -88,13 +90,13 @@ class MessagingService:
                         from src.services.channels.sms_utils import get_sms_segment_count
                         
                         quantity = 1
-                        if channel == "SMS":
+                        if message_type == MessageType.SMS:
                             quantity = get_sms_segment_count(content)
                             
                         billing_service = BillingService(db)
                         await billing_service.track_message_sent(business_id, quantity=quantity)
                     
-                    logger.info(f"Message {message_log.id} sent successfully via {channel}")
+                    logger.info(f"Message {message_log.id} sent successfully via {message_type.value}")
                 else:
                     message_log.status = MessageStatus.FAILED
                     message_log.error_message = "Provider request failed"
@@ -180,9 +182,10 @@ class MessagingService:
         self,
         recipient_phone: str,
         content: str,
-        channel: str = "WHATSAPP",
-        trigger_source: str = "event",
+        channel: MessageType = MessageType.WHATSAPP,
+        trigger_source: MessageTriggerSource = MessageTriggerSource.EVENT,
         business_id: Optional[int] = None,
+        log_metadata: Optional[dict] = None,
     ):
         """
         Add a message to the queue for async processing.
@@ -190,9 +193,10 @@ class MessagingService:
         Args:
             recipient_phone: Phone number of the recipient
             content: Message content to send
-            channel: Channel to use ("WHATSAPP" or "SMS")
+            channel: Channel to use (MessageType.WHATSAPP or MessageType.SMS)
             trigger_source: Source that triggered this message
             business_id: ID of the business for billing
+            log_metadata: Additional metadata for the message log
         """
         await self._queue.put({
             "recipient_phone": recipient_phone,
@@ -200,6 +204,7 @@ class MessagingService:
             "channel": channel,
             "trigger_source": trigger_source,
             "business_id": business_id,
+            "log_metadata": log_metadata,
         })
         logger.debug(f"Enqueued message for {recipient_phone}")
 
@@ -285,7 +290,7 @@ class MessagingService:
             await self.enqueue_message(
                 recipient_phone=customer.phone,
                 content=content,
-                trigger_source="job_booked",
+                trigger_source=MessageTriggerSource.JOB_BOOKED,
                 business_id=business_id,
             )
 
@@ -317,7 +322,7 @@ class MessagingService:
             await self.enqueue_message(
                 recipient_phone=customer.phone,
                 content=content,
-                trigger_source="job_scheduled",
+                trigger_source=MessageTriggerSource.JOB_SCHEDULED,
                 business_id=business_id,
             )
 
@@ -349,7 +354,7 @@ class MessagingService:
             await self.enqueue_message(
                 recipient_phone=customer.phone,
                 content=content,
-                trigger_source="on_my_way",
+                trigger_source=MessageTriggerSource.ON_MY_WAY,
                 business_id=business_id,
             )
 
@@ -384,8 +389,9 @@ class MessagingService:
         await self.enqueue_message(
             recipient_phone=recipient_phone,
             content=content,
-            trigger_source=f"status_{status_type}",
+            trigger_source=MessageTriggerSource.STATUS_CHANGE,
             business_id=business_id,
+            log_metadata={"status_type": status_type}
         )
 
     def register_handlers(self):

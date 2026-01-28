@@ -1,3 +1,4 @@
+from src.models import EntityType, CampaignChannel
 import asyncio
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
@@ -39,7 +40,7 @@ async def preview_audience(
     from src.uimodels import SearchTool
     search_params = SearchTool(
         query=query if query != "all" else "",
-        entity_type="CUSTOMER",
+        entity_type=EntityType.CUSTOMER,
         detailed=False,
         query_type="ALL",
         min_date=None,
@@ -58,11 +59,17 @@ async def preview_audience(
         None
     )
 
+    # Convert string channel to Enum if possible
+    try:
+        camp_channel = CampaignChannel(channel)
+    except ValueError:
+        camp_channel = CampaignChannel.WHATSAPP # Default or handle error
+    
     valid_results = []
     for customer in results:
-        if channel == "email" and not customer.email:
+        if camp_channel == CampaignChannel.EMAIL and not customer.email:
             continue
-        if channel in ["WHATSAPP", "SMS"] and not customer.phone:
+        if camp_channel in [CampaignChannel.WHATSAPP, CampaignChannel.SMS] and not customer.phone:
             continue
         valid_results.append(customer)
 

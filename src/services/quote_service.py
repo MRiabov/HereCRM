@@ -6,7 +6,7 @@ from datetime import datetime
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from src.models import Quote, QuoteLineItem, QuoteStatus, Job, LineItem, Request, Business, Customer
+from src.models import Quote, QuoteLineItem, QuoteStatus, Job, LineItem, Request, Business, Customer, MessageTriggerSource
 from src.services.pdf_generator import pdf_generator
 from src.services.storage import storage_service
 from src.services.tax_calculator import tax_calculator
@@ -193,7 +193,7 @@ class QuoteService:
             await messaging_service.enqueue_message(
                 recipient_phone=customer.phone,
                 content=content,
-                trigger_source="quote_sent",
+                trigger_source=MessageTriggerSource.QUOTE_SENT,
                 business_id=quote.business_id,
             )
         

@@ -6,7 +6,7 @@ import logging
 from src.services.messaging_service import messaging_service
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import User, Business, JobStatus
+from src.models import User, Business, JobStatus, MessageTriggerSource
 from src.repositories import JobRepository, UserRepository
 from src.services.routing.base import RoutingServiceProvider, RoutingSolution, RoutingException
 from src.services.routing.ors import OpenRouteServiceAdapter
@@ -140,7 +140,7 @@ class AutorouteToolExecutor:
                             await messaging_service.enqueue_message(
                                 recipient_phone=employee.phone_number,
                                 content=f"New job assigned: {job.description} at {job.scheduled_at.strftime('%H:%M') if job.scheduled_at else 'N/A'}",
-                                trigger_source="autoroute_assignment"
+                                trigger_source=MessageTriggerSource.AUTOROUTE_ASSIGNMENT
                             )
                         
                         # 2. Notify Customer (Placeholder as per Spec 013 "handoff to Msg Spec")

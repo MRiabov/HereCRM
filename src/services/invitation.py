@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import Invitation, InvitationStatus, User, UserRole
+from src.models import Invitation, InvitationStatus, User, UserRole, MessageTriggerSource, MessageType
 from src.repositories import InvitationRepository, UserRepository, BusinessRepository
 from src.services.messaging_service import messaging_service
 
@@ -63,8 +63,8 @@ class InvitationService:
             await messaging_service.send_message(
                 recipient_phone=identifier,
                 content=message,
-                channel="WHATSAPP",  # Default to WhatsApp
-                trigger_source="invitation_flow",
+                channel=MessageType.WHATSAPP,  # Default to WhatsApp
+                trigger_source=MessageTriggerSource.INVITATION_FLOW,
                 business_id=business_id
             )
         except Exception as e:
