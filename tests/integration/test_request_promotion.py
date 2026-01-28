@@ -103,3 +103,65 @@ async def test_request_to_quote_promotion_with_id(async_session):
     
     assert quote is not None
     assert "window" in quote.items[0].description.lower()
+
+@pytest.mark.asyncio
+async def test_request_promotion_with_assigned_to_and_price(async_session):
+    business = Business(name="Test Biz")
+    async_session.add(business)
+    await async_session.commit()
+    await async_session.refresh(business)
+
+    employee = User(name="Jeff", business_id=business.id, role="employee")
+    async_session.add(employee)
+    await async_session.commit()
+    await async_session.refresh(employee)
+
+    customer = Customer(name="Charlie", business_id=business.id)
+    async_session.add(customer)
+    
+    request = Request(
+        business_id=business.id,
+        description="Leaky faucet",
+        status="pending"
+    )
+    async_session.add(request)
+    await async_session.commit()
+
+    crm_service = CRMService(async_session, business.id)
+
+    # 1. Test Schedule (Job)
+    msg, metadata = await crm_service.convert_request(
+        query="faucet",
+        action="schedule",
+        assigned_to=employee.id,
+        price=150.0
+    )
+
+    assert metadata["entity"] == "job"
+    job_id = metadata["id"]
+    
+    from src.models import Job
+    job = await async_session.get(Job, job_id)
+    assert job.employee_id == employee.id
+    assert job.value == 150.0
+
+    # 2. Setup again for Quote
+    request2 = Request(
+        business_id=business.id,
+        description="Garden work",
+        status="pending"
+    )
+    async_session.add(request2)
+    await async_session.commit()
+
+    msg, metadata = await crm_service.convert_request(
+        query="Garden",
+        action="quote",
+        price=500.0
+    )
+
+    assert metadata["entity"] == "quote"
+    quote_id = metadata["id"]
+    
+    quote = await async_session.get(Quote, quote_id)
+    assert quote.total_amount == 500.0
