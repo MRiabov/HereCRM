@@ -12,8 +12,8 @@ from src.models import (
 from enum import Enum
 
 # --- Constants ---
-PHONE_PATTERN = r"^\+?[1-9]\d{1,14}$"
-EMAIL_PATTERN = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+PHONE_PATTERN = r"(^\+?[1-9]\d{1,14}$|^$)"
+EMAIL_PATTERN = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$|^$)"
 
 # --- Shared / Base Schemas ---
 
