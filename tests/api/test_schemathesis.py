@@ -80,7 +80,7 @@ if os.path.exists(SCHEMA_PATH):
         raw_schema = json.load(f)
     schema = schemathesis.openapi.from_dict(raw_schema)
     schema.app = app
-    schema.base_url = "http://localhost/api/v1"
+    schema.base_url = None
     # Disable coverage phase to speed up collection
     schema.config.phases.coverage.enabled = False
 else:
