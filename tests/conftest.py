@@ -19,6 +19,11 @@ os.environ["CLERK_ISSUER"] = "https://dummy.clerk.accounts.dev"
 os.environ["CLERK_JWKS_URL"] = "https://dummy.clerk.accounts.dev/.well-known/jwks.json"
 os.environ["CLERK_WEBHOOK_SECRET"] = "whsec_dummy"
 
+# PostHog settings for tests
+os.environ["POSTHOG_API_KEY"] = "phc_dummy_test_key"
+os.environ["POSTHOG_HOST"] = "https://dummy.posthog.com"
+os.environ["OPENROUTER_API_KEY"] = "sk-or-dummy-key"
+
 import pytest
 import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession

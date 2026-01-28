@@ -1,4 +1,5 @@
 import jwt
+import logging
 from fastapi import Request, HTTPException, status, Depends
 from jwt import PyJWKClient
 from src.config import settings
@@ -9,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import User, Business, UserRole
 
 from clerk_backend_api import Clerk
+
+logger = logging.getLogger(__name__)
 
 class VerifyToken:
     def __init__(self):
@@ -37,9 +40,10 @@ class VerifyToken:
                 issuer=settings.clerk_issuer,
             )
         except Exception as e:
+            logger.error(f"Token validation failed: {e}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Token validation failed: {str(e)}",
+                detail="Token validation failed",
             )
 
         clerk_id = payload.get("sub")
@@ -103,8 +107,9 @@ class VerifyToken:
                 await db.commit()
                 await db.refresh(user)
             except Exception as e:
+                logger.error(f"JIT sync failed: {e}")
                 await db.rollback()
-                raise HTTPException(status_code=500, detail=f"JIT sync failed: {str(e)}")
+                raise HTTPException(status_code=500, detail="Authentication sync failed")
         
         # 2. Validate Org Mismatch
         if clerk_org_id and user.business.clerk_org_id != clerk_org_id:
