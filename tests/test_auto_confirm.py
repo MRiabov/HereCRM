@@ -7,11 +7,13 @@ from src.models import User, ConversationState, ConversationStatus
 from src.services.whatsapp_service import WhatsappService
 from src.uimodels import AddJobTool
 from src.config.loader import ChannelConfig
+from src.services.chat.auto_confirm import AutoConfirmService
 
 # Mock config loader
 @pytest.fixture
 def mock_config_loader():
-    with patch("src.services.whatsapp_service.get_channel_config_loader") as mock:
+    # Patch in idle handler where it is imported
+    with patch("src.services.chat.handlers.idle.get_channel_config_loader") as mock:
         loader = MagicMock()
         loader.get_channel_config.return_value = {
             "auto_confirm": True,
@@ -55,6 +57,10 @@ async def test_auto_confirm_initiation(mock_config_loader, mock_parser, mock_tem
         mock_billing.track_message_sent = AsyncMock()
         
         service = WhatsappService(session, mock_parser, mock_template_service, billing_service=mock_billing)
+
+        # We need to mock the auto_confirm_service.schedule_auto_confirm
+        service.auto_confirm_service.schedule_auto_confirm = MagicMock()
+        service.idle_handler.auto_confirm_service.schedule_auto_confirm = MagicMock()
     
     # Mock repositories
     user = User(id=1, business_id=1, phone_number="+1234567890", preferred_channel="sms")
@@ -67,10 +73,12 @@ async def test_auto_confirm_initiation(mock_config_loader, mock_parser, mock_tem
     service.user_repo.get_by_phone = AsyncMock(return_value=user)
     service.state_repo.get_by_user_id = AsyncMock(return_value=state)
     service.state_repo.add = MagicMock()
-    service._generate_summary = AsyncMock(return_value="Add Job Summary")
+
+    service.summary_generator.generate_summary = AsyncMock(return_value="Add Job Summary")
+    service.idle_handler.summary_generator.generate_summary = AsyncMock(return_value="Add Job Summary")
     
     # Mock ServiceRepository instantiated inside _handle_idle
-    with patch("src.services.whatsapp_service.ServiceRepository") as MockServiceRepo:
+    with patch("src.services.chat.handlers.idle.ServiceRepository") as MockServiceRepo:
         mock_repo_instance = MockServiceRepo.return_value
         mock_repo_instance.get_all_for_business = AsyncMock(return_value=[])
     
@@ -78,15 +86,13 @@ async def test_auto_confirm_initiation(mock_config_loader, mock_parser, mock_tem
         tool = AddJobTool(description="Fix sink", price=100.0, customer_name="Alice")
         mock_parser.parse.return_value = tool
         
-        # Mock background task (we don't want to actually sleep/spawn)
-        with patch("asyncio.create_task") as mock_create_task:
-            reply = await service.handle_message("Add job", user_phone="+1234567890", channel="sms")
-            
-            # Verify
-            assert "Auto-confirming in 45s" in reply
-            assert state.state == ConversationStatus.PENDING_AUTO_CONFIRM
-            assert state.pending_action_timestamp is not None
-            mock_create_task.assert_called_once()
+        reply = await service.handle_message("Add job", user_phone="+1234567890", channel="sms")
+
+        # Verify
+        assert "Auto-confirming in 45s" in reply
+        assert state.state == ConversationStatus.PENDING_AUTO_CONFIRM
+        assert state.pending_action_timestamp is not None
+        service.idle_handler.auto_confirm_service.schedule_auto_confirm.assert_called_once()
             
 @pytest.mark.asyncio
 async def test_auto_confirm_cancellation(mock_config_loader, mock_parser, mock_template_service):
@@ -133,7 +139,9 @@ async def test_auto_confirm_interruption_creates_new_command(mock_config_loader,
     
     service.user_repo.get_by_phone = AsyncMock(return_value=user)
     service.state_repo.get_by_user_id = AsyncMock(return_value=state)
-    service._handle_idle = AsyncMock(return_value="New Command Processed")
+
+    # Mock idle handler's handle method
+    service.idle_handler.handle = AsyncMock(return_value="New Command Processed")
     
     # User says "Actually add lead" (not yes/no)
     reply = await service.handle_message("Actually add lead", user_phone="+1234567890")
@@ -145,9 +153,9 @@ async def test_auto_confirm_interruption_creates_new_command(mock_config_loader,
 @pytest.mark.asyncio
 async def test_auto_confirm_task_execution(mock_template_service):
     # This test mocks the inside of _auto_confirm_task
-    # We need to mock AsyncSessionLocal
+    # We need to mock AsyncSessionLocal in src.services.chat.auto_confirm
     
-    with patch("src.services.whatsapp_service.AsyncSessionLocal") as mock_session_cls:
+    with patch("src.services.chat.auto_confirm.AsyncSessionLocal") as mock_session_cls:
         mock_session = AsyncMock()
         mock_session.add = MagicMock() # Sync method
         mock_session_cls.return_value.__aenter__.return_value = mock_session
@@ -170,16 +178,14 @@ async def test_auto_confirm_task_execution(mock_template_service):
         mock_user_repo = MagicMock()
         mock_user_repo.get_by_id = AsyncMock(return_value=user)
         
-        with patch("src.services.whatsapp_service.ConversationStateRepository", return_value=mock_state_repo):
-            with patch("src.services.whatsapp_service.UserRepository", return_value=mock_user_repo):
-                 # Patch _execute_draft on the WhatsappService class directly for the duration of the task
-                 with patch("src.services.whatsapp_service.WhatsappService._execute_draft", new_callable=AsyncMock) as mock_execute_draft:
+        with patch("src.services.chat.auto_confirm.ConversationStateRepository", return_value=mock_state_repo):
+            with patch("src.services.chat.auto_confirm.UserRepository", return_value=mock_user_repo):
+                 # Patch DraftExecutor.execute_draft on the CLASS
+                 with patch("src.services.chat.utils.draft_executor.DraftExecutor.execute_draft", new_callable=AsyncMock) as mock_execute_draft:
                      mock_execute_draft.return_value = "Draft Executed"
                      
-                     # Instantiate real service
-                     # We use a real instance but we'll mock its billing/etc if needed
-                     # Actually _auto_confirm_task doesn't use self.billing_service anyway
-                     real_service = WhatsappService(AsyncMock(), MagicMock(), MagicMock())
+                     # Pass the mock session factory explicitly!
+                     auto_confirm_service = AutoConfirmService(session_factory=mock_session_cls)
                      
                      # Mock SMS Service
                      with patch("src.services.sms_factory.get_sms_service") as mock_get_sms:
@@ -187,7 +193,7 @@ async def test_auto_confirm_task_execution(mock_template_service):
                          mock_sms.send_sms = AsyncMock()
                          
                          # Run the task
-                         await real_service._auto_confirm_task(user_id=1, timeout=0)
+                         await auto_confirm_service._auto_confirm_task(user_id=1, timeout=0)
                          
                          # Verify execution
                          mock_execute_draft.assert_called_once()
