@@ -2524,7 +2524,7 @@ components:
       enum:
       - CSV
       - Excel
-      - JSON
+      - ZIP
       title: ExportFormat
     ExportRequestSchema:
       properties:

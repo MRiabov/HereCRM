@@ -62,7 +62,7 @@ class ExportStatus(str, enum.Enum):
 class ExportFormat(str, enum.Enum):
     CSV = "CSV"
     EXCEL = "Excel"
-    JSON = "JSON"
+    ZIP = "ZIP"
 
 
 class PaymentStatus(str, enum.Enum):

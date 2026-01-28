@@ -398,18 +398,19 @@ class ExitSettingsTool(BaseModel):
     pass
 
 class ExportQueryTool(BaseModel):
-    """Export data based on a natural language query."""
+    """Export data based on a natural language query.
+    Allows exporting specific entities (customers, jobs, requests) or 'everything' as a ZIP file."""
 
     query: str = Field(..., description="The specific keywords to search for (e.g., 'Dublin' if the user says 'customers in Dublin', or 'all' for everything).", max_length=500)
-    format: str = Field("csv", description="The desired output format: 'csv', 'excel', or 'json'.", max_length=10)
-    entity_type: Optional[str] = Field(None, description="Type of entity to export: 'customer', 'job', 'lead'. If unspecified, infer from query or default to customer.", max_length=20)
+    format: str = Field("csv", description="The desired output format: 'csv', 'excel', or 'zip'.", max_length=10)
+    entity_type: Optional[str] = Field(None, description="Type of entity to export: 'customer', 'job', 'request', 'expense', 'ledger', or 'all'. If 'all' or unspecified with query 'all', it will export a ZIP with multiple files.", max_length=20)
     status: Optional[str] = Field(None, description="Filter by status or pipeline stage (e.g., 'pending', 'lost', 'completed').", max_length=50)
     min_date: Optional[str] = Field(None, description="Start date for filtering in ISO 8601 format.", max_length=30)
     max_date: Optional[str] = Field(None, description="End date for filtering in ISO 8601 format.", max_length=30)
 
     @validator("format")
     def validate_format(cls, v):
-        if v.lower() not in ["csv", "excel", "json"]:
+        if v.lower() not in ["csv", "excel", "zip"]:
             return "csv" # Default to csv if invalid
         return v.lower()
 

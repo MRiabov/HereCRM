@@ -211,11 +211,11 @@ tool_descriptions:
     Example: "Help", "How does this work?", "Why did my last prompt fail?" -> HelpTool()
   
   ExportQueryTool: |
-    Export data based on keywords or filters. 
-    Use this tool when the user says "export", "download", "csv", or "get a list of".
+    Export data based on a natural language query.
     Example: "Export leads added last week" -> ExportQueryTool(query="leads", entity_type="lead", format="csv")
     Example: "Export all Dublin jobs as CSV" -> ExportQueryTool(query="Dublin", entity_type="job", format="csv")
-    Example: "Export everything" -> ExportQueryTool(query="all", entity_type="job")
+    Example: "Export everything" -> ExportQueryTool(query="all", entity_type="all", format="zip")
+    Example: "Download all data" -> ExportQueryTool(query="all", entity_type="all", format="zip")
   
   GetBillingStatusTool: |
     Check the current subscription status, limits, and usage.

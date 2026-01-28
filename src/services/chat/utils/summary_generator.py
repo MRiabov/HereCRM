@@ -175,11 +175,16 @@ class SummaryGenerator:
                 phone=customer.phone if customer else (tool_call.customer_phone or "Not supplied"),
                 address=customer.street if customer else "Not supplied",
             )
+            line_items_detail = ""
+            if hasattr(tool_call, "line_items") and tool_call.line_items:
+                line_items_detail = f"\n{format_line_items(tool_call.line_items)}"
+
             return self.template_service.render(
                 "request_summary",
                 client_details=client_details,
                 time=tool_call.time,
                 description=tool_call.description,
+                line_items=line_items_detail,
             )
 
         if isinstance(tool_call, GetPipelineTool):
