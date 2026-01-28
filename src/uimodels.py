@@ -46,10 +46,10 @@ class LineItemInfo(BaseModel):
     """Information about a single line item."""
 
     description: str = Field(..., description="Description of the service or item", max_length=500)
-    quantity: float = Field(1.0, description="Quantity or amount")
-    unit_price: Optional[float] = Field(None, description="Price per unit")
-    total_price: Optional[float] = Field(None, description="Total price for this line item")
-    service_id: Optional[int] = Field(None, description="The ID of the matching service from the catalog")
+    quantity: float = Field(1.0, description="Quantity or amount", ge=0)
+    unit_price: Optional[float] = Field(None, description="Price per unit", ge=0)
+    total_price: Optional[float] = Field(None, description="Total price for this line item", ge=0)
+    service_id: Optional[int] = Field(None, description="The ID of the matching service from the catalog", ge=1)
     service_name: Optional[str] = Field(None, description="The canonical name of the service from the catalog", max_length=100)
 
     @validator("quantity", "unit_price", "total_price")
@@ -78,7 +78,7 @@ class AddJobTool(BaseModel):
     country: Optional[str] = Field(
         None, description="Country (e.g. 'Ireland')", max_length=100
     )
-    price: Optional[float] = Field(None, description="Total price or value of the job")
+    price: Optional[float] = Field(None, description="Total price or value of the job", ge=0)
     description: Optional[str] = Field(
         None, description="Details of the work to be done", max_length=500
     )
@@ -101,6 +101,7 @@ class AddJobTool(BaseModel):
     estimated_duration: Optional[int] = Field(
         60,
         description="Estimated duration of the job in minutes (default 60)",
+        ge=0
     )
     latitude: Optional[float] = Field(None, description="Geocoded latitude")
     longitude: Optional[float] = Field(None, description="Geocoded longitude")
@@ -161,7 +162,7 @@ class ScheduleJobTool(BaseModel):
     """Schedule an existing or new job for a specific time.
     Triggered if 'schedule' is used or a specific time/date in the future is supplied."""
 
-    job_id: Optional[int] = Field(None, description="ID of the job if known")
+    job_id: Optional[int] = Field(None, description="ID of the job if known", ge=1)
     customer_query: Optional[str] = Field(
         None, description="Name or phone to find the customer/job", max_length=100
     )
@@ -172,7 +173,7 @@ class ScheduleJobTool(BaseModel):
     location: Optional[str] = Field(
         None, description="Address or location of the job (e.g. 'High Street 44')", max_length=200
     )
-    price: Optional[float] = Field(None, description="Total price or value of the job")
+    price: Optional[float] = Field(None, description="Total price or value of the job", ge=0)
     description: Optional[str] = Field(
         None, description="Details of the work to be done", max_length=500
     )
@@ -182,6 +183,7 @@ class ScheduleJobTool(BaseModel):
     estimated_duration: Optional[int] = Field(
         60,
         description="Estimated duration of the job in minutes (default 60)",
+        ge=0
     )
     city: Optional[str] = Field(
         None, description="City (e.g. 'Dublin')", max_length=100
@@ -232,7 +234,7 @@ class AddRequestTool(BaseModel):
         Urgency.MEDIUM, description="Urgency level"
     )
     expected_value: Optional[float] = Field(
-        None, description="Estimated value of the request"
+        None, description="Estimated value of the request", ge=0
     )
     line_items: Optional[List[LineItemInfo]] = Field(
         None, description="List of structured line items for the request"
@@ -281,13 +283,13 @@ class SearchTool(BaseModel):
         None, description="Filter by status"
     )
     radius: Optional[float] = Field(
-        None, description="Search radius in meters (default 200m if location provided)"
+        None, description="Search radius in meters (default 200m if location provided)", ge=0
     )
     center_lat: Optional[float] = Field(
-        None, description="Latitude for proximity search"
+        None, description="Latitude for proximity search", ge=-90, le=90
     )
     center_lon: Optional[float] = Field(
-        None, description="Longitude for proximity search"
+        None, description="Longitude for proximity search", ge=-180, le=180
     )
     center_address: Optional[str] = Field(
         None, description="Address for proximity search (e.g., 'High Street 34')", max_length=255
@@ -332,10 +334,10 @@ class ConvertRequestTool(BaseModel):
         None, description="ISO 8601 formatted datetime string (parsed by LLM)", max_length=50
     )
     assigned_to: Optional[int] = Field(
-        None, description="Optional ID of the professional to assign the job/quote to"
+        None, description="Optional ID of the professional to assign the job/quote to", ge=1
     )
     price: Optional[float] = Field(
-        None, description="Optional initial value or price for the job/quote"
+        None, description="Optional initial value or price for the job/quote", ge=0
     )
 
 
@@ -388,8 +390,8 @@ class UpdateCustomerStageTool(BaseModel):
 class AddServiceTool(BaseModel):
     """Add a new service to the catalog."""
 
-    name: str = Field(..., description="Name of the service (e.g. 'Window Cleaning')", max_length=100)
-    price: float = Field(..., description="Default price for the service")
+    name: str = Field(..., description="Name of the service (e.g. 'Window Cleaning')", min_length=1, max_length=100)
+    price: float = Field(..., description="Default price for the service", ge=0)
 
     @validator("price")
     def validate_price(cls, v):
@@ -403,7 +405,7 @@ class EditServiceTool(BaseModel):
 
     original_name: str = Field(..., description="The name of the service to edit (to find it)", max_length=100)
     new_name: Optional[str] = Field(None, description="New name for the service", max_length=100)
-    new_price: Optional[float] = Field(None, description="New default price")
+    new_price: Optional[float] = Field(None, description="New default price", ge=0)
     
     @validator("new_price")
     def validate_price(cls, v):
@@ -456,7 +458,7 @@ class RequestUpgradeTool(BaseModel):
     
     item_type: UpgradeItemType = Field(..., description="Type of item: 'seat', 'addon', or 'messaging'")
     item_id: Optional[str] = Field(None, description="Specific addon ID if type is 'addon' (e.g., 'campaign_manager'). Leave empty for seats.", max_length=50)
-    quantity: int = Field(1, description="Number of items to add")
+    quantity: int = Field(1, description="Number of items to add", ge=1)
 
 
 class ProServiceTool(BaseModel):
@@ -485,7 +487,7 @@ class MassEmailTool(BaseModel):
 class ExecuteBlastTool(BaseModel):
     """Execute a previously prepared broadcast campaign.
     Triggered when user says 'EXECUTE BLAST', 'SEND IT', or 'CONFIRM BROADCAST'."""
-    campaign_id: int = Field(..., description="ID of the campaign to execute.")
+    campaign_id: int = Field(..., description="ID of the campaign to execute.", ge=1)
 
 class ManageEmployeesTool(BaseModel):
     """Access employee management features (shifts, roles).
@@ -499,7 +501,7 @@ class QuoteLineItemInput(BaseModel):
     """A single line item in a quote."""
     description: str = Field(..., description="Description of the service or item", max_length=500)
     quantity: float = Field(1.0, description="Quantity or amount")
-    price: float = Field(..., description="Price per unit")
+    price: float = Field(..., description="Price per unit", ge=0)
 
     @validator("quantity", "price")
     def validate_positive(cls, v):
@@ -616,22 +618,22 @@ class CheckOutTool(BaseModel):
 class StartJobTool(BaseModel):
     """Start tracking time for a specific job.
     Triggered when user says 'Start job', 'I am arriving at [customer]', 'Begin work'."""
-    job_id: int = Field(..., description="ID of the job to start.")
+    job_id: int = Field(..., description="ID of the job to start.", ge=1)
 
 class FinishJobTool(BaseModel):
     """Finish tracking time for a specific job.
     Triggered when user says 'Finish job', 'Job done', 'Work complete'."""
-    job_id: int = Field(..., description="ID of the job to finish.")
+    job_id: int = Field(..., description="ID of the job to finish.", ge=1)
 
 
 class AddExpenseTool(BaseModel):
     """Record a business expense (e.g., fuel, materials, parking).
     Triggered when user says 'Add expense', 'Log cost', 'I spent $X on [item]'."""
 
-    amount: float = Field(..., description="The amount spent")
+    amount: float = Field(..., description="The amount spent", ge=0)
     description: str = Field(..., description="What was the expense for?", max_length=500)
     category: ExpenseCategory = Field(ExpenseCategory.GENERAL, description="Expense category")
-    job_id: Optional[int] = Field(None, description="The ID of the job this expense is linked to, if any")
+    job_id: Optional[int] = Field(None, description="The ID of the job this expense is linked to, if any", ge=1)
 
     @validator("amount")
     def validate_amount(cls, v):

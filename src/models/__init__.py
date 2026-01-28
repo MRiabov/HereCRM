@@ -10,13 +10,16 @@ from src.models.campaign import Campaign, CampaignRecipient, CampaignStatus, Cam
 from src.models.whatsapp_template import WhatsAppTemplate, WhatsAppTemplateStatus, WhatsAppTemplateCategory
 
 
-class UserRole(str, enum.Enum):
+from src.models.base_enum import RobustEnum
+
+
+class UserRole(RobustEnum):
     OWNER = "OWNER"
     MANAGER = "MANAGER"
     EMPLOYEE = "EMPLOYEE"
 
 
-class ConversationStatus(str, enum.Enum):
+class ConversationStatus(RobustEnum):
     IDLE = "IDLE"
     ONBOARDING = "ONBOARDING"
     WAITING_CONFIRM = "WAITING_CONFIRM"
@@ -27,7 +30,7 @@ class ConversationStatus(str, enum.Enum):
     EMPLOYEE_MANAGEMENT = "EMPLOYEE_MANAGEMENT"
 
 
-class PipelineStage(str, enum.Enum):
+class PipelineStage(RobustEnum):
     NEW_LEAD = "NEW_LEAD"
     NOT_CONTACTED = "NOT_CONTACTED"
     CONTACTED = "CONTACTED"
@@ -38,7 +41,7 @@ class PipelineStage(str, enum.Enum):
     LOST = "LOST"
 
 
-class LeadSource(str, enum.Enum):
+class LeadSource(RobustEnum):
     API = "api"
     WEBHOOK = "webhook"
     WHATSAPP = "whatsapp"
@@ -51,7 +54,7 @@ class LeadSource(str, enum.Enum):
     CRON = "cron"
 
 
-class InvoiceStatus(str, enum.Enum):
+class InvoiceStatus(RobustEnum):
     PENDING = "PENDING"
     GENERATED = "GENERATED"
     SENT = "SENT"
@@ -60,34 +63,34 @@ class InvoiceStatus(str, enum.Enum):
     CANCELLED = "CANCELLED"
 
 
-class Urgency(str, enum.Enum):
+class Urgency(RobustEnum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
 
 
-class ExportStatus(str, enum.Enum):
+class ExportStatus(RobustEnum):
     PENDING = "PENDING"
     PROCESSING = "PROCESSING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
 
 
-class ExportFormat(str, enum.Enum):
+class ExportFormat(RobustEnum):
     CSV = "csv"
     EXCEL = "excel"
     ZIP = "zip"
     JSON = "json"
 
 
-class PaymentStatus(str, enum.Enum):
+class PaymentStatus(RobustEnum):
     PENDING = "PENDING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
     REFUNDED = "REFUNDED"
 
 
-class QuoteStatus(str, enum.Enum):
+class QuoteStatus(RobustEnum):
     DRAFT = "DRAFT"
     SENT = "SENT"
     ACCEPTED = "ACCEPTED"
@@ -95,7 +98,7 @@ class QuoteStatus(str, enum.Enum):
     EXPIRED = "EXPIRED"
 
 
-class RequestStatus(str, enum.Enum):
+class RequestStatus(RobustEnum):
     PENDING = "PENDING"
     CONVERTED = "CONVERTED"
     DISMISSED = "DISMISSED"
@@ -110,7 +113,7 @@ class QuickBooksSyncStatus(str, enum.Enum):
     SKIPPED = "SKIPPED"
 
 
-class SyncType(str, enum.Enum):
+class SyncType(RobustEnum):
     SCHEDULED = "SCHEDULED"
     MANUAL = "MANUAL"
 
@@ -122,37 +125,42 @@ class SyncLogStatus(str, enum.Enum):
     FAILED = "FAILED"
 
 
-class InvoicingWorkflow(str, enum.Enum):
+class InvoicingWorkflow(RobustEnum):
     NEVER = "NEVER"
     MANUAL = "MANUAL"
     AUTOMATIC = "AUTOMATIC"
 
 
-class QuotingWorkflow(str, enum.Enum):
+class QuotingWorkflow(RobustEnum):
     NEVER = "NEVER"
     MANUAL = "MANUAL"
     AUTOMATIC = "AUTOMATIC"
 
 
-class PaymentTiming(str, enum.Enum):
+class PaymentTiming(RobustEnum):
     ALWAYS_PAID_ON_SPOT = "ALWAYS_PAID_ON_SPOT"
     USUALLY_PAID_ON_SPOT = "USUALLY_PAID_ON_SPOT"
     PAID_LATER = "PAID_LATER"
 
 
-class JobCreationDefault(str, enum.Enum):
+class JobCreationDefault(RobustEnum):
     MARK_DONE = "MARK_DONE"
     UNSCHEDULED = "UNSCHEDULED"
     AUTO_SCHEDULE = "AUTO_SCHEDULE"
     SCHEDULED_TODAY = "SCHEDULED_TODAY"
 
 
-class DistanceUnit(str, enum.Enum):
+class DistanceUnit(RobustEnum):
     MILES = "mi"
     KILOMETERS = "km"
 
 
-class SubscriptionStatus(str, enum.Enum):
+class OnboardingChoiceType(RobustEnum):
+    CREATE = "create"
+    JOIN = "join"
+
+
+class SubscriptionStatus(RobustEnum):
     FREE = "free"
     PRO = "pro"
     ACTIVE = "active"
@@ -171,7 +179,7 @@ class PaymentMethod(str, enum.Enum):
     OTHER = "other"
 
 
-class MessageType(str, enum.Enum):
+class MessageType(RobustEnum):
     WHATSAPP = "WHATSAPP"
     SMS = "SMS"
     EMAIL = "EMAIL"
@@ -179,21 +187,21 @@ class MessageType(str, enum.Enum):
     GENERIC = "GENERIC"
 
 
-class MessageStatus(str, enum.Enum):
+class MessageStatus(RobustEnum):
     PENDING = "PENDING"
     SENT = "SENT"
     FAILED = "FAILED"
     DRAFT = "DRAFT"
 
 
-class WageModelType(str, enum.Enum):
+class WageModelType(RobustEnum):
     COMMISSION = "COMMISSION"
     HOURLY_PER_JOB = "HOURLY_PER_JOB"
     HOURLY_PER_SHIFT = "HOURLY_PER_SHIFT"
     FIXED_DAILY = "FIXED_DAILY"
 
 
-class LedgerEntryType(str, enum.Enum):
+class LedgerEntryType(RobustEnum):
     WAGE = "WAGE"
     PAYOUT = "PAYOUT"
     EXPENSE_REIMBURSEMENT = "EXPENSE_REIMBURSEMENT"
@@ -242,7 +250,7 @@ class EntityType(str, enum.Enum):
     ALL = "all"
 
 
-class JobStatus(str, enum.Enum):
+class JobStatus(RobustEnum):
     PENDING = "PENDING"
     SCHEDULED = "SCHEDULED"
     BOOKED = "BOOKED"

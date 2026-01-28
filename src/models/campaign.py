@@ -3,12 +3,13 @@ from typing import List, Optional, TYPE_CHECKING
 from sqlalchemy import String, ForeignKey, DateTime, Text, Float, Enum as SAEnum, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 import enum
+from src.models.base_enum import RobustEnum
 from src.database import Base
 
 if TYPE_CHECKING:
     from src.models import Business, Customer
 
-class CampaignStatus(str, enum.Enum):
+class CampaignStatus(RobustEnum):
     DRAFT = "DRAFT"
     SCHEDULED = "SCHEDULED"
     SENDING = "SENDING"
@@ -16,7 +17,7 @@ class CampaignStatus(str, enum.Enum):
     FAILED = "FAILED"
     CANCELLED = "CANCELLED"
 
-class RecipientStatus(str, enum.Enum):
+class RecipientStatus(RobustEnum):
     PENDING = "PENDING"
     SENT = "SENT"
     FAILED = "FAILED"
@@ -24,8 +25,16 @@ class RecipientStatus(str, enum.Enum):
 
 class CampaignChannel(str, enum.Enum):
     WHATSAPP = "WHATSAPP"
-    EMAIL = "email"
+    EMAIL = "EMAIL"
     SMS = "SMS"
+
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, str):
+            for member in cls:
+                if member.value.upper() == value.upper():
+                    return member
+        return None
 
 class Campaign(Base):
     __tablename__ = "campaigns"

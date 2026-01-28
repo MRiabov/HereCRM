@@ -1,11 +1,10 @@
 import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import BaseModel
-from typing import Optional
 
 from src.database import get_db
-from src.models import User, UserRole, ConversationStatus
+from src.models import User, UserRole, ConversationStatus, OnboardingChoiceType
+from src.schemas.pwa import OnboardingChoice
 from src.services.invitation import InvitationService
 from src.repositories import BusinessRepository, ConversationStateRepository
 from src.api.dependencies.clerk_auth import get_current_user, verify_token
@@ -14,10 +13,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-class OnboardingChoice(BaseModel):
-    choice: str  # "create" or "join"
-    invite_code: Optional[str] = None
-    business_name: Optional[str] = None
+# Removed local OnboardingChoice class as it's now in src.schemas.pwa
 
 @router.post("/choice")
 @router.post("/choice/")
@@ -34,7 +30,7 @@ async def process_onboarding_choice(
     state_repo = ConversationStateRepository(db)
     invitation_service = InvitationService(db)
 
-    if payload.choice == "create":
+    if payload.choice == OnboardingChoiceType.CREATE:
         # They already have a business (created in sync_clerk_user/JIT)
         # We rename it if requested and ensure they are OWNER
         if payload.business_name:
@@ -70,7 +66,7 @@ async def process_onboarding_choice(
 
         return {"status": "SUCCESS", "message": "Business setup confirmed"}
 
-    elif payload.choice == "join":
+    elif payload.choice == OnboardingChoiceType.JOIN:
         if not payload.invite_code:
             raise HTTPException(status_code=400, detail="Invite code required to join a business")
         

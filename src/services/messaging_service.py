@@ -38,7 +38,20 @@ class MessagingService:
         Send a message to a recipient via the specified channel.
         """
         # Determine message type
-        message_type = channel if isinstance(channel, MessageType) else (MessageType.WHATSAPP if channel == "WHATSAPP" else MessageType.SMS)
+        if isinstance(channel, MessageType):
+            message_type = channel
+        elif isinstance(channel, str):
+            channel_upper = channel.upper()
+            if channel_upper == "WHATSAPP":
+                message_type = MessageType.WHATSAPP
+            elif channel_upper == "SMS":
+                message_type = MessageType.SMS
+            elif channel_upper == "EMAIL":
+                message_type = MessageType.EMAIL
+            else:
+                message_type = MessageType.WHATSAPP # Default
+        else:
+            message_type = MessageType.WHATSAPP
         
         # Mandatory GSM-7 normalization for SMS to avoid high costs (UCS-2)
         if message_type == MessageType.SMS:

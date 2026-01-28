@@ -175,7 +175,7 @@ async def send_message(
                         user_query=request.message,
                         business_id=service.business_id,
                         user_id=current_user.id,
-                        channel=MessageType.PWA_CHAT.value
+                        channel=MessageType.PWA_CHAT
                     )
                     break
                 else:
@@ -394,7 +394,11 @@ async def execute_tool(
     if not tool_cls:
         raise HTTPException(status_code=400, detail=f"Unsupported tool: {request.tool_name}")
         
-    tool_call = tool_cls(**request.arguments)
+    from pydantic import ValidationError
+    try:
+        tool_call = tool_cls(**request.arguments)
+    except (ValidationError, TypeError) as e:
+        raise HTTPException(status_code=422, detail=str(e))
     
     # 3. Execute
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))

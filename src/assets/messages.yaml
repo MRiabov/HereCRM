@@ -31,7 +31,7 @@ error_unclear_input: |
   - *Edit*: 'Edit Job, Lead or Request: John on High Street 34, call 0871235678 tomorrow at 12:00'
   - *Settings*: 'Update settings'
 
-   Note: Identify customers by phone or address to avoid duplicates. On SMS/Email, actions auto-confirm after 45s unless cancelled.
+  Note: Identify customers by phone or address to avoid duplicates. On SMS/Email, actions auto-confirm after 45s unless cancelled.
 
   Type 'help' for more details.
 error_edit_nothing: "Nothing to edit."
@@ -63,8 +63,8 @@ request_summary: |
   {client_details}
   - Time: {time}
   - Description: {description}{line_items}
-confirm_prompt: "Please confirm: {summary}\n(Reply 'Yes' to confirm, 'No' to cancel)"
-confirm_edit_prompt: "Review changes: {summary}\n(Reply 'Yes' to update, 'No' to cancel)"
+confirm_prompt: "Please confirm:\n{summary}\n(Reply 'Yes' to confirm, 'No' to cancel)"
+confirm_edit_prompt: "Review changes:\n{summary}\n(Reply 'Yes' to update, 'No' to cancel)"
 warning_no_contact_details: "⚠️ Warning: could not find a contact detail to send the {type}! Generate the {type} without sending?"
 action_cancelled: "Action cancelled."
 undo_hint: "(Reply 'undo' to revert)"
