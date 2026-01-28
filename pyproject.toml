@@ -68,3 +68,12 @@ project-includes = [
     "**/*.py*",
     "**/*.ipynb",
 ]
+
+[tool.fastapi-cli]
+# This tells 'fastapi dev' exactly what to run by default
+path = "src/main.py"
+
+[tool.uvicorn]
+# This helps when running via uvicorn directly
+reload-dirs = ["src"]
+reload-excludes = ["*/verify_*.py"]

@@ -1,4 +1,4 @@
-d422a86fb1124fb948df2b29b00b5abaa1d0db94To automate your nightly CI (Continuous Integration), you essentially need a **structured prompt-response dataset**. The LLM acting as the "Tester" needs the input (Scenario), the "System Context" (the user's role and business settings), and the "Expected Outcome" to compare against the actual output.
+To automate your nightly CI (Continuous Integration), you essentially need a **structured prompt-response dataset**. The LLM acting as the "Tester" needs the input (Scenario), the "System Context" (the user's role and business settings), and the "Expected Outcome" to compare against the actual output.
 
 Here is a comprehensive JSON schema designed to encapsulate all 21 specifications, followed by a sample of how those tests would look for your automated agent.
 
@@ -40,6 +40,14 @@ This schema allows your "Verification LLM" to understand exactly what it is test
 }
 
 ```
+
+---
+
+### Comprehensive Context Variables
+
+To ensure the LLM behaves correctly (e.g., maintaining full line item descriptions from the catalog), test cases in the validation dataset must include a realistic `user_context` and `service_catalog`.
+
+See the [LLM Context Variables Guide](file:///home/maksym/Work/proj/HereCRM-combined/HereCRM/llm_context_variables.md) for a full list of variables that should be included in advanced test scenarios.
 
 ---
 
@@ -241,44 +249,6 @@ Based on the comprehensive specifications provided, here is a categorized list o
 ### Suggested Next Step
 
 Would you like me to generate a **Python test script** or a **Postman collection** to automate the non-conversational parts (like the Inbound Lead API or the Webhook signatures)?
-
-Since you are pushing for 100% coverage across all 21 specs, here are the "Deep Integration" and "Chaos" tests. These scenarios target the friction points between independent modules, such as tax logic, specific regional edge cases, and role-based limitations.
-
-## 16. The "International Contractor" (Tax & Currency)
-
-* **The Surcharge Flip:** Set `workflow_tax_inclusive` to `false` (Tax Added). Create a job for $100. Verify the Stripe Invoice shows a subtotal of $100 and a calculated tax amount (e.g., $123.00 total).
-* **Geocoding vs. Tax:** Add a customer with a partial address. Ask to send an invoice. Verify the system warns you if it can't calculate tax because the customer's location is too vague for the Stripe Tax API.
-* **Rounding Check:** Add a service with a price of $19.99. Add 3 units ($59.97). Set tax to 23%. Verify the grand total on the PDF matches the Stripe Checkout session exactly to the cent.
-
-## 17. The "Busy Manager" (RBAC & Teamwork)
-
-* **Manager vs. Owner Billing:** As a **Manager**, ask "How much do we owe Dave in payroll?". This should succeed. Then ask "Add a new seat to our subscription." This should fail with the permission denied message.
-* **The "Status Disclaimer":** As an **Employee**, ask "What is our revenue today?". Verify the assistant provides the answer (if the tool allows) but appends the mandatory string: *"The user does not have role-based access to this feature because he doesn't have a status."*.
-* **Ambiguous Assignment:** Create two employees named "John Smith" and "John Doe." Send: "Assign #101 to John." Verify the LLM asks for clarification rather than picking one at random.
-
-## 18. The "Field Chaos" (Expenses & Payroll)
-
-* **The "Hourly" Check-Out Fail:** Set an employee to the `HOURLY_PER_SHIFT` model. Have them "Check In" at 8:00 AM, but forget to "Check Out." Try to run payroll. Verify the system flags the open shift or asks for a manual end time.
-* **The Job-Costing Leak:** Create a job for $200. Link a $250 expense to it. Verify the "Job Profitability" report correctly shows a **negative** profit (-$50) rather than crashing.
-* **Commission on Paid-Only:** Ask "Show my pending payroll." Verify that commissions are only credited to the employee's ledger *after* the Job/Invoice status changes to `PAID`, if your business defaults are set to "Paid Later".
-
-## 19. The "Sales Funnel" (Quotes & Leads)
-
-* **Quote Promotion:** Create a "Request" from a customer (e.g., "Fix my door"). Send "Promote this request to a quote." Verify the customer context (name/address) carries over to the new Quote entity automatically.
-* **The "Ghost" Quote:** Send a quote to a customer. Before they confirm, delete the Job/Service it was based on. Have the customer reply "Confirm." Verify the system handles the orphaned quote gracefully.
-* **Public Link Safety:** Attempt to access a Quote's public URL without a valid ID. Verify the confirmation website doesn't leak other customers' data.
-
-## 20. Advanced System Integrity (CAPI & Webhooks)
-
-* **The "Double Hook":** Configure both Meta CAPI and a Generic Webhook for `job.booked`. Book a job. Verify the Meta event is sent **and** the generic webhook receives a signed payload simultaneously.
-* **Signature Verification:** Send a test payload to your webhook. Manually try to modify the JSON body and verify that your receiver's HMAC-SHA256 check fails because the signature no longer matches.
-* **CAPI Normalization:** Provide a customer phone number in a messy format (e.g., `+1 (555) 123-4567`). Verify the system normalizes this to `15551234567` before hashing it for the Meta CAPI payload.
-
----
-
-### Would you like me to
-
-Generate a **Daily Smoke Test Checklist** for your employees? This would be a 5-minute routine they can run every morning to ensure the most critical paths (Add Job, Assign, Done, Invoice) are working perfectly.
 
 Since you are pushing for 100% coverage across all 21 specs, here are the "Deep Integration" and "Chaos" tests. These scenarios target the friction points between independent modules, such as tax logic, specific regional edge cases, and role-based limitations.
 
