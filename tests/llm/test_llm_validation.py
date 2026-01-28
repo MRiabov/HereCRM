@@ -20,21 +20,32 @@ async def test_llm_parsing(case):
     """
     Parametric test for LLM parsing logic.
     Runs against the real LLM (OpenRouter/Gemini).
+    
+    Each test case can include:
+    - user_input: The raw user message
+    - user_context: Role, settings, and other context passed to the LLM
+    - service_catalog: Optional catalog of services for line item matching
+    - system_time: Optional ISO timestamp for time-relative queries
+    - expected_logic: Expected tool call and/or response substrings
     """
     user_input = case["user_input"]
     expected_logic = case.get("expected_logic", {})
+    user_context = case.get("user_context", {})
+    service_catalog = case.get("service_catalog")
+    system_time = case.get("system_time")
+    
+    # Extract channel from user_context (defaults to WHATSAPP for backward compat)
+    channel_name = user_context.pop("channel", "WHATSAPP") if "channel" in user_context else "WHATSAPP"
     
     parser = LLMParser()
     
-    # We might need to pass user context (role, settings) to the parser if it supports it.
-    # For now, we assume the system context is handled by LLMParser.
-    # If role-based parsing is needed, we would update LLMParser to accept a user profile.
-    
-    # Execute parsing
-    # NOTE: This call is expensive and slow.
+    # Execute parsing with all context variables
     result = await parser.parse(
         user_input, 
-        user_context=case.get("user_context")
+        system_time=system_time,
+        service_catalog=service_catalog,
+        channel_name=channel_name,
+        user_context=user_context
     )
     
     expected_tool = expected_logic.get("tool_called")
@@ -54,6 +65,12 @@ async def test_llm_parsing(case):
             # Special handling for floats/rounding
             if isinstance(val, float) and isinstance(actual_args[key], float):
                 assert pytest.approx(actual_args[key]) == val, f"Argument '{key}' mismatch. Expected {val}, got {actual_args[key]}"
+            # Special handling for line_items (list of dicts)
+            elif key == "line_items" and isinstance(val, list):
+                _verify_line_items(val, actual_args[key])
+            # Special handling for items (CreateQuoteTool)
+            elif key == "items" and isinstance(val, list):
+                _verify_line_items(val, actual_args[key])
             else:
                 assert actual_args[key] == val, f"Argument '{key}' mismatch. Expected {val}, got {actual_args[key]}"
 
@@ -71,6 +88,37 @@ async def test_llm_parsing(case):
         # we check the response text. 
         # (Assuming LLMParser or a higher level service handles this).
         pass
+
+
+def _verify_line_items(expected_items: list, actual_items: list):
+    """
+    Verify that line items match expected values.
+    Uses partial matching: only checks fields specified in expected.
+    """
+    assert len(actual_items) >= len(expected_items), \
+        f"Expected at least {len(expected_items)} line items, got {len(actual_items)}"
+    
+    for i, expected_item in enumerate(expected_items):
+        actual_item = actual_items[i] if i < len(actual_items) else {}
+        
+        for field, expected_val in expected_item.items():
+            assert field in actual_item, \
+                f"Line item {i}: Missing field '{field}'. Actual: {actual_item}"
+            
+            actual_val = actual_item[field]
+            
+            # Description matching: case-insensitive contains check for flexibility
+            if field == "description":
+                assert expected_val.lower() in actual_val.lower() or actual_val.lower() in expected_val.lower(), \
+                    f"Line item {i}: Description mismatch. Expected '{expected_val}', got '{actual_val}'"
+            # Float comparison with tolerance
+            elif isinstance(expected_val, float) and isinstance(actual_val, (int, float)):
+                assert pytest.approx(float(actual_val)) == expected_val, \
+                    f"Line item {i}: Field '{field}' mismatch. Expected {expected_val}, got {actual_val}"
+            else:
+                assert actual_val == expected_val, \
+                    f"Line item {i}: Field '{field}' mismatch. Expected {expected_val}, got {actual_val}"
+
 
 @pytest.fixture(scope="session", autouse=True)
 def run_schema_validation():

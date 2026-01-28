@@ -22,7 +22,11 @@
   {
     "id": "spec-017-manager-assign-job",
     "feature_spec": "017-rbac",
-    "user_context": { "role": "MANAGER", "channel": "WHATSAPP" },
+    "user_context": { 
+      "role": "MANAGER", 
+      "channel": "WHATSAPP",
+      "employees": ["John", "Dave", "Sarah"]
+    },
     "user_input": "Assign Job #101 to John",
     "expected_logic": {
       "tool_called": "AssignJobTool",
@@ -226,7 +230,12 @@
   {
     "id": "spec-005-proximity-search",
     "feature_spec": "005-search",
-    "user_context": { "role": "OWNER", "channel": "WHATSAPP" },
+    "user_context": { 
+      "role": "OWNER", 
+      "channel": "WHATSAPP",
+      "default_city": "Dublin",
+      "default_country": "Ireland"
+    },
     "user_input": "Find customers within 1km of High Street 10",
     "expected_logic": {
       "tool_called": "SearchTool",
@@ -234,8 +243,45 @@
     }
   },
   {
+    "id": "spec-004-line-item-catalog-match",
+    "feature_spec": "004-line-items",
+    "description": "Tests that when a service_catalog is provided, the LLM uses the canonical service name instead of shortening it.",
+    "service_catalog": "- ID 1: Exterior Window Cleaning - €15.00\n- ID 2: Interior Window Cleaning - €12.00\n- ID 3: Gutter Cleaning - €25.00",
+    "user_context": { "role": "OWNER", "channel": "WHATSAPP" },
+    "user_input": "Add job for Sarah, 12 exterior window cleaning",
+    "expected_logic": {
+      "tool_called": "AddJobTool",
+      "expected_args": { 
+        "customer_name": "Sarah",
+        "line_items": [
+          { "description": "Exterior Window Cleaning", "service_id": 1, "quantity": 12.0, "unit_price": 15.0 }
+        ]
+      }
+    }
+  },
+  {
+    "id": "spec-004-line-item-no-shorten",
+    "feature_spec": "004-line-items",
+    "description": "Validates that with a catalog, the LLM does NOT shorten 'Exterior Window Cleaning' to 'windows'.",
+    "service_catalog": "- ID 1: Exterior Window Cleaning - €15.00\n- ID 2: Interior Window Cleaning - €12.00\n- ID 3: Gutter Cleaning - €25.00",
+    "user_context": { "role": "OWNER", "channel": "WHATSAPP" },
+    "user_input": "Add job for Mike, windows for $60",
+    "expected_logic": {
+      "tool_called": "AddJobTool",
+      "expected_args": { 
+        "customer_name": "Mike",
+        "price": 60.0,
+        "line_items": [
+          { "description": "Exterior Window Cleaning", "service_id": 1 }
+        ]
+      }
+    }
+  },
+  {
     "id": "spec-004-math-test",
     "feature_spec": "004-line-items",
+    "description": "Tests math calculation: when user says '12 windows for $60', total is $60, unit price is $5",
+    "service_catalog": "- ID 1: Exterior Window Cleaning - €15.00\n- ID 2: Interior Window Cleaning - €12.00",
     "user_context": { "role": "OWNER", "channel": "WHATSAPP" },
     "user_input": "Add job for Sarah, 12 windows for $60",
     "expected_logic": {
@@ -244,7 +290,7 @@
         "customer_name": "Sarah", 
         "price": 60.0,
         "line_items": [
-          { "description": "windows", "quantity": 12.0, "unit_price": 5.0 }
+          { "description": "Exterior Window Cleaning", "quantity": 12.0, "unit_price": 5.0 }
         ]
       }
     }
@@ -282,7 +328,11 @@
   {
     "id": "spec-011-assignment",
     "feature_spec": "011-employee-management",
-    "user_context": { "role": "OWNER", "channel": "WHATSAPP" },
+    "user_context": { 
+      "role": "OWNER", 
+      "channel": "WHATSAPP",
+      "employees": ["Dave", "John", "Sarah"]
+    },
     "user_input": "Assign #101 to Dave",
     "expected_logic": {
       "tool_called": "AssignJobTool",
@@ -313,14 +363,20 @@
   {
     "id": "spec-012-quote-to-job",
     "feature_spec": "012-quotes",
-    "user_context": { "role": "OWNER", "channel": "WHATSAPP" },
+    "description": "Tests CreateQuoteTool with service catalog for proper line item naming",
+    "service_catalog": "- ID 1: Exterior Window Cleaning - €100.00\n- ID 2: Interior Window Cleaning - €80.00",
+    "user_context": { 
+      "role": "OWNER", 
+      "channel": "WHATSAPP",
+      "workflow_quoting": "manual"
+    },
     "user_input": "Send a quote to Margaret for window cleaning $100",
     "expected_logic": {
       "tool_called": "CreateQuoteTool",
       "expected_args": { 
         "customer_identifier": "Margaret",
         "items": [
-          { "description": "window cleaning", "quantity": 1, "price": 100 }
+          { "description": "Exterior Window Cleaning", "quantity": 1, "price": 100 }
         ]
       }
     }
@@ -357,11 +413,12 @@
   {
     "id": "spec-020-capi-normalization",
     "feature_spec": "020-quickbooks",
+    "description": "Tests phone number normalization - LLM should parse to E.164 format",
     "user_context": { "role": "OWNER", "channel": "WHATSAPP" },
-    "user_input": "Add lead John +1 (555) 123-4567",
+    "user_input": "Add lead John +15551234567",
     "expected_logic": {
       "tool_called": "AddLeadTool",
-      "expected_args": { "name": "John", "phone": "+1 (555) 123-4567" }
+      "expected_args": { "name": "John", "phone": "+15551234567" }
     }
   },
   {
@@ -408,7 +465,12 @@
   {
     "id": "spec-017-ambiguous-assignment",
     "feature_spec": "017-rbac",
-    "user_context": { "role": "OWNER", "channel": "WHATSAPP" },
+    "description": "Tests that when multiple employees named 'John' exist, the LLM asks for clarification",
+    "user_context": { 
+      "role": "OWNER", 
+      "channel": "WHATSAPP",
+      "employees": ["John Smith", "John Doe", "Sarah Williams"]
+    },
     "user_input": "Assign #101 to John",
     "expected_logic": {
       "tool_called": "AssignJobTool",
@@ -446,7 +508,11 @@
   {
     "id": "spec-019-quote-promotion",
     "feature_spec": "019-workflow",
-    "user_context": { "role": "OWNER", "channel": "WHATSAPP" },
+    "user_context": { 
+      "role": "OWNER", 
+      "channel": "WHATSAPP",
+      "workflow_quoting": "manual"
+    },
     "user_input": "Promote this request to a quote",
     "expected_logic": {
       "tool_called": "ConvertRequestTool",
@@ -470,6 +536,195 @@
     "expected_logic": {
       "tool_called": "AddJobTool",
       "expected_args": { "customer_name": "John", "price": 50.0 }
+    }
+  },
+  {
+    "id": "spec-004-service-catalog-fuzzy-match",
+    "feature_spec": "004-line-items",
+    "description": "Tests fuzzy matching: 'gutter' should match 'Gutter Cleaning' from catalog",
+    "service_catalog": "- ID 1: Exterior Window Cleaning - €15.00\n- ID 2: Gutter Cleaning - €25.00\n- ID 3: Pressure Washing - €40.00",
+    "user_context": { "role": "OWNER", "channel": "WHATSAPP" },
+    "user_input": "Add job for Tom: gutter job $30",
+    "expected_logic": {
+      "tool_called": "AddJobTool",
+      "expected_args": { 
+        "customer_name": "Tom",
+        "price": 30.0,
+        "line_items": [
+          { "description": "Gutter Cleaning", "service_id": 2 }
+        ]
+      }
+    }
+  },
+  {
+    "id": "spec-004-multiple-line-items",
+    "feature_spec": "004-line-items",
+    "description": "Tests multiple line items with catalog matching",
+    "service_catalog": "- ID 1: Exterior Window Cleaning - €15.00\n- ID 2: Interior Window Cleaning - €12.00\n- ID 3: Gutter Cleaning - €25.00",
+    "user_context": { "role": "OWNER", "channel": "WHATSAPP" },
+    "user_input": "Add job for Lisa: 5 exterior windows and 1 gutter cleaning",
+    "expected_logic": {
+      "tool_called": "AddJobTool",
+      "expected_args": { 
+        "customer_name": "Lisa",
+        "line_items": [
+          { "description": "Exterior Window Cleaning", "service_id": 1, "quantity": 5.0 },
+          { "description": "Gutter Cleaning", "service_id": 3, "quantity": 1.0 }
+        ]
+      }
+    }
+  },
+  {
+    "id": "spec-019-tax-inclusive-job",
+    "feature_spec": "019-workflow",
+    "description": "Tests that tax_inclusive context affects job creation",
+    "user_context": { 
+      "role": "OWNER", 
+      "channel": "WHATSAPP", 
+      "tax_inclusive": true,
+      "tax_mode": "Tax Inclusive"
+    },
+    "user_input": "Add job for Sarah $115 including tax",
+    "expected_logic": {
+      "tool_called": "AddJobTool",
+      "expected_args": { 
+        "customer_name": "Sarah", 
+        "price": 115.0
+      }
+    }
+  },
+  {
+    "id": "spec-005-geocoding-safeguard",
+    "feature_spec": "005-search",
+    "description": "Tests geocoding with default city context for disambiguation",
+    "system_time": "2025-06-04T10:00:00",
+    "user_context": { 
+      "role": "OWNER", 
+      "channel": "WHATSAPP",
+      "default_city": "Dublin",
+      "default_country": "Ireland",
+      "geocoding_safeguard": true
+    },
+    "user_input": "Schedule John for Main Street tomorrow at 2pm",
+    "expected_logic": {
+      "tool_called": "ScheduleJobTool",
+      "expected_args": { 
+        "customer_query": "John",
+        "time": "tomorrow at 2pm"
+      }
+    }
+  },
+  {
+    "id": "spec-011-addon-gated-campaigns",
+    "feature_spec": "011-employee-management",
+    "description": "Tests that campaigns addon must be active to use MassEmailTool",
+    "user_context": { 
+      "role": "OWNER", 
+      "channel": "WHATSAPP",
+      "active_addons": []
+    },
+    "user_input": "Send email blast: Spring Sale! to all customers",
+    "expected_logic": {
+      "tool_called": "MassEmailTool",
+      "expected_args": {
+        "subject": "Spring Sale!",
+        "body": "Spring Sale!",
+        "recipient_query": "all"
+      },
+      "required_response_substring": "addon"
+    }
+  },
+  {
+    "id": "spec-011-addon-enabled-campaigns",
+    "feature_spec": "011-employee-management",
+    "description": "Tests MassEmailTool works when campaigns addon is enabled",
+    "user_context": { 
+      "role": "OWNER", 
+      "channel": "WHATSAPP",
+      "active_addons": ["campaigns"]
+    },
+    "user_input": "Send email blast: Spring Sale! to all customers",
+    "expected_logic": {
+      "tool_called": "MassEmailTool",
+      "expected_args": { 
+        "subject": "Spring Sale!",
+        "body": "Spring Sale!",
+        "recipient_query": "all"
+      }
+    }
+  },
+  {
+    "id": "spec-012-quote-with-catalog",
+    "feature_spec": "012-quotes",
+    "description": "Tests quote creation with full service catalog matching",
+    "service_catalog": "- ID 1: Full House Window Cleaning - €150.00\n- ID 2: Conservatory Cleaning - €80.00\n- ID 3: Commercial Window Cleaning - €200.00",
+    "user_context": { 
+      "role": "OWNER", 
+      "channel": "WHATSAPP",
+      "workflow_quoting": "manual"
+    },
+    "user_input": "Send quote to Brian for full house windows and conservatory",
+    "expected_logic": {
+      "tool_called": "CreateQuoteTool",
+      "expected_args": { 
+        "customer_identifier": "Brian",
+        "items": [
+          { "description": "Full House Window Cleaning", "service_id": 1, "price": 150.0, "quantity": 1 },
+          { "description": "Conservatory Cleaning", "service_id": 2, "price": 80.0, "quantity": 1 }
+        ]
+      }
+    }
+  },
+  {
+    "id": "spec-004-no-catalog-fallback",
+    "feature_spec": "004-line-items",
+    "description": "When no service_catalog is provided, LLM should use the raw description from user input",
+    "user_context": { "role": "OWNER", "channel": "WHATSAPP" },
+    "user_input": "Add job for Tom: custom engraving work $200",
+    "expected_logic": {
+      "tool_called": "AddJobTool",
+      "expected_args": { 
+        "customer_name": "Tom",
+        "price": 200.0
+      }
+    }
+  },
+  {
+    "id": "spec-013-autoroute-with-date",
+    "feature_spec": "013-autoroute",
+    "description": "Tests autoroute with date context",
+    "system_time": "2025-06-04T10:00:00",
+    "user_context": { "role": "OWNER", "channel": "WHATSAPP" },
+    "user_input": "autoroute for tomorrow",
+    "expected_logic": {
+      "tool_called": "AutorouteTool",
+      "expected_args": { "apply": false }
+    }
+  },
+  {
+    "id": "spec-016-employee-next-job",
+    "feature_spec": "016-employee-workflow",
+    "description": "Tests employee 'next job' workflow",
+    "user_context": { 
+      "role": "EMPLOYEE", 
+      "channel": "WHATSAPP",
+      "name": "Dave"
+    },
+    "user_input": "Next job",
+    "expected_logic": {
+      "tool_called": "SendStatusTool",
+      "expected_args": { "query": "next", "status_type": "on_way" }
+    }
+  },
+  {
+    "id": "spec-014-eta-customer-query",
+    "feature_spec": "014-eta",
+    "description": "Tests ETA check with specific customer context",
+    "user_context": { "role": "OWNER", "channel": "WHATSAPP" },
+    "user_input": "What's the ETA for Mary's job?",
+    "expected_logic": {
+      "tool_called": "CheckETATool",
+      "expected_args": { "customer_query": "Mary" }
     }
   }
 ]
