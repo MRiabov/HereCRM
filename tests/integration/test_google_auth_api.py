@@ -27,8 +27,6 @@ def test_google_callback_success(client):
         
         response = client.get("/auth/google/callback?code=testcode&state=123")
         
-        if response.status_code != 200:
-            print(f"DEBUG: Response Text: {response.text}")
         assert response.status_code == 200
         assert "Connected!" in response.text
         assert "Google Calendar has been successfully linked" in response.text

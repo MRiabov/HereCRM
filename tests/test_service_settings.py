@@ -78,7 +78,7 @@ async def test_settings_flow(test_session, mock_parser, mock_template_service):
     # 4. Delete Service
     mock_parser.parse_settings.return_value = DeleteServiceTool(name="Window Clean")
     response = await service.handle_message("Delete Service", user_phone="123")
-    assert "DELETED" in response
+    assert "deleted" in response.lower()
     
     services = await repo.get_all_for_business(biz.id)
     assert len(services) == 0

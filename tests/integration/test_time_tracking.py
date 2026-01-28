@@ -59,7 +59,6 @@ async def test_time_tracking_flow(async_session):
     assert job.employee_id == user.id
 
     # 6. Test Finish Job
-    original_job_start = job.begun_at
     job, total_duration = await service.finish_job(job.id)
     assert job.begun_at is None
     assert job.status == JobStatus.COMPLETED

@@ -67,7 +67,7 @@ async def test_tool_executor_appends_payment_link(mock_session):
         
         executor.customer_repo.search.return_value = [customer]
         executor.job_repo.get_most_recent_by_customer.return_value = job
-        mock_invoice_service.create_invoice.return_value = invoice
+        mock_invoice_service.create_invoice = AsyncMock(return_value=invoice)
         
         # Execute
         message, metadata = await executor._execute_send_invoice(tool)

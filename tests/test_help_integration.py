@@ -46,7 +46,7 @@ async def test_help_tool_integration(test_session: AsyncSession, template_servic
     mock_parser.parse.return_value = HelpTool()
 
     # Mock HelpService
-    with patch("src.services.help_service.HelpService") as MockHelpService:
+    with patch("src.services.chat.handlers.idle.HelpService") as MockHelpService:
         mock_help_instance = MockHelpService.return_value
         mock_help_instance.generate_help_response = AsyncMock(return_value="RAG Response")
         

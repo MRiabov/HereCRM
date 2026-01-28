@@ -62,7 +62,7 @@ class IdleHandler(ChatHandler):
             return await self.undo_handler.handle_edit_last(user, state_record)
 
         # Handle Settings Entry
-        if lower_text in ["SETTINGS", "update settings", "config"]:
+        if lower_text in ["settings", "update settings", "config"]:
             state_record.state = ConversationStatus.SETTINGS
             return self.template_service.render("settings_menu")
 

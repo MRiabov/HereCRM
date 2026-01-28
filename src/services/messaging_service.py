@@ -364,7 +364,8 @@ class MessagingService:
         """
         print(f"DEBUG: handle_send_status_message received data: {data}")
         business_id = data.get("business_id")
-        status_type = str(data.get("status_type", "unknown"))
+        raw_status = data.get("status_type", "unknown")
+        status_type = str(raw_status.value if hasattr(raw_status, "value") else raw_status)
         message_content = data.get("message_content")
         recipient_phone = data.get("customer_phone")
         

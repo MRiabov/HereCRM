@@ -183,7 +183,7 @@ async def test_customer_pov_scenarios():
                     customer_id=customer.id,
                     job_id=job.id,
                     total_amount=150.0,
-                    status=QuoteStatus.sent,
+                    status=QuoteStatus.SENT,
                     external_token="test_token_123"
                 )
                 db.add(quote)

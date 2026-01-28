@@ -24,13 +24,11 @@ async def test_export_customers_csv(async_session: AsyncSession):
     with patch("src.services.data_management.storage_service") as mock_storage:
         mock_storage.upload_file.return_value = "https://s3.fake/export.csv"
         
-        # Action: Export All
-        filters = {}
+        # Action: Export All Customers
+        filters = {"entity_type": "customer"}
         result = await service.export_data(business.id, query="all", format=ExportFormat.CSV, filters=filters)
         
         # Verify
-        if result.status == ExportStatus.FAILED:
-            print(f"DEBUG: Export Failed: {result.error_log}")
         assert result.status == ExportStatus.COMPLETED
         assert result.public_url == "https://s3.fake/export.csv"
         

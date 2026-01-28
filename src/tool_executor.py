@@ -328,7 +328,7 @@ class ToolExecutor:
         elif isinstance(tool_call, SendStatusTool):
             return await self._execute_send_status(tool_call)
         elif isinstance(tool_call, ManageEmployeesTool):
-            return f"✔ Access granted to Employee Management: {tool_call.action}", None
+            return f"✔ Access granted to Employee Management: {tool_call.action.value}", None
         elif isinstance(tool_call, MassEmailTool):
             campaign = await self.campaign_service.create_campaign(
                 business_id=self.business_id,
