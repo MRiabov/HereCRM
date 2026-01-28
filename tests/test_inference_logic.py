@@ -126,3 +126,81 @@ async def test_tool_executor_with_line_items(
 
     # Check Job total value (updated by event listener)
     assert job.value == 110.0
+
+
+@pytest.mark.asyncio
+async def test_inference_rounding_preserves_total_real_db(test_session: AsyncSession):
+    biz = Business(name="Test Biz")
+    test_session.add(biz)
+    await test_session.flush()
+
+    # Service with default price $5.00
+    svc = Service(
+        business_id=biz.id,
+        name="Widget",
+        default_price=5.0
+    )
+    test_session.add(svc)
+    await test_session.flush()
+
+    inference_service = InferenceService(test_session)
+
+    # User says "12 widgets for $50"
+    # 12 * 5 = 60 (Default). User overrides total to 50.
+    # Unit price should be 50 / 12 = 4.1666...
+    raw_items = [LineItemInfo(
+        description="Widget",
+        quantity=12.0,
+        total_price=50.0
+    )]
+
+    inferred = await inference_service.infer_line_items(biz.id, raw_items)
+    item = inferred[0]
+
+    # Expect total to be EXACTLY 50.0 (preserved)
+    assert item.total_price == 50.0
+    assert item.quantity == 12.0
+
+    # Unit price should be precise (approx 4.1667)
+    # If it was rounded to 2 decimals (4.17), total would be 50.04
+    assert abs(item.unit_price - (50.0/12.0)) < 0.0001
+    assert item.unit_price != 4.17
+
+
+@pytest.mark.asyncio
+async def test_inference_rounding_infer_quantity_real_db(test_session: AsyncSession):
+    biz = Business(name="Test Biz")
+    test_session.add(biz)
+    await test_session.flush()
+
+    # Service with default price $15.00
+    svc = Service(
+        business_id=biz.id,
+        name="Cleaning",
+        default_price=15.0
+    )
+    test_session.add(svc)
+    await test_session.flush()
+
+    inference_service = InferenceService(test_session)
+
+    # User says "Cleaning $50"
+    # Qty = 50 / 15 = 3.3333... -> 3.33
+    raw_items = [LineItemInfo(
+        description="Cleaning",
+        total_price=50.0,
+        # quantity defaults to 1.0 in Pydantic, but logic handles it
+    )]
+
+    inferred = await inference_service.infer_line_items(biz.id, raw_items)
+    item = inferred[0]
+
+    # Expect total to be preserved
+    assert item.total_price == 50.0
+
+    # Expect quantity to be rounded to 2 decimals
+    assert item.quantity == 3.33
+
+    # Expect unit price to be adjusted to match total
+    # 50 / 3.33 = 15.015...
+    assert abs(item.unit_price - (50.0/3.33)) < 0.0001
