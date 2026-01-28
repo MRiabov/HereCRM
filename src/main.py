@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import logging
 from src.database import engine, Base
 from src.api.routes import router as webhook_router
 from src.api.webhooks.stripe_webhook import router as stripe_router
@@ -17,6 +18,17 @@ async def lifespan(app: FastAPI):
     # Startup: Create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    
+    # Force-check schema consistency
+    from src.utils.schema_validation import validate_db_schema
+    mismatches = validate_db_schema()
+    if mismatches:
+        # Filter out minor things or handle specific cases if needed
+        # For now, we throw on ANY mismatch to ensure dev discipline
+        error_msg = f"Database schema mismatch detected: {mismatches}"
+        logger_for_mismatch = logging.getLogger("src.main")
+        logger_for_mismatch.error(error_msg)
+        raise RuntimeError(error_msg)
     
     # Register Event Listeners
     app.state.event_bus = event_bus
