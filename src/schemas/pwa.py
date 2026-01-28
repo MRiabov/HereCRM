@@ -80,6 +80,8 @@ class JobSchema(BaseModel):
     longitude: Optional[float] = None
     paid: bool = False
     estimated_duration: int = 60
+    begun_at: Optional[datetime] = None
+    total_actual_duration_seconds: int = 0
     customer: Optional[CustomerSchema]
     employee: Optional[UserSchema] = None
     line_items: List[LineItemSchema] = []

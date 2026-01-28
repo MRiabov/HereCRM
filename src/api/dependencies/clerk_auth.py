@@ -51,7 +51,7 @@ class VerifyToken:
         # 1. Resolve User
         user_result = await db.execute(
             select(User)
-            .options(joinedload(User.business))
+            .options(joinedload(User.business), joinedload(User.wage_config))
             .where(User.clerk_id == clerk_id)
         )
         user = user_result.scalar_one_or_none()

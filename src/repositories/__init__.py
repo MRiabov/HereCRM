@@ -41,8 +41,10 @@ class UserRepository(BaseRepository[User]):
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_by_id(self, id: int) -> Optional[User]:
-        query = select(User).where(User.id == id)
+    async def get_by_id(self, id: int, business_id: Optional[int] = None) -> Optional[User]:
+        query = select(User).options(joinedload(User.wage_config)).where(User.id == id)
+        if business_id:
+            query = query.where(User.business_id == business_id)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -581,7 +583,7 @@ class JobRepository(BaseRepository[Job]):
                 joinedload(Job.customer),
                 joinedload(Job.line_items),
                 joinedload(Job.business),
-                joinedload(Job.employee)
+                joinedload(Job.employee).joinedload(User.wage_config)
             )
             .where(Job.customer_id == customer_id, Job.business_id == business_id)
             .order_by(Job.id.desc())
@@ -605,7 +607,7 @@ class JobRepository(BaseRepository[Job]):
             .options(
                 joinedload(Job.line_items), 
                 joinedload(Job.customer),
-                joinedload(Job.employee)
+                joinedload(Job.employee).joinedload(User.wage_config)
             )
             .where(Job.id == job_id, Job.business_id == business_id)
         )
@@ -618,7 +620,7 @@ class JobRepository(BaseRepository[Job]):
             .options(
                 joinedload(Job.line_items),
                 joinedload(Job.customer),
-                joinedload(Job.employee)
+                joinedload(Job.employee).joinedload(User.wage_config)
             )
             .where(Job.customer_id == customer_id, Job.business_id == business_id)
             .order_by(Job.scheduled_at.desc())
@@ -711,7 +713,7 @@ def update_job_value(mapper, connection, target):
         new_total_stmt = select(func.sum(LineItem.total_price)).where(LineItem.job_id == job_id).scalar_subquery()
         
         connection.execute(
-            Job.__table__.update()
+            sa.update(Job)
             .where(Job.id == job_id)
             .values(value=new_total_stmt)
         )
@@ -722,7 +724,6 @@ def update_job_value(mapper, connection, target):
         if session:
             # Look for the job in the identity map to avoid a fresh DB query/lazy load
             from sqlalchemy.orm.util import identity_key
-            from sqlalchemy.orm.attributes import set_committed_value
             key = identity_key(Job, (job_id,))
             job = session.identity_map.get(key)
             if job:
