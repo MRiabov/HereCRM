@@ -31,7 +31,7 @@ async def test_provisioning_flow(client, async_session):
             "auth_id": auth_id,
             "config_type": config_type,
             "label": label,
-            "payload": {"business_id": 1, "owner": "John"}
+            "payload": {"business_id": 1, "OWNER": "John"}
         }
         
         response = client.post("/api/v1/integrations/provision", json=payload)

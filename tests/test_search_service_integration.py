@@ -94,7 +94,7 @@ async def test_search_proximity_job_filtering(search_service, setup_data):
     # Search near London (should return London Job, exclude Dublin Job)
     params = SearchTool(
         query="all",
-        entity_type="job",
+        entity_type="JOB",
         center_lat=51.5074,
         center_lon=-0.1278,
         radius=5000.0
@@ -111,7 +111,7 @@ async def test_search_proximity_customer_filtering(search_service, setup_data):
     # Search near Dublin (should return Dublin Customer, exclude London/Cork)
     params = SearchTool(
         query="all",
-        entity_type="customer",
+        entity_type="CUSTOMER",
         center_lat=53.3498,
         center_lon=-6.2603,
         radius=5000.0

@@ -71,7 +71,7 @@ async def test_convert_request_progression(session: AsyncSession):
     
     # Act: Convert Request to Job (using the name as query to match customer)
     # This should now emit JOB_CREATED because convert_request calls create_job
-    await crm.convert_request(query=name, action="schedule")
+    await crm.convert_request(query=name, action="SCHEDULE")
     await session.commit()
     
     await session.refresh(customer)

@@ -70,4 +70,4 @@ async def clerk_webhook(
         await db.rollback()
         raise HTTPException(status_code=500, detail="Internal processing error")
 
-    return {"status": "success"}
+    return {"status": "SUCCESS"}

@@ -78,7 +78,7 @@ class HelpService:
         messages = [{"role": "system", "content": system_content}]
         
         for msg in history:
-            role = "user" if msg.role == MessageRole.USER else "assistant"
+            role = "USER" if msg.role == MessageRole.USER else "ASSISTANT"
             content = msg.body
             
             # If assistant message has error or tool call context in log_metadata, include it
@@ -97,7 +97,7 @@ class HelpService:
             
         return messages
 
-    async def generate_help_response(self, user_query: str, business_id: int, user_id: int, channel: str = "whatsapp") -> str:
+    async def generate_help_response(self, user_query: str, business_id: int, user_id: int, channel: str = "WHATSAPP") -> str:
         """
         Main entry point for generating a help response:
         1. Fetch history
@@ -115,7 +115,7 @@ class HelpService:
         prompt_messages = self.construct_help_prompt(history, channel)
         
         # If the last message in prompt_messages is not the user_query, append it
-        if prompt_messages[-1]["role"] != "user" or prompt_messages[-1]["content"] != user_query:
-             prompt_messages.append({"role": "user", "content": user_query})
+        if prompt_messages[-1]["role"] != "USER" or prompt_messages[-1]["content"] != user_query:
+             prompt_messages.append({"role": "USER", "content": user_query})
 
         return await self.llm_client.chat_completion(prompt_messages)

@@ -32,7 +32,7 @@ async def test_update_wage_config():
     from src.api.v1.pwa.business import update_wage_config
     
     update_data = WageConfigurationUpdate(
-        model_type="hourly_per_job",
+        model_type="HOURLY_PER_JOB",
         rate_value=25.0,
         tax_withholding_rate=15.0,
         allow_expense_claims=True
@@ -45,7 +45,7 @@ async def test_update_wage_config():
         db=mock_db
     )
     
-    assert response["status"] == "success"
+    assert response["status"] == "SUCCESS"
     assert response["wage_config"]["rate_value"] == 25.0
     assert response["wage_config"]["model_type"] == WageModelType.HOURLY_PER_JOB
     

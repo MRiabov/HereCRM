@@ -163,7 +163,7 @@ class AutomationService:
                     await messaging_service.enqueue_message(
                         recipient_phone=job.customer.phone or "",
                         content=content,
-                        channel="whatsapp",
+                        channel="WHATSAPP",
                         trigger_source="review_request",
                         business_id=business.id
                     )

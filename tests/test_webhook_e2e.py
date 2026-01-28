@@ -133,7 +133,7 @@ async def test_webhook_e2e():
                 user_repo = UserRepository(session)
                 user = await user_repo.get_by_phone(phone)
                 assert user is not None
-                assert user.role == "owner"
+                assert user.role == "OWNER"
 
                 # Check Business
                 biz_repo = BusinessRepository(session)

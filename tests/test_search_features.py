@@ -94,7 +94,7 @@ async def setup_search_data(db_session: AsyncSession):
         customer_id=c2.id,
         business_id=business.id,
         description="Gutter cleaning",
-        status="SCHEDULED",
+        status=JobStatus.SCHEDULED,
         scheduled_at=(datetime.now(timezone.utc) + timedelta(days=1)).replace(
             hour=10, minute=0, second=0, microsecond=0
         ),
@@ -134,7 +134,7 @@ async def test_search_jobs_today(
 
     tool = SearchTool(
         query="all",
-        entity_type="job",
+        entity_type="JOB",
         query_type="SCHEDULED",
         min_date=today_start,
         max_date=today_end,
@@ -165,7 +165,7 @@ async def test_search_jobs_tomorrow(
 
     tool = SearchTool(
         query="all",
-        entity_type="job",
+        entity_type="JOB",
         query_type="SCHEDULED",
         min_date=tomorrow_start,
         max_date=tomorrow_end,
@@ -192,7 +192,7 @@ async def test_search_customers_with_jobs_today(
 
     tool = SearchTool(
         query="all",
-        entity_type="customer",
+        entity_type="CUSTOMER",
         query_type="SCHEDULED",
         min_date=today_start,
         max_date=today_end,
@@ -219,8 +219,8 @@ async def test_search_leads_added_today(
 
     tool = SearchTool(
         query="all",
-        entity_type="lead",
-        query_type="added",
+        entity_type="LEAD",
+        query_type="ADDED",
         min_date=today_start,
         max_date=today_end,
     )

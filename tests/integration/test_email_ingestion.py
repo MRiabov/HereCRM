@@ -50,7 +50,7 @@ async def test_postmark_email_ingestion_with_attachments(db_session):
             name="Test Upload Customer",
             business_id=business.id,
             email=customer_email,
-            pipeline_stage="contacted", 
+            pipeline_stage="CONTACTED", 
         )
         prep_session.add(customer)
         
@@ -99,7 +99,7 @@ async def test_postmark_email_ingestion_with_attachments(db_session):
             
             assert response.status_code == 200, response.text
             data = response.json()
-            assert data["status"] == "success"
+            assert data["status"] == "SUCCESS"
         
         # Verify Document Created
         async with TestingSessionLocal() as verify_session:

@@ -150,7 +150,7 @@ async def test_chat_send(client):
             assert "Internal Server Error" in response.text or "Error" in response.text
         else:
             assert response.status_code == 200
-            assert response.json()["status"] == "sent"
+            assert response.json()["status"] == "SENT"
     except Exception:
         pass # Ignore external service failure in test environment
 
@@ -165,13 +165,13 @@ async def test_get_workflow_settings(client):
 @pytest.mark.asyncio
 async def test_update_workflow_settings(client, async_session):
     payload = {
-        "workflow_invoicing": "automatic",
-        "workflow_quoting": "never",
+        "workflow_invoicing": "AUTOMATIC",
+        "workflow_quoting": "NEVER",
         "default_city": "Berlin"
     }
     response = await client.patch("/api/v1/pwa/settings/workflow", json=payload)
     assert response.status_code == 200
     data = response.json()
-    assert data["workflow_invoicing"] == "automatic"
-    assert data["workflow_quoting"] == "never"
+    assert data["workflow_invoicing"] == "AUTOMATIC"
+    assert data["workflow_quoting"] == "NEVER"
     assert data["default_city"] == "Berlin"

@@ -53,4 +53,4 @@ async def stripe_webhook(
          logger.error(f"Error processing webhook: {e}")
          raise HTTPException(status_code=500, detail="Internal processing error")
 
-    return {"status": "success"}
+    return {"status": "SUCCESS"}

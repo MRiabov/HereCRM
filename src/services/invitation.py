@@ -63,7 +63,7 @@ class InvitationService:
             await messaging_service.send_message(
                 recipient_phone=identifier,
                 content=message,
-                channel="whatsapp",  # Default to WhatsApp
+                channel="WHATSAPP",  # Default to WhatsApp
                 trigger_source="invitation_flow",
                 business_id=business_id
             )

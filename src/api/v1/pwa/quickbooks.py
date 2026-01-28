@@ -53,7 +53,7 @@ async def disconnect_quickbooks(
         raise HTTPException(status_code=403, detail="Only owners can disconnect QuickBooks")
     
     await auth_service.disconnect(current_user.business_id)
-    return {"status": "success"}
+    return {"status": "SUCCESS"}
 
 @router.post("/sync")
 async def trigger_sync(
@@ -64,4 +64,4 @@ async def trigger_sync(
         raise HTTPException(status_code=403, detail="Only owners can trigger sync")
     
     await accounting_service.trigger_manual_sync(current_user.business_id)
-    return {"status": "success"}
+    return {"status": "SUCCESS"}

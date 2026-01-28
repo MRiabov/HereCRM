@@ -100,4 +100,4 @@ async def delete_request(
     
     await service.session.delete(request)
     await service.session.commit()
-    return {"status": "success"}
+    return {"status": "SUCCESS"}

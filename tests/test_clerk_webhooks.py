@@ -4,7 +4,7 @@ from httpx import AsyncClient, ASGITransport
 from unittest.mock import patch
 from src.database import get_db, Base
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from src.models import User, Business
+from src.models import User, Business, UserRole
 
 # In-memory DB for tests
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -57,7 +57,7 @@ async def test_clerk_webhook_user_created():
                 )
                 
                 assert response.status_code == 200
-                assert response.json() == {"status": "success"}
+                assert response.json() == {"status": "SUCCESS"}
                 
                 async with TestingSessionLocal() as session:
                     from src.repositories import UserRepository
@@ -154,5 +154,5 @@ async def test_clerk_webhook_membership_created():
                     from src.repositories import UserRepository
                     user_repo = UserRepository(session)
                     user = await user_repo.get_by_clerk_id("user_membership_test")
-                    assert user.role == "owner"
+                    assert user.role == UserRole.OWNER
                     assert user.business_id is not None

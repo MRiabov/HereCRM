@@ -94,9 +94,9 @@ def load_channels_config() -> ChannelsConfig:
     if not os.path.exists(config_path):
         # Default configuration if file is missing
         return ChannelsConfig(channels={
-            "whatsapp": ChannelSettings(max_length=150, style="concise"),
+            "WHATSAPP": ChannelSettings(max_length=150, style="concise"),
             "email": ChannelSettings(max_length=1000, style="detailed"),
-            "sms": ChannelSettings(max_length=160, style="direct", provider="textgrid")
+            "SMS": ChannelSettings(max_length=160, style="direct", provider="textgrid")
         })
         
     with open(config_path, "r") as f:

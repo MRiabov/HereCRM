@@ -29,18 +29,18 @@ class MessagingService:
         self,
         recipient_phone: str,
         content: str,
-        channel: str = "whatsapp",
-        trigger_source: str = "manual",
+        channel: str = "WHATSAPP",
+        trigger_source: str = "MANUAL",
         business_id: Optional[int] = None,
     ) -> MessageLog:
         """
         Send a message to a recipient via the specified channel.
         """
         # Determine message type
-        message_type = MessageType.WHATSAPP if channel == "whatsapp" else MessageType.SMS
+        message_type = MessageType.WHATSAPP if channel == "WHATSAPP" else MessageType.SMS
         
         # Mandatory GSM-7 normalization for SMS to avoid high costs (UCS-2)
-        if channel == "sms":
+        if channel == "SMS":
             from src.services.channels.sms_utils import normalize_to_gsm7
             content = normalize_to_gsm7(content)
             
@@ -70,9 +70,9 @@ class MessagingService:
                 success = False
                 external_id = None
                 
-                if channel == "whatsapp":
+                if channel == "WHATSAPP":
                     success, external_id = await self._send_whatsapp(recipient_phone, content)
-                elif channel == "sms":
+                elif channel == "SMS":
                     success, external_id = await self._send_sms(recipient_phone, content)
                 
                 # 3. Update status and track usage
@@ -88,7 +88,7 @@ class MessagingService:
                         from src.services.channels.sms_utils import get_sms_segment_count
                         
                         quantity = 1
-                        if channel == "sms":
+                        if channel == "SMS":
                             quantity = get_sms_segment_count(content)
                             
                         billing_service = BillingService(db)
@@ -132,7 +132,7 @@ class MessagingService:
         
         # Basic text message payload
         payload = {
-            "messaging_product": "whatsapp",
+            "messaging_product": "WHATSAPP",
             "recipient_type": "individual",
             "to": recipient_phone,
             "type": "text",
@@ -147,7 +147,7 @@ class MessagingService:
                 
                 if response.status_code in (200, 201):
                     data = response.json()
-                    # Extract message ID from response: {'messaging_product': 'whatsapp', 'contacts': [...], 'messages': [{'id': '...'}]}
+                    # Extract message ID from response: {'messaging_product': 'WHATSAPP', 'contacts': [...], 'messages': [{'id': '...'}]}
                     msg_id = None
                     if "messages" in data and len(data["messages"]) > 0:
                         msg_id = data["messages"][0].get("id")
@@ -180,7 +180,7 @@ class MessagingService:
         self,
         recipient_phone: str,
         content: str,
-        channel: str = "whatsapp",
+        channel: str = "WHATSAPP",
         trigger_source: str = "event",
         business_id: Optional[int] = None,
     ):
@@ -190,7 +190,7 @@ class MessagingService:
         Args:
             recipient_phone: Phone number of the recipient
             content: Message content to send
-            channel: Channel to use ("whatsapp" or "sms")
+            channel: Channel to use ("WHATSAPP" or "SMS")
             trigger_source: Source that triggered this message
             business_id: ID of the business for billing
         """

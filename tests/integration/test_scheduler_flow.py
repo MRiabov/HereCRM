@@ -47,7 +47,7 @@ async def test_check_shifts_sends_notification():
             description="Morning Job",
             scheduled_at=now,
             employee_id=emp.id,
-            status="SCHEDULED",
+            status=JobStatus.SCHEDULED,
             location="123 Main St"
         )
         session.add(job_today)

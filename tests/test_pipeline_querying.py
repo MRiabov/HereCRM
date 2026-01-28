@@ -38,13 +38,13 @@ async def test_get_pipeline_summary(test_session: AsyncSession):
     service = CRMService(test_session, biz.id)
     summary = await service.get_pipeline_summary()
 
-    assert summary["not_contacted"]["count"] == 1
-    assert "Alice" in summary["not_contacted"]["examples"]
-    assert summary["contacted"]["count"] == 2
-    assert "Bob" in summary["contacted"]["examples"]
-    assert "Charlie" in summary["contacted"]["examples"]
-    assert summary["converted_once"]["count"] == 1
-    assert "David" in summary["converted_once"]["examples"]
+    assert summary[PipelineStage.NOT_CONTACTED.value]["count"] == 1
+    assert "Alice" in summary[PipelineStage.NOT_CONTACTED.value]["examples"]
+    assert summary[PipelineStage.CONTACTED.value]["count"] == 2
+    assert "Bob" in summary[PipelineStage.CONTACTED.value]["examples"]
+    assert "Charlie" in summary[PipelineStage.CONTACTED.value]["examples"]
+    assert summary[PipelineStage.CONVERTED_ONCE.value]["count"] == 1
+    assert "David" in summary[PipelineStage.CONVERTED_ONCE.value]["examples"]
 
 @pytest.mark.asyncio
 async def test_format_pipeline_summary(test_session: AsyncSession):

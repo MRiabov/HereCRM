@@ -42,7 +42,7 @@ async def test_scope_enforcement_blocked(test_session: AsyncSession, template_se
     executor = ToolExecutor(test_session, biz.id, user.id, str(user.phone_number), template_service)
     
     # ManageEmployeesTool requires "manage_employees"
-    tool = ManageEmployeesTool(action="list")
+    tool = ManageEmployeesTool(action="LIST")
     
     result, metadata = await executor.execute(tool)
     
@@ -65,7 +65,7 @@ async def test_scope_enforcement_allowed(test_session: AsyncSession, template_se
 
     executor = ToolExecutor(test_session, biz.id, user.id, str(user.phone_number), template_service)
     
-    tool = ManageEmployeesTool(action="list")
+    tool = ManageEmployeesTool(action="LIST")
     
     result, metadata = await executor.execute(tool)
     
@@ -87,7 +87,7 @@ async def test_scope_enforcement_default_allowed(test_session: AsyncSession, tem
     executor = ToolExecutor(test_session, biz.id, user.id, str(user.phone_number), template_service)
     
     # Check ManageEmployeesTool
-    res1, _ = await executor.execute(ManageEmployeesTool(action="list"))
+    res1, _ = await executor.execute(ManageEmployeesTool(action="LIST"))
     assert "Access granted to Employee Management" in res1
 
     # Check MassEmailTool

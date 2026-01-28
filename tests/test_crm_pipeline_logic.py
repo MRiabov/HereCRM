@@ -84,12 +84,12 @@ async def test_tool_executor_search_with_stage(test_session: AsyncSession):
     template_service = TemplateService()
     executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
     
-    search_tool = SearchTool(query="Alice", pipeline_stage=PipelineStage.LOST, entity_type="customer")
+    search_tool = SearchTool(query="Alice", pipeline_stage=PipelineStage.LOST, entity_type="CUSTOMER")
     response, metadata = await executor.execute(search_tool)
     
     assert "Alice" in response
 
-    search_tool_mismatch = SearchTool(query="Alice", pipeline_stage=PipelineStage.CONTACTED, entity_type="customer")
+    search_tool_mismatch = SearchTool(query="Alice", pipeline_stage=PipelineStage.CONTACTED, entity_type="CUSTOMER")
     response, metadata = await executor.execute(search_tool_mismatch)
     assert "Alice (" not in response 
     assert "No results found" in response or "search_no_results" in response
@@ -116,7 +116,7 @@ async def test_tool_executor_update_stage(test_session: AsyncSession):
     
     assert "Updated Alice's stage to Lost" in response
     assert metadata["action"] == "update"
-    assert metadata["new_stage"] == "lost"
+    assert metadata["new_stage"] == "LOST"
     
     await test_session.refresh(c1)
     assert c1.pipeline_stage == PipelineStage.LOST

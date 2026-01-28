@@ -133,6 +133,35 @@ class JobCreationDefault(str, enum.Enum):
     SCHEDULED_TODAY = "SCHEDULED_TODAY"
 
 
+class DistanceUnit(str, enum.Enum):
+    MILES = "mi"
+    KILOMETERS = "km"
+
+
+class SubscriptionStatus(str, enum.Enum):
+    FREE = "free"
+    PRO = "pro"
+
+
+class PaymentMethod(str, enum.Enum):
+    CASH = "cash"
+    CARD = "card"
+    BANK_TRANSFER = "bank_transfer"
+    OTHER = "other"
+
+
+class MessageType(str, enum.Enum):
+    WHATSAPP = "WHATSAPP"
+    SMS = "SMS"
+
+
+class MessageStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    SENT = "SENT"
+    FAILED = "FAILED"
+    DRAFT = "DRAFT"
+
+
 class WageModelType(str, enum.Enum):
     COMMISSION = "COMMISSION"
     HOURLY_PER_JOB = "HOURLY_PER_JOB"
@@ -144,6 +173,22 @@ class LedgerEntryType(str, enum.Enum):
     WAGE = "WAGE"
     PAYOUT = "PAYOUT"
     EXPENSE_REIMBURSEMENT = "EXPENSE_REIMBURSEMENT"
+
+
+class PromotionAction(str, enum.Enum):
+    SCHEDULE = "schedule"
+    COMPLETE = "complete"
+    LOG = "log"
+    QUOTE = "quote"
+
+
+class EntityType(str, enum.Enum):
+    JOB = "job"
+    REQUEST = "request"
+    EXPENSE = "expense"
+    LEDGER = "ledger"
+    CUSTOMER = "customer"
+    ALL = "all"
 
 
 class JobStatus(str, enum.Enum):
@@ -169,7 +214,7 @@ class Business(Base):
     # Billing Fields (Shimmed from WP00)
     stripe_customer_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     stripe_subscription_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    subscription_status: Mapped[str] = mapped_column(String, default="free")
+    subscription_status: Mapped[SubscriptionStatus] = mapped_column(SAEnum(SubscriptionStatus), default=SubscriptionStatus.FREE)
     seat_limit: Mapped[int] = mapped_column(Integer, default=1)
     active_addons: Mapped[List[str]] = mapped_column(JSON, default=lambda: ["manage_employees", "campaigns"])
     
@@ -188,7 +233,7 @@ class Business(Base):
     workflow_show_whatsapp_button: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=False)
     workflow_pipeline_quoted_stage: Mapped[bool] = mapped_column(Boolean, default=True)
     workflow_job_creation_default: Mapped[Optional[JobCreationDefault]] = mapped_column(SAEnum(JobCreationDefault), nullable=True)
-    workflow_distance_unit: Mapped[str] = mapped_column(String, default="mi")
+    workflow_distance_unit: Mapped[DistanceUnit] = mapped_column(SAEnum(DistanceUnit), default=DistanceUnit.MILES)
 
     # Automatic Messaging Settings (Feature 003)
     workflow_auto_quote_followup: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -239,7 +284,7 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
-    preferred_channel: Mapped[str] = mapped_column(String, default="whatsapp")
+    preferred_channel: Mapped[MessageType] = mapped_column(SAEnum(MessageType), default=MessageType.WHATSAPP)
     preferences: Mapped[dict] = mapped_column(
         JSON, default=lambda: {"confirm_by_default": False}
     )
@@ -265,7 +310,7 @@ class User(Base):
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="users")
-    conversation_state: Mapped[Optional["ConversationState"]] = relationship(back_populates="user")
+    conversation_state: Mapped[Optional["ConversationState"]] = relationship(back_populates="user", uselist=False)
     messages: Mapped[List["Message"]] = relationship(back_populates="user")
     wage_config: Mapped[Optional["WageConfiguration"]] = relationship(back_populates="user", uselist=False)
     ledger_entries: Mapped[List["LedgerEntry"]] = relationship(back_populates="user")
@@ -475,7 +520,7 @@ class ConversationState(Base):
     last_action_metadata: Mapped[Optional[dict]] = mapped_column(JSON)
     pending_action_timestamp: Mapped[Optional[datetime]] = mapped_column(DateTime)
     pending_action_payload: Mapped[Optional[dict]] = mapped_column(JSON)
-    active_channel: Mapped[str] = mapped_column(String, default="whatsapp")
+    active_channel: Mapped[MessageType] = mapped_column(SAEnum(MessageType), default=MessageType.WHATSAPP)
     last_updated: Mapped[datetime] = mapped_column(
         DateTime,
         default=lambda: datetime.now(timezone.utc),
@@ -524,7 +569,7 @@ class Message(Base):
     to_number: Mapped[Optional[str]] = mapped_column(String)
     body: Mapped[str] = mapped_column(Text)
     role: Mapped[MessageRole] = mapped_column(SAEnum(MessageRole))
-    channel_type: Mapped[str] = mapped_column(String, default="whatsapp")
+    channel_type: Mapped[MessageType] = mapped_column(SAEnum(MessageType), default=MessageType.WHATSAPP)
     external_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     is_executed: Mapped[bool] = mapped_column(Boolean, default=False)
     log_metadata: Mapped[Optional[dict]] = mapped_column(JSON)
@@ -537,12 +582,19 @@ class Message(Base):
     user: Mapped[Optional["User"]] = relationship(back_populates="messages")
 
 
+class ImportStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
 class ImportJob(Base):
     __tablename__ = "import_jobs"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
-    status: Mapped[str] = mapped_column(String, default=RequestStatus.PENDING)
+    status: Mapped[ImportStatus] = mapped_column(SAEnum(ImportStatus), default=ImportStatus.PENDING)
     file_url: Mapped[str] = mapped_column(String)
     filename: Mapped[Optional[str]] = mapped_column(String)
     record_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -623,7 +675,7 @@ class ExportRequest(Base):
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     status: Mapped[ExportStatus] = mapped_column(SAEnum(ExportStatus), default=ExportStatus.PENDING)
     query: Mapped[str] = mapped_column(Text)
-    format: Mapped[str] = mapped_column(String)  # 'csv', 'excel', 'zip'
+    format: Mapped[ExportFormat] = mapped_column(SAEnum(ExportFormat), default=ExportFormat.CSV)
     s3_key: Mapped[Optional[str]] = mapped_column(String)
     public_url: Mapped[Optional[str]] = mapped_column(String)
     error_log: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -633,19 +685,6 @@ class ExportRequest(Base):
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="export_requests")
-
-
-
-class MessageType(str, enum.Enum):
-    WHATSAPP = "WHATSAPP"
-    SMS = "SMS"
-
-
-class MessageStatus(str, enum.Enum):
-    PENDING = "PENDING"
-    SENT = "SENT"
-    FAILED = "FAILED"
-    DRAFT = "DRAFT"
 
 
 class MessageLog(Base):
@@ -676,7 +715,7 @@ class Payment(Base):
     invoice_id: Mapped[int] = mapped_column(ForeignKey("invoices.id"), index=True)
     amount: Mapped[float] = mapped_column(Float)
     payment_date: Mapped[datetime] = mapped_column(DateTime)
-    payment_method: Mapped[str] = mapped_column(String)  # 'cash', 'card', 'bank_transfer', etc.
+    payment_method: Mapped[PaymentMethod] = mapped_column(SAEnum(PaymentMethod), default=PaymentMethod.CASH)
     status: Mapped[PaymentStatus] = mapped_column(SAEnum(PaymentStatus), default=PaymentStatus.COMPLETED)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
@@ -769,6 +808,14 @@ class WageConfiguration(Base):
     user: Mapped["User"] = relationship(back_populates="wage_config")
 
 
+class ExpenseCategory(str, enum.Enum):
+    FUEL = "FUEL"
+    TOOLS = "TOOLS"
+    MATERIAL = "MATERIAL"
+    TRAVEL = "TRAVEL"
+    OTHER = "OTHER"
+
+
 class Expense(Base):
     __tablename__ = "expenses"
 
@@ -777,7 +824,7 @@ class Expense(Base):
     job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True, index=True)
     employee_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     amount: Mapped[float] = mapped_column(Float)
-    category: Mapped[str] = mapped_column(String)
+    category: Mapped[ExpenseCategory] = mapped_column(SAEnum(ExpenseCategory), default=ExpenseCategory.OTHER)
     description: Mapped[Optional[str]] = mapped_column(Text)
     receipt_url: Mapped[Optional[str]] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(

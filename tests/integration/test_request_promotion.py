@@ -1,5 +1,5 @@
 import pytest
-from src.models import Business, Customer, Request, Quote, QuoteStatus, User
+from src.models import Business, Customer, Request, Quote, QuoteStatus, User, UserRole, PromotionAction, RequestStatus
 from src.services.crm_service import CRMService
 
 @pytest.mark.asyncio
@@ -33,7 +33,7 @@ async def test_request_to_quote_promotion(async_session):
     # 2. Promote Request to Quote
     msg, metadata = await crm_service.convert_request(
         query="Alice", # Identifying by query which matches content
-        action="quote"
+        action=PromotionAction.QUOTE
     )
 
     # 3. Verify Result
@@ -77,7 +77,7 @@ async def test_request_to_quote_promotion_with_id(async_session):
     request = Request(
         business_id=business.id,
         description="Bob: Fix my window please",
-        status=
+        status=RequestStatus.PENDING
     )
     async_session.add(request)
     await async_session.commit()
@@ -87,7 +87,7 @@ async def test_request_to_quote_promotion_with_id(async_session):
     # Promote using content query
     msg, metadata = await crm_service.convert_request(
         query="window",
-        action="quote"
+        action=PromotionAction.QUOTE
     )
 
     assert metadata["entity"] == "quote"
@@ -109,7 +109,7 @@ async def test_request_promotion_with_assigned_to_and_price(async_session):
     await async_session.commit()
     await async_session.refresh(business)
 
-    employee = User(name="Jeff", business_id=business.id, role="employee")
+    employee = User(name="Jeff", business_id=business.id, role=UserRole.EMPLOYEE)
     async_session.add(employee)
     await async_session.commit()
     await async_session.refresh(employee)
@@ -130,7 +130,7 @@ async def test_request_promotion_with_assigned_to_and_price(async_session):
     # 1. Test Schedule (Job)
     msg, metadata = await crm_service.convert_request(
         query="faucet",
-        action="schedule",
+        action=PromotionAction.SCHEDULE,
         assigned_to=employee.id,
         price=150.0
     )
@@ -154,7 +154,7 @@ async def test_request_promotion_with_assigned_to_and_price(async_session):
 
     msg, metadata = await crm_service.convert_request(
         query="Garden",
-        action="quote",
+        action=PromotionAction.QUOTE,
         price=500.0
     )
 

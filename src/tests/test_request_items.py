@@ -66,7 +66,7 @@ async def test_convert_request_to_job_preserves_items(session: AsyncSession):
     )
     
     # 3. Convert to Job
-    msg, metadata = await crm.convert_request(query="Test Customer", action="schedule")
+    msg, metadata = await crm.convert_request(query="Test Customer", action="SCHEDULE")
     
     assert metadata["entity"] == "job"
     job_id = metadata["id"]
@@ -107,7 +107,7 @@ async def test_convert_request_to_quote_preserves_items(session: AsyncSession):
     )
     
     # 3. Convert to Quote
-    msg, metadata = await crm.convert_request(query="Quote Customer", action="quote")
+    msg, metadata = await crm.convert_request(query="Quote Customer", action="QUOTE")
     
     assert metadata["entity"] == "quote"
     quote_id = metadata["id"]

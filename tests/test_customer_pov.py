@@ -56,7 +56,7 @@ async def test_customer_pov_scenarios():
                 business_id=biz.id,
                 customer_id=customer.id,
                 description="Fix Leak",
-                status="SCHEDULED",
+                status=JobStatus.SCHEDULED,
                 scheduled_at=datetime.now(timezone.utc) + timedelta(minutes=10),
                 employee_id=tech_user.id,
                 latitude=53.3498, # Dublin
@@ -85,7 +85,7 @@ async def test_customer_pov_scenarios():
 
             # Scenario A: Technician sends "I'm on my way"
             from src.uimodels import SendStatusTool
-            mock_parser.return_value = SendStatusTool(query="Alice", status_type="on_way")
+            mock_parser.return_value = SendStatusTool(query="Alice", status_type="ON_WAY")
             
             tech_phone = "+444555666"
             payload = {"from_number": tech_phone, "body": "I am on my way to Alice"}
@@ -184,7 +184,7 @@ async def test_customer_pov_scenarios():
                     customer_id=customer.id,
                     job_id=job.id,
                     total_amount=150.0,
-                    status="sent",
+                    status=QuoteStatus.sent,
                     external_token="test_token_123"
                 )
                 db.add(quote)
@@ -192,14 +192,14 @@ async def test_customer_pov_scenarios():
             
             response = await ac.post("/quotes/test_token_123/confirm")
             assert response.status_code == 200
-            assert response.json()["status"] == "success"
+            assert response.json()["status"] == "SUCCESS"
             
             async with SessionLocal() as db:
                 from sqlalchemy import select
                 from src.models import Quote
                 res = await db.execute(select(Quote).where(Quote.external_token == "test_token_123"))
                 updated_quote = res.scalar_one()
-                assert updated_quote.status == "accepted"
+                assert updated_quote.status == QuoteStatus.ACCEPTED
 
     if os.path.exists("test_customer_pov.db"):
         os.remove("test_customer_pov.db")

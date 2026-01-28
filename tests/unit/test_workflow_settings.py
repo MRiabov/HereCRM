@@ -69,7 +69,7 @@ async def test_workflow_tool_rbac():
         
         # Test as Owner
         executor_owner = ToolExecutor(session, business.id, owner.id, owner.phone_number, template_service)
-        tool = UpdateWorkflowSettingsTool(invoicing="automatic")
+        tool = UpdateWorkflowSettingsTool(invoicing="AUTOMATIC")
         msg, _ = await executor_owner.execute(tool)
         assert "successfully" in msg.lower()
         
@@ -80,7 +80,7 @@ async def test_workflow_tool_rbac():
         
         # Test as Employee
         executor_emp = ToolExecutor(session, business.id, employee.id, employee.phone_number, template_service)
-        tool2 = UpdateWorkflowSettingsTool(invoicing="never")
+        tool2 = UpdateWorkflowSettingsTool(invoicing="NEVER")
         msg, _ = await executor_emp.execute(tool2)
         assert "don't have permission" in msg.lower()
         
@@ -113,7 +113,7 @@ async def test_workflow_tool_validation():
         tool_get = GetWorkflowSettingsTool()
         msg, data = await executor.execute(tool_get)
         assert "Current Workflow Settings" in msg
-        assert data["settings"]["workflow_invoicing"] == InvoicingWorkflow.MANUAL
+        assert data["SETTINGS"]["workflow_invoicing"] == InvoicingWorkflow.MANUAL
         print("test_workflow_tool_validation passed!")
         
     @pytest.mark.asyncio

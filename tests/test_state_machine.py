@@ -47,7 +47,7 @@ async def test_state_idle_to_confirm(
     biz = Business(name="Test Biz")
     test_session.add(biz)
     await test_session.flush()
-    user = User(phone_number="123456789", business_id=biz.id, role="owner")
+    user = User(phone_number="123456789", business_id=biz.id, role="OWNER")
     test_session.add(user)
     await test_session.flush()
 
@@ -59,7 +59,7 @@ async def test_state_idle_to_confirm(
         location=None,
         price=50.0,
         description="Fix window",
-        category="job",
+        category="JOB",
     )
     mock_parser.parse.return_value = tool_call
 
@@ -175,7 +175,7 @@ async def test_undo_functionality(
     # Undo
     response = await service.handle_message("undo", user_phone="123456789")
 
-    assert template_service.render("undo_deleted", entity_type="job") in response
+    assert template_service.render("undo_deleted", entity_type="JOB") in response
 
     # Verify job deleted
     from sqlalchemy import select
@@ -200,7 +200,7 @@ async def test_undo_promotion(
         business_id=biz.id,
         customer_id=1,
         description="Promoted job",
-        status="SCHEDULED",
+        status=JobStatus.SCHEDULED,
     )
     test_session.add(job)
     await test_session.flush()
@@ -260,7 +260,7 @@ async def test_undo_settings_update(
         state=ConversationStatus.IDLE,
         last_action_metadata={
             "action": "update_settings",
-            "entity": "user",
+            "entity": "USER",
             "user_id": user.id,
             "setting_key": "confirm_by_default",
             "old_value": False,
@@ -356,7 +356,7 @@ async def test_edit_last_flow(test_session, template_service):
         customer_name="John",
         price=50.0,
         description="faucet",
-        category="job",
+        category="JOB",
         customer_phone=None,
         location=None,
     )

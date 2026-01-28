@@ -1,7 +1,7 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from src.models import Job, JobStatus, Customer, PipelineStage, Business, PaymentTiming, Request, LineItem, Service, Urgency, RequestStatus
+from src.models import Job, JobStatus, Customer, PipelineStage, Business, PaymentTiming, Request, LineItem, Service, Urgency, RequestStatus, PromotionAction
 from src.repositories import JobRepository, CustomerRepository, RequestRepository
 from src.events import event_bus, JOB_CREATED, JOB_BOOKED, JOB_SCHEDULED, JOB_UPDATED, JOB_ASSIGNED, JOB_UNASSIGNED, JOB_PAID
 from datetime import datetime, timedelta, timezone
@@ -334,7 +334,7 @@ class CRMService:
     async def convert_request(
         self,
         query: str,
-        action: str,
+        action: str | PromotionAction,
         time: Optional[str] = None,
         iso_time: Optional[str] = None,
         assigned_to: Optional[int] = None,
@@ -349,7 +349,14 @@ class CRMService:
         req = await self.request_repo.get_by_id(requests[0].id, self.business_id)
         assert req is not None
 
-        if action == "schedule":
+        # Normalize action to enum
+        if isinstance(action, str):
+            try:
+                action = PromotionAction(action.lower())
+            except ValueError:
+                return f"Unknown action: {action}", None
+
+        if action == PromotionAction.SCHEDULE:
             # Promotion logic: Request -> Job
             customers = await self.customer_repo.search(query, self.business_id)
             if not customers:
@@ -406,7 +413,7 @@ class CRMService:
                 "price": job.value,
             }
 
-        elif action == "complete":
+        elif action == PromotionAction.COMPLETE:
             old_status = req.status
             req.status = RequestStatus.COMPLETED
             return f"✔ Request marked as completed: {req.description[:30]}", {
@@ -416,7 +423,7 @@ class CRMService:
                 "old_status": old_status,
             }
 
-        elif action == "log":
+        elif action == PromotionAction.LOG:
              old_status = req.status
              req.status = RequestStatus.LOGGED
              return f"✔ Request logged: {req.description[:30]}", {
@@ -426,7 +433,7 @@ class CRMService:
                  "old_status": old_status,
              }
 
-        elif action == "quote":
+        elif action == PromotionAction.QUOTE:
             # Promotion logic: Request -> Quote
             customers = await self.customer_repo.search(query, self.business_id)
             if not customers:
@@ -486,18 +493,19 @@ class CRMService:
     async def format_pipeline_summary(self) -> str:
         summary = await self.get_pipeline_summary()
         lines = ["### Pipeline Breakdown"]
-        # Order them logically if possible, or just alphabetical
+        # Order them logically
         stages = [
-            "new_lead",
-            "not_contacted",
-            "contacted",
-            "quoted",
-            "converted_once",
-            "converted_recurrent",
-            "not_interested",
-            "lost",
+            PipelineStage.NEW_LEAD,
+            PipelineStage.NOT_CONTACTED,
+            PipelineStage.CONTACTED,
+            PipelineStage.QUOTED,
+            PipelineStage.CONVERTED_ONCE,
+            PipelineStage.CONVERTED_RECURRENT,
+            PipelineStage.NOT_INTERESTED,
+            PipelineStage.LOST,
         ]
-        for stage_key in stages:
+        for stage in stages:
+            stage_key = stage.value
             if stage_key not in summary:
                 continue
             data = summary[stage_key]

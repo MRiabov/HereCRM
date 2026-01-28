@@ -14,7 +14,7 @@ async def test_get_chat_history(async_session: AsyncSession):
     await async_session.refresh(biz)
 
     # Create a user
-    user = User(business_id=biz.id, phone_number="123", role="owner")
+    user = User(business_id=biz.id, phone_number="123", role="OWNER")
     async_session.add(user)
     await async_session.commit()
     await async_session.refresh(user)
@@ -73,17 +73,17 @@ async def test_construct_help_prompt(async_session: AsyncSession):
         log_metadata={"error": "Something went wrong"}
     )
     
-    prompt = service.construct_help_prompt([m1, m2], "whatsapp")
+    prompt = service.construct_help_prompt([m1, m2], "WHATSAPP")
     
     assert len(prompt) == 3 # System + 2 messages
     assert prompt[0]["role"] == "system"
     assert "MANUAL CONTENT" in prompt[0]["content"]
     assert "150" in prompt[0]["content"] or "concise" in prompt[0]["content"].lower()
     
-    assert prompt[1]["role"] == "user"
+    assert prompt[1]["role"] == "USER"
     assert prompt[1]["content"] == "Help me"
     
-    assert prompt[2]["role"] == "assistant"
+    assert prompt[2]["role"] == "ASSISTANT"
     assert "Sure" in prompt[2]["content"]
     assert "Something went wrong" in prompt[2]["content"]
 
@@ -110,7 +110,7 @@ async def test_generate_help_response(async_session: AsyncSession):
     await async_session.refresh(biz)
     
     # Create a user
-    user = User(business_id=biz.id, phone_number="123", role="owner")
+    user = User(business_id=biz.id, phone_number="123", role="OWNER")
     async_session.add(user)
     await async_session.commit()
     await async_session.refresh(user)
@@ -131,7 +131,7 @@ async def test_generate_help_response(async_session: AsyncSession):
     
     service = HelpService(async_session, mock_llm)
     user_query = "How do I add a job?"
-    response = await service.generate_help_response(user_query, biz.id, user.id, "whatsapp")
+    response = await service.generate_help_response(user_query, biz.id, user.id, "WHATSAPP")
     
     assert response == "To add a job, type 'add job'."
     mock_llm.chat_completion.assert_called_once()
@@ -139,7 +139,7 @@ async def test_generate_help_response(async_session: AsyncSession):
     args, _ = mock_llm.chat_completion.call_args
     prompt = args[0]
     assert prompt[0]["role"] == "system"
-    assert prompt[1]["role"] == "user"
+    assert prompt[1]["role"] == "USER"
     assert prompt[1]["content"] == "Previous message"
-    assert prompt[2]["role"] == "user"
+    assert prompt[2]["role"] == "USER"
     assert prompt[2]["content"] == user_query

@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Job, User, JobCreationDefault
+from src.models import Business, Job, User, JobCreationDefault, JobStatus, UserRole
 from src.tool_executor import ToolExecutor
 from src.uimodels import AddJobTool
 from src.services.template_service import TemplateService
@@ -37,7 +37,7 @@ async def test_execute_add_job_scheduled_today(
     test_session.add(biz)
     await test_session.flush()
 
-    user = User(phone_number="999888777", business_id=biz.id, role="owner")
+    user = User(phone_number="999888777", business_id=biz.id, role=UserRole.OWNER)
     test_session.add(user)
     await test_session.flush()
 
@@ -66,7 +66,7 @@ async def test_execute_add_job_scheduled_today(
     res = await test_session.execute(select(Job))
     job = res.scalar_one()
     
-    assert job.status == "SCHEDULED"
+    assert job.status == JobStatus.SCHEDULED
     assert job.scheduled_at is not None
     
     # Check if scheduled_at is close to now

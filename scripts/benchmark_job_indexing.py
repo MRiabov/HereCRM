@@ -1,3 +1,4 @@
+from src.models import JobStatus
 import asyncio
 import time
 import os
@@ -52,7 +53,7 @@ async def run_benchmark():
                     business_id=business.id,
                     customer_id=customer.id,
                     description=f"Job {j} for {customer.name}",
-                    status="pending"
+                    status=JobStatus.pending
                 )
                 jobs.append(job)
         session.add_all(jobs)

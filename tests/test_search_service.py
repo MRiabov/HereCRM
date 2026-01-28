@@ -36,7 +36,7 @@ async def test_search_service_instantiation():
 async def test_search_customers_delegation(search_service):
     # Setup
     search_service.customer_repo.search.return_value = [Customer(name="Test Customer")]
-    params = SearchTool(query="Test", entity_type="customer")
+    params = SearchTool(query="Test", entity_type="CUSTOMER")
     
     # Execute
     params.entity_type = "customer" # Ensure it is set
@@ -53,7 +53,7 @@ async def test_search_customers_delegation(search_service):
 async def test_search_jobs_delegation(search_service):
     # Setup
     search_service.job_repo.search.return_value = [Job(description="Fix Sink")]
-    params = SearchTool(query="Sink", entity_type="job")
+    params = SearchTool(query="Sink", entity_type="JOB")
     
     # Execute
     result, data = await search_service.search(params, business_id=1)
@@ -66,7 +66,7 @@ async def test_search_jobs_delegation(search_service):
 async def test_search_requests_delegation(search_service):
     # Setup
     search_service.request_repo.search.return_value = [Request(description="Need help")]
-    params = SearchTool(query="help", entity_type="request")
+    params = SearchTool(query="help", entity_type="REQUEST")
     
     # Execute
     result, data = await search_service.search(params, business_id=1)
@@ -98,7 +98,7 @@ async def test_search_aggregation_all(search_service):
 
 @pytest.mark.asyncio
 async def test_search_routing_customer(search_service):
-    params = SearchTool(query="test", entity_type="customer")
+    params = SearchTool(query="test", entity_type="CUSTOMER")
     await search_service.search(params, business_id=1)
     
     search_service.customer_repo.search.assert_awaited_once()
@@ -108,7 +108,7 @@ async def test_search_routing_customer(search_service):
 @pytest.mark.asyncio
 async def test_search_routing_lead(search_service):
     # Lead routes to customer repo logic
-    params = SearchTool(query="test", entity_type="lead")
+    params = SearchTool(query="test", entity_type="LEAD")
     await search_service.search(params, business_id=1)
     
     search_service.customer_repo.search.assert_awaited_once()
@@ -117,7 +117,7 @@ async def test_search_routing_lead(search_service):
 async def test_date_parsing(search_service):
     params = SearchTool(
         query="test", 
-        entity_type="request",
+        entity_type="REQUEST",
         min_date="2023-01-01T00:00:00",
         max_date="2023-12-31T23:59:59"
     )
@@ -142,7 +142,7 @@ async def test_search_formatting_detailed(search_service):
     search_service.customer_repo.search.return_value = [c]
     
     # Test Detailed
-    params = SearchTool(query="John", entity_type="customer", detailed=True)
+    params = SearchTool(query="John", entity_type="CUSTOMER", detailed=True)
     result, data = await search_service.search(params, business_id=1)
     
     assert "John Doe (123)" in result
@@ -164,7 +164,7 @@ async def test_search_truncation(search_service):
     results = [Customer(name=f"C{i}") for i in range(15)]
     search_service.customer_repo.search.return_value = results
     
-    params = SearchTool(query="all", entity_type="customer")
+    params = SearchTool(query="all", entity_type="CUSTOMER")
     result, data = await search_service.search(params, business_id=1)
     
     # Check that we only see 10 items formatted + truncation message

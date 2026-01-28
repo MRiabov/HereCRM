@@ -37,7 +37,7 @@ async def test_help_tool_integration(test_session: AsyncSession, template_servic
     biz = Business(name="Test Biz")
     test_session.add(biz)
     await test_session.flush()
-    user = User(phone_number="123456789", business_id=biz.id, role="owner")
+    user = User(phone_number="123456789", business_id=biz.id, role="OWNER")
     test_session.add(user)
     await test_session.commit()
 
@@ -61,5 +61,5 @@ async def test_help_tool_integration(test_session: AsyncSession, template_servic
             user_query="Help me",
             business_id=biz.id,
             user_id=user.id,
-            channel="whatsapp"
+            channel="WHATSAPP"
         )

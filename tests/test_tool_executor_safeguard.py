@@ -22,8 +22,8 @@ async def test_tool_executor_add_job_safeguard_blocked():
     
     business = MagicMock(spec=Business)
     business.id = 1
-    business.workflow_invoicing = "manual"
-    business.workflow_quoting = "manual"
+    business.workflow_invoicing = "MANUAL"
+    business.workflow_quoting = "MANUAL"
     business.active_addons = []
     
     executor = ToolExecutor(session, business_id=1, user_id=1, user_phone="+353871234567", template_service=template_service)
@@ -71,8 +71,8 @@ async def test_tool_executor_add_job_safeguard_allowed():
     
     business = MagicMock(spec=Business)
     business.id = 1
-    business.workflow_invoicing = "manual"
-    business.workflow_quoting = "manual"
+    business.workflow_invoicing = "MANUAL"
+    business.workflow_quoting = "MANUAL"
     business.active_addons = []
     
     executor = ToolExecutor(session, business_id=1, user_id=1, user_phone="+353871234567", template_service=template_service)
@@ -94,7 +94,7 @@ async def test_tool_executor_add_job_safeguard_allowed():
     # Mock WorkflowSettingsService
     executor.workflow_service = AsyncMock()
     executor.workflow_service.get_settings.return_value = {
-        "workflow_job_creation_default": "unscheduled"
+        "workflow_job_creation_default": "UNSCHEDULED"
     }
     
     # Mock CRMService to avoid real DB calls for job creation

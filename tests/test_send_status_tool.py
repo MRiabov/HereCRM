@@ -46,7 +46,7 @@ async def test_send_status_named_customer(test_session, template_service):
     with patch("src.tool_executor.event_bus") as mock_bus:
         mock_bus.emit = AsyncMock()
         
-        tool = SendStatusTool(query="John", status_type="on_way")
+        tool = SendStatusTool(query="John", status_type="ON_WAY")
         result, metadata = await executor.execute(tool)
         
         assert "Sent status update to John Doe" in result
@@ -89,7 +89,7 @@ async def test_send_status_next_client(test_session, template_service):
     with patch("src.tool_executor.event_bus") as mock_bus:
         mock_bus.emit = AsyncMock()
         
-        tool = SendStatusTool(query="next_scheduled_client", status_type="running_late")
+        tool = SendStatusTool(query="next_scheduled_client", status_type="RUNNING_LATE")
         result, metadata = await executor.execute(tool)
         
         assert "Sent status update to Next Client" in result

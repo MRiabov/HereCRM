@@ -39,7 +39,7 @@ async def test_execute_add_job_new_customer(
     test_session.add(biz)
     await test_session.flush()
 
-    user = User(phone_number="123456789", business_id=biz.id, role="owner")
+    user = User(phone_number="123456789", business_id=biz.id, role=UserRole.OWNER)
     test_session.add(user)
     await test_session.flush()
 
@@ -86,7 +86,7 @@ async def test_execute_convert_request(
     test_session.add(biz)
     await test_session.flush()
 
-    user = User(phone_number="123456789", business_id=biz.id, role="owner")
+    user = User(phone_number="123456789", business_id=biz.id, role=UserRole.OWNER)
     test_session.add(user)
     await test_session.flush()
 
@@ -96,7 +96,7 @@ async def test_execute_convert_request(
     await test_session.flush()
 
     executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
-    tool = ConvertRequestTool(query="roof", action="schedule", time="tomorrow")
+    tool = ConvertRequestTool(query="roof", action="SCHEDULE", time="tomorrow")
 
     result, metadata = await executor.execute(tool)
 
@@ -112,7 +112,7 @@ async def test_execute_convert_request(
     res = await test_session.execute(select(Job))
     job = res.scalar_one()
     assert "Converted from request: I want to fix my roof" in job.description
-    assert job.status == "SCHEDULED"
+    assert job.status == JobStatus.SCHEDULED
 
 
 @pytest.mark.asyncio
@@ -123,17 +123,17 @@ async def test_execute_log_request(
     test_session.add(biz)
     await test_session.flush()
 
-    user = User(phone_number="123456789", business_id=biz.id, role="owner")
+    user = User(phone_number="123456789", business_id=biz.id, role=UserRole.OWNER)
     test_session.add(user)
     await test_session.flush()
 
     # Pre-existing request
-    req = Request(business_id=biz.id, description="Info only request", status="PENDING")
+    req = Request(business_id=biz.id, description="Info only request", status=RequestStatus.PENDING)
     test_session.add(req)
     await test_session.flush()
 
     executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
-    tool = ConvertRequestTool(query="Info", action="log")
+    tool = ConvertRequestTool(query="Info", action="LOG")
 
     result, metadata = await executor.execute(tool)
 
@@ -145,7 +145,7 @@ async def test_execute_log_request(
 
     res = await test_session.execute(select(Request).where(Request.id == req.id))
     updated_req = res.scalar_one()
-    assert updated_req.status == "logged"
+    assert updated_req.status == RequestStatus.LOGGED
 
 
 @pytest.mark.asyncio
@@ -156,7 +156,7 @@ async def test_execute_add_lead_implicit(
     test_session.add(biz)
     await test_session.flush()
 
-    user = User(phone_number="123456789", business_id=biz.id, role="owner")
+    user = User(phone_number="123456789", business_id=biz.id, role=UserRole.OWNER)
     test_session.add(user)
     await test_session.flush()
 
@@ -215,7 +215,7 @@ async def test_deduplication(
     test_session.add(biz)
     await test_session.flush()
 
-    user = User(phone_number="123456789", business_id=biz.id, role="owner")
+    user = User(phone_number="123456789", business_id=biz.id, role=UserRole.OWNER)
     test_session.add(user)
     await test_session.flush()
 
@@ -257,7 +257,7 @@ async def test_execute_get_pipeline(
     test_session.add(biz)
     await test_session.flush()
 
-    user = User(phone_number="123456789", business_id=biz.id, role="owner")
+    user = User(phone_number="123456789", business_id=biz.id, role=UserRole.OWNER)
     test_session.add(user)
     await test_session.flush()
 

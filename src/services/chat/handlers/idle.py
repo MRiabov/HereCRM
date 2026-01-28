@@ -62,7 +62,7 @@ class IdleHandler(ChatHandler):
             return await self.undo_handler.handle_edit_last(user, state_record)
 
         # Handle Settings Entry
-        if lower_text in ["settings", "update settings", "config"]:
+        if lower_text in ["SETTINGS", "update settings", "config"]:
             state_record.state = ConversationStatus.SETTINGS
             return self.template_service.render("settings_menu")
 
@@ -86,7 +86,7 @@ class IdleHandler(ChatHandler):
 
         # Handle Employee Management Entry
         if lower_text in ["employee management", "manage employees", "employees"]:
-            if user.role not in ["owner", "manager"]:
+            if user.role not in ["OWNER", "MANAGER"]:
                  return "Access denied: Employee Management is restricted to authorized roles."
 
             state_record.state = ConversationStatus.EMPLOYEE_MANAGEMENT
@@ -105,7 +105,7 @@ class IdleHandler(ChatHandler):
             [f"- ID {s.id}: {s.name} (${s.default_price})" for s in services]
         ) if services else None
 
-        channel_name = state_record.active_channel or "whatsapp"
+        channel_name = state_record.active_channel or "WHATSAPP"
 
         system_time = datetime.now(timezone.utc).isoformat()
         user_context = {

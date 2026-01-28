@@ -52,7 +52,7 @@ async def process_onboarding_choice(
         
         if not current_user.clerk_id:
             logger.error(f"User {current_user.id} has no clerk_id during onboarding")
-            return {"status": "success", "message": "Business setup confirmed (local)"}
+            return {"status": "SUCCESS", "message": "Business setup confirmed (local)"}
 
         # Update Clerk Metadata so PWA can redirect
         try:
@@ -68,7 +68,7 @@ async def process_onboarding_choice(
             # but we should log it.
             print(f"Error updating Clerk metadata: {e}")
 
-        return {"status": "success", "message": "Business setup confirmed"}
+        return {"status": "SUCCESS", "message": "Business setup confirmed"}
 
     elif payload.choice == "join":
         if not payload.invite_code:
@@ -91,7 +91,7 @@ async def process_onboarding_choice(
 
             if not current_user.clerk_id:
                 logger.error(f"User {current_user.id} has no clerk_id during join")
-                return {"status": "success", "message": message}
+                return {"status": "SUCCESS", "message": message}
 
             # Update Clerk Metadata
             try:
@@ -109,7 +109,7 @@ async def process_onboarding_choice(
             except Exception as e:
                 print(f"Error updating Clerk metadata: {e}")
 
-            return {"status": "success", "message": message}
+            return {"status": "SUCCESS", "message": message}
         else:
             raise HTTPException(status_code=400, detail=message)
 

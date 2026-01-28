@@ -9,7 +9,7 @@ from sqlalchemy import select
 class MockUser:
     id = 1
     business_id = 1
-    role = "owner"
+    role = "OWNER"
     name = "Test User"
     phone_number = "+15550000"
 
@@ -72,8 +72,8 @@ async def test_ai_chat_persistence(client):
     response = await client.post("/api/v1/pwa/chat/send", json=payload)
     assert response.status_code == 200
     data = response.json()
-    # The API now returns status="sent" but the content is the JSON string of the proposal
-    assert data["status"] == "sent"
+    # The API now returns status="SENT" but the content is the JSON string of the proposal
+    assert data["status"] == "SENT"
     
     import json
     proposal = json.loads(data["content"])
@@ -88,7 +88,7 @@ async def test_ai_chat_persistence(client):
     exec_response = await client.post("/api/v1/pwa/chat/execute", json=exec_payload)
     assert exec_response.status_code == 200
     exec_data = exec_response.json()
-    assert exec_data["status"] == "sent"
+    assert exec_data["status"] == "SENT"
     assert exec_data["is_executed"] is True
     
     # 3. Check history

@@ -41,9 +41,9 @@ class RBACService:
 
         # Role hierarchy values
         role_values = {
-            "employee": 1,
-            "manager": 2,
-            "owner": 3
+            "EMPLOYEE": 1,
+            "MANAGER": 2,
+            "OWNER": 3
         }
 
         # Normalize user role string

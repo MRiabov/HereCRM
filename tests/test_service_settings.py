@@ -48,7 +48,7 @@ async def test_settings_flow(test_session, mock_parser, mock_template_service):
     service = WhatsappService(test_session, mock_parser, mock_template_service)
     
     # 1. Enter Settings
-    response = await service.handle_message("settings", user_phone="123")
+    response = await service.handle_message("SETTINGS", user_phone="123")
     assert mock_template_service.render("settings_menu").split('\n')[0] in response
     
     state = await service.state_repo.get_by_user_id(user.id)
@@ -78,7 +78,7 @@ async def test_settings_flow(test_session, mock_parser, mock_template_service):
     # 4. Delete Service
     mock_parser.parse_settings.return_value = DeleteServiceTool(name="Window Clean")
     response = await service.handle_message("Delete Service", user_phone="123")
-    assert "deleted" in response
+    assert "DELETED" in response
     
     services = await repo.get_all_for_business(biz.id)
     assert len(services) == 0

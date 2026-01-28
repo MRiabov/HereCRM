@@ -16,7 +16,7 @@ async def test_core_crud_operations(async_session):
     user = User(
         email="core@example.com",
         business_id=business.id,
-        role="owner"
+        role="OWNER"
     )
     async_session.add(user)
     await async_session.commit()

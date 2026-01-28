@@ -3,9 +3,9 @@ from src.models import PipelineStage, Customer
 from src.events import EventBus, event_bus
 
 def test_pipeline_stage_enum():
-    assert PipelineStage.NOT_CONTACTED == "not_contacted"
-    assert PipelineStage.CONTACTED == "contacted"
-    assert PipelineStage.CONVERTED_ONCE == "converted_once"
+    assert PipelineStage.NOT_CONTACTED == "NOT_CONTACTED"
+    assert PipelineStage.CONTACTED == "CONTACTED"
+    assert PipelineStage.CONVERTED_ONCE == "CONVERTED_ONCE"
     assert len(PipelineStage) == 6
 
 def test_customer_model_has_pipeline_stage():

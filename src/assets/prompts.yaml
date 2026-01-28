@@ -32,11 +32,11 @@ system_instruction: |
 
   ### FEW-SHOT EXAMPLES:
   - "Add job for John 085123123 fix faucet $50" -> AddJobTool(customer_name="John", customer_phone="085123123", price=50.0, description="fix faucet")
-  - "Promote John's request to a quote" -> ConvertRequestTool(query="John", action="quote")
-  - "Promote this request to a quote" -> ConvertRequestTool(query="current_request", action="quote")
+  - "Promote John's request to a quote" -> ConvertRequestTool(query="John", action="QUOTE")
+  - "Promote this request to a quote" -> ConvertRequestTool(query="current_request", action="QUOTE")
   - "Find customers within 1km of High Street 10" -> SearchTool(query="all", center_address="High Street 10", radius=1000.0)
   - "Next Job" -> SendStatusTool(query="next", status_type="on_way")
-  - "Export leads added last week" -> ExportQueryTool(query="leads", entity_type="customer")
+  - "Export leads added last week" -> ExportQueryTool(query="leads", entity_type="CUSTOMER")
   - "Sync QuickBooks now" -> SyncQuickBooksTool()
   - "Hourly Sync" -> SyncQuickBooksTool()
   - "Done #101" -> SendStatusTool(query="101", status_type="finish_job")
@@ -144,19 +144,19 @@ tool_descriptions:
     Search for jobs, customers, or requests.
     Examples of when to call:
     - User: "Find jobs in Dublin"
-      -> SearchTool(query="Dublin", entity_type="job")
+      -> SearchTool(query="Dublin", entity_type="JOB")
     - User: "Search for Mary"
       -> SearchTool(query="Mary")
     - User: "Show me pending jobs"
-      -> SearchTool(query="PENDING", status="PENDING", entity_type="job")
+      -> SearchTool(query="PENDING", status="PENDING", entity_type="JOB")
     - User: "Who is at 123 Main St?"
       -> SearchTool(query="123 Main St")
     - User: "Show details for John's last job"
-      -> SearchTool(query="John", detailed=True, entity_type="job")
+      -> SearchTool(query="John", detailed=True, entity_type="JOB")
     - User: "Find customers within 1km of High Street 10"
       -> SearchTool(query="all", center_address="High Street 10", radius=1000.0)
     - User: "Show Job #101"
-      -> SearchTool(query="101", entity_type="job")
+      -> SearchTool(query="101", entity_type="JOB")
 
   UpdateSettingsTool: |
     Update user preferences or business settings.
@@ -174,13 +174,13 @@ tool_descriptions:
     Convert a general request or a query into a specific action like scheduling or logging.
     Examples of when to call:
     - User: "Schedule that request for John for Monday"
-      -> ConvertRequestTool(query="John", action="schedule", time="Monday", iso_time="2025-06-09T09:00:00")
+      -> ConvertRequestTool(query="John", action="SCHEDULE", time="Monday", iso_time="2025-06-09T09:00:00")
     - User: "Log that callback for Mary as complete"
-      -> ConvertRequestTool(query="Mary", action="log")
+      -> ConvertRequestTool(query="Mary", action="LOG")
     - User: "Promote John's request to a quote"
-      -> ConvertRequestTool(query="John", action="quote")
+      -> ConvertRequestTool(query="John", action="QUOTE")
     - User: "Promote this request to a quote"
-      -> ConvertRequestTool(query="current_request", action="quote")
+      -> ConvertRequestTool(query="current_request", action="QUOTE")
 
   SendStatusTool: |
     Send a status update message to a customer (e.g. "On my way").
@@ -212,10 +212,10 @@ tool_descriptions:
   
   ExportQueryTool: |
     Export data based on a natural language query.
-    Example: "Export leads added last week" -> ExportQueryTool(query="leads", entity_type="lead", format="csv")
-    Example: "Export all Dublin jobs as CSV" -> ExportQueryTool(query="Dublin", entity_type="job", format="csv")
-    Example: "Export everything" -> ExportQueryTool(query="all", entity_type="all", format="zip")
-    Example: "Download all data" -> ExportQueryTool(query="all", entity_type="all", format="zip")
+    Example: "Export leads added last week" -> ExportQueryTool(query="leads", entity_type="LEAD", format="csv")
+    Example: "Export all Dublin jobs as CSV" -> ExportQueryTool(query="Dublin", entity_type="JOB", format="csv")
+    Example: "Export everything" -> ExportQueryTool(query="all", entity_type="ALL", format="zip")
+    Example: "Download all data" -> ExportQueryTool(query="all", entity_type="ALL", format="zip")
   
   GetBillingStatusTool: |
     Check the current subscription status, limits, and usage.

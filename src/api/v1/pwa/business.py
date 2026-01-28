@@ -67,7 +67,7 @@ async def update_wage_config(
         wage_config.allow_expense_claims = update_data.allow_expense_claims
 
     await db.commit()
-    return {"status": "success", "wage_config": {
+    return {"status": "SUCCESS", "wage_config": {
         "model_type": wage_config.model_type,
         "rate_value": wage_config.rate_value,
         "tax_withholding_rate": wage_config.tax_withholding_rate,

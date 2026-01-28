@@ -142,7 +142,7 @@ class TestPostmarkWebhook:
             
             # Verify response
             assert response.status_code == 200, response.text
-            assert response.json()["status"] == "success"
+            assert response.json()["status"] == "SUCCESS"
             
             # Verify interactions
             mock_auth_service.get_or_create_user_by_identity.assert_called_with("user@example.com")

@@ -57,7 +57,7 @@ class TestTwilioWebhook:
         mock_whatsapp_service.handle_message.assert_called_once()
         call_args = mock_whatsapp_service.handle_message.call_args
         assert call_args.kwargs['user_phone'] == "+1234567890"
-        assert call_args.kwargs['channel'] == "sms"
+        assert call_args.kwargs['channel'] == "SMS"
 
     async def test_twilio_webhook_missing_signature(self, client):
         """Test webhook rejects requests without signature (triggering real dependency)"""

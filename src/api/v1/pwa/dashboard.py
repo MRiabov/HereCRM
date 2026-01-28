@@ -34,9 +34,9 @@ async def get_dashboard_stats(
     
     # Sum up leads from pipeline data
     for stage, data in pipeline_data.items():
-        if stage in ["contacted", "not_contacted"]:
+        if stage in ["CONTACTED", "NOT_CONTACTED"]:
             active_leads += data["count"]
-            if stage == "contacted":
+            if stage == "CONTACTED":
                 needs_followup += data["count"] # Simplistic logic
                 
     return DashboardStats(

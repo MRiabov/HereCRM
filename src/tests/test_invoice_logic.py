@@ -57,7 +57,7 @@ async def test_create_invoice_success(session: AsyncSession, mock_s3_service, mo
     # Assert
     assert invoice is not None
     assert invoice.public_url == "https://s3.example.com/invoice.pdf"
-    assert invoice.status == "GENERATED"
+    assert invoice.status == InvoiceStatus.GENERATED
     
     # Verify mocks called
     mock_pdf_generator.generate_invoice.assert_called_once()
@@ -148,7 +148,7 @@ async def test_existing_invoice_warning(session: AsyncSession, mock_s3_service, 
     await session.flush()
     
     # Create existing invoice manually
-    existing_invoice = Invoice(job_id=job.id, s3_key="old.pdf", public_url="http://old.com/inv.pdf", status="SENT")
+    existing_invoice = Invoice(job_id=job.id, s3_key="old.pdf", public_url="http://old.com/inv.pdf", status=InvoiceStatus.SENT)
     session.add(existing_invoice)
     await session.commit()
     

@@ -38,7 +38,7 @@ def mock_template_service():
 async def test_config_loader():
     # Test loading actual config
     config = ChannelConfig()
-    sms_config = config.get_channel_config("sms")
+    sms_config = config.get_channel_config("SMS")
     assert sms_config["provider"] == "twilio"
     assert sms_config["auto_confirm"] is True
     assert sms_config["max_length"] == 160
@@ -62,11 +62,11 @@ async def test_auto_confirm_initiation(mock_config_loader, mock_parser, mock_tem
         service.idle_handler.auto_confirm_service.schedule_auto_confirm = MagicMock()
     
     # Mock repositories
-    user = User(id=1, business_id=1, phone_number="+1234567890", preferred_channel="sms")
+    user = User(id=1, business_id=1, phone_number="+1234567890", preferred_channel="SMS")
     state = ConversationState(
         user_id=1, 
         state=ConversationStatus.IDLE, 
-        active_channel="sms"
+        active_channel="SMS"
     )
     
     service.user_repo.get_by_phone = AsyncMock(return_value=user)
@@ -85,7 +85,7 @@ async def test_auto_confirm_initiation(mock_config_loader, mock_parser, mock_tem
         tool = AddJobTool(description="Fix sink", price=100.0, customer_name="Alice")
         mock_parser.parse.return_value = tool
         
-        reply = await service.handle_message("Add job", user_phone="+1234567890", channel="sms")
+        reply = await service.handle_message("Add job", user_phone="+1234567890", channel="SMS")
 
         # Verify
         assert "Auto-confirming in 45s" in reply
@@ -106,7 +106,7 @@ async def test_auto_confirm_cancellation(mock_config_loader, mock_parser, mock_t
     state = ConversationState(
         user_id=1, 
         state=ConversationStatus.PENDING_AUTO_CONFIRM, 
-        active_channel="sms",
+        active_channel="SMS",
         pending_action_timestamp=datetime.now(timezone.utc) + timedelta(seconds=30)
     )
     
@@ -114,7 +114,7 @@ async def test_auto_confirm_cancellation(mock_config_loader, mock_parser, mock_t
     service.state_repo.get_by_user_id = AsyncMock(return_value=state)
     
     # User says "No"
-    reply = await service.handle_message("No", user_phone="+1234567890", channel="sms")
+    reply = await service.handle_message("No", user_phone="+1234567890", channel="SMS")
     
     assert "Rendered action_cancelled" in reply
     assert state.state == ConversationStatus.IDLE
@@ -133,7 +133,7 @@ async def test_auto_confirm_interruption_creates_new_command(mock_config_loader,
     state = ConversationState(
         user_id=1, 
         state=ConversationStatus.PENDING_AUTO_CONFIRM, 
-        active_channel="sms"
+        active_channel="SMS"
     )
     
     service.user_repo.get_by_phone = AsyncMock(return_value=user)
@@ -164,7 +164,7 @@ async def test_auto_confirm_task_execution(mock_template_service):
         state = ConversationState(
             user_id=1, 
             state=ConversationStatus.PENDING_AUTO_CONFIRM,
-            active_channel="sms",
+            active_channel="SMS",
             pending_action_timestamp=datetime.now(timezone.utc) - timedelta(seconds=1), # Expired
             draft_data={"tool_name": "AddJobTool", "arguments": {
                 "description": "Fix sink", "price": 100.0, "customer_name": "Alice"

@@ -1,5 +1,21 @@
 from typing import Optional, List, ClassVar
 from pydantic.v1 import BaseModel, Field, validator
+from src.models import (
+    JobStatus, 
+    Urgency, 
+    PipelineStage, 
+    PromotionAction, 
+    EntityType, 
+    InvoicingWorkflow, 
+    QuotingWorkflow, 
+    PaymentTiming,
+    JobCreationDefault
+)
+from src.models import (
+    JobStatus, Urgency, PipelineStage, ExportFormat, 
+    InvoicingWorkflow, QuotingWorkflow, PaymentTiming, 
+    JobCreationDefault, PromotionAction
+)
 
 # --- Constants ---
 PHONE_PATTERN = r"^\+?[1-9]\d{1,14}$"
@@ -49,8 +65,8 @@ class AddJobTool(BaseModel):
     description: Optional[str] = Field(
         None, description="Details of the work to be done", max_length=500
     )
-    status: Optional[str] = Field(
-        None, description="Status: 'PENDING', 'done', 'SCHEDULED'", max_length=20
+    status: Optional[JobStatus] = Field(
+        None, description="Status of the job"
     )
     line_items: Optional[List[LineItemInfo]] = Field(
         None, description="List of structured line items for the job"
@@ -195,8 +211,8 @@ class AddRequestTool(BaseModel):
     location: Optional[str] = Field(
         None, description="Address or location involved in the request", max_length=200
     )
-    urgency: str = Field(
-        "Medium", description="Urgency level: 'Low', 'Medium', 'High'", max_length=20
+    urgency: Urgency = Field(
+        Urgency.MEDIUM, description="Urgency level"
     )
     expected_value: Optional[float] = Field(
         None, description="Estimated value of the request"
@@ -225,10 +241,9 @@ class SearchTool(BaseModel):
         max_length=100,
     )
     detailed: bool = False
-    entity_type: Optional[str] = Field(
+    entity_type: Optional[EntityType] = Field(
         None,
-        description="Filter by entity type: 'job', 'customer', 'request', 'lead'. If not specified, searches all.",
-        max_length=20
+        description="Filter by entity type. If not specified, searches all."
     )
     query_type: Optional[str] = Field(
         "general",
@@ -245,8 +260,8 @@ class SearchTool(BaseModel):
         description="End date for range filtering in ISO format (YYYY-MM-DDTHH:MM:SS)",
         max_length=30
     )
-    status: Optional[str] = Field(
-        None, description="Filter by status (e.g., 'PENDING', 'done', 'COMPLETED')", max_length=50
+    status: Optional[JobStatus] = Field(
+        None, description="Filter by status"
     )
     radius: Optional[float] = Field(
         None, description="Search radius in meters (default 200m if location provided)"
@@ -260,8 +275,8 @@ class SearchTool(BaseModel):
     center_address: Optional[str] = Field(
         None, description="Address for proximity search (e.g., 'High Street 34')", max_length=255
     )
-    pipeline_stage: Optional[str] = Field(
-        None, description="Filter by pipeline stage (e.g., 'not_contacted', 'quoted', 'lost')", max_length=50
+    pipeline_stage: Optional[PipelineStage] = Field(
+        None, description="Filter by pipeline stage"
     )
 
 
@@ -290,8 +305,8 @@ class ConvertRequestTool(BaseModel):
     query: str = Field(
         ..., description="Name, phone number or content to identifying the entity", max_length=100
     )
-    action: str = Field(
-        ..., description="Action to perform: 'schedule', 'complete', 'log', or 'quote'", max_length=20
+    action: PromotionAction = Field(
+        ..., description="Action to perform"
     )
     time: Optional[str] = Field(
         None, description="Optional time for scheduling or reminders", max_length=100
@@ -348,10 +363,9 @@ class UpdateCustomerStageTool(BaseModel):
     query: str = Field(
         ..., description="Name or phone to find the customer", max_length=100
     )
-    stage: str = Field(
+    stage: PipelineStage = Field(
         ...,
-        description="The new pipeline stage: 'not_contacted', 'contacted', 'quoted', 'converted_once', 'converted_recurrent', 'not_interested', 'lost'",
-        max_length=50
+        description="The new pipeline stage"
     )
 
 
@@ -402,9 +416,9 @@ class ExportQueryTool(BaseModel):
     Allows exporting specific entities (customers, jobs, requests) or 'everything' as a ZIP file."""
 
     query: str = Field(..., description="The specific keywords to search for (e.g., 'Dublin' if the user says 'customers in Dublin', or 'all' for everything).", max_length=500)
-    format: str = Field("csv", description="The desired output format: 'csv', 'excel', or 'zip'.", max_length=10)
+    format: ExportFormat = Field(ExportFormat.CSV, description="The desired output format: 'csv', 'excel', or 'zip'.")
     entity_type: Optional[str] = Field(None, description="Type of entity to export: 'customer', 'job', 'request', 'expense', 'ledger', or 'all'. If 'all' or unspecified with query 'all', it will export a ZIP with multiple files.", max_length=20)
-    status: Optional[str] = Field(None, description="Filter by status or pipeline stage (e.g., 'PENDING', 'lost', 'COMPLETED').", max_length=50)
+    status: Optional[str] = Field(None, description="Filter by status or pipeline stage (e.g., 'PENDING', 'LOST', 'COMPLETED').", max_length=50)
     min_date: Optional[str] = Field(None, description="Start date for filtering in ISO 8601 format.", max_length=30)
     max_date: Optional[str] = Field(None, description="End date for filtering in ISO 8601 format.", max_length=30)
 
@@ -456,7 +470,7 @@ class MassEmailTool(BaseModel):
     subject: str = Field(..., description="Subject of the email", max_length=200)
     body: str = Field(..., description="Content of the message", max_length=5000)
     recipient_query: str = Field("all", description="Filter for recipients (e.g. 'all', 'Dublin customers')", max_length=500)
-    channel: str = Field("whatsapp", description="Channel: 'whatsapp', 'email', 'sms'", max_length=20)
+    channel: str = Field("WHATSAPP", description="Channel: 'WHATSAPP', 'email', 'SMS'", max_length=20)
 
 class ExecuteBlastTool(BaseModel):
     """Execute a previously prepared broadcast campaign.
@@ -545,15 +559,15 @@ class GetWorkflowSettingsTool(BaseModel):
 
 class UpdateWorkflowSettingsTool(BaseModel):
     """Update the business workflow configuration.
-    Allowed values for invoicing/quoting: 'never', 'manual', 'automatic'.
-    Allowed values for payment_timing: 'always_paid_on_spot', 'usually_paid_on_spot', 'paid_later'."""
+    Allowed values for invoicing/quoting: 'NEVER', 'MANUAL', 'AUTOMATIC'.
+    Allowed values for payment_timing: 'ALWAYS_PAID_ON_SPOT', 'USUALLY_PAID_ON_SPOT', 'PAID_LATER'."""
 
-    invoicing: Optional[str] = Field(None, description="Invoicing workflow: 'never', 'manual', 'automatic'", max_length=20)
-    quoting: Optional[str] = Field(None, description="Quoting workflow: 'never', 'manual', 'automatic'", max_length=20)
-    payment_timing: Optional[str] = Field(None, description="Payment timing: 'always_paid_on_spot', 'usually_paid_on_spot', 'paid_later'", max_length=30)
+    invoicing: Optional[InvoicingWorkflow] = Field(None, description="Invoicing workflow")
+    quoting: Optional[QuotingWorkflow] = Field(None, description="Quoting workflow")
+    payment_timing: Optional[PaymentTiming] = Field(None, description="Payment timing")
     enable_reminders: Optional[bool] = Field(None, description="Whether to send auto-reminders")
     pipeline_quoted_stage: Optional[bool] = Field(None, description="Whether to show the 'Quoted' stage in the sales pipeline")
-    job_creation_default: Optional[str] = Field(None, description="Job creation default: 'mark_done', 'unscheduled', 'auto_schedule'", max_length=20)
+    job_creation_default: Optional[JobCreationDefault] = Field(None, description="Job creation default")
 
 
 class ExitAccountingTool(BaseModel):

@@ -97,7 +97,7 @@ async def test_schedule_job_emits_event(test_session):
         business_id=business.id,
         customer_id=customer.id,
         description="Test Job",
-        status="PENDING"
+        status=JobStatus.PENDING
     )
     test_session.add(job)
     await test_session.commit()

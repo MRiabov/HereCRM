@@ -175,14 +175,14 @@ async def webhook(
                             analytics.capture(
                                 user.phone_number or "unknown", 
                                 "message_received", 
-                                {"body": text_body, "channel": "whatsapp", "is_new_user": is_new}
+                                {"body": text_body, "channel": "WHATSAPP", "is_new_user": is_new}
                             )
                             response_text = await whatsapp_service.handle_message(
                                 user_id=user.id,
                                 user_phone=user.phone_number,
                                 message_text=text_body,
                                 is_new_user=is_new,
-                                channel="whatsapp",
+                                channel="WHATSAPP",
                                 media_url=media_url,
                                 media_type=media_type
                             )
@@ -192,13 +192,13 @@ async def webhook(
                                 analytics.capture(
                                     user.phone_number or "unknown", 
                                     "reply_sent", 
-                                    {"body": response_text, "channel": "whatsapp"}
+                                    {"body": response_text, "channel": "WHATSAPP"}
                                 )
                                 from src.services.messaging_service import messaging_service
                                 await messaging_service.send_message(
                                     recipient_phone=user.phone_number or "",
                                     content=response_text,
-                                    channel="whatsapp",
+                                    channel="WHATSAPP",
                                     trigger_source="bot_reply"
                                 )
                             
@@ -238,7 +238,7 @@ async def webhook(
                 is_new_user=is_new,
                 media_url=media_url,
                 media_type=media_type,
-                channel="whatsapp"
+                channel="WHATSAPP"
             )
             
             if response_text:
@@ -379,7 +379,7 @@ async def twilio_webhook(
             user_id=user.id,
             user_phone=user.phone_number,
             message_text=body,
-            channel="sms",
+            channel="SMS",
             is_new_user=is_new
         )
         
@@ -525,19 +525,19 @@ async def textgrid_webhook(
         user, is_new = await auth_service.get_or_create_user(payload.from_number)
         
         # Process Message
-        # We reuse the WhatsappService handle_message logic but for 'sms' channel
+        # We reuse the WhatsappService handle_message logic but for 'SMS' channel
         await whatsapp_service.handle_message(
             user_id=user.id,
             user_phone=user.phone_number,
             message_text=payload.text,
             is_new_user=is_new,
-            channel="sms"
+            channel="SMS"
         )
         
         # Commit Transaction
         await auth_service.session.commit()
         
-        return {"status": "success"}
+        return {"status": "SUCCESS"}
 
     except Exception:
         logger.exception("TextGrid webhook processing failed")
@@ -629,7 +629,7 @@ async def postmark_inbound_webhook(
                     business_id=user.business_id,
                     name=clean_name or "New Customer",
                     email=from_email if "@" in from_email else None, # Rough check
-                    pipeline_stage="contacted"
+                    pipeline_stage="CONTACTED"
                 )
                 customer_repo.add(customer)
                 await auth_service.session.flush()
@@ -661,7 +661,7 @@ async def postmark_inbound_webhook(
             user_phone=user_identifier,  # Using email as identifier
             message_text=text_body,
             is_new_user=is_new,
-            channel="email"
+            channel="EMAIL"
         )
         
         # Store threading metadata in the most recent message
@@ -709,7 +709,7 @@ async def postmark_inbound_webhook(
 
         
         return {
-            "status": "success",
+            "status": "SUCCESS",
             "message": "Email processed"
         }
         
@@ -743,7 +743,7 @@ async def confirm_quote(
     
     # Notify business owner / customer about confirmation?
     # For now just return success JSON
-    return {"status": "success", "message": "Quote accepted", "quote_id": quote.id, "job_id": quote.job_id}
+    return {"status": "SUCCESS", "message": "Quote accepted", "quote_id": quote.id, "job_id": quote.job_id}
 
 
 @router.get("/webhooks/quickbooks/callback")
@@ -767,7 +767,7 @@ async def quickbooks_callback(
 
         await auth_service.handle_callback(code, realmId, state)
         
-        return {"status": "success", "message": "QuickBooks connected successfully! You can close this window."}
+        return {"status": "SUCCESS", "message": "QuickBooks connected successfully! You can close this window."}
     except Exception as e:
         logger.error(f"QuickBooks callback failed: {e}")
         raise HTTPException(status_code=500, detail=f"Connection failed: {str(e)}")
@@ -827,7 +827,7 @@ async def google_callback(
                 await messaging_service.send_message(
                     recipient_phone=user.phone_number,
                     content="✔ Google Calendar connected! Your assigned jobs will now appear on your calendar.",
-                    channel=user.preferred_channel or "whatsapp",
+                    channel=user.preferred_channel or "WHATSAPP",
                     trigger_source="system_notification"
                 )
 

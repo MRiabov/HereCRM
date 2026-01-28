@@ -6,7 +6,7 @@ def render_employee_dashboard(context: dict) -> str:
     Renders the employee dashboard text message using a Jinja2 template.
     
     Args:
-        context: A dictionary containing 'employees' and 'unscheduled' jobs.
+        context: A dictionary containing 'employees' and 'UNSCHEDULED' jobs.
                  Expected structure:
                  {
                      'employees': [
@@ -22,7 +22,7 @@ def render_employee_dashboard(context: dict) -> str:
                              ]
                          }, ...
                      ],
-                     'unscheduled': [
+                     'UNSCHEDULED': [
                          {
                              'description': str,
                              'id': int

@@ -138,7 +138,7 @@ async def reset_db(
         # Re-populate
         await populate_demo_data(db)
         
-        return {"status": "success", "message": "Database reset and demo data populated. You might need to sign in again if your user was deleted (but demo users were created)."}
+        return {"status": "SUCCESS", "message": "Database reset and demo data populated. You might need to sign in again if your user was deleted (but demo users were created)."}
     except Exception as e:
         logger.exception("Database reset failed")
         raise HTTPException(status_code=500, detail=f"Reset failed: {str(e)}")

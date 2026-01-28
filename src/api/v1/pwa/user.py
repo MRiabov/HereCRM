@@ -58,4 +58,4 @@ async def disconnect_google_calendar(
     current_user.google_calendar_sync_enabled = False
     current_user.google_calendar_credentials = None
     await db.commit()
-    return {"status": "success"}
+    return {"status": "SUCCESS"}

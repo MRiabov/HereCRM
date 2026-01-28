@@ -23,9 +23,9 @@ class RecipientStatus(str, enum.Enum):
     DELETED = "DELETED"
 
 class CampaignChannel(str, enum.Enum):
-    WHATSAPP = "whatsapp"
+    WHATSAPP = "WHATSAPP"
     EMAIL = "email"
-    SMS = "sms"
+    SMS = "SMS"
 
 class Campaign(Base):
     __tablename__ = "campaigns"

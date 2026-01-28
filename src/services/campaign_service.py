@@ -63,9 +63,9 @@ class CampaignService:
         # Use SearchService to segment audience
         search_params = SearchTool(
             query=str(campaign.recipient_query) if campaign.recipient_query and campaign.recipient_query != "all" else "",
-            entity_type="customer",
+            entity_type="CUSTOMER",
             detailed=False,
-            query_type="all",
+            query_type="ALL",
             min_date=None,
             max_date=None,
             status=None,
@@ -158,7 +158,7 @@ class CampaignService:
                         msg_log = await messaging_service.send_message(
                             recipient_phone=customer.phone,
                             content=campaign.body,
-                            channel="whatsapp",
+                            channel="WHATSAPP",
                             trigger_source=f"campaign_{campaign_id}",
                             business_id=campaign.business_id
                         )
@@ -170,7 +170,7 @@ class CampaignService:
                         msg_log = await messaging_service.send_message(
                             recipient_phone=customer.phone,
                             content=campaign.body,
-                            channel="sms",
+                            channel="SMS",
                             trigger_source=f"campaign_{campaign_id}",
                             business_id=campaign.business_id
                         )

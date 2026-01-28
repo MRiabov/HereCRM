@@ -93,7 +93,7 @@ class SchedulerService:
                     await messaging_service.enqueue_message(
                         recipient_phone=employee.phone_number,
                         content=summary_text,
-                        channel="whatsapp",
+                        channel="WHATSAPP",
                         trigger_source="scheduler"
                     )
                     logger.info(f"Enqueued shift summary for {employee.id}")

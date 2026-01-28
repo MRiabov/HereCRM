@@ -78,7 +78,7 @@ async def test_generic_webhook_email_onboarding():
                 user = await user_repo.get_by_email(email)
                 assert user is not None
                 assert user.email == email
-                assert user.role == "owner"
+                assert user.role == "OWNER"
 
 @pytest.mark.asyncio
 async def test_generic_webhook_existing_user_phone():
@@ -99,7 +99,7 @@ async def test_generic_webhook_existing_user_phone():
         biz = Business(name="Existing Biz")
         session.add(biz)
         await session.flush()
-        user = User(phone_number=phone, business_id=biz.id, role="owner")
+        user = User(phone_number=phone, business_id=biz.id, role="OWNER")
         session.add(user)
         await session.commit()
 

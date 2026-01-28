@@ -70,7 +70,7 @@ async def provision_integration(
     
     db.add(config)
     await db.commit()
-    return {"status": "success", "config_id": str(config.id)}
+    return {"status": "SUCCESS", "config_id": str(config.id)}
 
 @router.post("/leads", status_code=status.HTTP_201_CREATED)
 
@@ -141,7 +141,7 @@ async def create_request(
     request = Request(
         business_id=business_id,
         description=full_content,
-        status="PENDING"
+        status=RequestStatus.PENDING
     )
     request_repo.add(request)
     await db.commit()

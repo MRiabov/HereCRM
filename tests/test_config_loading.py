@@ -5,9 +5,9 @@ def test_config_loading():
     config = load_channels_config()
     
     # Verify whatsapp configuration
-    whatsapp_conf = config.get_channel_config("whatsapp")
+    whatsapp_conf = config.get_channel_config("WHATSAPP")
     assert whatsapp_conf["max_length"] == 4096
     
     # Verify sms configuration
-    sms_conf = config.get_channel_config("sms")
+    sms_conf = config.get_channel_config("SMS")
     assert sms_conf.get("provider") == "twilio"

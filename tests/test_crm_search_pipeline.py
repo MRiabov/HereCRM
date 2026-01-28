@@ -40,28 +40,28 @@ async def test_search_filter_pipeline_stage(test_session):
     repo = CustomerRepository(test_session)
     
     # 1. Search for LOST
-    results_lost = await repo.search(query="all", business_id=biz.id, pipeline_stage="lost")
+    results_lost = await repo.search(query="all", business_id=biz.id, pipeline_stage="LOST")
     assert len(results_lost) == 1
     assert results_lost[0].name == "Dave"
     
     # 2. Search for NOT_CONTACTED
-    results_nc = await repo.search(query="all", business_id=biz.id, pipeline_stage="not_contacted")
+    results_nc = await repo.search(query="all", business_id=biz.id, pipeline_stage="NOT_CONTACTED")
     assert len(results_nc) == 1
     assert results_nc[0].name == "Alice"
     
     # 3. Search for CONVERTED_ONCE
-    results_co = await repo.search(query="all", business_id=biz.id, pipeline_stage="converted_once")
+    results_co = await repo.search(query="all", business_id=biz.id, pipeline_stage="CONVERTED_ONCE")
     assert len(results_co) == 1
     assert results_co[0].name == "Charlie"
     
     # 4. Search with Name + Stage
     # "Bob" in Contacted -> Should find Bob
-    results_bob = await repo.search(query="Bob", business_id=biz.id, pipeline_stage="contacted")
+    results_bob = await repo.search(query="Bob", business_id=biz.id, pipeline_stage="CONTACTED")
     assert len(results_bob) == 1
     assert results_bob[0].name == "Bob"
     
     # "Bob" in Lost -> Should find NOBODY
-    results_bob_lost = await repo.search(query="Bob", business_id=biz.id, pipeline_stage="lost")
+    results_bob_lost = await repo.search(query="Bob", business_id=biz.id, pipeline_stage="LOST")
     assert len(results_bob_lost) == 0
 
 @pytest.mark.asyncio

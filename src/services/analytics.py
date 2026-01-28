@@ -56,7 +56,7 @@ class PostHogClient:
         """
         properties = {
             "query": query,
-            "success": success,
+            "SUCCESS": success,
             "attempts": attempts,
             "error_type": error_type,
             "tool_called": tool_called,

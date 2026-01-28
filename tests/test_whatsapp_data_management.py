@@ -1,9 +1,9 @@
-from src.models import JobStatus
+from src.models import ExportStatus, JobStatus
 import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.services.whatsapp_service import WhatsappService
-from src.models import User, ConversationState, ConversationStatus
+from src.models import ExportStatus, User, ConversationState, ConversationStatus
 from src.uimodels import ExportQueryTool, ExitDataManagementTool
 from src.services.template_service import TemplateService
 
@@ -71,7 +71,7 @@ async def test_data_management_export_filtered(service, mock_parser):
     state = ConversationState(user_id=123, state=ConversationStatus.DATA_MANAGEMENT)
 
     # Mock tool to return filters
-    tool = ExportQueryTool(query="jobs", format="excel", entity_type="job", status="PENDING")
+    tool = ExportQueryTool(query="jobs", format="excel", entity_type="JOB", status=ExportStatus.PENDING)
     mock_parser.parse_data_management.return_value = tool
 
     # Mock Data Service

@@ -19,7 +19,7 @@ async def test_send_message_creates_message_log():
         message_log = await service.send_message(
             recipient_phone="+1234567890",
             content="Test message",
-            channel="whatsapp",
+            channel="WHATSAPP",
             trigger_source="test",
         )
     
@@ -52,7 +52,7 @@ async def test_send_message_sms_channel():
         message_log = await service.send_message(
             recipient_phone="+1234567890",
             content="Test SMS",
-            channel="sms",
+            channel="SMS",
             trigger_source="test",
         )
     
@@ -75,7 +75,7 @@ async def test_send_message_handles_errors():
         message_log = await service.send_message(
             recipient_phone="+1234567890",
             content="Test message",
-            channel="whatsapp",
+            channel="WHATSAPP",
             trigger_source="test",
         )
     
@@ -98,7 +98,7 @@ async def test_enqueue_message():
     await service.enqueue_message(
         recipient_phone="+1234567890",
         content="Queued message",
-        channel="whatsapp",
+        channel="WHATSAPP",
         trigger_source="test",
     )
     
@@ -109,7 +109,7 @@ async def test_enqueue_message():
     message_data = await service._queue.get()
     assert message_data["recipient_phone"] == "+1234567890"
     assert message_data["content"] == "Queued message"
-    assert message_data["channel"] == "whatsapp"
+    assert message_data["channel"] == "WHATSAPP"
     assert message_data["trigger_source"] == "test"
 
 
@@ -127,7 +127,7 @@ async def test_process_queue():
         await service.enqueue_message(
             recipient_phone="+1234567890",
             content="Queued message",
-            channel="whatsapp",
+            channel="WHATSAPP",
             trigger_source="test",
         )
         

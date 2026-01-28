@@ -31,7 +31,7 @@ async def list_campaigns(
 @router.post("/preview")
 async def preview_audience(
     query: str = "all",
-    channel: str = "whatsapp",
+    channel: str = "WHATSAPP",
     service: CampaignService = Depends(get_campaign_service),
     current_user: User = Depends(get_current_user)
 ):
@@ -39,9 +39,9 @@ async def preview_audience(
     from src.uimodels import SearchTool
     search_params = SearchTool(
         query=query if query != "all" else "",
-        entity_type="customer",
+        entity_type="CUSTOMER",
         detailed=False,
-        query_type="all",
+        query_type="ALL",
         min_date=None,
         max_date=None,
         status=None,
@@ -62,7 +62,7 @@ async def preview_audience(
     for customer in results:
         if channel == "email" and not customer.email:
             continue
-        if channel in ["whatsapp", "sms"] and not customer.phone:
+        if channel in ["WHATSAPP", "SMS"] and not customer.phone:
             continue
         valid_results.append(customer)
 

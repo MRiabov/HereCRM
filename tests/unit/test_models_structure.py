@@ -166,7 +166,7 @@ class TestMainDatabaseModels:
         
         sync_log = SyncLog(
             business_id=business.id,
-            sync_type="manual",
+            sync_type="MANUAL",
             records_processed=10,
             records_succeeded=8,
             records_failed=2,
@@ -180,7 +180,7 @@ class TestMainDatabaseModels:
         
         assert sync_log.id is not None
         assert sync_log.business_id == business.id
-        assert sync_log.sync_type == "manual"
+        assert sync_log.sync_type == "MANUAL"
         assert sync_log.records_processed == 10
         assert sync_log.records_succeeded == 8
         assert sync_log.records_failed == 2
@@ -203,7 +203,7 @@ class TestMainDatabaseModels:
                 records_processed=5,
                 records_succeeded=5,
                 records_failed=0,
-                status="success"
+                status="SUCCESS"
             )
             temp_db.add(sync_log)
         

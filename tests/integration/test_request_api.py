@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime, timezone
-from src.models import Business, Customer, Request
+from src.models import Business, Customer, Request, Urgency
 from src.services.crm_service import CRMService
 
 @pytest.mark.asyncio
@@ -21,7 +21,7 @@ async def test_request_api_crud(async_session):
     # 2. Create Request
     request_data = {
         "description": "I need a leaking faucet fixed",
-        "urgency": "High",
+        "urgency": Urgency.HIGH,
         "expected_value": 150.0,
         "follow_up_date": datetime.now(timezone.utc),
         "customer_id": customer.id
@@ -30,7 +30,7 @@ async def test_request_api_crud(async_session):
     request = await crm_service.create_request(**request_data)
     assert request.id is not None
     assert request.description == "I need a leaking faucet fixed"
-    assert request.urgency == "High"
+    assert request.urgency == Urgency.HIGH
     assert request.customer_id == customer.id
 
     # 3. List Requests
@@ -39,15 +39,15 @@ async def test_request_api_crud(async_session):
     assert requests[0].id == request.id
 
     # 4. Update Request
-    request.urgency = "Medium"
+    request.urgency = Urgency.MEDIUM
     await async_session.commit()
     await async_session.refresh(request)
-    assert request.urgency == "Medium"
+    assert request.urgency == Urgency.MEDIUM
 
     # 5. Get Request by ID
     fetched_request = await async_session.get(Request, request.id)
     assert fetched_request.id == request.id
-    assert fetched_request.urgency == "Medium"
+    assert fetched_request.urgency == Urgency.MEDIUM
 
     # 6. Delete Request
     await async_session.delete(request)
@@ -66,9 +66,9 @@ async def test_request_search(async_session):
     crm_service = CRMService(async_session, business.id)
 
     # Create multiple requests
-    await crm_service.create_request(description="Garden work", urgency="Low")
-    await crm_service.create_request(description="Roof repair", urgency="High")
-    await crm_service.create_request(description="Indoor painting", urgency="Medium")
+    await crm_service.create_request(description="Garden work", urgency=Urgency.LOW)
+    await crm_service.create_request(description="Roof repair", urgency=Urgency.HIGH)
+    await crm_service.create_request(description="Indoor painting", urgency=Urgency.MEDIUM)
 
     # Search for "roof"
     results = await crm_service.request_repo.search(query="roof", business_id=business.id)
@@ -80,6 +80,6 @@ async def test_request_search(async_session):
     assert len(results) == 3
 
     # Filter by Urgency
-    results = await crm_service.request_repo.search(query="all", business_id=business.id, urgency="High")
+    results = await crm_service.request_repo.search(query="all", business_id=business.id, urgency=Urgency.HIGH)
     assert len(results) == 1
-    assert results[0].urgency == "High"
+    assert results[0].urgency == Urgency.HIGH

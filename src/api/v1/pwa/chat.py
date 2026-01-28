@@ -297,7 +297,7 @@ async def send_message(
         # Commit all (user message, tool changes, ai response)
         await service.session.commit()
         
-        return {"status": "sent", "content": response_text, "reply": response_text}
+        return {"status": "SENT", "content": response_text, "reply": response_text}
 
     customer = await service.customer_repo.get_by_id(request.customer_id, service.business_id)
     if not customer:
@@ -324,7 +324,7 @@ async def send_message(
     await messaging_service.send_message(
         recipient_phone=customer.phone,
         content=request.message,
-        channel="whatsapp",
+        channel="WHATSAPP",
         trigger_source="pwa_chat_manual",
         business_id=service.business_id
     )
@@ -339,12 +339,12 @@ async def send_message(
         to_number=customer.phone,
         body=request.message,
         role=MessageRole.ASSISTANT,
-        channel_type="whatsapp"
+        channel_type="WHATSAPP"
     )
     service.session.add(outbound_msg)
     await service.session.commit()
     
-    return {"status": "sent"}
+    return {"status": "SENT"}
 
 @router.post("/execute")
 async def execute_tool(
@@ -448,7 +448,7 @@ async def execute_tool(
     
     await service.session.commit()
     
-    return {"status": "sent", "content": response_text, "tool": request.tool_name, "data": data, "is_executed": True}
+    return {"status": "SENT", "content": response_text, "tool": request.tool_name, "data": data, "is_executed": True}
 
 
 @router.patch("/message/{message_id}")

@@ -398,7 +398,7 @@ class ToolExecutor:
             return await self._execute_google_calendar_status(tool_call)
         elif isinstance(tool_call, GetWorkflowSettingsTool):
              settings = await self.workflow_service.get_settings(self.business_id)
-             return f"Current Workflow Settings:\n{settings}", {"action": "get_workflow_settings", "settings": settings}
+             return f"Current Workflow Settings:\n{settings}", {"action": "get_workflow_settings", "SETTINGS": settings}
         elif isinstance(tool_call, UpdateWorkflowSettingsTool):
             return await self._execute_update_workflow_settings(tool_call)
         elif isinstance(tool_call, PromoteUserTool):
@@ -903,7 +903,7 @@ class ToolExecutor:
             ),
             {
                 "action": "update_settings",
-                "entity": "user",
+                "entity": "USER",
                 "user_id": self.user_id,
                 "setting_key": tool.setting_key,
                 "old_value": old_value,
@@ -1344,7 +1344,7 @@ class ToolExecutor:
         # WP03 presentation layer call
         report = render_employee_dashboard({
             "employees": [{"name": emp.name, "jobs": jobs} for emp, jobs in schedule.items()],
-            "unscheduled": unscheduled
+            "UNSCHEDULED": unscheduled
         })
         
         # Serialize data for the frontend
@@ -1374,7 +1374,7 @@ class ToolExecutor:
             "entity": "dashboard", 
             "date": target_date.isoformat(),
             "employees": serialized_employees,
-            "unscheduled": serialized_unscheduled
+            "UNSCHEDULED": serialized_unscheduled
         }
 
     async def _execute_assign_job(
@@ -1609,7 +1609,7 @@ class ToolExecutor:
             return "No updates provided.", None
             
         new_settings = await self.workflow_service.update_settings(self.business_id, **updates)
-        return "Workflow settings updated successfully.", {"action": "update_workflow_settings", "settings": new_settings}
+        return "Workflow settings updated successfully.", {"action": "update_workflow_settings", "SETTINGS": new_settings}
 
     async def _execute_connect_quickbooks(
         self, tool: ConnectQuickBooksTool
@@ -1701,7 +1701,7 @@ class ToolExecutor:
         # or just kick it off.
         # Let's await it for the "Sync Now" command to give definitive result
         try:
-            results = await sync_manager.run_sync(self.business_id, trigger="manual")
+            results = await sync_manager.run_sync(self.business_id, trigger="MANUAL")
             count = sum(len(ids) for ids in results.values())
             
             return self.template_service.render("quickbooks_sync_complete", count=count), {
@@ -1741,10 +1741,10 @@ class ToolExecutor:
         
         return f"✔ Promoted {target_user.name} to Manager.", {
             "action": "promote_user",
-            "entity": "user",
+            "entity": "USER",
             "id": target_user.id,
             "name": target_user.name,
-            "new_role": "manager"
+            "new_role": "MANAGER"
         }
 
     async def _execute_dismiss_user(
@@ -1821,7 +1821,7 @@ class ToolExecutor:
         
         return f"✔ Dismissed {user_name} from the business.", {
             "action": "dismiss_user",
-            "entity": "user",
+            "entity": "USER",
             "id": user_id,
             "name": user_name
         }
@@ -1842,7 +1842,7 @@ class ToolExecutor:
         
         return "You have left the business. Goodbye.", {
             "action": "leave_business",
-            "entity": "user",
+            "entity": "USER",
             "id": self.user_id
         }
 

@@ -1,3 +1,4 @@
+from src.models import InvoiceStatus
 import logging
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -83,7 +84,7 @@ class InvoiceService:
             s3_key=filename,
             public_url=public_url,
             payment_link=payment_link,
-            status="GENERATED"
+            status=InvoiceStatus.GENERATED
         )
         self.session.add(invoice)
         await self.session.flush()

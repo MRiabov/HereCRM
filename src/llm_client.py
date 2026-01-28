@@ -465,8 +465,8 @@ class LLMParser:
                     if attempt == 0:
                         self.logger.info("LLM failed to produce tool call, retrying...")
                         # Append the assistant's content (if any) and the retry instruction
-                        messages.append({"role": "assistant", "content": message.content or "[no tool call produced]"})
-                        messages.append({"role": "user", "content": self.prompts_service.render("retry_instruction")})
+                        messages.append({"role": "ASSISTANT", "content": message.content or "[no tool call produced]"})
+                        messages.append({"role": "USER", "content": self.prompts_service.render("retry_instruction")})
                         continue
                     else:
                         # Return None if final attempt failed, so the caller can handle it as an error/help message
@@ -499,7 +499,7 @@ class LLMParser:
                         messages.append(message)
                         error_msg = f"JSON Decode Error: {str(e)}"
                         messages.append({
-                            "role": "user", 
+                            "role": "USER", 
                             "content": self.prompts_service.render("retry_error_instruction", error=error_msg)
                         })
                         continue
@@ -546,7 +546,7 @@ class LLMParser:
                             messages.append(message)
                             error_msg = f"Validation Error: {str(e)}"
                             messages.append({
-                                "role": "user", 
+                                "role": "USER", 
                                 "content": self.prompts_service.render("retry_error_instruction", error=error_msg)
                             })
                             continue
@@ -573,7 +573,7 @@ class LLMParser:
                     if attempt == 0:
                          messages.append(message)
                          messages.append({
-                             "role": "user",
+                             "role": "USER",
                              "content": self.prompts_service.render("retry_error_instruction", error=f"Unknown tool '{function_name}'. Please use one of the provided tools.")
                          })
                          continue
@@ -620,7 +620,7 @@ class LLMParser:
                 "If they ask to export, use ExportQueryTool. "
                 "If they want to leave, use ExitDataManagementTool.",
             },
-            {"role": "user", "content": text},
+            {"role": "USER", "content": text},
         ]
 
         model_map = {
@@ -660,7 +660,7 @@ class LLMParser:
 
         messages = [
             {"role": "system", "content": system_instruction},
-            {"role": "user", "content": text},
+            {"role": "USER", "content": text},
         ]
 
         model_map = {
@@ -694,7 +694,7 @@ class LLMParser:
                 "The user wants to invite new employees or manage existing ones. "
                 "Map their request to the appropriate tool.",
             },
-            {"role": "user", "content": text},
+            {"role": "USER", "content": text},
         ]
 
         model_map = {
@@ -715,7 +715,7 @@ class LLMParser:
         text: str, 
         system_time: Optional[str] = None, 
         service_catalog: Optional[str] = None,
-        channel_name: str = "whatsapp",
+        channel_name: str = "WHATSAPP",
         user_context: Optional[dict] = None,
         feedback: Optional[str] = None
     ) -> Optional[
@@ -781,11 +781,11 @@ class LLMParser:
                 "user_time_prompt", system_time=system_time, text=text
             )
 
-        messages.append({"role": "user", "content": user_prompt})
+        messages.append({"role": "USER", "content": user_prompt})
 
         if feedback:
-            messages.append({"role": "assistant", "content": "I will try to find the location."}) # Placeholder assistant response
-            messages.append({"role": "user", "content": f"ERROR: {feedback}\nPlease try parsing the original request again with better inputs."})
+            messages.append({"role": "ASSISTANT", "content": "I will try to find the location."}) # Placeholder assistant response
+            messages.append({"role": "USER", "content": f"ERROR: {feedback}\nPlease try parsing the original request again with better inputs."})
 
         model_map = {
             "AddJobTool": AddJobTool,

@@ -7,6 +7,7 @@ from src.models import (
     Business,
     User,
     ConversationStatus,
+    UserRole
 )
 from src.services.whatsapp_service import WhatsappService
 from src.services.template_service import TemplateService
@@ -42,7 +43,7 @@ async def test_onboarding_flow_create(
     biz = Business(name="Temp Biz")
     test_session.add(biz)
     await test_session.flush()
-    user = User(phone_number="123456789", business_id=biz.id, role="owner")
+    user = User(phone_number="123456789", business_id=biz.id, role=UserRole.OWNER)
     test_session.add(user)
     await test_session.commit()
 
@@ -77,12 +78,12 @@ async def test_onboarding_flow_join(
     biz = Business(name="Temp Biz")
     test_session.add(biz)
     await test_session.flush()
-    user = User(phone_number="123456789", business_id=biz.id, role="owner")
+    user = User(phone_number="123456789", business_id=biz.id, role=UserRole.OWNER)
     test_session.add(user)
     
     # Create an invitation
     from src.models import Invitation, InvitationStatus
-    inviter = User(phone_number="999", business_id=biz.id, role="owner")
+    inviter = User(phone_number="999", business_id=biz.id, role=UserRole.OWNER)
     test_session.add(inviter)
     await test_session.flush()
     

@@ -58,20 +58,20 @@ class TestSMSSegmentBilling:
             
             # 1. Test short SMS (1 segment)
             content_short = "Short SMS"
-            await service.send_message("+123456789", content_short, channel="sms", business_id=123)
+            await service.send_message("+123456789", content_short, channel="SMS", business_id=123)
             
             mock_billing_service.track_message_sent.assert_called_with(123, quantity=1)
             
             # 2. Test long SMS (2 segments)
             content_long = "A" * 161
-            await service.send_message("+123456789", content_long, channel="sms", business_id=123)
+            await service.send_message("+123456789", content_long, channel="SMS", business_id=123)
             
             mock_billing_service.track_message_sent.assert_called_with(123, quantity=2)
 
             # 3. Test emoji message (should be normalized and billed as 1 segment)
             # Re-mock execute to return a new log if needed, but let's just check the last call
             content_emoji = "Hello 🚀"
-            await service.send_message("+123456789", content_emoji, channel="sms", business_id=123)
+            await service.send_message("+123456789", content_emoji, channel="SMS", business_id=123)
             
             # Check that it was billed as 1 segment (after normalization "Hello ?" is 7 chars)
             mock_billing_service.track_message_sent.assert_called_with(123, quantity=1)

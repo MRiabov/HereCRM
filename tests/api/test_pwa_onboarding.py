@@ -17,7 +17,7 @@ async def client(async_session):
         name="PWA User",
         email="pwa@example.com",
         business_id=biz.id,
-        role="owner"
+        role="OWNER"
     )
     async_session.add(user)
     await async_session.commit()
@@ -66,7 +66,7 @@ async def test_pwa_onboarding_choice_join(client, async_session):
     async_session.add(other_biz)
     await async_session.flush()
     
-    inviter = User(phone_number="999", business_id=other_biz.id, role="owner")
+    inviter = User(phone_number="999", business_id=other_biz.id, role="OWNER")
     async_session.add(inviter)
     await async_session.flush()
     

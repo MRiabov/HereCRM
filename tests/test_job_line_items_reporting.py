@@ -62,7 +62,7 @@ async def test_show_job_with_line_items(db_session: AsyncSession, template_servi
     executor = ToolExecutor(db_session, business_id=business.id, user_id=user.id, user_phone="1234567890", template_service=template_service)
 
     # Test Search (Detailed)
-    search_tool = SearchTool(query="Clean windows", entity_type="job", detailed=True)
+    search_tool = SearchTool(query="Clean windows", entity_type="JOB", detailed=True)
     result, _ = await executor.execute(search_tool)
 
     assert "Job: Clean windows" in result

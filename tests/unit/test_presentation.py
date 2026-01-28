@@ -35,7 +35,7 @@ def test_dashboard_rendering():
     
     context = {
         'employees': employees,
-        'unscheduled': unscheduled
+        'UNSCHEDULED': unscheduled
     }
     
     output = render_employee_dashboard(context)
@@ -54,7 +54,7 @@ def test_dashboard_rendering():
 def test_dashboard_rendering_empty():
     context = {
         'employees': [],
-        'unscheduled': []
+        'UNSCHEDULED': []
     }
     output = render_employee_dashboard(context)
     

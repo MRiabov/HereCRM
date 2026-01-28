@@ -39,10 +39,10 @@ class AutoConfirmService:
 
                         result = await draft_executor.execute_draft(user, state_record)
 
-                        active_channel = state_record.active_channel or "whatsapp"
-                        recipient = user.phone_number if active_channel == "sms" else (user.email or user.phone_number)
+                        active_channel = state_record.active_channel or "WHATSAPP"
+                        recipient = user.phone_number if active_channel == "SMS" else (user.email or user.phone_number)
 
-                        if active_channel == "sms" and user.phone_number:
+                        if active_channel == "SMS" and user.phone_number:
                             from src.services.sms_factory import get_sms_service
                             svc = get_sms_service()
                             await svc.send_sms(user.phone_number, result)

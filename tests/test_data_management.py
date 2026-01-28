@@ -5,7 +5,7 @@ import os
 from unittest.mock import patch
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Customer, Job, PipelineStage
+from src.models import Business, Customer, Job, PipelineStage, ExportStatus, ExportFormat, JobStatus, EntityType
 from src.services.data_management import DataManagementService
 from src.repositories import CustomerRepository, JobRepository
 
@@ -58,7 +58,7 @@ async def test_import_data_csv(test_session, setup_business, tmp_path):
         media_type="text/csv"
     )
 
-    assert import_job.status == "COMPLETED"
+    assert import_job.status == ExportStatus.COMPLETED
     assert import_job.record_count == 2
 
     # 3. Verify Data in DB
@@ -69,6 +69,7 @@ async def test_import_data_csv(test_session, setup_business, tmp_path):
     assert cust1.city == "Dublin"
 
     job_repo = JobRepository(test_session)
+    # Search uses 'Clean windows' which is in description
     jobs1 = await job_repo.search("Clean windows", setup_business.id)
     assert len(jobs1) >= 1
     assert jobs1[0].customer_id == cust1.id
@@ -108,10 +109,10 @@ async def test_export_data_csv(test_session, setup_business):
         export_req = await service.export_data(
             business_id=setup_business.id,
             query="Dublin",
-            format="csv"
+            format=ExportFormat.CSV
         )
 
-        assert export_req.status == "COMPLETED"
+        assert export_req.status == ExportStatus.COMPLETED
         assert export_req.public_url == export_file
         
         # Capture the content written to mock storage
@@ -128,4 +129,5 @@ async def test_export_data_csv(test_session, setup_business):
     assert str(df.iloc[0]["phone"]) == "5555555555"
 
     # Cleanup
-    os.remove(export_req.public_url)
+    if os.path.exists(export_req.public_url):
+        os.remove(export_req.public_url)

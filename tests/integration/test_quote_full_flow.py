@@ -33,7 +33,7 @@ async def test_quote_full_conversational_flow(async_session):
     user = User(
         email="test@example.com", 
         business_id=business.id, 
-        role="owner",
+        role="OWNER",
         preferences={"default_city": "Dublin", "default_country": "Ireland"}
     )
     async_session.add(user)

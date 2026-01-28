@@ -474,7 +474,7 @@ class CustomerRepository(BaseRepository[Customer]):
 
     async def get_leads(self, business_id: int) -> List[Customer]:
         return await self.search(
-            query="all", business_id=business_id, entity_type="lead"
+            query="all", business_id=business_id, entity_type="LEAD"
         )
 
 

@@ -77,7 +77,7 @@ class WhatsappService:
         message_text: str,
         user_id: Optional[int] = None,
         user_phone: Optional[str] = None,
-        channel: str = "whatsapp",
+        channel: str = "WHATSAPP",
         is_new_user: bool = False,
         media_url: Optional[str] = None,
         media_type: Optional[str] = None,
@@ -213,7 +213,7 @@ class WhatsappService:
         # Dispatch SMS if channel is SMS or user identity suggests SMS
         effective_channel = state_record.active_channel or channel
         
-        if effective_channel == "sms" and user.phone_number:
+        if effective_channel == "SMS" and user.phone_number:
             try:
                 from src.services.sms_factory import get_sms_service
                 await get_sms_service().send_sms(user.phone_number, reply)

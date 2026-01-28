@@ -95,7 +95,7 @@ async def test_employee_dashboard_flow_mocked():
         # Verify metadata
         assert metadata["action"] == "query"
         assert "employees" in metadata
-        assert "unscheduled" in metadata
+        assert "UNSCHEDULED" in metadata
         assert metadata["employees"][0]["name"] == "Alice"
         assert metadata["employees"][0]["jobs"][0]["description"] == "Fix sink"
 

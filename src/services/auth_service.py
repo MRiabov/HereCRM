@@ -140,7 +140,7 @@ class AuthService:
         # Map roles
         if "admin" in role_key:
             user.role = UserRole.OWNER
-        elif "manager" in role_key:
+        elif "MANAGER" in role_key:
             user.role = UserRole.MANAGER
         elif "member" in role_key:
             user.role = UserRole.EMPLOYEE
