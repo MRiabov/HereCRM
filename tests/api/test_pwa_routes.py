@@ -81,7 +81,7 @@ async def test_create_and_get_job(client):
     job_data = {
         "customer_id": customer_id,
         "description": "Test Job PWA",
-        "status": "PENDING",
+        "status": JobStatus.PENDING,
         "value": 150.0
     }
     res = await client.post("/api/v1/pwa/jobs/", json=job_data)

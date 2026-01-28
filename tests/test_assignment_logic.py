@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime, timezone
-from src.models import Business, User, Job, UserRole
+from src.models import Business, User, Job, UserRole, JobStatus
 from src.services.assignment_service import AssignmentService
 
 # Mark all tests as async
@@ -54,7 +54,7 @@ async def test_assign_job_success(async_session):
     async_session.add(cust)
     await async_session.flush()
 
-    job = Job(business_id=biz.id, customer_id=cust.id, description="Fix sink", status="PENDING")
+    job = Job(business_id=biz.id, customer_id=cust.id, description="Fix sink", status=JobStatus.PENDING)
     async_session.add(job)
     await async_session.commit()
     

@@ -21,7 +21,7 @@ async def test_request_to_quote_promotion(async_session):
     request = Request(
         business_id=business.id,
         description="Alice: I need a quote for a new terrace",
-        status="PENDING"
+        status=RequestStatus.PENDING
     )
     async_session.add(request)
     await async_session.commit()
@@ -77,7 +77,7 @@ async def test_request_to_quote_promotion_with_id(async_session):
     request = Request(
         business_id=business.id,
         description="Bob: Fix my window please",
-        status="PENDING"
+        status=
     )
     async_session.add(request)
     await async_session.commit()
@@ -120,7 +120,7 @@ async def test_request_promotion_with_assigned_to_and_price(async_session):
     request = Request(
         business_id=business.id,
         description="Leaky faucet",
-        status="PENDING"
+        status=RequestStatus.PENDING
     )
     async_session.add(request)
     await async_session.commit()
@@ -147,7 +147,7 @@ async def test_request_promotion_with_assigned_to_and_price(async_session):
     request2 = Request(
         business_id=business.id,
         description="Garden work",
-        status="PENDING"
+        status=RequestStatus.PENDING
     )
     async_session.add(request2)
     await async_session.commit()

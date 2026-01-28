@@ -51,7 +51,7 @@ async def test_add_job_emits_event(test_session):
             description="Test Job",
             location="Test Location",
             price=100.0,
-            status="PENDING"
+            status=JobStatus.PENDING
         )
         
         await executor.execute(tool)

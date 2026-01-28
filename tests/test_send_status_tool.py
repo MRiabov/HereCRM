@@ -77,7 +77,7 @@ async def test_send_status_next_client(test_session, template_service):
     job = Job(
         business_id=biz.id,
         customer_id=customer.id,
-        status="SCHEDULED",
+        status=JobStatus.SCHEDULED,
         scheduled_at=future_time
     )
     

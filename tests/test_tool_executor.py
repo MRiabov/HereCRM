@@ -1,3 +1,4 @@
+from src.models import RequestStatus
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
@@ -90,7 +91,7 @@ async def test_execute_convert_request(
     await test_session.flush()
 
     # Pre-existing request
-    req = Request(business_id=biz.id, description="I want to fix my roof", status="PENDING")
+    req = Request(business_id=biz.id, description="I want to fix my roof", status=RequestStatus.PENDING)
     test_session.add(req)
     await test_session.flush()
 

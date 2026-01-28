@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Customer, Job, Invoice, MessageLog, MessageType, MessageStatus
+from src.models import Business, Customer, Job, Invoice, MessageLog, MessageType, MessageStatus, JobStatus, InvoiceStatus
 from src.repositories import JobRepository
 
 # Use in-memory SQLite for tests
@@ -38,13 +38,13 @@ async def test_tenant_isolation(test_session: AsyncSession):
 
     # Create Job for A
     job_a = Job(
-        business_id=biz_a.id, customer_id=1, description="Cleaning A", status="PENDING"
+        business_id=biz_a.id, customer_id=1, description="Cleaning A", status=JobStatus.PENDING
     )  # Mock customer ID
     test_session.add(job_a)
 
     # Create Job for B
     job_b = Job(
-        business_id=biz_b.id, customer_id=2, description="Cleaning B", status="PENDING"
+        business_id=biz_b.id, customer_id=2, description="Cleaning B", status=JobStatus.PENDING
     )
     test_session.add(job_b)
 
@@ -76,7 +76,7 @@ async def test_invoice_relationship(test_session: AsyncSession):
     test_session.add(customer)
     await test_session.flush()
 
-    job = Job(business_id=biz.id, customer_id=customer.id, description="Job", status="PENDING")
+    job = Job(business_id=biz.id, customer_id=customer.id, description="Job", status=JobStatus.PENDING)
     test_session.add(job)
     await test_session.flush()
 
@@ -85,7 +85,7 @@ async def test_invoice_relationship(test_session: AsyncSession):
         job_id=job.id,
         s3_key="key123.pdf",
         public_url="http://s3.com/key123.pdf",
-        status="SENT"
+        status=InvoiceStatus.SENT
     )
     test_session.add(invoice)
     await test_session.commit()

@@ -50,7 +50,7 @@ async def test_show_job_with_line_items(db_session: AsyncSession, template_servi
         business_id=business.id,
         description="Clean windows",
         value=100.0,
-        status="PENDING"
+        status=JobStatus.PENDING
     )
     db_session.add(job)
     await db_session.flush()

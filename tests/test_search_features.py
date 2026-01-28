@@ -81,7 +81,7 @@ async def setup_search_data(db_session: AsyncSession):
         customer_id=c1.id,
         business_id=business.id,
         description="Window cleaning",
-        status="PENDING",
+        status=JobStatus.PENDING,
         scheduled_at=datetime.now(timezone.utc).replace(
             hour=14, minute=0, second=0, microsecond=0
         ),
@@ -109,7 +109,7 @@ async def setup_search_data(db_session: AsyncSession):
     r1 = Request(
         business_id=business.id,
         description="Call back later",
-        status="PENDING",
+        status=JobStatus.PENDING,
         created_at=datetime.now(timezone.utc),
     )
     db_session.add(r1)

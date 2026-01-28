@@ -1,3 +1,4 @@
+from src.models import JobStatus
 import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -81,7 +82,7 @@ async def test_data_management_export_filtered(service, mock_parser):
     response = await service.data_management_handler.handle(user, state, "export pending jobs")
 
     service.data_service.export_data.assert_called_once_with(
-        1, "jobs", "excel", filters={"entity_type": "job", "status": "PENDING"}
+        1, "jobs", "excel", filters={"entity_type": "job", "status": JobStatus.PENDING.name}
     )
     assert "Export processing" in response
 

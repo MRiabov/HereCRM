@@ -1,4 +1,5 @@
 
+from src.models import JobStatus
 import asyncio
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
@@ -47,7 +48,7 @@ async def run_reproduction():
             description="Assigned Job",
             scheduled_at=today,
             employee_id=emp.id,
-            status="pending"
+            status=JobStatus.PENDING
         )
         session.add(job1)
         
@@ -58,7 +59,7 @@ async def run_reproduction():
             description="Unassigned Job",
             scheduled_at=today,
             employee_id=None,
-            status="pending"
+            status=JobStatus.PENDING
         )
         session.add(job2)
         

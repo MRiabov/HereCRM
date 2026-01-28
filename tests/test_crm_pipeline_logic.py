@@ -39,12 +39,12 @@ async def test_customer_search_by_pipeline_stage(test_session: AsyncSession):
     repo = CustomerRepository(test_session)
     
     # Search for Lost
-    results = await repo.search(query="all", business_id=biz.id, pipeline_stage="lost")
+    results = await repo.search(query="all", business_id=biz.id, pipeline_stage=PipelineStage.LOST)
     assert len(results) == 1
     assert results[0].name == "Alice"
 
     # Search for Contacted
-    results = await repo.search(query="all", business_id=biz.id, pipeline_stage="contacted")
+    results = await repo.search(query="all", business_id=biz.id, pipeline_stage=PipelineStage.CONTACTED)
     assert len(results) == 1
     assert results[0].name == "Bob"
 
@@ -59,7 +59,7 @@ async def test_crm_service_update_stage(test_session: AsyncSession):
     await test_session.flush()
 
     service = CRMService(test_session, biz.id)
-    updated = await service.update_customer_stage(c1.id, "lost")
+    updated = await service.update_customer_stage(c1.id, PipelineStage.LOST)
     
     assert updated.pipeline_stage == PipelineStage.LOST
     
@@ -84,12 +84,12 @@ async def test_tool_executor_search_with_stage(test_session: AsyncSession):
     template_service = TemplateService()
     executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
     
-    search_tool = SearchTool(query="Alice", pipeline_stage="lost", entity_type="customer")
+    search_tool = SearchTool(query="Alice", pipeline_stage=PipelineStage.LOST, entity_type="customer")
     response, metadata = await executor.execute(search_tool)
     
     assert "Alice" in response
 
-    search_tool_mismatch = SearchTool(query="Alice", pipeline_stage="contacted", entity_type="customer")
+    search_tool_mismatch = SearchTool(query="Alice", pipeline_stage=PipelineStage.CONTACTED, entity_type="customer")
     response, metadata = await executor.execute(search_tool_mismatch)
     assert "Alice (" not in response 
     assert "No results found" in response or "search_no_results" in response
@@ -111,7 +111,7 @@ async def test_tool_executor_update_stage(test_session: AsyncSession):
     template_service = TemplateService()
     executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
     
-    update_tool = UpdateCustomerStageTool(query="Alice", stage="lost")
+    update_tool = UpdateCustomerStageTool(query="Alice", stage=PipelineStage.LOST)
     response, metadata = await executor.execute(update_tool)
     
     assert "Updated Alice's stage to Lost" in response

@@ -156,7 +156,7 @@ async def test_undo_functionality(
     test_session.add(user)
 
     job = Job(
-        business_id=biz.id, customer_id=1, description="To be undone", status="PENDING"
+        business_id=biz.id, customer_id=1, description="To be undone", status=JobStatus.PENDING
     )
     test_session.add(job)
     await test_session.flush()
@@ -309,7 +309,7 @@ async def test_schedule_ambiguous_customer(
 
     # Create one job for the first John
     job = Job(
-        business_id=biz.id, customer_id=c1.id, description="Sink", status="PENDING"
+        business_id=biz.id, customer_id=c1.id, description="Sink", status=JobStatus.PENDING
     )
     test_session.add(job)
     await test_session.commit()
