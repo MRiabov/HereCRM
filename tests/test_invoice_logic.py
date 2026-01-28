@@ -42,7 +42,15 @@ async def test_invoice_service_create(mock_session, mock_s3_service, mock_pdf_ge
     invoice = await service.create_invoice(job)
     
     # Verify
-    mock_pdf_generator.generate_invoice.assert_called_once_with(job, payment_link=None)
+    mock_pdf_generator.generate_invoice.assert_called_once_with(
+        job, 
+        invoice_date=None, 
+        payment_link=None,
+        invoice_number=None,
+        due_date=None,
+        notes=None,
+        items=None
+    )
     mock_s3_service.upload_file.assert_called_once()
     assert invoice.job_id == 1
     assert invoice.public_url == "https://s3.example.com/invoice.pdf"
