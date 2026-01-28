@@ -1,29 +1,10 @@
 from src.models import RequestStatus, UserRole, JobStatus
 import pytest
-import pytest_asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from src.database import Base
 from src.models import Business, Job, Customer, User, Request, PipelineStage
 from src.tool_executor import ToolExecutor
 from src.uimodels import AddJobTool, AddLeadTool, ConvertRequestTool, SearchTool, GetPipelineTool
 from src.services.template_service import TemplateService
-
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
-
-
-@pytest_asyncio.fixture
-async def test_session():
-    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    SessionLocal = async_sessionmaker(
-        bind=engine, class_=AsyncSession, expire_on_commit=False
-    )
-    async with SessionLocal() as session:
-        yield session
-
-    await engine.dispose()
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @pytest.fixture
@@ -33,8 +14,9 @@ def template_service():
 
 @pytest.mark.asyncio
 async def test_execute_add_job_new_customer(
-    test_session: AsyncSession, template_service: TemplateService
+    async_session: AsyncSession, template_service: TemplateService
 ):
+    test_session = async_session
     biz = Business(name="Test Biz")
     test_session.add(biz)
     await test_session.flush()
@@ -46,21 +28,26 @@ async def test_execute_add_job_new_customer(
     from unittest.mock import MagicMock, patch, AsyncMock
     
     # Mock GeocodingService to prevent unclosed client sessions
-    with patch("src.tool_executor.GeocodingService") as link_mock:
+    with patch("src.events.event_bus.emit", new_callable=AsyncMock), \
+         patch("src.tool_executor.GeocodingService") as link_mock, \
+         patch("src.services.crm_service.GeocodingService") as crm_mock:
+        
         mock_geo = MagicMock()
         mock_geo.geocode = AsyncMock(return_value=(None, None, None, None, None, None, None))
+        
         link_mock.return_value = mock_geo
+        crm_mock.return_value = mock_geo
         
         executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
-    tool = AddJobTool(
-        customer_name="Alice",
-        customer_phone="5551234",
-        description="Wash windows",
-        price=100.0,
-        location="123 Street",
-    )
+        tool = AddJobTool(
+            customer_name="Alice",
+            customer_phone="5551234",
+            description="Wash windows",
+            price=100.0,
+            location="123 Street",
+        )
 
-    result, metadata = await executor.execute(tool)
+        result, metadata = await executor.execute(tool)
 
     assert "Job added: Alice" in result
     assert metadata["action"] == "create"
@@ -80,8 +67,9 @@ async def test_execute_add_job_new_customer(
 
 @pytest.mark.asyncio
 async def test_execute_convert_request(
-    test_session: AsyncSession, template_service: TemplateService
+    async_session: AsyncSession, template_service: TemplateService
 ):
+    test_session = async_session
     biz = Business(name="Test Biz")
     test_session.add(biz)
     await test_session.flush()
@@ -117,8 +105,9 @@ async def test_execute_convert_request(
 
 @pytest.mark.asyncio
 async def test_execute_log_request(
-    test_session: AsyncSession, template_service: TemplateService
+    async_session: AsyncSession, template_service: TemplateService
 ):
+    test_session = async_session
     biz = Business(name="Test Biz")
     test_session.add(biz)
     await test_session.flush()
@@ -150,8 +139,9 @@ async def test_execute_log_request(
 
 @pytest.mark.asyncio
 async def test_execute_add_lead_implicit(
-    test_session: AsyncSession, template_service: TemplateService
+    async_session: AsyncSession, template_service: TemplateService
 ):
+    test_session = async_session
     biz = Business(name="Test Biz")
     test_session.add(biz)
     await test_session.flush()
@@ -209,8 +199,9 @@ async def test_execute_add_lead_implicit(
 
 @pytest.mark.asyncio
 async def test_deduplication(
-    test_session: AsyncSession, template_service: TemplateService
+    async_session: AsyncSession, template_service: TemplateService
 ):
+    test_session = async_session
     biz = Business(name="Dedupe Biz")
     test_session.add(biz)
     await test_session.flush()
@@ -251,8 +242,9 @@ async def test_deduplication(
 
 @pytest.mark.asyncio
 async def test_execute_get_pipeline(
-    test_session: AsyncSession, template_service: TemplateService
+    async_session: AsyncSession, template_service: TemplateService
 ):
+    test_session = async_session
     biz = Business(name="Pipeline Biz")
     test_session.add(biz)
     await test_session.flush()

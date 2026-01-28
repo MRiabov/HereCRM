@@ -1,31 +1,16 @@
 import pytest
 import pytest_asyncio
 from unittest.mock import AsyncMock, patch
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from src.database import Base
+from sqlalchemy.ext.asyncio import AsyncSession
 from src.tool_executor import ToolExecutor
 from src.uimodels import AddJobTool, ScheduleJobTool
 from src.models import Customer, Job, Business, User, UserRole, JobStatus
 from src.services.template_service import TemplateService
 
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
-
-@pytest_asyncio.fixture
-async def test_session():
-    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    SessionLocal = async_sessionmaker(
-        bind=engine, class_=AsyncSession, expire_on_commit=False
-    )
-    async with SessionLocal() as session:
-        yield session
-
-    await engine.dispose()
 
 @pytest.mark.asyncio
-async def test_add_job_emits_event(test_session):
+async def test_add_job_emits_event(async_session: AsyncSession):
+    test_session = async_session
     # Setup
     business = Business(name="Test Biz")
     test_session.add(business)
@@ -40,10 +25,17 @@ async def test_add_job_emits_event(test_session):
     template_service = AsyncMock(spec=TemplateService)
     template_service.render.return_value = "Mocked Template"
     
-    executor = ToolExecutor(test_session, business.id, user_id, user_phone, template_service)
-    
-    # Mock event bus
-    with patch("src.events.event_bus.emit", new_callable=AsyncMock) as mock_emit:
+    # Mock event bus and GeocodingService to prevent background tasks and unclosed sessions
+    with patch("src.events.event_bus.emit", new_callable=AsyncMock) as mock_emit, \
+         patch("src.tool_executor.GeocodingService") as MockGeoTool, \
+         patch("src.services.crm_service.GeocodingService") as MockGeoCRM:
+         
+        # Configure mocks
+        MockGeoTool.return_value.geocode = AsyncMock(return_value=(None, None, None, None, None, None, None))
+        MockGeoCRM.return_value.geocode = AsyncMock(return_value=(None, None, None, None, None, None, None))
+
+        executor = ToolExecutor(test_session, business.id, user_id, user_phone, template_service)
+
         # Execute
         tool = AddJobTool(
             customer_name="Test Customer",
@@ -67,7 +59,8 @@ async def test_add_job_emits_event(test_session):
         assert found, "JOB_CREATED event not emitted"
 
 @pytest.mark.asyncio
-async def test_schedule_job_emits_event(test_session):
+async def test_schedule_job_emits_event(async_session: AsyncSession):
+    test_session = async_session
     # Setup
     business = Business(name="Test Biz")
     test_session.add(business)
@@ -81,8 +74,6 @@ async def test_schedule_job_emits_event(test_session):
     user_phone = "1234567890"
     template_service = AsyncMock(spec=TemplateService)
     template_service.render.return_value = "Mocked Template"
-    
-    executor = ToolExecutor(test_session, business.id, user_id, user_phone, template_service)
     
     # Create existing job and customer
     customer = Customer(
@@ -102,8 +93,16 @@ async def test_schedule_job_emits_event(test_session):
     test_session.add(job)
     await test_session.commit()
     
-    # Mock event bus
-    with patch("src.events.event_bus.emit", new_callable=AsyncMock) as mock_emit:
+    # Mock event bus and GeocodingService
+    with patch("src.events.event_bus.emit", new_callable=AsyncMock) as mock_emit, \
+         patch("src.tool_executor.GeocodingService") as MockGeoTool, \
+         patch("src.services.crm_service.GeocodingService") as MockGeoCRM:
+         
+        MockGeoTool.return_value.geocode = AsyncMock(return_value=(None, None, None, None, None, None, None))
+        MockGeoCRM.return_value.geocode = AsyncMock(return_value=(None, None, None, None, None, None, None))
+
+        executor = ToolExecutor(test_session, business.id, user_id, user_phone, template_service)
+
         # Execute
         tool = ScheduleJobTool(
             job_id=job.id,

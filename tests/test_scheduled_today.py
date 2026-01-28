@@ -42,7 +42,7 @@ async def test_execute_add_job_scheduled_today(
     await test_session.flush()
 
     from unittest.mock import MagicMock, patch, AsyncMock
-    with patch("src.tool_executor.GeocodingService") as geo_mock:
+    with patch("src.services.geocoding.GeocodingService") as geo_mock:
         mock_instance = MagicMock()
         mock_instance.geocode = AsyncMock(return_value=(None, None, None, None, None, None, "123 Mock Lane"))
         geo_mock.return_value = mock_instance
@@ -56,9 +56,9 @@ async def test_execute_add_job_scheduled_today(
             location="123 Mock Lane"
         )
 
-    # Patch event_bus to prevent async tasks from running on the closed loop
-    with patch("src.events.event_bus.emit", new_callable=AsyncMock) as mock_emit:
-        result, metadata = await executor.execute(tool)
+        # Patch EventBus.emit to ensure all instances (including imports) use the mock
+        with patch("src.events.EventBus.emit", new_callable=AsyncMock) as mock_emit:
+            result, metadata = await executor.execute(tool)
 
     assert "Job added: Scheduled Alice" in result
     assert metadata["action"] == "create"

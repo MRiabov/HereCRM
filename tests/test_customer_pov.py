@@ -71,6 +71,7 @@ async def test_customer_pov_scenarios():
             patch("src.services.messaging_service.MessagingService.enqueue_message", new_callable=AsyncMock) as mock_enqueue,
             patch("src.services.routing.ors.OpenRouteServiceAdapter.get_eta_minutes") as mock_eta,
             patch("src.services.location_service.LocationService.get_employee_location") as mock_loc,
+            patch("src.services.geocoding.GeocodingService"),
         ):
             # Register handlers manually because conftest resets event_bus
             messaging_service.register_handlers()

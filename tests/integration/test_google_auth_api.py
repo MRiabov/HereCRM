@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from src.main import app
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 
 @pytest.fixture
 def client():
@@ -20,9 +20,11 @@ def test_google_login_redirect(client):
         assert response.headers["location"] == "https://google.com/auth"
 
 def test_google_callback_success(client):
-    with patch("src.api.routes.GoogleCalendarService") as mock_service_class:
+    with patch("src.api.routes.GoogleCalendarService") as mock_service_class, \
+         patch("src.services.messaging_service.MessagingService.send_message", new_callable=AsyncMock), \
+         patch("src.services.calendar_sync_handler.calendar_sync_handler.sync_all_user_jobs", new_callable=AsyncMock):
+        
         mock_service = mock_service_class.return_value
-        from unittest.mock import AsyncMock
         mock_service.process_auth_callback = AsyncMock(return_value=True)
         
         response = client.get("/auth/google/callback?code=testcode&state=123")
