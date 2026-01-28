@@ -12,7 +12,7 @@ os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///test_customer_pov.db"
 
 from src.main import app
 from src.database import engine
-from src.models import Business, User, Customer, Job, UserRole, PipelineStage
+from src.models import Business, User, Customer, Job, UserRole, PipelineStage, JobStatus, QuoteStatus
 from src.services.messaging_service import messaging_service
 
 @pytest.mark.asyncio
@@ -84,8 +84,8 @@ async def test_customer_pov_scenarios():
             secret = os.getenv("WHATSAPP_APP_SECRET", "dummy_secret")
 
             # Scenario A: Technician sends "I'm on my way"
-            from src.uimodels import SendStatusTool
-            mock_parser.return_value = SendStatusTool(query="Alice", status_type="ON_WAY")
+            from src.uimodels import SendStatusTool, StatusType
+            mock_parser.return_value = SendStatusTool(query="Alice", status_type=StatusType.ON_WAY)
             
             tech_phone = "+444555666"
             payload = {"from_number": tech_phone, "body": "I am on my way to Alice"}

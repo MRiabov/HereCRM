@@ -6,7 +6,7 @@ from src.database import Base
 from src.services.search_service import SearchService
 from src.services.geocoding import GeocodingService
 from src.uimodels import SearchTool
-from src.models import Business, User, Customer, Job, Request, JobStatus
+from src.models import Business, User, Customer, Job, Request, JobStatus, EntityType
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -94,7 +94,7 @@ async def test_search_proximity_job_filtering(search_service, setup_data):
     # Search near London (should return London Job, exclude Dublin Job)
     params = SearchTool(
         query="all",
-        entity_type="JOB",
+        entity_type=EntityType.JOB,
         center_lat=51.5074,
         center_lon=-0.1278,
         radius=5000.0
@@ -111,7 +111,7 @@ async def test_search_proximity_customer_filtering(search_service, setup_data):
     # Search near Dublin (should return Dublin Customer, exclude London/Cork)
     params = SearchTool(
         query="all",
-        entity_type="CUSTOMER",
+        entity_type=EntityType.CUSTOMER,
         center_lat=53.3498,
         center_lon=-6.2603,
         radius=5000.0

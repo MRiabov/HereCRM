@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, patch
 from datetime import datetime, timezone, timedelta
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, User, UserRole, Job, Customer
+from src.models import Business, User, UserRole, Job, Customer, JobStatus
 from src.services.scheduler import scheduler_service
 from src.services.messaging_service import messaging_service
 

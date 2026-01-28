@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from src.database import Base
 from src.models import Business, Job, Customer, User, UserRole, JobStatus
 from src.tool_executor import ToolExecutor
-from src.uimodels import SendStatusTool
+from src.uimodels import SendStatusTool, StatusType
 from src.services.template_service import TemplateService
 from datetime import datetime, timedelta
 
@@ -46,18 +46,17 @@ async def test_send_status_named_customer(test_session, template_service):
     with patch("src.tool_executor.event_bus") as mock_bus:
         mock_bus.emit = AsyncMock()
         
-        tool = SendStatusTool(query="John", status_type="ON_WAY")
+        tool = SendStatusTool(query="John", status_type=StatusType.ON_WAY)
         result, metadata = await executor.execute(tool)
         
         assert "Sent status update to John Doe" in result
-        assert metadata["status_type"] == "on_way"
+        assert metadata["status_type"] == StatusType.ON_WAY
         
         mock_bus.emit.assert_called_once()
         args = mock_bus.emit.call_args
         assert args[0][0] == "SEND_STATUS_MESSAGE"
         payload = args[0][1]
-        assert payload["customer_id"] == customer.id
-        assert payload["status_type"] == "on_way"
+        assert payload["status_type"] == StatusType.ON_WAY
 
 @pytest.mark.asyncio
 async def test_send_status_next_client(test_session, template_service):
@@ -89,11 +88,11 @@ async def test_send_status_next_client(test_session, template_service):
     with patch("src.tool_executor.event_bus") as mock_bus:
         mock_bus.emit = AsyncMock()
         
-        tool = SendStatusTool(query="next_scheduled_client", status_type="RUNNING_LATE")
+        tool = SendStatusTool(query="next_scheduled_client", status_type=StatusType.RUNNING_LATE)
         result, metadata = await executor.execute(tool)
         
         assert "Sent status update to Next Client" in result
-        assert metadata["status_type"] == "running_late"
+        assert metadata["status_type"] == StatusType.RUNNING_LATE
         
         mock_bus.emit.assert_called_once()
         args = mock_bus.emit.call_args

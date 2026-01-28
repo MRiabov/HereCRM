@@ -1604,39 +1604,13 @@ paths:
             application/json:
               schema: {}
   /api/v1/pwa/analytics/proxy/{path}:
-    post:
+    delete:
       tags:
       - pwa-analytics
       summary: Proxy Posthog
       description: Proxies requests to PostHog to bypass ad-blockers and avoid console
         errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__post
-      parameters:
-      - name: path
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    patch:
-      tags:
-      - pwa-analytics
-      summary: Proxy Posthog
-      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
-        errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__post
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__delete
       parameters:
       - name: path
         in: path
@@ -1662,7 +1636,7 @@ paths:
       summary: Proxy Posthog
       description: Proxies requests to PostHog to bypass ad-blockers and avoid console
         errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__post
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__delete
       parameters:
       - name: path
         in: path
@@ -1682,13 +1656,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-    delete:
+    post:
       tags:
       - pwa-analytics
       summary: Proxy Posthog
       description: Proxies requests to PostHog to bypass ad-blockers and avoid console
         errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__post
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__delete
+      parameters:
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    patch:
+      tags:
+      - pwa-analytics
+      summary: Proxy Posthog
+      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
+        errors.
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__delete
       parameters:
       - name: path
         in: path
@@ -1714,7 +1714,7 @@ paths:
       summary: Proxy Posthog
       description: Proxies requests to PostHog to bypass ad-blockers and avoid console
         errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__post
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__delete
       parameters:
       - name: path
         in: path
@@ -1816,10 +1816,8 @@ components:
           default: UNSCHEDULED
         workflow_distance_unit:
           anyOf:
-          - type: string
-            maxLength: 10
+          - $ref: '#/components/schemas/DistanceUnit'
           - type: 'null'
-          title: Workflow Distance Unit
           default: mi
         workflow_auto_quote_followup:
           type: boolean
@@ -1961,10 +1959,8 @@ components:
           - type: 'null'
         workflow_distance_unit:
           anyOf:
-          - type: string
-            maxLength: 10
+          - $ref: '#/components/schemas/DistanceUnit'
           - type: 'null'
-          title: Workflow Distance Unit
         workflow_auto_quote_followup:
           anyOf:
           - type: boolean
@@ -2428,6 +2424,12 @@ components:
       - imports
       - exports
       title: DataActivitySchema
+    DistanceUnit:
+      type: string
+      enum:
+      - mi
+      - km
+      title: DistanceUnit
     ExpenseCategory:
       type: string
       enum:
@@ -2531,6 +2533,7 @@ components:
       - csv
       - excel
       - zip
+      - json
       title: ExportFormat
     ExportRequestSchema:
       properties:

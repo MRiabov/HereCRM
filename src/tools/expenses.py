@@ -24,7 +24,7 @@ class ExpenseTools:
         )
 
         job_info = f" (Linked to Job #{tool.job_id})" if tool.job_id else ""
-        message = f"✔ Recorded expense: {tool.description} - €{tool.amount:.2f}{job_info}"
+        message = f"✔ Recorded expense: {tool.description} ({tool.category.value if hasattr(tool.category, 'value') else tool.category}) - €{tool.amount:.2f}{job_info}"
         
         return message, {
             "action": "create",

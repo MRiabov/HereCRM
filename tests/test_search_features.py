@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime, timedelta, timezone
-from src.models import Job, Customer, Request, User, Business, JobStatus
+from src.models import Job, Customer, Request, User, Business, JobStatus, EntityType
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from src.tool_executor import ToolExecutor
 from src.uimodels import SearchTool
@@ -126,15 +126,15 @@ async def test_search_jobs_today(
     executor = ToolExecutor(db_session, business_id, user_id, user_phone, mock_template_service)
 
     today_start = (
-        datetime.now(timezone.utc).replace(hour=0, minute=0, second=0).isoformat()
+        datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
     )
     today_end = (
-        datetime.now(timezone.utc).replace(hour=23, minute=59, second=59).isoformat()
+        datetime.now(timezone.utc).replace(hour=23, minute=59, second=59, microsecond=0).isoformat()
     )
 
     tool = SearchTool(
         query="all",
-        entity_type="JOB",
+        entity_type=EntityType.JOB,
         query_type="SCHEDULED",
         min_date=today_start,
         max_date=today_end,
@@ -154,18 +154,18 @@ async def test_search_jobs_tomorrow(
 
     tomorrow_start = (
         (datetime.now(timezone.utc) + timedelta(days=1))
-        .replace(hour=0, minute=0, second=0)
+        .replace(hour=0, minute=0, second=0, microsecond=0)
         .isoformat()
     )
     tomorrow_end = (
         (datetime.now(timezone.utc) + timedelta(days=1))
-        .replace(hour=23, minute=59, second=59)
+        .replace(hour=23, minute=59, second=59, microsecond=0)
         .isoformat()
     )
 
     tool = SearchTool(
         query="all",
-        entity_type="JOB",
+        entity_type=EntityType.JOB,
         query_type="SCHEDULED",
         min_date=tomorrow_start,
         max_date=tomorrow_end,
@@ -184,15 +184,15 @@ async def test_search_customers_with_jobs_today(
     executor = ToolExecutor(db_session, business_id, user_id, user_phone, mock_template_service)
 
     today_start = (
-        datetime.now(timezone.utc).replace(hour=0, minute=0, second=0).isoformat()
+        datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
     )
     today_end = (
-        datetime.now(timezone.utc).replace(hour=23, minute=59, second=59).isoformat()
+        datetime.now(timezone.utc).replace(hour=23, minute=59, second=59, microsecond=0).isoformat()
     )
 
     tool = SearchTool(
         query="all",
-        entity_type="CUSTOMER",
+        entity_type=EntityType.CUSTOMER,
         query_type="SCHEDULED",
         min_date=today_start,
         max_date=today_end,
@@ -211,15 +211,15 @@ async def test_search_leads_added_today(
     executor = ToolExecutor(db_session, business_id, user_id, user_phone, mock_template_service)
 
     today_start = (
-        datetime.now(timezone.utc).replace(hour=0, minute=0, second=0).isoformat()
+        datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
     )
     today_end = (
-        datetime.now(timezone.utc).replace(hour=23, minute=59, second=59).isoformat()
+        datetime.now(timezone.utc).replace(hour=23, minute=59, second=59, microsecond=0).isoformat()
     )
 
     tool = SearchTool(
         query="all",
-        entity_type="LEAD",
+        entity_type=EntityType.LEAD,
         query_type="ADDED",
         min_date=today_start,
         max_date=today_end,

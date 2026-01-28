@@ -7,7 +7,7 @@ from src.main import app
 # We'll assume the API is open or mocked auth for now as per implementation (no `Depends(get_current_user)` enforced strictly yet).
 
 from src.database import get_db
-from src.models import User, Business, UserRole
+from src.models import User, Business, UserRole, JobStatus
 from src.api.dependencies.clerk_auth import get_current_user, verify_token
 
 @pytest.fixture

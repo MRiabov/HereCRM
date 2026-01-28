@@ -1,12 +1,12 @@
 import logging
-from typing import Optional
+from typing import Optional, Union
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.repositories import (
     ConversationStateRepository,
     UserRepository,
     BusinessRepository,
 )
-from src.models import ConversationState, ConversationStatus, Message, MessageRole
+from src.models import ConversationState, ConversationStatus, Message, MessageRole, MessageType
 from src.llm_client import LLMParser
 from src.services.template_service import TemplateService
 from src.services.data_management import DataManagementService
@@ -77,12 +77,13 @@ class WhatsappService:
         message_text: str,
         user_id: Optional[int] = None,
         user_phone: Optional[str] = None,
-        channel: str = "WHATSAPP",
+        channel: MessageType = MessageType.WHATSAPP,
         is_new_user: bool = False,
         media_url: Optional[str] = None,
         media_type: Optional[str] = None,
     ) -> str:
         self.logger.debug(f"DEBUG: handle_message entered. user_id={user_id}, user_phone={user_phone}, channel={channel}")
+        
         self._current_metadata = {}
         # 1. Identify User
         if user_id:
@@ -213,7 +214,7 @@ class WhatsappService:
         # Dispatch SMS if channel is SMS or user identity suggests SMS
         effective_channel = state_record.active_channel or channel
         
-        if effective_channel == "SMS" and user.phone_number:
+        if effective_channel == MessageType.SMS and user.phone_number:
             try:
                 from src.services.sms_factory import get_sms_service
                 await get_sms_service().send_sms(user.phone_number, reply)

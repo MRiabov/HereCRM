@@ -16,7 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
-from src.models import Message, DocumentType, Customer, MessageTriggerSource, LeadSource
+from src.models import Message, DocumentType, Customer, MessageTriggerSource, MessageType, LeadSource
 from src.services.auth_service import AuthService
 from src.services.whatsapp_service import WhatsappService
 from src.services.quote_service import QuoteService
@@ -182,7 +182,7 @@ async def webhook(
                                 user_phone=user.phone_number,
                                 message_text=text_body,
                                 is_new_user=is_new,
-                                channel="WHATSAPP",
+                                channel=MessageType.WHATSAPP,
                                 media_url=media_url,
                                 media_type=media_type
                             )
@@ -531,7 +531,7 @@ async def textgrid_webhook(
             user_phone=user.phone_number,
             message_text=payload.text,
             is_new_user=is_new,
-            channel="SMS"
+            channel=MessageType.SMS
         )
         
         # Commit Transaction
@@ -661,7 +661,7 @@ async def postmark_inbound_webhook(
             user_phone=user_identifier,  # Using email as identifier
             message_text=text_body,
             is_new_user=is_new,
-            channel="EMAIL"
+            channel=MessageType.EMAIL
         )
         
         # Store threading metadata in the most recent message
@@ -805,11 +805,14 @@ async def google_callback(
         # Try to parse state as JSON (new style) or int (legacy style)
         try:
             state_data = json.loads(state)
-            user_id = int(state_data.get("user_id"))
-            # If success_url was passed in state, it overrides the query param
-            if "success_url" in state_data:
-                success_url = state_data["success_url"]
-        except (json.JSONDecodeError, TypeError, ValueError):
+            if isinstance(state_data, dict):
+                user_id = int(state_data.get("user_id"))
+                # If success_url was passed in state, it overrides the query param
+                if "success_url" in state_data:
+                    success_url = state_data["success_url"]
+            else:
+                user_id = int(state_data)
+        except (json.JSONDecodeError, TypeError, ValueError, AttributeError):
             user_id = int(state)
         
         service = GoogleCalendarService()

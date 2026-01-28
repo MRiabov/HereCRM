@@ -44,8 +44,11 @@ class LeadSource(str, enum.Enum):
     WHATSAPP = "whatsapp"
     SMS = "sms"
     PWA = "pwa"
+    FB_ADS = "fb_ads"
     MANUAL = "manual"
     GENERIC = "generic"
+    ZAPIER = "zapier"
+    CRON = "cron"
 
 
 class InvoiceStatus(str, enum.Enum):
@@ -74,6 +77,7 @@ class ExportFormat(str, enum.Enum):
     CSV = "csv"
     EXCEL = "excel"
     ZIP = "zip"
+    JSON = "json"
 
 
 class PaymentStatus(str, enum.Enum):
@@ -151,6 +155,13 @@ class DistanceUnit(str, enum.Enum):
 class SubscriptionStatus(str, enum.Enum):
     FREE = "free"
     PRO = "pro"
+    ACTIVE = "active"
+    PAST_DUE = "past_due"
+    UNPAID = "unpaid"
+    CANCELED = "canceled"
+    INCOMPLETE = "incomplete"
+    INCOMPLETE_EXPIRED = "incomplete_expired"
+    TRIALING = "trialing"
 
 
 class PaymentMethod(str, enum.Enum):
@@ -163,7 +174,9 @@ class PaymentMethod(str, enum.Enum):
 class MessageType(str, enum.Enum):
     WHATSAPP = "WHATSAPP"
     SMS = "SMS"
-    PWA_CHAT = "pwa_chat"
+    EMAIL = "EMAIL"
+    PWA_CHAT = "PWA_CHAT"
+    GENERIC = "GENERIC"
 
 
 class MessageStatus(str, enum.Enum):
@@ -225,6 +238,7 @@ class EntityType(str, enum.Enum):
     EXPENSE = "expense"
     LEDGER = "ledger"
     CUSTOMER = "customer"
+    LEAD = "lead"
     ALL = "all"
 
 

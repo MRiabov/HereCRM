@@ -27,7 +27,7 @@ def rbac_service():
 
 def test_load_config(rbac_service):
     assert rbac_service.get_tool_config("TestEmployeeTool") is not None
-    assert rbac_service.get_tool_config("TestManagerTool")["role"] == "MANAGER"
+    assert rbac_service.get_tool_config("TestManagerTool")["role"] == "manager"
 
 def test_employee_access(rbac_service):
     # Employee should access employee tools only

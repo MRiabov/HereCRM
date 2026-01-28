@@ -3,7 +3,7 @@ import asyncio
 from unittest.mock import patch, AsyncMock, MagicMock
 
 from src.services.messaging_service import MessagingService
-from src.models import MessageStatus, MessageType, Business, Customer, MessageLog, MessageTriggerSource
+from src.models import MessageStatus, MessageType, MessageTriggerSource, Business, Customer, MessageLog
 from src.database import AsyncSessionLocal
 from src.events import event_bus
 
@@ -53,7 +53,7 @@ async def test_send_message_sms_channel():
             recipient_phone="+1234567890",
             content="Test SMS",
             channel=MessageType.SMS,
-            trigger_source=MessageTriggerSource.API,
+            trigger_source=MessageTriggerSource.MANUAL,
         )
     
     async with AsyncSessionLocal() as db:
@@ -76,7 +76,7 @@ async def test_send_message_handles_errors():
             recipient_phone="+1234567890",
             content="Test message",
             channel=MessageType.WHATSAPP,
-            trigger_source=MessageTriggerSource.API,
+            trigger_source=MessageTriggerSource.MANUAL,
         )
     
     async with AsyncSessionLocal() as db:
@@ -99,7 +99,7 @@ async def test_enqueue_message():
         recipient_phone="+1234567890",
         content="Queued message",
         channel=MessageType.WHATSAPP,
-        trigger_source=MessageTriggerSource.API,
+        trigger_source=MessageTriggerSource.MANUAL,
     )
     
     # Verify message was added to queue
@@ -110,7 +110,7 @@ async def test_enqueue_message():
     assert message_data["recipient_phone"] == "+1234567890"
     assert message_data["content"] == "Queued message"
     assert message_data["channel"] == MessageType.WHATSAPP
-    assert message_data["trigger_source"] == MessageTriggerSource.API
+    assert message_data["trigger_source"] == MessageTriggerSource.MANUAL
 
 
 @pytest.mark.asyncio

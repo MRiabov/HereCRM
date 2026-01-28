@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from src.database import Base
 from src.tool_executor import ToolExecutor
 from src.uimodels import AddJobTool, ScheduleJobTool
-from src.models import Customer, Job, Business, User, UserRole
+from src.models import Customer, Job, Business, User, UserRole, JobStatus
 from src.services.template_service import TemplateService
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -32,11 +32,11 @@ async def test_add_job_emits_event(test_session):
     await test_session.flush()
     
     user_id = 999
-    user = User(id=user_id, business_id=business.id, role=UserRole.OWNER, phone_number="+1234567890")
+    user = User(id=user_id, business_id=business.id, role=UserRole.OWNER, phone_number="1234567890")
     test_session.add(user)
     await test_session.flush()
     
-    user_phone = "+1234567890"
+    user_phone = "1234567890"
     template_service = AsyncMock(spec=TemplateService)
     template_service.render.return_value = "Mocked Template"
     
@@ -47,7 +47,7 @@ async def test_add_job_emits_event(test_session):
         # Execute
         tool = AddJobTool(
             customer_name="Test Customer",
-            customer_phone="+1987654321",
+            customer_phone="1987654321",
             description="Test Job",
             location="Test Location",
             price=100.0,
@@ -74,11 +74,11 @@ async def test_schedule_job_emits_event(test_session):
     await test_session.flush()
 
     user_id = 999
-    user = User(id=user_id, business_id=business.id, role=UserRole.OWNER, phone_number="+1234567890")
+    user = User(id=user_id, business_id=business.id, role=UserRole.OWNER, phone_number="1234567890")
     test_session.add(user)
     await test_session.flush()
     
-    user_phone = "+1234567890"
+    user_phone = "1234567890"
     template_service = AsyncMock(spec=TemplateService)
     template_service.render.return_value = "Mocked Template"
     
@@ -88,7 +88,7 @@ async def test_schedule_job_emits_event(test_session):
     customer = Customer(
         business_id=business.id,
         name="Test Customer",
-        phone="+1987654321"
+        phone="1987654321"
     )
     test_session.add(customer)
     await test_session.flush()

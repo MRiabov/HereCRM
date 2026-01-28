@@ -6,7 +6,7 @@ def test_pipeline_stage_enum():
     assert PipelineStage.NOT_CONTACTED == "NOT_CONTACTED"
     assert PipelineStage.CONTACTED == "CONTACTED"
     assert PipelineStage.CONVERTED_ONCE == "CONVERTED_ONCE"
-    assert len(PipelineStage) == 6
+    assert len(PipelineStage) == 8
 
 def test_customer_model_has_pipeline_stage():
     customer = Customer(name="Test Customer")

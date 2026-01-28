@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.models import Base, Business, Customer, Service, SyncLog, QuickBooksSyncStatus
+from src.models import Base, Business, Customer, Service, SyncLog, QuickBooksSyncStatus, SyncType, SyncLogStatus
 from src.credentials_models import QuickBooksCredential, PYSQLCIPHER_AVAILABLE
 
 
@@ -166,11 +166,11 @@ class TestMainDatabaseModels:
         
         sync_log = SyncLog(
             business_id=business.id,
-            sync_type="MANUAL",
+            sync_type=SyncType.MANUAL,
             records_processed=10,
             records_succeeded=8,
             records_failed=2,
-            status="partial_success",
+            status=SyncLogStatus.PARTIAL_SUCCESS,
             error_details={"failed_records": [3, 7]},
             duration_seconds=45.5
         )
@@ -180,11 +180,11 @@ class TestMainDatabaseModels:
         
         assert sync_log.id is not None
         assert sync_log.business_id == business.id
-        assert sync_log.sync_type == "MANUAL"
+        assert sync_log.sync_type == SyncType.MANUAL
         assert sync_log.records_processed == 10
         assert sync_log.records_succeeded == 8
         assert sync_log.records_failed == 2
-        assert sync_log.status == "partial_success"
+        assert sync_log.status == SyncLogStatus.PARTIAL_SUCCESS
         assert sync_log.error_details == {"failed_records": [3, 7]}
         assert sync_log.duration_seconds == 45.5
         assert sync_log.sync_timestamp is not None

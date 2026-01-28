@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from src.database import Base
 from src.models import Business, User, UserRole
 from src.tool_executor import ToolExecutor
-from src.uimodels import ManageEmployeesTool
+from src.uimodels import ManageEmployeesTool, EmployeeManageAction
 from src.services.template_service import TemplateService
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -42,7 +42,7 @@ async def test_scope_enforcement_blocked(test_session: AsyncSession, template_se
     executor = ToolExecutor(test_session, biz.id, user.id, str(user.phone_number), template_service)
     
     # ManageEmployeesTool requires "manage_employees"
-    tool = ManageEmployeesTool(action="LIST")
+    tool = ManageEmployeesTool(action=EmployeeManageAction.LIST)
     
     result, metadata = await executor.execute(tool)
     
@@ -65,7 +65,7 @@ async def test_scope_enforcement_allowed(test_session: AsyncSession, template_se
 
     executor = ToolExecutor(test_session, biz.id, user.id, str(user.phone_number), template_service)
     
-    tool = ManageEmployeesTool(action="LIST")
+    tool = ManageEmployeesTool(action=EmployeeManageAction.LIST)
     
     result, metadata = await executor.execute(tool)
     
@@ -87,7 +87,7 @@ async def test_scope_enforcement_default_allowed(test_session: AsyncSession, tem
     executor = ToolExecutor(test_session, biz.id, user.id, str(user.phone_number), template_service)
     
     # Check ManageEmployeesTool
-    res1, _ = await executor.execute(ManageEmployeesTool(action="LIST"))
+    res1, _ = await executor.execute(ManageEmployeesTool(action=EmployeeManageAction.LIST))
     assert "Access granted to Employee Management" in res1
 
     # Check MassEmailTool

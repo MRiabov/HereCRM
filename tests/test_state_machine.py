@@ -10,6 +10,8 @@ from src.models import (
     ConversationStatus,
     Job,
     Request,
+    JobStatus,
+    EntityType,
 )
 from src.services.whatsapp_service import WhatsappService
 from src.services.template_service import TemplateService
@@ -55,7 +57,7 @@ async def test_state_idle_to_confirm(
     mock_parser = AsyncMock()
     tool_call = AddJobTool(
         customer_name="John Doe",
-        customer_phone=None,
+        customer_phone="1234567890",
         location=None,
         price=50.0,
         description="Fix window",

@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime, timezone
 from src.services.expenses import ExpenseService
-from src.models import User, Job, Business, UserRole, Customer
+from src.models import User, Job, Business, UserRole, Customer, ExpenseCategory
 from src.uimodels import AddExpenseTool
 from src.tools.expenses import ExpenseTools
 
@@ -28,12 +28,12 @@ async def test_expense_service_crud(async_session):
         business_id=business.id,
         employee_id=user.id,
         amount=50.5,
-        category="Fuel",
+        category=ExpenseCategory.FUEL,
         description="Fuel for truck"
     )
     assert expense.id is not None
     assert expense.amount == 50.5
-    assert expense.category == "Fuel"
+    assert expense.category == ExpenseCategory.FUEL
 
     # 2. Get expenses
     expenses = await service.get_expenses(business.id)
@@ -68,16 +68,16 @@ async def test_add_expense_tool_integration(async_session):
     tools = ExpenseTools(service)
 
     # 1. Test Tool without job
-    tool_no_job = AddExpenseTool(amount=10.0, description="Parking", category="Parking")
+    tool_no_job = AddExpenseTool(amount=10.0, description="Parking", category=ExpenseCategory.TRAVEL)
     msg, metadata = await tools.add_expense(tool_no_job, user.id)
     
     assert "Recorded expense" in msg
-    assert "Parking" in msg
+    assert "TRAVEL" in msg
     assert metadata["amount"] == 10.0
     assert metadata["job_id"] is None
 
     # 2. Test Tool with job
-    tool_with_job = AddExpenseTool(amount=25.0, description="Supplies", category="Supplies", job_id=job.id)
+    tool_with_job = AddExpenseTool(amount=25.0, description="Supplies", category=ExpenseCategory.MATERIAL, job_id=job.id)
     msg_job, metadata_job = await tools.add_expense(tool_with_job, user.id)
     
     assert f"Linked to Job #{job.id}" in msg_job

@@ -2,7 +2,7 @@ import pytest
 from datetime import datetime, date, timezone
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Job, Customer
+from src.models import Business, Job, Customer, JobStatus
 from src.services.dashboard_service import DashboardService
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"

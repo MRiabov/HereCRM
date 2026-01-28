@@ -2,7 +2,7 @@ import os
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
-from src.models import Message, MessageRole
+from src.models import Message, MessageRole, MessageType
 from src.config import channels_config
 from src.llm_client import LLMParser
 import logging
@@ -54,7 +54,7 @@ class HelpService:
         # Convert to list and reverse to get chronological order
         return list(reversed(list(messages)))
 
-    def construct_help_prompt(self, history: List[Message], channel: str) -> List[dict]:
+    def construct_help_prompt(self, history: List[Message], channel: MessageType | str) -> List[dict]:
         """
         Construct a list of messages for the LLM including system instructions,
         manual content, and conversation history.
@@ -62,7 +62,8 @@ class HelpService:
         manual_text = self._load_manual()
         
         # Get channel restrictions from config
-        channel_settings = channels_config.channels.get(channel)
+        channel_name = channel.value if isinstance(channel, MessageType) else channel
+        channel_settings = channels_config.channels.get(channel_name)
         restrictions = "Be helpful and concise."
         if channel_settings:
             restrictions = f"Max length: {channel_settings.max_length} characters. Style: {channel_settings.style}."
@@ -97,7 +98,7 @@ class HelpService:
             
         return messages
 
-    async def generate_help_response(self, user_query: str, business_id: int, user_id: int, channel: str = "WHATSAPP") -> str:
+    async def generate_help_response(self, user_query: str, business_id: int, user_id: int, channel: MessageType = MessageType.WHATSAPP) -> str:
         """
         Main entry point for generating a help response:
         1. Fetch history

@@ -1,4 +1,4 @@
-from src.models import RequestStatus
+from src.models import RequestStatus, UserRole, JobStatus
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
@@ -54,7 +54,7 @@ async def test_execute_add_job_new_customer(
         executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
     tool = AddJobTool(
         customer_name="Alice",
-        customer_phone="555-1234",
+        customer_phone="5551234",
         description="Wash windows",
         price=100.0,
         location="123 Street",
@@ -165,7 +165,7 @@ async def test_execute_add_lead_implicit(
     # 1. Add Lead
     tool = AddLeadTool(
         name="Bob The Lead",
-        phone="555-LEAD",
+        phone="5551234",
         details="Just inquiring",
     )
     result, metadata = await executor.execute(tool)

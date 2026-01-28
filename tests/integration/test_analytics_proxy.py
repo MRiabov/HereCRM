@@ -35,15 +35,17 @@ async def test_analytics_proxy_forwarding():
         assert response.status_code == 200
         assert response.content == b'{"status": "ok"}'
         
-        # Verify the mock was called with the correct URL
-        expected_target_url = f"{settings.posthog_host}/{test_path}?{test_query}"
+        # Verify the mock was called with the correct URL and params
+        expected_target_base_url = f"{settings.posthog_host.rstrip('/')}/{test_path}"
+        expected_params = {"v": "3", "ver": "1.335.2"}
         
         import json
         
         mock_request.assert_called_once()
         call_args = mock_request.call_args
         assert call_args.kwargs["method"] == "POST"
-        assert call_args.kwargs["url"] == expected_target_url
+        assert str(call_args.kwargs["url"]).rstrip('/') == expected_target_base_url.rstrip('/')
+        assert call_args.kwargs["params"] == expected_params
         
         # Compare parsed JSON to avoid whitespace issues
         assert json.loads(call_args.kwargs["content"]) == payload

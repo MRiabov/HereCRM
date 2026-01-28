@@ -345,7 +345,7 @@ class BusinessSettingsSchema(BaseModel):
     workflow_show_whatsapp_button: Optional[bool]
     workflow_pipeline_quoted_stage: bool
     workflow_job_creation_default: Optional[JobCreationDefault] = JobCreationDefault.UNSCHEDULED
-    workflow_distance_unit: Optional[str] = Field("mi", max_length=10)
+    workflow_distance_unit: Optional[DistanceUnit] = DistanceUnit.MILES
     workflow_auto_quote_followup: bool
     workflow_quote_followup_delay_hrs: int
     workflow_auto_review_requests: bool
@@ -373,7 +373,7 @@ class BusinessSettingsUpdate(BaseModel):
     workflow_show_whatsapp_button: Optional[bool] = None
     workflow_pipeline_quoted_stage: Optional[bool] = None
     workflow_job_creation_default: Optional[JobCreationDefault] = None
-    workflow_distance_unit: Optional[str] = Field(None, max_length=10)
+    workflow_distance_unit: Optional[DistanceUnit] = None
     workflow_auto_quote_followup: Optional[bool] = None
     workflow_quote_followup_delay_hrs: Optional[int] = None
     workflow_auto_review_requests: Optional[bool] = None
@@ -394,7 +394,7 @@ class WageConfigurationUpdate(BaseModel):
 # --- Search ---
 
 class SearchResult(BaseModel):
-    type: str = Field(..., max_length=50) # customer, job, request
+    type: EntityType
     id: int
     title: str = Field(..., max_length=200)
     subtitle: Optional[str] = Field(None, max_length=200)

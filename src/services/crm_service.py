@@ -63,7 +63,7 @@ class CRMService:
         description: Optional[str] = None,
         value: Optional[float] = None,
         location: Optional[str] = None,
-        status: str | JobStatus = JobStatus.PENDING,
+        status: JobStatus = JobStatus.PENDING,
         scheduled_at: Optional[datetime] = None,
         items: Optional[list] = None,
         postal_code: Optional[str] = None,
@@ -216,8 +216,8 @@ class CRMService:
         self,
         request_id: int,
         description: Optional[str] = None,
-        status: Optional[str | RequestStatus] = None,
-        urgency: Optional[Urgency | str] = None,
+        status: Optional[RequestStatus] = None,
+        urgency: Optional[Urgency] = None,
         expected_value: Optional[float] = None,
         items: Optional[list] = None,
         follow_up_date: Optional[datetime] = None,
@@ -256,22 +256,9 @@ class CRMService:
         if description is not None:
             request.description = description
         if status is not None:
-            if isinstance(status, str):
-                try:
-                    request.status = RequestStatus(status.upper())
-                except ValueError:
-                    # Fallback or keep as is? Enums are strict now.
-                    pass
-            else:
-                request.status = status
+            request.status = status
         if urgency is not None:
-            if isinstance(urgency, str):
-                try:
-                    request.urgency = Urgency(urgency.upper())
-                except ValueError:
-                    pass
-            else:
-                request.urgency = urgency
+            request.urgency = urgency
         if expected_value is not None:
             request.expected_value = expected_value
         if subtotal is not None:
@@ -334,7 +321,7 @@ class CRMService:
     async def convert_request(
         self,
         query: str,
-        action: str | PromotionAction,
+        action: PromotionAction,
         time: Optional[str] = None,
         iso_time: Optional[str] = None,
         assigned_to: Optional[int] = None,
@@ -348,13 +335,6 @@ class CRMService:
         # Load with line items
         req = await self.request_repo.get_by_id(requests[0].id, self.business_id)
         assert req is not None
-
-        # Normalize action to enum
-        if isinstance(action, str):
-            try:
-                action = PromotionAction(action.upper())
-            except ValueError:
-                return f"Unknown action: {action}", None
 
         if action == PromotionAction.SCHEDULE:
             # Promotion logic: Request -> Job
@@ -518,17 +498,12 @@ class CRMService:
             lines.append(line)
         return "\n".join(lines)
 
-    async def update_customer_stage(self, customer_id: int, stage: str) -> Customer:
+    async def update_customer_stage(self, customer_id: int, stage: PipelineStage) -> Customer:
         customer = await self.customer_repo.get_by_id(customer_id, self.business_id)
         if not customer:
             raise ValueError(f"Customer with ID {customer_id} not found.")
 
-        try:
-            new_stage = PipelineStage(stage)
-        except ValueError:
-            raise ValueError(f"Invalid pipeline stage: {stage}")
-
-        customer.pipeline_stage = new_stage
+        customer.pipeline_stage = stage
         await self.session.flush()
         return customer
 
@@ -542,7 +517,7 @@ class CRMService:
         email: Optional[str] = None,
         street: Optional[str] = None,
         city: Optional[str] = None,
-        pipeline_stage: Optional[str] = None
+        pipeline_stage: Optional[PipelineStage] = None
     ) -> Customer:
         customer = await self.customer_repo.get_by_id(customer_id, self.business_id)
         if not customer:
@@ -568,10 +543,7 @@ class CRMService:
         if city is not None:
             customer.city = city
         if pipeline_stage is not None:
-            try:
-                customer.pipeline_stage = PipelineStage(pipeline_stage)
-            except ValueError:
-                raise ValueError(f"Invalid pipeline stage: {pipeline_stage}")
+            customer.pipeline_stage = pipeline_stage
 
         await self.session.flush()
         return customer
@@ -580,7 +552,7 @@ class CRMService:
         self,
         job_id: int,
         description: Optional[str] = None,
-        status: Optional[str | JobStatus] = None,
+        status: Optional[JobStatus] = None,
         scheduled_at: Optional[datetime] = None,
         value: Optional[float] = None,
         items: Optional[list] = None,
@@ -588,6 +560,7 @@ class CRMService:
         employee_id: Optional[int] = None,
         location: Optional[str] = None,
         postal_code: Optional[str] = None,
+        paid: Optional[bool] = None,
     ) -> Job:
         # Use get_with_line_items to eagerly load line_items and customer
         job = await self.job_repo.get_with_line_items(job_id, self.business_id)
@@ -633,20 +606,7 @@ class CRMService:
             from src.services.time_tracking import TimeTrackingService
             tt_service = TimeTrackingService(self.session)
             
-            # Map 'done' to 'COMPLETED' for backward compatibility or ease of use
-            if status == "done":
-                status = JobStatus.COMPLETED
-            
-            # Special case for 'paid' status which might come from some integrations
-            if status == "paid":
-                job.paid = True
-                status = JobStatus.COMPLETED # Fallback status
-            
-            try:
-                new_status = JobStatus(status.upper()) if isinstance(status, str) else status
-            except ValueError:
-                # Fallback for unknown status strings
-                new_status = JobStatus.PENDING
+            new_status = status
             
             if new_status == JobStatus.IN_PROGRESS and old_status != JobStatus.IN_PROGRESS:
                 await tt_service.start_job(job.id, self.user_id or job.employee_id)
@@ -656,10 +616,8 @@ class CRMService:
                 await tt_service.finish_job(job.id)
             else:
                 job.status = new_status
-                
-            # If status explicitly set to 'paid', update the flag too
-            if status.lower() == 'paid':
-                job.paid = True
+        if paid is not None:
+            job.paid = paid
         if location is not None:
             job.location = location
         if postal_code is not None:

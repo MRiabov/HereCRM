@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 
 from src.events import event_bus
 from src.services.messaging_service import MessagingService
-from src.models import MessageLog, MessageStatus, Business, Customer
+from src.models import MessageLog, MessageStatus, Business, Customer, MessageTriggerSource
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from unittest.mock import patch
@@ -73,7 +73,7 @@ async def test_event_bus_integration_job_created(async_session: AsyncSession):
     from sqlalchemy import select
     result = await db.execute(
         select(MessageLog).where(
-            MessageLog.trigger_source == "job_booked"
+            MessageLog.trigger_source == MessageTriggerSource.JOB_BOOKED
         )
     )
     message_logs = result.scalars().all()
@@ -138,7 +138,7 @@ async def test_event_bus_integration_job_scheduled(async_session: AsyncSession):
     from sqlalchemy import select
     result = await db.execute(
         select(MessageLog).where(
-            MessageLog.trigger_source == "job_scheduled"
+            MessageLog.trigger_source == MessageTriggerSource.JOB_SCHEDULED
         )
     )
     message_logs = result.scalars().all()
@@ -199,7 +199,7 @@ async def test_event_bus_integration_on_my_way(async_session: AsyncSession):
     from sqlalchemy import select
     result = await db.execute(
         select(MessageLog).where(
-            MessageLog.trigger_source == "on_my_way"
+            MessageLog.trigger_source == MessageTriggerSource.ON_MY_WAY
         )
     )
     message_logs = result.scalars().all()
@@ -277,6 +277,6 @@ async def test_multiple_events_concurrent_processing(async_session: AsyncSession
     
     # Verify different trigger sources
     trigger_sources = {log.trigger_source for log in message_logs}
-    assert "job_booked" in trigger_sources
-    assert "job_scheduled" in trigger_sources
-    assert "on_my_way" in trigger_sources
+    assert MessageTriggerSource.JOB_BOOKED in trigger_sources
+    assert MessageTriggerSource.JOB_SCHEDULED in trigger_sources
+    assert MessageTriggerSource.ON_MY_WAY in trigger_sources

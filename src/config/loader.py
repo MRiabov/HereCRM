@@ -19,7 +19,12 @@ class ChannelConfig:
             return yaml.safe_load(f) or {}
 
     def get_channel_config(self, channel_name: str) -> Dict[str, Any]:
-        return self.config.get("channels", {}).get(channel_name, {})
+        channels = self.config.get("channels", {})
+        # Try exact match, then try lowercase
+        config = channels.get(channel_name)
+        if config is None:
+            config = channels.get(channel_name.lower())
+        return config or {}
 
 @lru_cache()
 def get_channel_config_loader() -> ChannelConfig:

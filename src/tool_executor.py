@@ -1573,25 +1573,15 @@ class ToolExecutor:
     async def _execute_update_workflow_settings(
         self, tool: UpdateWorkflowSettingsTool
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
-        # Validate enums if provided
         updates = {}
         if tool.invoicing:
-            try:
-                updates["workflow_invoicing"] = InvoicingWorkflow(tool.invoicing.lower())
-            except ValueError:
-                return f"Error: Invalid invoicing value '{tool.invoicing}'. Use: never, manual, automatic.", None
+            updates["workflow_invoicing"] = tool.invoicing
         
         if tool.quoting:
-            try:
-                updates["workflow_quoting"] = QuotingWorkflow(tool.quoting.lower())
-            except ValueError:
-                return f"Error: Invalid quoting value '{tool.quoting}'. Use: never, manual, automatic.", None
+            updates["workflow_quoting"] = tool.quoting
         
         if tool.payment_timing:
-            try:
-                updates["workflow_payment_timing"] = PaymentTiming(tool.payment_timing.lower())
-            except ValueError:
-                return f"Error: Invalid payment_timing value '{tool.payment_timing}'. Use: always_paid_on_spot, usually_paid_on_spot, paid_later.", None
+            updates["workflow_payment_timing"] = tool.payment_timing
         
         if tool.enable_reminders is not None:
             updates["workflow_enable_reminders"] = tool.enable_reminders
@@ -1600,10 +1590,7 @@ class ToolExecutor:
             updates["workflow_pipeline_quoted_stage"] = tool.pipeline_quoted_stage
 
         if tool.job_creation_default:
-            try:
-                updates["workflow_job_creation_default"] = JobCreationDefault(tool.job_creation_default.lower())
-            except ValueError:
-                return f"Error: Invalid job_creation_default value '{tool.job_creation_default}'. Use: mark_done, unscheduled, auto_schedule, scheduled_today.", None
+            updates["workflow_job_creation_default"] = tool.job_creation_default
             
         if not updates:
             return "No updates provided.", None

@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from src.main import app
 from src.database import get_db, Base
 from src.config import settings
-from src.models import Document, Customer, Business
+from src.models import Document, Customer, Business, SubscriptionStatus, PipelineStage
 from unittest.mock import patch
 
 # In-memory DB for tests
@@ -41,7 +41,7 @@ async def test_postmark_email_ingestion_with_attachments(db_session):
     
     # Create Business and Customer
     async with TestingSessionLocal() as prep_session:
-        business = Business(name="Test Biz", subscription_status="active")
+        business = Business(name="Test Biz", subscription_status=SubscriptionStatus.ACTIVE)
         prep_session.add(business)
         await prep_session.flush()
         
@@ -50,7 +50,7 @@ async def test_postmark_email_ingestion_with_attachments(db_session):
             name="Test Upload Customer",
             business_id=business.id,
             email=customer_email,
-            pipeline_stage="CONTACTED", 
+            pipeline_stage=PipelineStage.CONTACTED, 
         )
         prep_session.add(customer)
         

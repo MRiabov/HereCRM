@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Customer, Job, Invoice, MessageLog, MessageType, MessageStatus, JobStatus, InvoiceStatus
+from src.models import Business, Customer, Job, Invoice, MessageLog, MessageType, MessageStatus, JobStatus, InvoiceStatus, MessageTriggerSource
 from src.repositories import JobRepository
 
 # Use in-memory SQLite for tests
@@ -112,7 +112,7 @@ async def test_message_log_creation(test_session: AsyncSession):
         content="Hello Test",
         message_type=MessageType.WHATSAPP,
         status=MessageStatus.PENDING,
-        trigger_source="test_source",
+        trigger_source=MessageTriggerSource.MANUAL,
     )
     test_session.add(log)
     await test_session.commit()

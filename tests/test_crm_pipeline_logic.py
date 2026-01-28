@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Customer, User, PipelineStage, UserRole
+from src.models import Business, Customer, User, PipelineStage, UserRole, EntityType
 from src.services.crm_service import CRMService
 from src.tool_executor import ToolExecutor
 from src.services.template_service import TemplateService
@@ -84,12 +84,12 @@ async def test_tool_executor_search_with_stage(test_session: AsyncSession):
     template_service = TemplateService()
     executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
     
-    search_tool = SearchTool(query="Alice", pipeline_stage=PipelineStage.LOST, entity_type="CUSTOMER")
+    search_tool = SearchTool(query="Alice", pipeline_stage=PipelineStage.LOST, entity_type=EntityType.CUSTOMER)
     response, metadata = await executor.execute(search_tool)
     
     assert "Alice" in response
 
-    search_tool_mismatch = SearchTool(query="Alice", pipeline_stage=PipelineStage.CONTACTED, entity_type="CUSTOMER")
+    search_tool_mismatch = SearchTool(query="Alice", pipeline_stage=PipelineStage.CONTACTED, entity_type=EntityType.CUSTOMER)
     response, metadata = await executor.execute(search_tool_mismatch)
     assert "Alice (" not in response 
     assert "No results found" in response or "search_no_results" in response

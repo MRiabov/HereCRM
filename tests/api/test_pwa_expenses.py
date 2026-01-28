@@ -3,7 +3,7 @@ from httpx import AsyncClient, ASGITransport
 from src.main import app
 from datetime import datetime, timezone
 from src.database import get_db
-from src.models import User, Business, UserRole, Expense
+from src.models import User, Business, UserRole, Expense, ExpenseCategory
 from src.api.dependencies.clerk_auth import get_current_user, verify_token
 
 @pytest.fixture
@@ -28,7 +28,7 @@ async def client(async_session):
         business_id=biz.id,
         employee_id=user.id,
         amount=50.0,
-        category="Gas",
+        category=ExpenseCategory.FUEL,
         description="Gas for track",
         created_at=datetime.now(timezone.utc)
     )
@@ -36,7 +36,7 @@ async def client(async_session):
         business_id=biz.id,
         employee_id=user.id,
         amount=120.0,
-        category="Tools",
+        category=ExpenseCategory.TOOLS,
         description="New drill",
         created_at=datetime.now(timezone.utc)
     )
@@ -70,23 +70,23 @@ async def test_list_expenses(client):
     data = response.json()
     assert isinstance(data, list)
     assert len(data) == 2
-    assert data[0]["category"] in ["Gas", "Tools"]
+    assert data[0]["category"] in [ExpenseCategory.FUEL, ExpenseCategory.TOOLS]
 
 @pytest.mark.asyncio
 async def test_search_expenses(client):
     # Test search by category
-    response = await client.get("/api/v1/pwa/expenses/?search=Gas")
+    response = await client.get(f"/api/v1/pwa/expenses/?search={ExpenseCategory.FUEL.value}")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1
-    assert data[0]["category"] == "Gas"
+    assert data[0]["category"] == ExpenseCategory.FUEL
     
     # Test search by description
     response = await client.get("/api/v1/pwa/expenses/?search=drill")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1
-    assert data[0]["category"] == "Tools"
+    assert data[0]["category"] == ExpenseCategory.TOOLS
     
     # Test no results
     response = await client.get("/api/v1/pwa/expenses/?search=Lunch")

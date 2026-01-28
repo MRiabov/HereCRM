@@ -4,7 +4,7 @@ import io
 import httpx
 import zipfile
 from datetime import datetime, timezone
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from src.models import Customer, Job, ImportJob, ExportRequest, PipelineStage, Expense, LedgerEntry, ExportStatus, JobStatus, ExportFormat, EntityType, ImportStatus
@@ -131,7 +131,7 @@ class DataManagementService:
                 )
                 self.session.add(job)
 
-    async def _get_export_data(self, business_id: int, entity_type: EntityType | str | None, query: str, filters: Dict[str, Any]) -> Tuple[pd.DataFrame, str]:
+    async def _get_export_data(self, business_id: int, entity_type: Optional[EntityType], query: str, filters: Dict[str, Any]) -> Tuple[pd.DataFrame, str]:
         min_date = None
         max_date = None
         if filters.get("min_date"):
@@ -143,12 +143,8 @@ class DataManagementService:
                 max_date = datetime.fromisoformat(filters["max_date"].replace("Z", "+00:00"))
             except ValueError: pass
 
-        if isinstance(entity_type, str):
-            try:
-                entity_type = EntityType(entity_type.lower())
-            except ValueError:
-                # Fallback to customer if unknown entity_type string
-                entity_type = EntityType.CUSTOMER
+        if not entity_type:
+             entity_type = EntityType.CUSTOMER
 
         data = []
         if entity_type == EntityType.JOB:
@@ -213,16 +209,10 @@ class DataManagementService:
                 data.append({"id": c.id, "name": c.name, "phone": c.phone, "email": c.email, "address": f"{c.street or ''} {c.city or ''}".strip(), "stage": c.pipeline_stage.value, "created_at": c.created_at})
             return pd.DataFrame(data, columns=headers), "customers"
 
-    async def export_data(self, business_id: int, query: str, format: str | ExportFormat, filters: Dict[str, Any] = None) -> ExportRequest:
+    async def export_data(self, business_id: int, query: str, format: ExportFormat, filters: Dict[str, Any] = None) -> ExportRequest:
         query = query or ""
         filters = filters or {}
         
-        if isinstance(format, str):
-            try:
-                format = ExportFormat(format.lower())
-            except ValueError:
-                format = ExportFormat.CSV
-
         export_req = ExportRequest(
             business_id=business_id,
             query=query or "",
@@ -267,19 +257,24 @@ class DataManagementService:
                 # Single file export
                 df, name = await self._get_export_data(business_id, entity_type, query, filters)
                 output = io.BytesIO()
-                ext = "xlsx" if format == ExportFormat.EXCEL else "csv"
-                filename = f"export_{name}_{business_id}_{int(datetime.now().timestamp())}.{ext}"
                 
                 if format == ExportFormat.EXCEL:
+                    ext = "xlsx"
                     for col in df.columns:
                         if pd.api.types.is_datetime64_any_dtype(df[col]):
                             df[col] = df[col].dt.tz_localize(None)
                     df.to_excel(output, index=False)
                     content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                elif format == ExportFormat.JSON:
+                    ext = "json"
+                    df.to_json(output, orient="records", date_format="iso")
+                    content_type = "application/json"
                 else:
+                    ext = "csv"
                     df.to_csv(output, index=False)
                     content_type = "text/csv"
                 
+                filename = f"export_{name}_{business_id}_{int(datetime.now().timestamp())}.{ext}"
                 output.seek(0)
                 file_bytes = output.read()
 

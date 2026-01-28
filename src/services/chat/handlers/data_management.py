@@ -1,6 +1,6 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import User, ConversationState, ConversationStatus
+from src.models import User, ConversationState, ConversationStatus, ExportStatus
 from src.llm_client import LLMParser
 from src.services.template_service import TemplateService
 from src.services.data_management import DataManagementService

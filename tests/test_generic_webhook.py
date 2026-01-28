@@ -2,6 +2,7 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 from src.main import app
 from src.database import get_db, Base
+from src.models import LeadSource
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from unittest.mock import AsyncMock, patch
 
@@ -53,7 +54,7 @@ async def test_generic_webhook_email_onboarding():
                 payload = {
                     "identity": email,
                     "message": "Hello from Zapier",
-                    "source": "Zapier"
+                    "source": LeadSource.ZAPIER
                 }
 
                 # Fail without header
@@ -69,7 +70,7 @@ async def test_generic_webhook_email_onboarding():
                 assert response.status_code == 200
             data = response.json()
             assert data["reply"] == "welcome_message"
-            assert data["source"] == "Zapier"
+            assert data["source"] == LeadSource.ZAPIER
 
             # Verify User created in DB
             async with TestingSessionLocal() as session:
@@ -116,7 +117,7 @@ async def test_generic_webhook_existing_user_phone():
                 payload = {
                     "identity": phone,
                     "message": "Status update",
-                    "source": "Cron"
+                    "source": LeadSource.CRON
                 }
 
                 response = await ac.post(
@@ -131,7 +132,7 @@ async def test_generic_webhook_existing_user_phone():
             # Actually _handle_idle returns 'welcome_back' if greeting, or parser response.
             # "Status update" is not a greeting, so it should be "Processing command"
             assert data["reply"] == "Processing command"
-            assert data["source"] == "Cron"
+            assert data["source"] == LeadSource.CRON
 
 @pytest.mark.asyncio
 async def test_generic_webhook_rate_limit():

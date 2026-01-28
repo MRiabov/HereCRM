@@ -64,32 +64,41 @@ async def client():
 
 @pytest.mark.asyncio
 async def test_ai_chat_persistence(client):
+    from unittest.mock import patch, AsyncMock
+    from src.uimodels import AddJobTool
+    
     # 1. Send message to AI - should return 'proposed'
     payload = {
         "customer_id": 0,
         "message": "Add job for Bob, $100"
     }
-    response = await client.post("/api/v1/pwa/chat/send", json=payload)
-    assert response.status_code == 200
-    data = response.json()
-    # The API now returns status="SENT" but the content is the JSON string of the proposal
-    assert data["status"] == "SENT"
     
-    import json
-    proposal = json.loads(data["content"])
-    assert proposal["status"] == "proposed"
-    assert proposal["tool"] == "AddJobTool"
+    mock_tool = AddJobTool(customer_name="Bob", price=100.0, description="Clean house")
     
-    # 2. Execute the tool
-    exec_payload = {
-        "tool_name": "AddJobTool",
-        "arguments": proposal["data"]
-    }
-    exec_response = await client.post("/api/v1/pwa/chat/execute", json=exec_payload)
-    assert exec_response.status_code == 200
-    exec_data = exec_response.json()
-    assert exec_data["status"] == "SENT"
-    assert exec_data["is_executed"] is True
+    with patch("src.api.v1.pwa.chat.parser.parse", new_callable=AsyncMock) as mock_parse:
+        mock_parse.return_value = mock_tool
+        
+        response = await client.post("/api/v1/pwa/chat/send", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        # The API now returns status="SENT" but the content is the JSON string of the proposal
+        assert data["status"] == "SENT"
+        
+        import json
+        proposal = json.loads(data["content"])
+        assert proposal["status"] == "proposed"
+        assert proposal["tool"] == "AddJobTool"
+        
+        # 2. Execute the tool
+        exec_payload = {
+            "tool_name": "AddJobTool",
+            "arguments": proposal["data"]
+        }
+        exec_response = await client.post("/api/v1/pwa/chat/execute", json=exec_payload)
+        assert exec_response.status_code == 200
+        exec_data = exec_response.json()
+        assert exec_data["status"] == "SENT"
+        assert exec_data["is_executed"] is True
     
     # 3. Check history
     history_res = await client.get("/api/v1/pwa/chat/history/0")
