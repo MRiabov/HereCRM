@@ -11,10 +11,14 @@ from src.api.v1.pwa.router import router as pwa_router
 from src.events import event_bus
 from src.services.messaging_service import messaging_service
 from src.services.automation_service import automation_service
+from src.logging_config import setup_logging
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Initialize logging configuration
+    setup_logging()
+
     # Startup: Create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
