@@ -152,7 +152,7 @@ async def test_generic_webhook_rate_limit():
             payload = {
                 "identity": "limited@example.com",
                 "message": "Hello",
-                "source": "Zapier"
+                "source": "zapier"
             }
 
             response = await ac.post(

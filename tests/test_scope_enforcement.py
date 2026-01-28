@@ -93,4 +93,4 @@ async def test_scope_enforcement_default_allowed(test_session: AsyncSession, tem
     # Check MassEmailTool
     from src.uimodels import MassEmailTool
     res2, _ = await executor.execute(MassEmailTool(subject="Hi", body="Dev"))
-    assert "Access granted to Campaigns" in res2
+    assert "Broadcast Prepared" in res2

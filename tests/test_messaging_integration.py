@@ -145,7 +145,7 @@ async def test_event_bus_integration_job_scheduled(async_session: AsyncSession):
     
     assert len(message_logs) > 0
     latest_log = message_logs[-1]
-    assert "SCHEDULED" in latest_log.content.lower()
+    assert "scheduled" in latest_log.content.lower()
     assert latest_log.status == MessageStatus.SENT
 
 

@@ -222,7 +222,7 @@ async def test_parse_convert_request(mock_parser):
     mock_tool_call.function.arguments = json.dumps(
         {
             "query": "John",
-            "action": "complete",
+            "action": "COMPLETE",
         }
     )
 
@@ -235,7 +235,7 @@ async def test_parse_convert_request(mock_parser):
     result = await parser.parse("mark John as completed")
     assert isinstance(result, ConvertRequestTool)
     assert result.query == "John"
-    assert result.action == "complete"
+    assert result.action == "COMPLETE"
 
 
 @pytest.mark.asyncio

@@ -7,6 +7,7 @@ from unittest.mock import patch, AsyncMock, MagicMock
 from src.main import app
 from src.api.routes import get_services
 from src.config import settings
+from src.models import MessageType
 
 class TestPostmarkWebhook:
     """Test suite for Postmark inbound webhook endpoint"""
@@ -151,7 +152,7 @@ class TestPostmarkWebhook:
             call_args = mock_whatsapp_service.handle_message.call_args
             assert call_args.kwargs['user_phone'] == "user@example.com"
             assert call_args.kwargs['message_text'] == "Hi there"
-            assert call_args.kwargs['channel'] == "email"
+            assert call_args.kwargs['channel'] == MessageType.EMAIL
 
             mock_send_email.assert_called_once()
             email_args = mock_send_email.call_args

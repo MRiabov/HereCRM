@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.services.data_management import DataManagementService
-from src.models import Business, Customer, Job, PipelineStage, JobStatus, ExportStatus
+from src.models import Business, Customer, Job, PipelineStage, JobStatus, ExportStatus, ExportFormat
 
 @pytest.mark.asyncio
 async def test_export_customers_csv(async_session: AsyncSession):
@@ -26,9 +26,11 @@ async def test_export_customers_csv(async_session: AsyncSession):
         
         # Action: Export All
         filters = {}
-        result = await service.export_data(business.id, query="all", format="csv", filters=filters)
+        result = await service.export_data(business.id, query="all", format=ExportFormat.CSV, filters=filters)
         
         # Verify
+        if result.status == ExportStatus.FAILED:
+            print(f"DEBUG: Export Failed: {result.error_log}")
         assert result.status == ExportStatus.COMPLETED
         assert result.public_url == "https://s3.fake/export.csv"
         
@@ -67,7 +69,7 @@ async def test_export_jobs_filtered(async_session: AsyncSession):
         
         # Action: Export Jobs with Status=pending
         filters = {"entity_type": "job", "status": JobStatus.PENDING}
-        result = await service.export_data(business.id, query="all", format="excel", filters=filters)
+        result = await service.export_data(business.id, query="all", format=ExportFormat.EXCEL, filters=filters)
         
         assert result.status == ExportStatus.COMPLETED
         

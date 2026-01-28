@@ -177,7 +177,7 @@ async def test_undo_functionality(
     # Undo
     response = await service.handle_message("undo", user_phone="123456789")
 
-    assert template_service.render("undo_deleted", entity_type="JOB") in response
+    assert template_service.render("undo_deleted", entity_type="job") in response
 
     # Verify job deleted
     from sqlalchemy import select

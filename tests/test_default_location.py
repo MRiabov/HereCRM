@@ -97,8 +97,8 @@ async def test_add_job_creates_customer_with_defaults(db_session, setup_user):
             "Test Loc",
             default_city="DefaultCity",
             default_country="DefaultCountry",
-            session=db_session,
-            user_id=user.id
+            safeguard_enabled=False,
+            max_distance_km=100.0
         )
 
         from src.repositories import CustomerRepository

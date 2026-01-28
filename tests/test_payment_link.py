@@ -57,6 +57,7 @@ async def test_tool_executor_appends_payment_link(mock_session):
     # ToolExecutor creates its own services, so we need to patch the service call
     with patch("src.tool_executor.InvoiceService") as MockInvoiceService:
         mock_invoice_service = MockInvoiceService.return_value
+        executor.invoice_service = mock_invoice_service
         
         # Test Data
         tool = SendInvoiceTool(query="John")

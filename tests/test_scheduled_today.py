@@ -56,6 +56,8 @@ async def test_execute_add_job_scheduled_today(
             location="123 Mock Lane"
         )
 
+    # Patch event_bus to prevent async tasks from running on the closed loop
+    with patch("src.events.event_bus.emit", new_callable=AsyncMock) as mock_emit:
         result, metadata = await executor.execute(tool)
 
     assert "Job added: Scheduled Alice" in result

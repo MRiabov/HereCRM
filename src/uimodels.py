@@ -35,7 +35,7 @@ class EmployeeManageAction(str, enum.Enum):
     VIEW_AVAILABILITY = "view_availability"
 
 # --- Constants ---
-PHONE_PATTERN = r"^\+?[1-9]\d{1,14}$"
+PHONE_PATTERN = r"^\+?[0-9]\d{1,14}$"
 EMAIL_PATTERN = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
 
 # Allowlist for settings that can be updated via LLM

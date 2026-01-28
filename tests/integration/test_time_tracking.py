@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime, timezone
 from src.services.time_tracking import TimeTrackingService
-from src.models import User, Job, Business, UserRole, Customer
+from src.models import User, Job, Business, UserRole, Customer, JobStatus
 
 @pytest.mark.asyncio
 async def test_time_tracking_flow(async_session):
@@ -43,7 +43,7 @@ async def test_time_tracking_flow(async_session):
     # ... actually spec says "Check if already checked in? (Optional)"
     
     # 3. Test Check Out
-    user, start, end = await service.check_out(user.id)
+    user, start, end, completed_jobs = await service.check_out(user.id)
     assert user.current_shift_start is None
     assert start == original_start
     assert end > start
@@ -55,7 +55,7 @@ async def test_time_tracking_flow(async_session):
     # 5. Test Start Job
     job = await service.start_job(job.id, user.id)
     assert job.begun_at is not None
-    assert job.status == JobStatus.in_progress
+    assert job.status == JobStatus.IN_PROGRESS
     assert job.employee_id == user.id
 
     # 6. Test Finish Job
