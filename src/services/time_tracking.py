@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from src.models import User, Job, JobStatus
-from typing import Optional, Tuple
+from typing import Tuple
 
 class TimeTrackingService:
     def __init__(self, session: AsyncSession):
@@ -38,6 +38,18 @@ class TimeTrackingService:
         return user, start_time, end_time
 
     async def start_job(self, job_id: int, user_id: int) -> Job:
+        # [FEATURE-005] Enforce one running job at a time
+        stmt = select(Job).where(
+            Job.employee_id == user_id,
+            Job.status == JobStatus.in_progress,
+            Job.id != job_id
+        )
+        result = await self.session.execute(stmt)
+        active_job = result.scalar_one_or_none()
+        
+        if active_job:
+            raise ValueError(f"Cannot start job: You already have an active job in progress (Job #{active_job.id}). Please pause it or finish it first.")
+
         job = await self.session.get(Job, job_id)
         if not job:
             raise ValueError(f"Job {job_id} not found")
