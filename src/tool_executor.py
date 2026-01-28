@@ -419,7 +419,7 @@ class ToolExecutor:
         elif isinstance(tool_call, CheckInTool):
              return await self.shift_tools.check_in(tool_call, self.user_id), None
         elif isinstance(tool_call, CheckOutTool):
-             return await self.shift_tools.check_out(tool_call, self.user_id), None
+             return await self.shift_tools.check_out(tool_call, self.user_id)
         elif isinstance(tool_call, StartJobTool):
              return await self.job_time_tools.start_job(tool_call, self.user_id), None
         elif isinstance(tool_call, FinishJobTool):

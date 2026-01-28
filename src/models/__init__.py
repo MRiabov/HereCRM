@@ -398,6 +398,7 @@ class Job(Base):
     )
     estimated_duration: Mapped[int] = mapped_column(Integer, default=60)
     begun_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     total_actual_duration_seconds: Mapped[int] = mapped_column(Integer, default=0)
 
     # Relationships
