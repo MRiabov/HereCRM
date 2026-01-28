@@ -178,7 +178,7 @@ help_message: |
   
   - *Search*: 'Find John' or 'Show all jobs' or 'Find lead of High Street 34'
   - *Requests*: Store a request for later review: 'Add request: John on High Street 34, call 0871235678 tomorrow at 12:00'
-  - *Promote to Job*: Convert a request into a job: 'Promote request for High Street 34 to job'
+  - *Promote to Job/Quote: Convert a request into a job/quote: 'Promote request for High Street 34 to job'
   - *Sales Pipeline*: View sales funnel or update customer status: 'Show sales pipeline', 'Show Lost customers', 'Mark John as Not Interested'
   - *Invoice*: Generate and send an invoice: 'Send invoice to John'
   - *Send Status*: Notify customer you are on the way: 'On my way to John'. The client receives "Hello, I'm on my way to you. Will be there soon." (configurable)

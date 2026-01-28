@@ -216,10 +216,11 @@ class InvoiceSchema(BaseModel):
 class InvoiceCreate(BaseModel):
     job_id: int = Field(..., ge=1)
     force_regenerate: bool = False
-    invoice_number: Optional[str] = None
+    invoice_number: Optional[str] = Field(None, max_length=50)
+    status: InvoiceStatus
     issued_at: Optional[datetime] = None
     due_date: Optional[datetime] = None
-    notes: Optional[str] = None
+    notes: Optional[str] = Field(None, max_length=1000)
     items: Optional[List[LineItemCreate]] = None
 
 # --- Quote Schemas ---
@@ -522,7 +523,7 @@ class ExportRequestSchema(BaseModel):
     format: ExportFormat
     status: ExportStatus
     public_url: Optional[str] = Field(None, max_length=500)
-    error_log: Optional[str] = None
+    error_log: Optional[str] = Field(None, max_length=2000)
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

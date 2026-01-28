@@ -103,8 +103,8 @@ class AddJobTool(BaseModel):
         description="Estimated duration of the job in minutes (default 60)",
         ge=0
     )
-    latitude: Optional[float] = Field(None, description="Geocoded latitude")
-    longitude: Optional[float] = Field(None, description="Geocoded longitude")
+    latitude: Optional[float] = Field(None, ge=-90, le=90)
+    longitude: Optional[float] = Field(None, ge=-180, le=180)
 
     @validator("price")
     def validate_price(cls, v):
@@ -138,8 +138,8 @@ class AddLeadTool(BaseModel):
         description="Additional details or description about the lead/client",
         max_length=500,
     )
-    latitude: Optional[float] = Field(None, description="Geocoded latitude")
-    longitude: Optional[float] = Field(None, description="Geocoded longitude")
+    latitude: Optional[float] = Field(None, ge=-90, le=90)
+    longitude: Optional[float] = Field(None, ge=-180, le=180)
 
 
 class EditCustomerTool(BaseModel):
@@ -154,8 +154,8 @@ class EditCustomerTool(BaseModel):
     details: Optional[str] = Field(
         None, description="New details/notes", max_length=500
     )
-    latitude: Optional[float] = Field(None, description="Geocoded latitude")
-    longitude: Optional[float] = Field(None, description="Geocoded longitude")
+    latitude: Optional[float] = Field(None, ge=-90, le=90)
+    longitude: Optional[float] = Field(None, ge=-180, le=180)
 
 
 class ScheduleJobTool(BaseModel):
@@ -201,8 +201,8 @@ class ScheduleJobTool(BaseModel):
         description="ISO 8601 formatted datetime string (parsed by LLM)",
         max_length=50,
     )
-    latitude: Optional[float] = Field(None, description="Geocoded latitude")
-    longitude: Optional[float] = Field(None, description="Geocoded longitude")
+    latitude: Optional[float] = Field(None, ge=-90, le=90)
+    longitude: Optional[float] = Field(None, ge=-180, le=180)
 
 
 

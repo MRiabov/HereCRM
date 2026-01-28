@@ -4410,7 +4410,8 @@
           "error_log": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2000
               },
               {
                 "type": "null"
@@ -4618,13 +4619,17 @@
           "invoice_number": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 50
               },
               {
                 "type": "null"
               }
             ],
             "title": "Invoice Number"
+          },
+          "status": {
+            "$ref": "#/components/schemas/InvoiceStatus"
           },
           "issued_at": {
             "anyOf": [
@@ -4653,7 +4658,8 @@
           "notes": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 1000
               },
               {
                 "type": "null"
@@ -4678,7 +4684,8 @@
         },
         "type": "object",
         "required": [
-          "job_id"
+          "job_id",
+          "status"
         ],
         "title": "InvoiceCreate"
       },

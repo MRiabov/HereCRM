@@ -2669,6 +2669,7 @@ components:
         error_log:
           anyOf:
           - type: string
+            maxLength: 2000
           - type: 'null'
           title: Error Log
         created_at:
@@ -2796,8 +2797,11 @@ components:
         invoice_number:
           anyOf:
           - type: string
+            maxLength: 50
           - type: 'null'
           title: Invoice Number
+        status:
+          $ref: '#/components/schemas/InvoiceStatus'
         issued_at:
           anyOf:
           - type: string
@@ -2813,6 +2817,7 @@ components:
         notes:
           anyOf:
           - type: string
+            maxLength: 1000
           - type: 'null'
           title: Notes
         items:
@@ -2825,6 +2830,7 @@ components:
       type: object
       required:
       - job_id
+      - status
       title: InvoiceCreate
     InvoiceSchema:
       properties:
