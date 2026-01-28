@@ -84,6 +84,7 @@ if os.path.exists(SCHEMA_PATH):
 else:
     schema = schemathesis.openapi.from_asgi("/openapi.json", app)
 
+@pytest.mark.schemathesis
 @schema.include(path_regex="^/api/v1/pwa/").parametrize()
 @settings(
     max_examples=1, # Smoke test mode for CI/CD

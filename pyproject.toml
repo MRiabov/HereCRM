@@ -55,9 +55,10 @@ build-backend = "setuptools.build_meta"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-addopts = "-m 'not llm_validation'"
+addopts = "-m 'not llm_validation and not schemathesis'"
 markers = [
-    "llm_validation: expensive tests that run against the real LLM (nightly)"
+    "llm_validation: expensive tests that run against the real LLM (nightly)",
+    "schemathesis: slow API schema validation tests"
 ]
 
 [tool.pyrefly]
