@@ -6,15 +6,15 @@ from src.database import get_db
 from src.services.billing_service import BillingService
 from src.api.dependencies.clerk_auth import get_current_user
 from src.models import User, UserRole
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 router = APIRouter()
 
 class CheckoutSessionRequest(BaseModel):
-    item_type: str  # 'seat', 'messaging', 'addon'
-    item_id: Optional[str] = None
-    success_url: str
-    cancel_url: str
+    item_type: str = Field(..., pattern="^(seat|messaging|addon)$", max_length=20)
+    item_id: Optional[str] = Field(None, max_length=50)
+    success_url: str = Field(..., max_length=500)
+    cancel_url: str = Field(..., max_length=500)
 
 async def get_billing_service(
     session: AsyncSession = Depends(get_db)

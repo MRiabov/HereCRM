@@ -3666,12 +3666,15 @@
         "properties": {
           "item_type": {
             "type": "string",
+            "maxLength": 20,
+            "pattern": "^(seat|messaging|addon)$",
             "title": "Item Type"
           },
           "item_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 50
               },
               {
                 "type": "null"
@@ -3681,10 +3684,12 @@
           },
           "success_url": {
             "type": "string",
+            "maxLength": 500,
             "title": "Success Url"
           },
           "cancel_url": {
             "type": "string",
+            "maxLength": 500,
             "title": "Cancel Url"
           }
         },
