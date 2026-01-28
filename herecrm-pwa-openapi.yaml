@@ -1604,65 +1604,13 @@ paths:
             application/json:
               schema: {}
   /api/v1/pwa/analytics/proxy/{path}:
-    post:
-      tags:
-      - pwa-analytics
-      summary: Proxy Posthog
-      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
-        errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__post
-      parameters:
-      - name: path
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    get:
-      tags:
-      - pwa-analytics
-      summary: Proxy Posthog
-      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
-        errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__post
-      parameters:
-      - name: path
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
     patch:
       tags:
       - pwa-analytics
       summary: Proxy Posthog
       description: Proxies requests to PostHog to bypass ad-blockers and avoid console
         errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__post
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__patch
       parameters:
       - name: path
         in: path
@@ -1688,7 +1636,7 @@ paths:
       summary: Proxy Posthog
       description: Proxies requests to PostHog to bypass ad-blockers and avoid console
         errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__post
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__patch
       parameters:
       - name: path
         in: path
@@ -1714,7 +1662,59 @@ paths:
       summary: Proxy Posthog
       description: Proxies requests to PostHog to bypass ad-blockers and avoid console
         errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__post
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__patch
+      parameters:
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - pwa-analytics
+      summary: Proxy Posthog
+      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
+        errors.
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__patch
+      parameters:
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - pwa-analytics
+      summary: Proxy Posthog
+      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
+        errors.
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__patch
       parameters:
       - name: path
         in: path
@@ -1813,7 +1813,7 @@ components:
           anyOf:
           - $ref: '#/components/schemas/JobCreationDefault'
           - type: 'null'
-          default: unscheduled
+          default: UNSCHEDULED
         workflow_distance_unit:
           anyOf:
           - type: string
@@ -2522,9 +2522,9 @@ components:
     ExportFormat:
       type: string
       enum:
-      - CSV
-      - Excel
-      - ZIP
+      - csv
+      - excel
+      - zip
       title: ExportFormat
     ExportRequestSchema:
       properties:
@@ -2565,10 +2565,10 @@ components:
     ExportStatus:
       type: string
       enum:
-      - pending
-      - processing
-      - completed
-      - failed
+      - PENDING
+      - PROCESSING
+      - COMPLETED
+      - FAILED
       title: ExportStatus
     GeocodeResponse:
       properties:
@@ -2740,18 +2740,18 @@ components:
     InvoiceStatus:
       type: string
       enum:
-      - pending
-      - sent
-      - paid
-      - overdue
-      - cancelled
+      - PENDING
+      - SENT
+      - PAID
+      - OVERDUE
+      - CANCELLED
       title: InvoiceStatus
     InvoicingWorkflow:
       type: string
       enum:
-      - never
-      - manual
-      - automatic
+      - NEVER
+      - MANUAL
+      - AUTOMATIC
       title: InvoicingWorkflow
     JobCreate:
       properties:
@@ -2766,7 +2766,7 @@ components:
           title: Description
         status:
           $ref: '#/components/schemas/JobStatus'
-          default: pending
+          default: PENDING
         scheduled_at:
           anyOf:
           - type: string
@@ -2814,10 +2814,10 @@ components:
     JobCreationDefault:
       type: string
       enum:
-      - mark_done
-      - unscheduled
-      - auto_schedule
-      - scheduled_today
+      - MARK_DONE
+      - UNSCHEDULED
+      - AUTO_SCHEDULE
+      - SCHEDULED_TODAY
       title: JobCreationDefault
     JobListResponse:
       properties:
@@ -2918,13 +2918,13 @@ components:
     JobStatus:
       type: string
       enum:
-      - pending
-      - scheduled
-      - booked
-      - in_progress
-      - paused
-      - completed
-      - cancelled
+      - PENDING
+      - SCHEDULED
+      - BOOKED
+      - IN_PROGRESS
+      - PAUSED
+      - COMPLETED
+      - CANCELLED
       title: JobStatus
     JobUpdate:
       properties:
@@ -3037,8 +3037,8 @@ components:
     MessageRole:
       type: string
       enum:
-      - user
-      - assistant
+      - USER
+      - ASSISTANT
       title: MessageRole
     OnboardingChoice:
       properties:
@@ -3062,21 +3062,21 @@ components:
     PaymentTiming:
       type: string
       enum:
-      - always_paid_on_spot
-      - usually_paid_on_spot
-      - paid_later
+      - ALWAYS_PAID_ON_SPOT
+      - USUALLY_PAID_ON_SPOT
+      - PAID_LATER
       title: PaymentTiming
     PipelineStage:
       type: string
       enum:
-      - new_lead
-      - not_contacted
-      - contacted
-      - quoted
-      - converted_once
-      - converted_recurrent
-      - not_interested
-      - lost
+      - NEW_LEAD
+      - NOT_CONTACTED
+      - CONTACTED
+      - QUOTED
+      - CONVERTED_ONCE
+      - CONVERTED_RECURRENT
+      - NOT_INTERESTED
+      - LOST
       title: PipelineStage
     QuoteCreate:
       properties:
@@ -3114,7 +3114,7 @@ components:
           title: Total Amount
         status:
           $ref: '#/components/schemas/QuoteStatus'
-          default: draft
+          default: DRAFT
       type: object
       required:
       - customer_id
@@ -3200,18 +3200,18 @@ components:
     QuoteStatus:
       type: string
       enum:
-      - draft
-      - sent
-      - accepted
-      - rejected
-      - expired
+      - DRAFT
+      - SENT
+      - ACCEPTED
+      - REJECTED
+      - EXPIRED
       title: QuoteStatus
     QuotingWorkflow:
       type: string
       enum:
-      - never
-      - manual
-      - automatic
+      - NEVER
+      - MANUAL
+      - AUTOMATIC
       title: QuotingWorkflow
     RecentActivity:
       properties:
@@ -3255,7 +3255,7 @@ components:
           title: Description
         urgency:
           $ref: '#/components/schemas/Urgency'
-          default: Medium
+          default: MEDIUM
         expected_value:
           anyOf:
           - type: number
@@ -3374,9 +3374,9 @@ components:
     RequestStatus:
       type: string
       enum:
-      - pending
-      - converted
-      - dismissed
+      - PENDING
+      - CONVERTED
+      - DISMISSED
       title: RequestStatus
     RequestUpdate:
       properties:
@@ -3591,24 +3591,24 @@ components:
     SyncLogStatus:
       type: string
       enum:
-      - processing
-      - success
-      - partial_success
-      - failed
+      - PROCESSING
+      - SUCCESS
+      - PARTIAL_SUCCESS
+      - FAILED
       title: SyncLogStatus
     Urgency:
       type: string
       enum:
-      - Low
-      - Medium
-      - High
+      - LOW
+      - MEDIUM
+      - HIGH
       title: Urgency
     UserRole:
       type: string
       enum:
-      - owner
-      - manager
-      - employee
+      - OWNER
+      - MANAGER
+      - EMPLOYEE
       title: UserRole
     UserSchema:
       properties:
@@ -3737,10 +3737,10 @@ components:
     WageModelType:
       type: string
       enum:
-      - commission
-      - hourly_per_job
-      - hourly_per_shift
-      - fixed_daily
+      - COMMISSION
+      - HOURLY_PER_JOB
+      - HOURLY_PER_SHIFT
+      - FIXED_DAILY
       title: WageModelType
     WhatsAppTemplateCategory:
       type: string

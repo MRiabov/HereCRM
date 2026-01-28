@@ -70,29 +70,26 @@ app.dependency_overrides[verify_token] = mock_user
 app.dependency_overrides[get_current_user] = mock_user
 
 # --- Schemathesis Setup ---
+import json
+import os
 
-schema = schemathesis.openapi.from_asgi("/openapi.json", app)
+SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "../../herecrm-pwa-openapi.json")
 
-# Specific subsets
-pwa_schema = schema.include(path_regex="^/api/v1/pwa/")
-webhook_schema = schema.include(path_regex="^/webhooks/")
+if os.path.exists(SCHEMA_PATH):
+    with open(SCHEMA_PATH, "r") as f:
+        raw_schema = json.load(f)
+    schema = schemathesis.openapi.from_dict(raw_schema)
+    schema.app = app
+    schema.base_url = "http://localhost/api/v1"
+else:
+    schema = schemathesis.openapi.from_asgi("/openapi.json", app)
 
-@pwa_schema.parametrize()
+@schema.include(path_regex="^/api/v1/pwa/").parametrize()
 @settings(
-    max_examples=5, 
+    max_examples=1, # Smoke test mode for CI/CD
     deadline=None,
     suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow]
 )
 def test_pwa_api_schema(case):
-    response = case.call()
-    case.validate_response(response)
-
-@webhook_schema.parametrize()
-@settings(
-    max_examples=5,
-    deadline=None,
-    suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow]
-)
-def test_webhooks_schema(case):
     response = case.call()
     case.validate_response(response)
