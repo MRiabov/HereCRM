@@ -1,6 +1,6 @@
 import pytest
 import unittest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from src.services.whatsapp_service import WhatsappService, ConversationStatus
 from src.models import User, Business, ConversationState
 from src.uimodels import GetBillingStatusTool, RequestUpgradeTool
@@ -40,39 +40,14 @@ async def test_billing_entry(whatsapp_service):
     user = User(id=1, business_id=1, phone_number="123")
     state = ConversationState(user_id=1, state=ConversationStatus.IDLE)
     
-    # Mock ToolExecutor execution
-    with unittest.mock.patch("src.services.whatsapp_service.ToolExecutor") as MockExecutor:
+    # Mock ToolExecutor execution. Note: ToolExecutor is imported in src.services.chat.handlers.idle
+    with unittest.mock.patch("src.services.chat.handlers.idle.ToolExecutor") as MockExecutor:
         mock_exec_instance = AsyncMock()
         MockExecutor.return_value = mock_exec_instance
         mock_exec_instance.execute.return_value = ("Billing Status: Free", None)
         
-        response = await whatsapp_service.handle_message("billing", user_id=1, user_phone="123")
-        
-        # Should transition to BILLING
-        # Note: handle_message logic for "billing" keyword updates state
-        # But wait, handle_message calls _handle_idle which checks keywords
-        # Let's verify _handle_idle logic or the flow through handle_message
-        
-        # We need to ensure state_repo returns our state
-        whatsapp_service.state_repo.get_by_user_id.return_value = state
-        whatsapp_service.user_repo.get_by_id.return_value = user
-
-        # Since we are mocking handle_message's internal calls, we actually need to test _handle_idle directly
-        # or ensure handle_message calls it.
-        # But handle_message does complex logic. 
-        # For simplicity in this mock test, let's call _handle_idle directly for the keyword check part
-        # OR better: run handle_message and trust the mock state repo.
-        
-        # Re-run logic for "billing" which is handled in _handle_idle (which is called by handle_message if state is IDLE)
-        # However, handle_message logic:
-        # 1. Get user -> ok
-        # 2. Get state -> ok (IDLE)
-        # 3. Call _handle_idle
-        
-        # Inside _handle_idle:
-        # if "billing" in text -> state=BILLING, ToolExecutor.execute(GetBillingStatusTool)
-        
-        response = await whatsapp_service._handle_idle(user, state, "billing")
+        # Call idle_handler directly
+        response = await whatsapp_service.idle_handler.handle(user, state, "billing")
         
         assert state.state == ConversationStatus.BILLING
         assert "Billing Status: Free" in response
@@ -82,12 +57,13 @@ async def test_billing_status_check(whatsapp_service):
     user = User(id=1, business_id=1, phone_number="123")
     state = ConversationState(user_id=1, state=ConversationStatus.BILLING)
     
-    with unittest.mock.patch("src.services.whatsapp_service.ToolExecutor") as MockExecutor:
+    # Mock ToolExecutor in billing handler
+    with unittest.mock.patch("src.services.chat.handlers.billing.ToolExecutor") as MockExecutor:
         mock_exec_instance = AsyncMock()
         MockExecutor.return_value = mock_exec_instance
         mock_exec_instance.execute.return_value = ("Status: Active", None)
         
-        response = await whatsapp_service._handle_billing(user, state, "status")
+        response = await whatsapp_service.billing_handler.handle(user, state, "status")
         
         assert "Status: Active" in response
         # Verify GetBillingStatusTool was called
@@ -99,7 +75,10 @@ async def test_billing_upgrade_request_seat(whatsapp_service):
     user = User(id=1, business_id=1, phone_number="123")
     state = ConversationState(user_id=1, state=ConversationStatus.BILLING)
     
-    response = await whatsapp_service._handle_billing(user, state, "buy 5 seats")
+    # Mock summary generator since it's called
+    whatsapp_service.billing_handler.summary_generator.generate_summary = AsyncMock(return_value="Summary")
+
+    response = await whatsapp_service.billing_handler.handle(user, state, "buy 5 seats")
     
     assert state.state == ConversationStatus.WAITING_CONFIRM
     assert state.draft_data["tool_name"] == "RequestUpgradeTool"
@@ -110,8 +89,11 @@ async def test_billing_upgrade_request_seat(whatsapp_service):
 async def test_billing_upgrade_request_addon(whatsapp_service):
     user = User(id=1, business_id=1, phone_number="123")
     state = ConversationState(user_id=1, state=ConversationStatus.BILLING)
+
+    # Mock summary generator since it's called
+    whatsapp_service.billing_handler.summary_generator.generate_summary = AsyncMock(return_value="Summary")
     
-    response = await whatsapp_service._handle_billing(user, state, "I want the campaign addon")
+    response = await whatsapp_service.billing_handler.handle(user, state, "I want the campaign addon")
     
     assert state.state == ConversationStatus.WAITING_CONFIRM
     assert state.draft_data["tool_name"] == "RequestUpgradeTool"
@@ -123,5 +105,5 @@ async def test_billing_exit(whatsapp_service):
     user = User(id=1, business_id=1, phone_number="123")
     state = ConversationState(user_id=1, state=ConversationStatus.BILLING)
     
-    await whatsapp_service._handle_billing(user, state, "exit")
+    await whatsapp_service.billing_handler.handle(user, state, "exit")
     assert state.state == ConversationStatus.IDLE

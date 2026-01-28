@@ -45,7 +45,8 @@ class AutoConfirmService:
 
                         if active_channel == "sms" and user.phone_number:
                             from src.services.sms_factory import get_sms_service
-                            await get_sms_service().send_sms(user.phone_number, result)
+                            svc = get_sms_service()
+                            await svc.send_sms(user.phone_number, result)
                         elif active_channel == "email" and (user.email or user.phone_number):
                              from src.services.postmark_service import PostmarkService
                              to_email = user.email or user.phone_number or ""
