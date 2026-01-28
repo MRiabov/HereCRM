@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, AsyncMock, patch
 from src.tool_executor import ToolExecutor, GetBillingStatusTool, RequestUpgradeTool
 from src.services.billing_service import BillingService
 from src.uimodels import RequestUpgradeTool
-from src.models import Business, User, UserRole
+from src.models import Business
 
 @pytest.mark.asyncio
 async def test_upgrade_messaging_allowed():

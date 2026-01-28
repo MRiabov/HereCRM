@@ -2,7 +2,7 @@
 import pytest
 from unittest.mock import MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import User, UserRole, Job, Customer
+from src.models import User, UserRole, Job, Customer, JobStatus
 from src.tool_executor import ToolExecutor
 from src.uimodels import AutorouteTool
 from src.services.routing.base import RoutingSolution, RoutingStep
@@ -44,7 +44,7 @@ async def test_autoroute_preview_success(session: AsyncSession, mock_routing_ser
         customer_id=cust.id, 
         business_id=1, 
         description="Fix sink", 
-        status="scheduled",
+        status=JobStatus.SCHEDULED,
         scheduled_at=datetime.combine(today, datetime.min.time()),
         latitude=53.33,
         longitude=-6.22

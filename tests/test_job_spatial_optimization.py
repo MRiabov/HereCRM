@@ -2,7 +2,7 @@
 import pytest
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Customer, Job
+from src.models import Business, Customer, Job, JobStatus
 from src.repositories import JobRepository
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -39,7 +39,7 @@ async def test_job_spatial_optimization():
             customer_id=cust_dublin.id,
             latitude=51.8985,
             longitude=-8.4756,
-            status="pending"
+            status=JobStatus.PENDING
         )
 
         # Job B: No location, falls back to Customer (Dublin)
@@ -49,7 +49,7 @@ async def test_job_spatial_optimization():
             customer_id=cust_dublin.id,
             latitude=None,
             longitude=None,
-            status="pending"
+            status=JobStatus.PENDING
         )
 
         session.add_all([job_cork, job_dublin_implicit])

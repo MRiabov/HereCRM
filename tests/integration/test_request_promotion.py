@@ -1,8 +1,6 @@
 import pytest
 from src.models import Business, Customer, Request, Quote, QuoteStatus, User
 from src.services.crm_service import CRMService
-from src.services.quote_service import QuoteService
-from src.uimodels import ConvertRequestTool
 
 @pytest.mark.asyncio
 async def test_request_to_quote_promotion(async_session):
@@ -23,7 +21,7 @@ async def test_request_to_quote_promotion(async_session):
     request = Request(
         business_id=business.id,
         description="Alice: I need a quote for a new terrace",
-        status="pending"
+        status="PENDING"
     )
     async_session.add(request)
     await async_session.commit()
@@ -79,7 +77,7 @@ async def test_request_to_quote_promotion_with_id(async_session):
     request = Request(
         business_id=business.id,
         description="Bob: Fix my window please",
-        status="pending"
+        status="PENDING"
     )
     async_session.add(request)
     await async_session.commit()
@@ -122,7 +120,7 @@ async def test_request_promotion_with_assigned_to_and_price(async_session):
     request = Request(
         business_id=business.id,
         description="Leaky faucet",
-        status="pending"
+        status="PENDING"
     )
     async_session.add(request)
     await async_session.commit()
@@ -149,7 +147,7 @@ async def test_request_promotion_with_assigned_to_and_price(async_session):
     request2 = Request(
         business_id=business.id,
         description="Garden work",
-        status="pending"
+        status="PENDING"
     )
     async_session.add(request2)
     await async_session.commit()

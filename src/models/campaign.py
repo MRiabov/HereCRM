@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from typing import List, Optional, TYPE_CHECKING
-from sqlalchemy import String, ForeignKey, DateTime, Text, JSON, Float, Enum as SAEnum, Integer, Boolean
+from sqlalchemy import String, ForeignKey, DateTime, Text, Float, Enum as SAEnum, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 import enum
 from src.database import Base
@@ -9,12 +9,18 @@ if TYPE_CHECKING:
     from src.models import Business, Customer
 
 class CampaignStatus(str, enum.Enum):
-    DRAFT = "draft"
-    SCHEDULED = "scheduled"
-    SENDING = "sending"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
+    DRAFT = "DRAFT"
+    SCHEDULED = "SCHEDULED"
+    SENDING = "SENDING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+
+class RecipientStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    SENT = "SENT"
+    FAILED = "FAILED"
+    DELETED = "DELETED"
 
 class CampaignChannel(str, enum.Enum):
     WHATSAPP = "whatsapp"
@@ -64,7 +70,7 @@ class CampaignRecipient(Base):
     campaign_id: Mapped[int] = mapped_column(ForeignKey("campaigns.id"), index=True)
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), index=True)
     
-    status: Mapped[str] = mapped_column(String, default="pending") # pending, sent, failed
+    status: Mapped[RecipientStatus] = mapped_column(SAEnum(RecipientStatus), default=RecipientStatus.PENDING)
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     

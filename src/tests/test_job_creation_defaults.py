@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.services.crm_service import CRMService
-from src.models import Business, Customer, Job
+from src.models import Business, Customer
 
 @pytest.mark.asyncio
 async def test_create_job_defaults(session: AsyncSession):

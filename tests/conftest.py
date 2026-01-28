@@ -20,7 +20,6 @@ os.environ["CLERK_JWKS_URL"] = "https://dummy.clerk.accounts.dev/.well-known/jwk
 os.environ["CLERK_WEBHOOK_SECRET"] = "whsec_dummy"
 
 import pytest
-import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from src.models import Base

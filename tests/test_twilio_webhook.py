@@ -6,7 +6,6 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch, AsyncMock, MagicMock
 from src.main import app
 from src.api.routes import get_services, verify_twilio_signature
-from fastapi import Response
 
 class TestTwilioWebhook:
     """Test suite for Twilio webhook endpoint"""

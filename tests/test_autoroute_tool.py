@@ -2,10 +2,9 @@ import pytest
 from unittest.mock import MagicMock
 from datetime import date, datetime
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import User, Job, Customer, Business
+from src.models import User, Job, Customer, Business, JobStatus
 from src.tools.routing_tools import AutorouteToolExecutor
 from src.uimodels import AutorouteTool
-from src.services.routing.mock import MockRoutingService
 
 @pytest.mark.asyncio
 async def test_autoroute_preview_basic(async_session: AsyncSession):
@@ -32,11 +31,11 @@ async def test_autoroute_preview_basic(async_session: AsyncSession):
     # Jobs
     # One scheduled for today, unassigned
     j1 = Job(business_id=business_id, customer_id=c1.id, description="Job 1", 
-             status="scheduled", scheduled_at=datetime.combine(date.today(), datetime.min.time()),
+             status=JobStatus.SCHEDULED, scheduled_at=datetime.combine(date.today(), datetime.min.time()),
              latitude=c1.latitude, longitude=c1.longitude)
     # One pending
     j2 = Job(business_id=business_id, customer_id=c2.id, description="Job 2", 
-             status="pending",
+             status=JobStatus.PENDING,
              latitude=c2.latitude, longitude=c2.longitude)
     async_session.add_all([j1, j2])
     await async_session.commit()

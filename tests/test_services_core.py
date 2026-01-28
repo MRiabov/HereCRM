@@ -1,6 +1,6 @@
 import pytest
 from datetime import date, datetime, time
-from src.models import Business, User, Job, Customer, UserRole
+from src.models import Business, User, Job, Customer, UserRole, JobStatus
 from src.services.dashboard_service import DashboardService
 from src.services.assignment_service import AssignmentService
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
@@ -36,7 +36,7 @@ async def test_assignment_service(test_session: AsyncSession):
     test_session.add(customer)
     await test_session.flush()
 
-    job = Job(business_id=biz.id, customer_id=customer.id, description="Test Job", status="pending")
+    job = Job(business_id=biz.id, customer_id=customer.id, description="Test Job", status=JobStatus.PENDING)
     test_session.add(job)
     await test_session.commit()
 
@@ -124,8 +124,8 @@ async def test_dashboard_service_unscheduled(test_session: AsyncSession):
     test_session.add(user)
     await test_session.flush()
 
-    job1 = Job(business_id=biz.id, customer_id=customer.id, description="Unscheduled Job", employee_id=None, status="pending")
-    job2 = Job(business_id=biz.id, customer_id=customer.id, description="Scheduled Job", employee_id=user.id, status="pending", scheduled_at=datetime.now())
+    job1 = Job(business_id=biz.id, customer_id=customer.id, description="Unscheduled Job", employee_id=None, status=JobStatus.PENDING)
+    job2 = Job(business_id=biz.id, customer_id=customer.id, description="Scheduled Job", employee_id=user.id, status=JobStatus.PENDING, scheduled_at=datetime.now())
     test_session.add_all([job1, job2])
     await test_session.commit()
 

@@ -1,6 +1,6 @@
 import pytest
 import pytest_asyncio
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock, patch
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
 from src.models import Business, Job, Customer, User, UserRole
@@ -73,7 +73,7 @@ async def test_check_eta_tool_redundant_query(
         business_id=biz.id,
         employee_id=tech.id,
         description="Fix sink",
-        status="scheduled",
+        status="SCHEDULED",
         scheduled_at=datetime.now(timezone.utc),
         estimated_duration=60,
         latitude=40.730610,

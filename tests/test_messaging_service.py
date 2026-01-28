@@ -1,6 +1,5 @@
 import pytest
 import asyncio
-from datetime import datetime, timezone
 from unittest.mock import patch, AsyncMock, MagicMock
 
 from src.services.messaging_service import MessagingService
@@ -226,7 +225,7 @@ async def test_handle_job_scheduled_event():
     # Get the message from queue
     message_data = await service._queue.get()
     assert "+1234567890" in message_data["recipient_phone"]
-    assert "scheduled" in message_data["content"].lower()
+    assert "SCHEDULED" in message_data["content"].lower()
     assert "2026-01-15T10:00:00Z" in message_data["content"]
     assert message_data["trigger_source"] == "job_scheduled"
 

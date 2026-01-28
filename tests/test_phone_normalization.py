@@ -52,7 +52,6 @@ async def test_customer_phone_deduplication(db_session: AsyncSession):
 
 async def test_standardization_logic():
     # This will be the unit test for the function I will add
-    from src.repositories import normalize_phone
     
     assert normalize_phone("089 948 1234") == "0899481234"
     assert normalize_phone("0899481 234") == "0899481234"

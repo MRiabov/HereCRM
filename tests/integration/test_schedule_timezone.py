@@ -1,9 +1,8 @@
 import pytest
 from datetime import datetime, date, timezone
-import pytz
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Job, Customer, User, UserRole
+from src.models import Business, Job, Customer
 from src.services.dashboard_service import DashboardService
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -40,7 +39,7 @@ async def test_schedule_timezone_filtering():
             customer_id=cust.id,
             description="Morning Job",
             scheduled_at=datetime(2026, 1, 27, 14, 0, tzinfo=timezone.utc),
-            status="pending"
+            status="PENDING"
         )
         
         # Job B: Jan 27 20:00 EST = Jan 28 01:00 UTC (Stored as next day in UTC, but should be in range)
@@ -49,7 +48,7 @@ async def test_schedule_timezone_filtering():
             customer_id=cust.id,
             description="Evening Job",
             scheduled_at=datetime(2026, 1, 28, 1, 0, tzinfo=timezone.utc),
-            status="pending"
+            status="PENDING"
         )
         
         # Job C: Jan 26 20:00 EST = Jan 27 01:00 UTC (Stored as target day in UTC, but is actually yesterday in local time)
@@ -58,7 +57,7 @@ async def test_schedule_timezone_filtering():
             customer_id=cust.id,
             description="Yesterday Late Job",
             scheduled_at=datetime(2026, 1, 27, 1, 0, tzinfo=timezone.utc),
-            status="pending"
+            status="PENDING"
         )
         
         session.add_all([job_a, job_b, job_c])

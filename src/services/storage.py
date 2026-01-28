@@ -2,7 +2,6 @@ import boto3
 from botocore.exceptions import ClientError
 from botocore.config import Config
 import logging
-from typing import Optional
 
 from src.config import settings
 

@@ -1,6 +1,3 @@
-import asyncio
-import time
-import httpx
 
 async def benchmark_jobs():
     url = "http://localhost:8000/api/v1/pwa/jobs/"

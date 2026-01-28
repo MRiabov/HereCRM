@@ -2,7 +2,7 @@ import asyncio
 from httpx import AsyncClient, ASGITransport
 from src.main import app
 from src.api.dependencies.clerk_auth import get_current_user, verify_token
-from src.models import User, Business
+from src.models import User
 
 async def mock_auth():
     return User(id=1, clerk_id="test_clerk", business_id=1)

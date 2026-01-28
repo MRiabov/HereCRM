@@ -1,12 +1,9 @@
 import pytest
 import os
-import pandas as pd
-import io
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text
+from sqlalchemy import select
 from src.services.data_management import DataManagementService
 from src.models import Business, Customer, Job, ImportJob
-from datetime import datetime
 
 @pytest.fixture
 def mock_file_content():
@@ -38,7 +35,7 @@ async def test_import_happy_path(async_session: AsyncSession):
         # Run Import
         job = await service.import_data(business.id, filename, "text/csv")
         
-        assert job.status == "completed"
+        assert job.status == "COMPLETED"
         assert job.record_count == 2
         
         # Verify Customers
@@ -67,7 +64,7 @@ async def test_import_happy_path(async_session: AsyncSession):
 async def test_import_atomicity_failure(async_session: AsyncSession):
     """
     Test that if one row fails or an error occurs during processing, 
-    NO customers/jobs are committed, but the ImportJob is saved as 'failed'.
+    NO customers/jobs are committed, but the ImportJob is saved as 'FAILED'.
     """
     business = Business(name="Test Biz Atom")
     async_session.add(business)
@@ -100,7 +97,7 @@ async def test_import_atomicity_failure(async_session: AsyncSession):
     try:
         job = await service.import_data(business.id, filename, "text/csv")
         
-        assert job.status == "failed"
+        assert job.status == "FAILED"
         assert "Simulated Failure" in job.error_log[0]['error']
         
         # Verify Rollback - Customer "Should Rollback" should NOT exist
@@ -111,7 +108,7 @@ async def test_import_atomicity_failure(async_session: AsyncSession):
         result = await async_session.execute(select(ImportJob).where(ImportJob.id == job.id))
         saved_job = result.scalars().first()
         assert saved_job is not None
-        assert saved_job.status == "failed"
+        assert saved_job.status == "FAILED"
 
     finally:
         if os.path.exists(filename):

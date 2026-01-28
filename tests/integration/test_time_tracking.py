@@ -62,7 +62,7 @@ async def test_time_tracking_flow(async_session):
     original_job_start = job.begun_at
     job, total_duration = await service.finish_job(job.id)
     assert job.begun_at is None
-    assert job.status == "completed"
+    assert job.status == "COMPLETED"
     assert total_duration >= 0
 
     # 7. Test Finish Job without Start

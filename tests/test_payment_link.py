@@ -79,7 +79,6 @@ async def test_tool_executor_appends_payment_link(mock_session):
 @pytest.mark.asyncio
 async def test_pdf_generator_includes_payment_link():
     from src.services.pdf_generator import PDFGenerator
-    from jinja2 import Template
     
     # We mock the environment to return a template that we can check
     with patch("src.services.pdf_generator.Environment") as mock_env_cls:

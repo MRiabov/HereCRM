@@ -50,7 +50,7 @@ class AddJobTool(BaseModel):
         None, description="Details of the work to be done", max_length=500
     )
     status: Optional[str] = Field(
-        None, description="Status: 'pending', 'done', 'scheduled'", max_length=20
+        None, description="Status: 'PENDING', 'done', 'SCHEDULED'", max_length=20
     )
     line_items: Optional[List[LineItemInfo]] = Field(
         None, description="List of structured line items for the job"
@@ -232,7 +232,7 @@ class SearchTool(BaseModel):
     )
     query_type: Optional[str] = Field(
         "general",
-        description="Type of query: 'general' (text match), 'added' (created_at), 'scheduled' (scheduled_at). Defaults to 'general' if not time-based.",
+        description="Type of query: 'general' (text match), 'added' (created_at), 'SCHEDULED' (scheduled_at). Defaults to 'general' if not time-based.",
         max_length=20
     )
     min_date: Optional[str] = Field(
@@ -246,7 +246,7 @@ class SearchTool(BaseModel):
         max_length=30
     )
     status: Optional[str] = Field(
-        None, description="Filter by status (e.g., 'pending', 'done', 'completed')", max_length=50
+        None, description="Filter by status (e.g., 'PENDING', 'done', 'COMPLETED')", max_length=50
     )
     radius: Optional[float] = Field(
         None, description="Search radius in meters (default 200m if location provided)"
@@ -404,7 +404,7 @@ class ExportQueryTool(BaseModel):
     query: str = Field(..., description="The specific keywords to search for (e.g., 'Dublin' if the user says 'customers in Dublin', or 'all' for everything).", max_length=500)
     format: str = Field("csv", description="The desired output format: 'csv', 'excel', or 'zip'.", max_length=10)
     entity_type: Optional[str] = Field(None, description="Type of entity to export: 'customer', 'job', 'request', 'expense', 'ledger', or 'all'. If 'all' or unspecified with query 'all', it will export a ZIP with multiple files.", max_length=20)
-    status: Optional[str] = Field(None, description="Filter by status or pipeline stage (e.g., 'pending', 'lost', 'completed').", max_length=50)
+    status: Optional[str] = Field(None, description="Filter by status or pipeline stage (e.g., 'PENDING', 'lost', 'COMPLETED').", max_length=50)
     min_date: Optional[str] = Field(None, description="Start date for filtering in ISO 8601 format.", max_length=30)
     max_date: Optional[str] = Field(None, description="End date for filtering in ISO 8601 format.", max_length=30)
 

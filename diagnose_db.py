@@ -1,6 +1,6 @@
 import asyncio
 from sqlalchemy import select, text
-from src.database import AsyncSessionLocal, engine
+from src.database import AsyncSessionLocal
 from src.models import Business
 
 async def diagnose():

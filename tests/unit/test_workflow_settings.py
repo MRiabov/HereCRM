@@ -160,7 +160,7 @@ async def test_workflow_tool_validation():
             assert data["action"] == "create"
             # Retrieve job to check status
             job = await session.get(Job, data["id"])
-            assert job.status == "pending"
+            assert job.status == "PENDING"
 
             # 2. MARK_DONE -> Done
             data = await execute_add_job(JobCreationDefault.MARK_DONE)
@@ -170,7 +170,7 @@ async def test_workflow_tool_validation():
             # 3. AUTO_SCHEDULE -> Pending (for now)
             data = await execute_add_job(JobCreationDefault.AUTO_SCHEDULE)
             job = await session.get(Job, data["id"])
-            assert job.status == "pending"
+            assert job.status == "PENDING"
             
             print("test_workflow_job_creation_default passed!")
 

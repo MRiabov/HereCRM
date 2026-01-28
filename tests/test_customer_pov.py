@@ -56,7 +56,7 @@ async def test_customer_pov_scenarios():
                 business_id=biz.id,
                 customer_id=customer.id,
                 description="Fix Leak",
-                status="scheduled",
+                status="SCHEDULED",
                 scheduled_at=datetime.now(timezone.utc) + timedelta(minutes=10),
                 employee_id=tech_user.id,
                 latitude=53.3498, # Dublin
@@ -190,7 +190,7 @@ async def test_customer_pov_scenarios():
                 db.add(quote)
                 await db.commit()
             
-            response = await ac.post(f"/quotes/test_token_123/confirm")
+            response = await ac.post("/quotes/test_token_123/confirm")
             assert response.status_code == 200
             assert response.json()["status"] == "success"
             

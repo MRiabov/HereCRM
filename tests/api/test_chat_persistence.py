@@ -3,7 +3,6 @@ from httpx import AsyncClient, ASGITransport
 from src.main import app
 from src.api.dependencies.clerk_auth import get_current_user
 from src.models import User, MessageRole
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 # Mock User
@@ -16,9 +15,9 @@ class MockUser:
 
 @pytest.fixture
 async def client():
-    from src.api.dependencies.clerk_auth import verify_token, get_current_user
+    from src.api.dependencies.clerk_auth import verify_token
     from src.database import AsyncSessionLocal
-    from src.models import Business, User, UserRole
+    from src.models import Business, UserRole
 
     # Create records in DB
     async with AsyncSessionLocal() as db:

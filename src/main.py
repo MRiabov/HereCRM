@@ -3,7 +3,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 from src.database import engine, Base
-import src.models  # Ensure all models are registered with Base.metadata
 from src.api.routes import router as webhook_router
 from src.api.webhooks.stripe_webhook import router as stripe_router
 from src.api.webhooks.clerk import router as clerk_router

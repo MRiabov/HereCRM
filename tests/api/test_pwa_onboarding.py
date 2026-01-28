@@ -2,10 +2,8 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 from src.main import app
 from src.database import get_db
-from src.api.dependencies.clerk_auth import get_current_user, VerifyToken
+from src.api.dependencies.clerk_auth import get_current_user
 from src.models import User, Business, Invitation, InvitationStatus, ConversationStatus
-from sqlalchemy.ext.asyncio import AsyncSession
-from unittest.mock import MagicMock, AsyncMock
 
 @pytest.fixture
 async def client(async_session):

@@ -141,7 +141,7 @@ async def create_request(
     request = Request(
         business_id=business_id,
         description=full_content,
-        status="pending"
+        status="PENDING"
     )
     request_repo.add(request)
     await db.commit()

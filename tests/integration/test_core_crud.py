@@ -1,5 +1,5 @@
 import pytest
-from src.models import Business, Customer, Job, Quote, User, QuoteStatus
+from src.models import Business, Customer, User, QuoteStatus
 from src.repositories import CustomerRepository, JobRepository
 from src.services.crm_service import CRMService
 from src.services.quote_service import QuoteService

@@ -1,14 +1,13 @@
 import asyncio
 import logging
 from datetime import datetime, timezone, timedelta
-from sqlalchemy import select, and_
+from sqlalchemy import select
 from src.database import AsyncSessionLocal
 from src.models import (
     Business, Job, Quote, QuoteStatus, MessageLog, MessageType, MessageStatus, Customer
 )
 from src.events import event_bus, QUOTE_SENT, JOB_PAID
 from src.services.messaging_service import messaging_service
-from src.llm_client import parser as llm_parser
 
 logger = logging.getLogger(__name__)
 

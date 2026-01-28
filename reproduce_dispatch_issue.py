@@ -1,13 +1,10 @@
 
 import asyncio
-import pytest
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
 from src.models import Business, Job, Customer, User, UserRole
 from src.services.dashboard_service import DashboardService
-from src.api.v1.pwa.jobs import list_jobs
-from unittest.mock import AsyncMock, MagicMock
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 

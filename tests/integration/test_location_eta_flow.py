@@ -3,8 +3,7 @@ from unittest.mock import MagicMock, patch
 from src.tool_executor import ToolExecutor
 from src.uimodels import CheckETATool, LocateEmployeeTool
 from src.models import User, Job, Customer, UserRole, Business, JobStatus
-from src.services.location_service import LocationService
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 @pytest.mark.asyncio
 async def test_location_and_eta_flow(async_session):

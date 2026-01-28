@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional
-from sqlalchemy import String, ForeignKey, DateTime, Integer, Enum as SAEnum
+from sqlalchemy import String, ForeignKey, DateTime, Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database import Base
 import enum

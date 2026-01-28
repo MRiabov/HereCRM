@@ -1,7 +1,6 @@
 import asyncio
-import json
 from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # Mock necessary imports before importing our services
 import sys

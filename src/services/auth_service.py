@@ -1,4 +1,3 @@
-from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import User, Business, UserRole
 from src.repositories import UserRepository, BusinessRepository

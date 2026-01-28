@@ -3,7 +3,7 @@ import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 from datetime import date
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import Business, Customer, Job, User, UserRole
+from src.models import Business, Customer, Job, User, UserRole, JobStatus
 from src.services.crm_service import CRMService
 from src.tools.routing_tools import AutorouteToolExecutor
 from src.services.template_service import TemplateService
@@ -111,7 +111,7 @@ async def test_autoroute_executor_on_the_fly_geocoding(session: AsyncSession, mo
         customer_id=cust.id,
         description="Ungeocoded Job",
         location="Dublin, Ireland",
-        status="pending",
+        status=JobStatus.PENDING,
         latitude=None,
         longitude=None
     )

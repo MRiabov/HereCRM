@@ -2,7 +2,6 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from unittest.mock import AsyncMock, MagicMock
-from datetime import datetime, timezone, timedelta
 from src.database import Base
 from src.services.search_service import SearchService
 from src.services.geocoding import GeocodingService
@@ -67,7 +66,7 @@ async def setup_data(db_session: AsyncSession):
         customer_id=c1.id, 
         latitude=DUBLIN_LAT, 
         longitude=DUBLIN_LON,
-        status="pending"
+        status=JobStatus.PENDING
     )
 
     j2 = Job(
@@ -76,7 +75,7 @@ async def setup_data(db_session: AsyncSession):
         customer_id=c2.id, 
         latitude=LONDON_LAT, 
         longitude=LONDON_LON,
-        status="pending"
+        status=JobStatus.PENDING
     )
 
     db_session.add_all([j1, j2])

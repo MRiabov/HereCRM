@@ -1,3 +1,4 @@
+from src.models import JobStatus
 import logging
 import secrets
 from typing import List, Dict, Optional
@@ -39,7 +40,7 @@ class QuoteService:
         job = Job(
             business_id=quote.business_id,
             customer_id=quote.customer_id,
-            status="pending",
+            status=JobStatus.PENDING,
             description=f"Job from Quote #{quote.id}",
             value=quote.total_amount,
             subtotal=quote.subtotal,

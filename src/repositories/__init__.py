@@ -352,7 +352,7 @@ class CustomerRepository(BaseRepository[Customer]):
             )
 
         # Query Type logic (Precedence over generic entity type)
-        if query_type == "scheduled":
+        if query_type == "SCHEDULED":
             # "Customers with jobs today"
             # We need customers who have jobs in the date range
             stmt = select(Customer).join(Job)
@@ -486,7 +486,7 @@ class JobRepository(BaseRepository[Job]):
         self,
         query: str,
         business_id: int,
-        query_type: Optional[str] = None,  # "scheduled" or "added"
+        query_type: Optional[str] = None,  # "SCHEDULED" or "added"
         min_date: Optional[datetime] = None,
         max_date: Optional[datetime] = None,
         status: Optional[str] = None,

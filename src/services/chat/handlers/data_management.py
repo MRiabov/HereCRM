@@ -62,7 +62,7 @@ class DataManagementHandler(ChatHandler):
                 export_req = await self.data_service.export_data(
                     user.business_id, tool_call.query, tool_call.format, filters=filters
                 )
-                if export_req.status == "completed":
+                if export_req.status == "COMPLETED":
                     # In a real app, public_url would be a downloadable link.
                     return f"Export completed! You can download it here: {export_req.public_url}"
                 else:

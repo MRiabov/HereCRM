@@ -1,9 +1,8 @@
 import pytest
-import pytest_asyncio
 from unittest.mock import MagicMock, AsyncMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.services.whatsapp_service import WhatsappService
-from src.models import User, ConversationState, ConversationStatus, Business
+from src.models import User, ConversationState, ConversationStatus
 from src.uimodels import ExportQueryTool, ExitDataManagementTool
 from src.services.template_service import TemplateService
 
@@ -55,7 +54,7 @@ async def test_data_management_export(service, mock_parser):
 
     # Mock Data Service return
     mock_export_req = MagicMock()
-    mock_export_req.status = "completed"
+    mock_export_req.status = "COMPLETED"
     mock_export_req.public_url = "http://test.com/export.csv"
     service.data_service.export_data.return_value = mock_export_req
 
@@ -71,18 +70,18 @@ async def test_data_management_export_filtered(service, mock_parser):
     state = ConversationState(user_id=123, state=ConversationStatus.DATA_MANAGEMENT)
 
     # Mock tool to return filters
-    tool = ExportQueryTool(query="jobs", format="excel", entity_type="job", status="pending")
+    tool = ExportQueryTool(query="jobs", format="excel", entity_type="job", status="PENDING")
     mock_parser.parse_data_management.return_value = tool
 
     # Mock Data Service
     mock_export_req = MagicMock()
-    mock_export_req.status = "processing"
+    mock_export_req.status = "PROCESSING"
     service.data_service.export_data.return_value = mock_export_req
 
     response = await service.data_management_handler.handle(user, state, "export pending jobs")
 
     service.data_service.export_data.assert_called_once_with(
-        1, "jobs", "excel", filters={"entity_type": "job", "status": "pending"}
+        1, "jobs", "excel", filters={"entity_type": "job", "status": "PENDING"}
     )
     assert "Export processing" in response
 
@@ -93,7 +92,7 @@ async def test_data_management_import(service):
 
     # Mock Data Service return
     mock_import_job = MagicMock()
-    mock_import_job.status = "completed"
+    mock_import_job.status = "COMPLETED"
     mock_import_job.record_count = 10
     mock_import_job.error_log = []
     service.data_service.import_data.return_value = mock_import_job

@@ -1,5 +1,4 @@
-import pytest
-from src.services.storage import S3Service, storage_service
+from src.services.storage import S3Service
 from src.config import settings
 from unittest.mock import patch, MagicMock, ANY
 

@@ -1,6 +1,5 @@
 import asyncio
 import httpx
-from datetime import date
 
 async def verify_routing_api():
     base_url = "http://localhost:8000/api/v1/pwa"

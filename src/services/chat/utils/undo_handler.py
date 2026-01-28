@@ -1,6 +1,6 @@
 from typing import cast, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import User, ConversationState, Job, Request
+from src.models import User, ConversationState, Request
 from src.repositories import JobRepository, RequestRepository, UserRepository
 from src.services.template_service import TemplateService
 
@@ -38,14 +38,14 @@ class UndoHandler:
                 repo = JobRepository(self.session)
                 job = await repo.get_by_id(entity_id, user.business_id)
                 if job:
-                    job.status = cast(str, metadata.get("old_status", "pending"))
+                    job.status = cast(str, metadata.get("old_status", "PENDING"))
                     state_record.last_action_metadata = None
                     return self.template_service.render("undo_job_reverted")
             elif entity_type == "request" and isinstance(entity_id, int):
                 repo = RequestRepository(self.session)
                 req = await repo.get_by_id(entity_id, user.business_id)
                 if req:
-                    req.status = cast(str, metadata.get("old_status", "pending"))
+                    req.status = cast(str, metadata.get("old_status", "PENDING"))
                     state_record.last_action_metadata = None
                     return self.template_service.render("undo_request_reverted")
 
@@ -61,7 +61,7 @@ class UndoHandler:
                         req = Request(
                             business_id=user.business_id,
                             description=cast(str, old_description),
-                            status="pending",
+                            status="PENDING",
                         )
                         self.session.add(req)
 

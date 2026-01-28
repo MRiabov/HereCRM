@@ -1,7 +1,7 @@
 import asyncio
 from unittest.mock import AsyncMock, MagicMock
 from src.tool_executor import ToolExecutor
-from src.uimodels import AddLeadTool, AddJobTool
+from src.uimodels import AddLeadTool
 from src.services.template_service import TemplateService
 
 async def test_lead_address_resolution():
@@ -66,7 +66,7 @@ async def test_lead_address_resolution():
 
     # Case 3: Explicit city in tool.city, location is just street
     tool4 = AddLeadTool(name="Alice Brown", location="high street 34", city="Waterford", country="Ireland")
-    print(f"\nExecuting AddLeadTool with city='Waterford', location='high street 34'")
+    print("\nExecuting AddLeadTool with city='Waterford', location='high street 34'")
     response4, _ = await executor.execute(tool4)
     print(response4)
     if "Waterford" in response4 and "Ireland" in response4 and "Dublin" not in response4:

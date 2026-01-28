@@ -1,11 +1,11 @@
 from datetime import date as date_cls
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
-from src.models import User, Job
+from src.models import User
 from src.api.dependencies.clerk_auth import get_current_user
 from src.tools.routing_tools import AutorouteToolExecutor
 from src.services.template_service import TemplateService
@@ -16,8 +16,6 @@ from src.schemas.pwa import (
     RoutingStep as PWARoutingStep, 
     RoutingMetrics as PWARoutingMetrics,
     JobSchema,
-    CustomerSchema,
-    UserSchema,
     GeocodeResponse
 )
 

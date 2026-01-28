@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.services.crm_service import CRMService
-from src.models import RequestStatus, Urgency, JobStatus, QuoteStatus
+from src.models import Urgency
 
 @pytest.mark.asyncio
 async def test_request_creation_with_items(session: AsyncSession):

@@ -1,5 +1,5 @@
 import pytest
-from datetime import date, datetime
+from datetime import date
 from unittest.mock import AsyncMock, patch, MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import User, Job, Customer, Business
@@ -27,13 +27,13 @@ async def test_autoroute_apply_execution(async_session: AsyncSession):
     
     # Jobs - Pending
     j1 = Job(business_id=business_id, customer_id=c1.id, description="Job Apply 1", 
-             status="pending", latitude=c1.latitude, longitude=c1.longitude)
+             status="PENDING", latitude=c1.latitude, longitude=c1.longitude)
     async_session.add(j1)
     await async_session.commit()
     
     # Verify initial state
     assert j1.employee_id is None
-    assert j1.status == "pending"
+    assert j1.status == "PENDING"
 
     # 2. Run Tool with apply=True
     # We patch messaging service to avoid actual queuing/side effects and check calls
@@ -56,7 +56,7 @@ async def test_autoroute_apply_execution(async_session: AsyncSession):
         # 3. Verify DB Changes
         await async_session.refresh(j1)
         assert j1.employee_id == emp1.id
-        assert j1.status == "scheduled"
+        assert j1.status == "SCHEDULED"
         assert j1.scheduled_at is not None
         
         # 4. Verify Notifications
@@ -83,7 +83,7 @@ async def test_autoroute_apply_rollback_on_error(async_session: AsyncSession):
     async_session.add_all([emp, c])
     await async_session.commit()
     
-    j = Job(business_id=bid, customer_id=c.id, description="Job Rollback", status="pending", latitude=52.53, longitude=13.41)
+    j = Job(business_id=bid, customer_id=c.id, description="Job Rollback", status="PENDING", latitude=52.53, longitude=13.41)
     async_session.add(j)
     await async_session.commit()
 
@@ -111,4 +111,4 @@ async def test_autoroute_apply_rollback_on_error(async_session: AsyncSession):
         # With pytest-asyncio and sqlite memory, it should work if session is handled right.
         await async_session.refresh(j)
         assert j.employee_id is None
-        assert j.status == "pending"
+        assert j.status == "PENDING"

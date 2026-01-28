@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, date
 import math
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Optional
 from src.models import Job, User
 from .base import RoutingServiceProvider, RoutingSolution, RoutingStep
 

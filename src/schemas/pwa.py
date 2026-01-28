@@ -4,8 +4,7 @@ from typing import List, Optional, Any, Dict
 from pydantic import BaseModel, ConfigDict, Field, AnyHttpUrl
 from src.models import (
     JobStatus, PipelineStage, InvoicingWorkflow, QuotingWorkflow, 
-    PaymentTiming, JobCreationDefault, WageModelType, LedgerEntryType,
-    QuoteStatus, QuickBooksSyncStatus, SyncType, SyncLogStatus,
+    PaymentTiming, JobCreationDefault, WageModelType, QuoteStatus, SyncLogStatus,
     CampaignStatus, CampaignChannel, WhatsAppTemplateStatus, WhatsAppTemplateCategory,
     InvoiceStatus, ExportStatus, ExportFormat, RequestStatus, UserRole, MessageRole
 )
@@ -117,7 +116,7 @@ class RecentActivity(BaseModel):
 # --- Job Schemas ---
 
 class JobListResponse(BaseModel):
-    date: str = Field(..., max_length=10) # YYYY-MM-DD
+    date: str = Field(..., max_length=20) # YYYY-MM-DD or "Unscheduled"
     jobs: List[JobSchema]
 
 class JobCreate(BaseModel):
@@ -426,7 +425,7 @@ class RoutingMetrics(BaseModel):
     unassigned_count: int
 
 class RoutingResponse(BaseModel):
-    date: str = Field(..., max_length=10)
+    date: str = Field(..., max_length=20)
     metrics: RoutingMetrics
     routes: List[RouteSchema]
     unassigned_jobs: List[JobSchema]

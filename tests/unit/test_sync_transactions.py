@@ -1,5 +1,4 @@
 import pytest
-import sys
 from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime
 

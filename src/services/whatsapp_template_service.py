@@ -1,7 +1,6 @@
 import logging
 import httpx
-from datetime import datetime, timezone
-from typing import Optional, List, Any
+from typing import List
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 

@@ -5,7 +5,6 @@ from src.database import Base
 from src.models import Business, Service, Job, LineItem, Customer
 from src.services.inference_service import InferenceService
 from src.uimodels import LineItemInfo
-import src.repositories # Register listeners
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 

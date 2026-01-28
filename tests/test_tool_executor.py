@@ -90,7 +90,7 @@ async def test_execute_convert_request(
     await test_session.flush()
 
     # Pre-existing request
-    req = Request(business_id=biz.id, description="I want to fix my roof", status="pending")
+    req = Request(business_id=biz.id, description="I want to fix my roof", status="PENDING")
     test_session.add(req)
     await test_session.flush()
 
@@ -111,7 +111,7 @@ async def test_execute_convert_request(
     res = await test_session.execute(select(Job))
     job = res.scalar_one()
     assert "Converted from request: I want to fix my roof" in job.description
-    assert job.status == "scheduled"
+    assert job.status == "SCHEDULED"
 
 
 @pytest.mark.asyncio
@@ -127,7 +127,7 @@ async def test_execute_log_request(
     await test_session.flush()
 
     # Pre-existing request
-    req = Request(business_id=biz.id, description="Info only request", status="pending")
+    req = Request(business_id=biz.id, description="Info only request", status="PENDING")
     test_session.add(req)
     await test_session.flush()
 

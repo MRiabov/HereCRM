@@ -2,7 +2,6 @@ import logging
 import time
 import os
 from datetime import datetime, timezone, timedelta
-from typing import List, Optional, Dict, Any
 
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -63,9 +62,9 @@ class QuickBooksSyncManager:
             
             # 3. Perform Sync by entity type
             stats = {
-                "customers": {"processed": 0, "succeeded": 0, "failed": 0},
-                "services": {"processed": 0, "succeeded": 0, "failed": 0},
-                "invoices": {"processed": 0, "succeeded": 0, "failed": 0},
+                "customers": {"processed": 0, "succeeded": 0, "FAILED": 0},
+                "services": {"processed": 0, "succeeded": 0, "FAILED": 0},
+                "invoices": {"processed": 0, "succeeded": 0, "FAILED": 0},
             }
             
             errors = []
@@ -79,7 +78,7 @@ class QuickBooksSyncManager:
                 if success:
                     stats["customers"]["succeeded"] += 1
                 else:
-                    stats["customers"]["failed"] += 1
+                    stats["customers"]["FAILED"] += 1
                     if len(errors) < 5:
                         errors.append(f"Customer {customer.id}: {customer.quickbooks_sync_error}")
 
@@ -92,7 +91,7 @@ class QuickBooksSyncManager:
                 if success:
                     stats["services"]["succeeded"] += 1
                 else:
-                    stats["services"]["failed"] += 1
+                    stats["services"]["FAILED"] += 1
                     if len(errors) < 5:
                         errors.append(f"Service {service.id}: {service.quickbooks_sync_error}")
 
@@ -107,7 +106,7 @@ class QuickBooksSyncManager:
             duration = time.time() - start_time
             sync_log.records_processed = sum(s["processed"] for s in stats.values())
             sync_log.records_succeeded = sum(s["succeeded"] for s in stats.values())
-            sync_log.records_failed = sum(s["failed"] for s in stats.values())
+            sync_log.records_failed = sum(s["FAILED"] for s in stats.values())
             sync_log.duration_seconds = duration
             sync_log.error_details = {"errors": errors} if errors else None
             

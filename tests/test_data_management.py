@@ -1,13 +1,11 @@
 import pytest
 import pytest_asyncio
 import pandas as pd
-import io
 import os
-from unittest.mock import patch, MagicMock
-from datetime import datetime, timezone
+from unittest.mock import patch
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Customer, Job, ImportJob, ExportRequest, PipelineStage
+from src.models import Business, Customer, Job, PipelineStage
 from src.services.data_management import DataManagementService
 from src.repositories import CustomerRepository, JobRepository
 
@@ -45,7 +43,7 @@ async def test_import_data_csv(test_session, setup_business, tmp_path):
         "notes": ["Note 1", "Note 2"],
         "job_description": ["Clean windows", "Clean gutters"],
         "job_price": [100.0, 150.0],
-        "job_status": ["pending", "completed"]
+        "job_status": ["PENDING", "COMPLETED"]
     }
     df = pd.DataFrame(data)
     csv_path = tmp_path / "test_import.csv"
@@ -60,7 +58,7 @@ async def test_import_data_csv(test_session, setup_business, tmp_path):
         media_type="text/csv"
     )
 
-    assert import_job.status == "completed"
+    assert import_job.status == "COMPLETED"
     assert import_job.record_count == 2
 
     # 3. Verify Data in DB
@@ -113,7 +111,7 @@ async def test_export_data_csv(test_session, setup_business):
             format="csv"
         )
 
-        assert export_req.status == "completed"
+        assert export_req.status == "COMPLETED"
         assert export_req.public_url == export_file
         
         # Capture the content written to mock storage

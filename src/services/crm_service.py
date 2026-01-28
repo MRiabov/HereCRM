@@ -1,7 +1,7 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from src.models import Job, JobStatus, Customer, PipelineStage, Business, PaymentTiming, Request, LineItem, Service, User, Urgency, RequestStatus, ConversationStatus, ConversationState
+from src.models import Job, JobStatus, Customer, PipelineStage, Business, PaymentTiming, Request, LineItem, Service, Urgency, RequestStatus
 from src.repositories import JobRepository, CustomerRepository, RequestRepository
 from src.events import event_bus, JOB_CREATED, JOB_BOOKED, JOB_SCHEDULED, JOB_UPDATED, JOB_ASSIGNED, JOB_UNASSIGNED, JOB_PAID
 from datetime import datetime, timedelta, timezone
@@ -256,10 +256,22 @@ class CRMService:
         if description is not None:
             request.description = description
         if status is not None:
-            # Simple status update for now
-            request.status = status
+            if isinstance(status, str):
+                try:
+                    request.status = RequestStatus(status.upper())
+                except ValueError:
+                    # Fallback or keep as is? Enums are strict now.
+                    pass
+            else:
+                request.status = status
         if urgency is not None:
-            request.urgency = urgency
+            if isinstance(urgency, str):
+                try:
+                    request.urgency = Urgency(urgency.upper())
+                except ValueError:
+                    pass
+            else:
+                request.urgency = urgency
         if expected_value is not None:
             request.expected_value = expected_value
         if subtotal is not None:
@@ -396,7 +408,7 @@ class CRMService:
 
         elif action == "complete":
             old_status = req.status
-            req.status = "completed"
+            req.status = RequestStatus.COMPLETED
             return f"✔ Request marked as completed: {req.description[:30]}", {
                 "action": "update",
                 "entity": "request",
@@ -406,7 +418,7 @@ class CRMService:
 
         elif action == "log":
              old_status = req.status
-             req.status = "logged"
+             req.status = RequestStatus.LOGGED
              return f"✔ Request logged: {req.description[:30]}", {
                  "action": "update",
                  "entity": "request",
@@ -613,7 +625,7 @@ class CRMService:
             from src.services.time_tracking import TimeTrackingService
             tt_service = TimeTrackingService(self.session)
             
-            # Map 'done' to 'completed' for backward compatibility or ease of use
+            # Map 'done' to 'COMPLETED' for backward compatibility or ease of use
             if status == "done":
                 status = JobStatus.COMPLETED
             
@@ -623,7 +635,7 @@ class CRMService:
                 status = JobStatus.COMPLETED # Fallback status
             
             try:
-                new_status = JobStatus(status) if isinstance(status, str) else status
+                new_status = JobStatus(status.upper()) if isinstance(status, str) else status
             except ValueError:
                 # Fallback for unknown status strings
                 new_status = JobStatus.PENDING

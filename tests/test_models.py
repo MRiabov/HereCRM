@@ -38,13 +38,13 @@ async def test_tenant_isolation(test_session: AsyncSession):
 
     # Create Job for A
     job_a = Job(
-        business_id=biz_a.id, customer_id=1, description="Cleaning A", status="pending"
+        business_id=biz_a.id, customer_id=1, description="Cleaning A", status="PENDING"
     )  # Mock customer ID
     test_session.add(job_a)
 
     # Create Job for B
     job_b = Job(
-        business_id=biz_b.id, customer_id=2, description="Cleaning B", status="pending"
+        business_id=biz_b.id, customer_id=2, description="Cleaning B", status="PENDING"
     )
     test_session.add(job_b)
 
@@ -76,7 +76,7 @@ async def test_invoice_relationship(test_session: AsyncSession):
     test_session.add(customer)
     await test_session.flush()
 
-    job = Job(business_id=biz.id, customer_id=customer.id, description="Job", status="pending")
+    job = Job(business_id=biz.id, customer_id=customer.id, description="Job", status="PENDING")
     test_session.add(job)
     await test_session.flush()
 
@@ -106,7 +106,6 @@ async def test_invoice_relationship(test_session: AsyncSession):
 
 @pytest.mark.asyncio
 async def test_message_log_creation(test_session: AsyncSession):
-    from src.models import MessageLog, MessageType, MessageStatus
 
     log = MessageLog(
         recipient_phone="1234567890",

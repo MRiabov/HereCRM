@@ -1,5 +1,4 @@
 import pytest
-import pytest_asyncio
 from unittest.mock import AsyncMock, patch
 from datetime import datetime, timezone, timedelta
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
@@ -48,7 +47,7 @@ async def test_check_shifts_sends_notification():
             description="Morning Job",
             scheduled_at=now,
             employee_id=emp.id,
-            status="scheduled",
+            status="SCHEDULED",
             location="123 Main St"
         )
         session.add(job_today)
@@ -60,7 +59,7 @@ async def test_check_shifts_sends_notification():
             description="Tomorrow Job",
             scheduled_at=now + timedelta(days=1, hours=1),
             employee_id=emp.id,
-            status="scheduled"
+            status="SCHEDULED"
         )
         session.add(job_tomorrow)
         

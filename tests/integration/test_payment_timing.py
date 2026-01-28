@@ -1,5 +1,5 @@
 import pytest
-from src.models import Business, Customer, User, PaymentTiming
+from src.models import Business, Customer, PaymentTiming
 from src.services.crm_service import CRMService
 
 @pytest.mark.asyncio

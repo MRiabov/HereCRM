@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from datetime import datetime, timezone
-from sqlalchemy.ext.asyncio import AsyncSession
 from src.database import AsyncSessionLocal
 from src.repositories import ConversationStateRepository, UserRepository
 from src.models import Message, MessageRole, ConversationStatus

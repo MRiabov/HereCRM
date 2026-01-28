@@ -74,7 +74,7 @@ class AutorouteToolExecutor:
             status=JobStatus.SCHEDULED,
             min_date=start_of_day,
             max_date=end_of_day,
-            query_type="scheduled"
+            query_type="SCHEDULED"
         )
         
         all_jobs_map = {j.id: j for j in pending_jobs}

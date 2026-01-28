@@ -1,18 +1,11 @@
 import pytest
 from datetime import datetime, timedelta, timezone
-from src.repositories import (
-    JobRepository,
-    CustomerRepository,
-    RequestRepository,
-    UserRepository,
-)
 from src.models import Job, Customer, Request, User, Business
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from src.tool_executor import ToolExecutor
 from src.uimodels import SearchTool
 from src.database import Base
 from src.services.template_service import TemplateService
-from src.services.geocoding import GeocodingService
 from unittest.mock import AsyncMock
 import pytest_asyncio
 
@@ -88,7 +81,7 @@ async def setup_search_data(db_session: AsyncSession):
         customer_id=c1.id,
         business_id=business.id,
         description="Window cleaning",
-        status="pending",
+        status="PENDING",
         scheduled_at=datetime.now(timezone.utc).replace(
             hour=14, minute=0, second=0, microsecond=0
         ),
@@ -101,7 +94,7 @@ async def setup_search_data(db_session: AsyncSession):
         customer_id=c2.id,
         business_id=business.id,
         description="Gutter cleaning",
-        status="scheduled",
+        status="SCHEDULED",
         scheduled_at=(datetime.now(timezone.utc) + timedelta(days=1)).replace(
             hour=10, minute=0, second=0, microsecond=0
         ),
@@ -116,7 +109,7 @@ async def setup_search_data(db_session: AsyncSession):
     r1 = Request(
         business_id=business.id,
         description="Call back later",
-        status="pending",
+        status="PENDING",
         created_at=datetime.now(timezone.utc),
     )
     db_session.add(r1)
@@ -142,7 +135,7 @@ async def test_search_jobs_today(
     tool = SearchTool(
         query="all",
         entity_type="job",
-        query_type="scheduled",
+        query_type="SCHEDULED",
         min_date=today_start,
         max_date=today_end,
     )
@@ -173,7 +166,7 @@ async def test_search_jobs_tomorrow(
     tool = SearchTool(
         query="all",
         entity_type="job",
-        query_type="scheduled",
+        query_type="SCHEDULED",
         min_date=tomorrow_start,
         max_date=tomorrow_end,
     )
@@ -200,7 +193,7 @@ async def test_search_customers_with_jobs_today(
     tool = SearchTool(
         query="all",
         entity_type="customer",
-        query_type="scheduled",
+        query_type="SCHEDULED",
         min_date=today_start,
         max_date=today_end,
     )

@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime
 from src.models import WageConfiguration, WageModelType
 from src.services.wages.calculator import WageCalculator
 

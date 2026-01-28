@@ -1,11 +1,9 @@
 import pytest
 import pytest_asyncio
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
 from src.models import Business, Customer, PipelineStage
 from src.services.crm_service import CRMService
-from src.events import event_bus
 from src.services.pipeline_handlers import handle_job_created
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -89,7 +87,7 @@ async def test_pipeline_progression_scenarios(test_session):
             customer_id=c1.id, 
             description="First Job", 
             value=100.0,
-            status="scheduled"
+            status="SCHEDULED"
         )
         # Manually trigger handler because real EventBus might be running in background (or not started)
         await handle_job_created({"customer_id": c1.id, "business_id": biz.id})
@@ -103,7 +101,7 @@ async def test_pipeline_progression_scenarios(test_session):
             customer_id=c1.id, 
             description="Second Job", 
             value=100.0,
-            status="scheduled"
+            status="SCHEDULED"
         )
         await handle_job_created({"customer_id": c1.id, "business_id": biz.id})
     

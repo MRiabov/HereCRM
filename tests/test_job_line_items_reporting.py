@@ -1,5 +1,4 @@
 import pytest
-from datetime import datetime, timezone
 from src.models import Job, Customer, User, Business, LineItem, Service
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from src.tool_executor import ToolExecutor
@@ -51,7 +50,7 @@ async def test_show_job_with_line_items(db_session: AsyncSession, template_servi
         business_id=business.id,
         description="Clean windows",
         value=100.0,
-        status="pending"
+        status="PENDING"
     )
     db_session.add(job)
     await db_session.flush()

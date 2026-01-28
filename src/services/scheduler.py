@@ -1,13 +1,11 @@
 import logging
-import asyncio
 from datetime import datetime, timezone, timedelta
-from typing import Callable, List, Dict
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select
 from src.database import AsyncSessionLocal
-from src.models import User, UserRole, Job
+from src.models import User, UserRole, Job, JobStatus
 from src.services.messaging_service import messaging_service
 
 logger = logging.getLogger(__name__)
@@ -69,7 +67,7 @@ class SchedulerService:
                         Job.employee_id == employee.id,
                         Job.scheduled_at >= today_start,
                         Job.scheduled_at < today_end,
-                        Job.status != 'completed'
+                        Job.status != JobStatus.COMPLETED
                     ).order_by(Job.scheduled_at)
                     
                     result_jobs = await session.execute(stmt_jobs)

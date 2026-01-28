@@ -4,7 +4,6 @@ from sqlalchemy import create_engine
 from alembic.migration import MigrationContext
 from alembic.autogenerate import compare_metadata
 from src.database import Base, DATABASE_URL
-import src.models  # Ensure all models are registered with Base.metadata
 
 logger = logging.getLogger(__name__)
 

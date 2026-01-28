@@ -1,14 +1,13 @@
 import logging
 import pandas as pd
 import io
-import json
 import httpx
 import zipfile
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Dict, Any, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from src.models import Business, Customer, Job, ImportJob, ExportRequest, PipelineStage, Request, Expense, LedgerEntry
+from src.models import Customer, Job, ImportJob, ExportRequest, PipelineStage, Expense, LedgerEntry, ExportStatus, JobStatus
 from src.repositories import BusinessRepository, CustomerRepository, JobRepository
 
 logger = logging.getLogger(__name__)
@@ -28,7 +27,7 @@ class DataManagementService:
         """
         import_job = ImportJob(
             business_id=business_id,
-            status="processing",
+            status="PROCESSING",
             file_url=file_url,
             created_at=datetime.now(timezone.utc)
         )
@@ -60,12 +59,12 @@ class DataManagementService:
             async with self.session.begin_nested():
                 await self._process_dataframe(business_id, df)
             
-            import_job.status = "completed"
+            import_job.status = "COMPLETED"
             import_job.completed_at = datetime.now(timezone.utc)
 
         except Exception as e:
             logger.exception("Import failed")
-            import_job.status = "failed"
+            import_job.status = "FAILED"
             import_job.error_log = [{"error": str(e)}]
         
         await self.session.commit()
@@ -116,12 +115,18 @@ class DataManagementService:
                 customer.details = row.get("notes")
 
             if not pd.isna(row.get("job_description")) or not pd.isna(row.get("job_price")):
+                job_status_raw = row.get("job_status", "PENDING")
+                try:
+                    job_status = JobStatus(str(job_status_raw).upper())
+                except ValueError:
+                    job_status = JobStatus.PENDING
+
                 job = Job(
                     business_id=business_id,
                     customer_id=customer.id,
                     description=row.get("job_description"),
                     value=float(row.get("job_price", 0)) if not pd.isna(row.get("job_price")) else None,
-                    status=row.get("job_status", "pending"),
+                    status=job_status,
                     location=row.get("address")
                 )
                 self.session.add(job)
@@ -208,7 +213,7 @@ class DataManagementService:
             business_id=business_id,
             query=query,
             format=format, # Store lowercase to match enum values
-            status="processing",
+            status=ExportStatus.PROCESSING,
             created_at=datetime.now(timezone.utc)
         )
         self.session.add(export_req)
@@ -261,11 +266,11 @@ class DataManagementService:
 
             export_req.s3_key = s3_key
             export_req.public_url = public_url
-            export_req.status = "completed"
+            export_req.status = ExportStatus.COMPLETED
 
         except Exception as e:
             logger.exception("Export failed")
-            export_req.status = "failed"
+            export_req.status = ExportStatus.FAILED
             export_req.error_log = str(e)
             
         await self.session.commit()

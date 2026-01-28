@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime, timezone
 from src.services.expenses import ExpenseService
-from src.models import User, Job, Business, UserRole, Customer, Expense
+from src.models import User, Job, Business, UserRole, Customer
 from src.uimodels import AddExpenseTool
 from src.tools.expenses import ExpenseTools
 

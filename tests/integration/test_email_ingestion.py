@@ -6,7 +6,7 @@ from src.main import app
 from src.database import get_db, Base
 from src.config import settings
 from src.models import Document, Customer, Business
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 # In-memory DB for tests
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"

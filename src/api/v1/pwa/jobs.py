@@ -8,7 +8,7 @@ from src.database import get_db
 from src.services.crm_service import CRMService
 from src.services.dashboard_service import DashboardService
 from src.schemas.pwa import JobListResponse, JobSchema, JobCreate, JobUpdate
-from src.models import Job, User
+from src.models import User
 from src.api.dependencies.clerk_auth import get_current_user
 
 router = APIRouter()

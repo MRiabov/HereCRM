@@ -30,7 +30,7 @@ async def test_add_job_summary_done(service, mock_user):
         location="Barrack Street 67",
         price=50.0,
         description="Fix leak",
-        status="completed",
+        status="COMPLETED",
     )
     # Replaced service._generate_summary with service.summary_generator.generate_summary
     summary = await service.summary_generator.generate_summary(tool, mock_user)

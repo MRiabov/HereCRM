@@ -1,9 +1,8 @@
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.services.data_management import DataManagementService
-from src.models import Business, Customer, Job, PipelineStage
-from datetime import datetime
+from src.models import Business, Customer, Job, PipelineStage, JobStatus, ExportStatus
 
 @pytest.mark.asyncio
 async def test_export_customers_csv(async_session: AsyncSession):
@@ -30,7 +29,7 @@ async def test_export_customers_csv(async_session: AsyncSession):
         result = await service.export_data(business.id, query="all", format="csv", filters=filters)
         
         # Verify
-        assert result.status == "completed"
+        assert result.status == ExportStatus.COMPLETED
         assert result.public_url == "https://s3.fake/export.csv"
         
         # Verify call args
@@ -56,8 +55,8 @@ async def test_export_jobs_filtered(async_session: AsyncSession):
     async_session.add(c1)
     await async_session.flush()
 
-    j1 = Job(business_id=business.id, customer_id=c1.id, description="Fix Roof", status="pending", value=500.0)
-    j2 = Job(business_id=business.id, customer_id=c1.id, description="Clean Windows", status="completed", value=100.0)
+    j1 = Job(business_id=business.id, customer_id=c1.id, description="Fix Roof", status=JobStatus.PENDING, value=500.0)
+    j2 = Job(business_id=business.id, customer_id=c1.id, description="Clean Windows", status=JobStatus.COMPLETED, value=100.0)
     async_session.add_all([j1, j2])
     await async_session.commit()
 
@@ -67,10 +66,10 @@ async def test_export_jobs_filtered(async_session: AsyncSession):
         mock_storage.upload_file.return_value = "https://s3.fake/jobs.xlsx"
         
         # Action: Export Jobs with Status=pending
-        filters = {"entity_type": "job", "status": "pending"}
+        filters = {"entity_type": "job", "status": JobStatus.PENDING}
         result = await service.export_data(business.id, query="all", format="excel", filters=filters)
         
-        assert result.status == "completed"
+        assert result.status == ExportStatus.COMPLETED
         
         # Verify content logic (without parsing excel binary, just assume success if mock called)
         mock_storage.upload_file.assert_called_once()
@@ -95,7 +94,7 @@ async def test_export_failure_handling(async_session: AsyncSession):
         
         result = await service.export_data(business.id, query="all", format="json")
         
-        assert result.status == "failed"
+        assert result.status == ExportStatus.FAILED
         # ExportRequest not having error log means we can't check the message directly on the model 
         # unless we added it (which I didn't in WP01, ImportJob has it).
         # But status should be failed.

@@ -1,11 +1,9 @@
 import pytest
-import asyncio
 from contextlib import asynccontextmanager
 
 from src.events import event_bus
 from src.services.messaging_service import MessagingService
 from src.models import MessageLog, MessageStatus, Business, Customer
-from src.database import get_db
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from unittest.mock import patch
@@ -147,7 +145,7 @@ async def test_event_bus_integration_job_scheduled(async_session: AsyncSession):
     
     assert len(message_logs) > 0
     latest_log = message_logs[-1]
-    assert "scheduled" in latest_log.content.lower()
+    assert "SCHEDULED" in latest_log.content.lower()
     assert latest_log.status == MessageStatus.SENT
 
 

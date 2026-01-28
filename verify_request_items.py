@@ -7,7 +7,7 @@ sys.path.append(os.getcwd())
 
 from src.database import async_session_factory
 from src.services.crm_service import CRMService
-from src.models import Urgency, RequestStatus
+from src.models import Urgency
 
 async def verify_request_creation():
     async with async_session_factory() as session:

@@ -3,7 +3,6 @@ from httpx import AsyncClient, ASGITransport
 from src.main import app
 from src.database import get_db, AsyncSessionLocal as SessionLocal
 from src.models import User, Business, UserRole
-from sqlalchemy.ext.asyncio import AsyncSession
 import json
 
 async def debug_422():

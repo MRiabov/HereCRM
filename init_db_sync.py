@@ -6,7 +6,7 @@ import sys
 # Add src to path
 sys.path.append(os.getcwd())
 
-from src.database import engine, Base
+from src.database import Base
 from src.models import *
 
 def init_db():

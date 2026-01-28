@@ -1656,7 +1656,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-    get:
+    put:
       tags:
       - pwa-analytics
       summary: Proxy Posthog
@@ -1708,7 +1708,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-    put:
+    get:
       tags:
       - pwa-analytics
       summary: Proxy Posthog
@@ -2106,12 +2106,12 @@ components:
     CampaignStatus:
       type: string
       enum:
-      - draft
-      - scheduled
-      - sending
-      - completed
-      - failed
-      - cancelled
+      - DRAFT
+      - SCHEDULED
+      - SENDING
+      - COMPLETED
+      - FAILED
+      - CANCELLED
       title: CampaignStatus
     ChatExecuteRequest:
       properties:
@@ -2741,6 +2741,7 @@ components:
       type: string
       enum:
       - PENDING
+      - GENERATED
       - SENT
       - PAID
       - OVERDUE
@@ -2823,7 +2824,7 @@ components:
       properties:
         date:
           type: string
-          maxLength: 10
+          maxLength: 20
           title: Date
         jobs:
           items:
@@ -3377,6 +3378,8 @@ components:
       - PENDING
       - CONVERTED
       - DISMISSED
+      - COMPLETED
+      - LOGGED
       title: RequestStatus
     RequestUpdate:
       properties:
@@ -3479,7 +3482,7 @@ components:
       properties:
         date:
           type: string
-          maxLength: 10
+          maxLength: 20
           title: Date
         metrics:
           $ref: '#/components/schemas/RoutingMetrics'

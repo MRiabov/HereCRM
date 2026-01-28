@@ -2669,7 +2669,7 @@
           }
         }
       },
-      "get": {
+      "put": {
         "tags": [
           "pwa-analytics"
         ],
@@ -2747,7 +2747,7 @@
           }
         }
       },
-      "put": {
+      "get": {
         "tags": [
           "pwa-analytics"
         ],
@@ -3449,12 +3449,12 @@
       "CampaignStatus": {
         "type": "string",
         "enum": [
-          "draft",
-          "scheduled",
-          "sending",
-          "completed",
-          "failed",
-          "cancelled"
+          "DRAFT",
+          "SCHEDULED",
+          "SENDING",
+          "COMPLETED",
+          "FAILED",
+          "CANCELLED"
         ],
         "title": "CampaignStatus"
       },
@@ -4520,6 +4520,7 @@
         "type": "string",
         "enum": [
           "PENDING",
+          "GENERATED",
           "SENT",
           "PAID",
           "OVERDUE",
@@ -4662,7 +4663,7 @@
         "properties": {
           "date": {
             "type": "string",
-            "maxLength": 10,
+            "maxLength": 20,
             "title": "Date"
           },
           "jobs": {
@@ -5574,7 +5575,9 @@
         "enum": [
           "PENDING",
           "CONVERTED",
-          "DISMISSED"
+          "DISMISSED",
+          "COMPLETED",
+          "LOGGED"
         ],
         "title": "RequestStatus"
       },
@@ -5756,7 +5759,7 @@
         "properties": {
           "date": {
             "type": "string",
-            "maxLength": 10,
+            "maxLength": 20,
             "title": "Date"
           },
           "metrics": {

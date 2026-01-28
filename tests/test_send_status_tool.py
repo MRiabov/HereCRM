@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, patch
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Job, Customer, User
+from src.models import Business, Job, Customer, User, UserRole, JobStatus
 from src.tool_executor import ToolExecutor
 from src.uimodels import SendStatusTool
 from src.services.template_service import TemplateService
@@ -34,7 +34,7 @@ async def test_send_status_named_customer(test_session, template_service):
     test_session.add(biz)
     await test_session.flush()
 
-    user = User(phone_number="123456789", business_id=biz.id, role="owner")
+    user = User(phone_number="123456789", business_id=biz.id, role=UserRole.OWNER)
     test_session.add(user)
     
     customer = Customer(name="John Doe", phone="123456", business_id=biz.id)
@@ -65,7 +65,7 @@ async def test_send_status_next_client(test_session, template_service):
     test_session.add(biz)
     await test_session.flush()
 
-    user = User(phone_number="123456789", business_id=biz.id, role="owner")
+    user = User(phone_number="123456789", business_id=biz.id, role=UserRole.OWNER)
     test_session.add(user)
     
     customer = Customer(name="Next Client", phone="999999", business_id=biz.id)
@@ -77,7 +77,7 @@ async def test_send_status_next_client(test_session, template_service):
     job = Job(
         business_id=biz.id,
         customer_id=customer.id,
-        status="scheduled",
+        status="SCHEDULED",
         scheduled_at=future_time
     )
     

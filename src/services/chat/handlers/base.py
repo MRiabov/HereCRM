@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Optional
 from src.models import User, ConversationState
 
 class ChatHandler(ABC):

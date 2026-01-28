@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, func, desc
 from sqlalchemy.orm import selectinload, joinedload
 
-from src.models import Job, User, UserRole, Invoice, Customer
+from src.models import Job, User, UserRole, Invoice, Customer, JobStatus
 from src.schemas.pwa import ActivityType
 
 class DashboardService:
@@ -21,7 +21,7 @@ class DashboardService:
         stmt = select(func.sum(Job.value)).where(
             Job.business_id == business_id,
             Job.scheduled_at >= start_of_month,
-            Job.status != "cancelled"
+            Job.status != JobStatus.CANCELLED
         )
         result = await self.session.execute(stmt)
         return result.scalar() or 0.0
@@ -161,7 +161,7 @@ class DashboardService:
 
     async def get_unscheduled_jobs(self, business_id: int) -> List[Job]:
         """
-        Query all jobs where (employee_id is None OR scheduled_at is None) AND status is pending/open.
+        Query all jobs where (employee_id is None OR scheduled_at is None) AND status is pending.
         """
         stmt = select(Job).where(
             Job.business_id == business_id,
@@ -169,7 +169,7 @@ class DashboardService:
                 Job.employee_id.is_(None),
                 Job.scheduled_at.is_(None)
             ),
-            Job.status.in_(["pending", "open"])
+            Job.status == JobStatus.PENDING
         ).options(
             selectinload(Job.customer),
             selectinload(Job.employee),

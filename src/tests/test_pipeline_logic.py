@@ -1,6 +1,6 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import Customer, PipelineStage
+from src.models import Customer, PipelineStage, RequestStatus
 from src.services.crm_service import CRMService
 from src.repositories import CustomerRepository
 from src.services.pipeline_handlers import handle_job_created, handle_contact_event
@@ -64,7 +64,7 @@ async def test_convert_request_progression(session: AsyncSession):
     name = "Target Customer"
     customer = Customer(name=name, business_id=business_id)
     from src.models import Request
-    req = Request(business_id=business_id, description=f"Request from {name}", status="pending")
+    req = Request(business_id=business_id, description=f"Request from {name}", status=RequestStatus.PENDING)
     session.add(customer)
     session.add(req)
     await session.commit()

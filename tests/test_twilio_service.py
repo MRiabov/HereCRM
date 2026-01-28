@@ -2,7 +2,7 @@
 Tests for Twilio SMS integration (WP02)
 """
 import pytest
-from unittest.mock import Mock, patch, AsyncMock
+from unittest.mock import Mock, patch
 from src.services.twilio_service import TwilioService
 
 

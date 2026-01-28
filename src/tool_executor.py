@@ -8,24 +8,17 @@ from datetime import datetime, timedelta, timezone
 
 from src.models import (
     Customer,
-    Request,
     Business,
     Service,
     Job,
-    User,
     UserRole,
     InvoicingWorkflow,
     QuotingWorkflow,
     PaymentTiming,
     JobCreationDefault,
-    PipelineStage,
     CampaignChannel,
     JobStatus, # Added JobStatus
-    ConversationStatus, # Added ConversationStatus
-    QuoteStatus, # Added QuoteStatus
-    SyncType, # Added SyncType
-    SyncLogStatus, # Added SyncLogStatus
-)
+    )
 from src.events import event_bus
 from src.repositories import (
     JobRepository,
@@ -97,7 +90,6 @@ from src.uimodels import (
     AddExpenseTool,
 )
 from src.tools.expenses import ExpenseTools
-from src.services.accounting.accounting_tools import AccountingToolsHandler
 from src.tools.shifts import ShiftTools
 from src.tools.jobs_time import JobTimeTools
 from src.tools.invoice_tools import SendInvoiceTool
@@ -110,7 +102,6 @@ from src.tools.employee_management import (
     DismissUserTool,
     LeaveBusinessTool
 )
-from src.services.location_service import LocationService
 from src.services.routing.ors import OpenRouteServiceAdapter
 from src.services.accounting.quickbooks_auth import QuickBooksAuthService
 from src.services.accounting.quickbooks_sync import QuickBooksSyncManager
@@ -789,7 +780,7 @@ class ToolExecutor:
                 location=tool.location,
                 price=tool.price,
                 description=tool.description,
-                status=JobStatus.SCHEDULED, # Changed from "scheduled" to JobStatus.SCHEDULED
+                status=JobStatus.SCHEDULED, # Changed from "SCHEDULED" to JobStatus.SCHEDULED
                 line_items=tool.line_items,
                 time=tool.time,
                 iso_time=tool.iso_time,
@@ -1286,7 +1277,7 @@ class ToolExecutor:
                  .where(
                      Job.business_id == self.business_id,
                      Job.scheduled_at >= datetime.now(),
-                     Job.status == "scheduled"
+                     Job.status == JobStatus.SCHEDULED
                  )
                  .order_by(Job.scheduled_at.asc())
                  .limit(1)
@@ -1678,7 +1669,7 @@ class ToolExecutor:
                         errors += f": {err_str[:47]}..."
                     else:
                         errors += f": {err_str}"
-            elif last_log.status.value == "failed":
+            elif last_log.status.value == "FAILED":
                 errors = "Last sync failed completely"
         
         return self.template_service.render(

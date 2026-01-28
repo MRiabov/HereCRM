@@ -6,7 +6,7 @@ from src.events import event_bus, JOB_CREATED, JOB_UPDATED, JOB_ASSIGNED, JOB_UN
 from src.database import AsyncSessionLocal
 from src.repositories import JobRepository, UserRepository
 from src.services.google_calendar_service import GoogleCalendarService
-from src.models import Job
+from src.models import Job, JobStatus
 
 logger = logging.getLogger(__name__)
 
@@ -71,15 +71,14 @@ class CalendarSyncHandler:
                 return
 
             # Fetch all upcoming jobs for this user
-            from sqlalchemy import and_
             from sqlalchemy.orm import selectinload
             stmt = (
                 select(Job)
                 .where(
                     Job.employee_id == user_id,
                     Job.scheduled_at >= datetime.now(),
-                    Job.status != 'completed',
-                    Job.status != 'cancelled'
+                    Job.status != JobStatus.COMPLETED,
+                    Job.status != JobStatus.CANCELLED
                 )
                 .options(selectinload(Job.customer))
             )

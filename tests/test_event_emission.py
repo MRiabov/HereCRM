@@ -51,7 +51,7 @@ async def test_add_job_emits_event(test_session):
             description="Test Job",
             location="Test Location",
             price=100.0,
-            status="pending"
+            status="PENDING"
         )
         
         await executor.execute(tool)
@@ -97,7 +97,7 @@ async def test_schedule_job_emits_event(test_session):
         business_id=business.id,
         customer_id=customer.id,
         description="Test Job",
-        status="pending"
+        status="PENDING"
     )
     test_session.add(job)
     await test_session.commit()

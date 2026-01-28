@@ -4,7 +4,15 @@ from typing import Optional
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import Campaign, CampaignRecipient, CampaignStatus, CampaignChannel, Customer
+from src.models import (
+    Campaign, 
+    CampaignRecipient, 
+    CampaignStatus, 
+    CampaignChannel, 
+    RecipientStatus, 
+    Customer,
+    MessageStatus
+)
 from src.services.search_service import SearchService
 from src.services.messaging_service import messaging_service
 from src.services.postmark_service import PostmarkService
@@ -83,7 +91,7 @@ class CampaignService:
         await self.session.execute(
             update(CampaignRecipient)
             .where(CampaignRecipient.campaign_id == campaign_id)
-            .values(status="deleted") # Or actual delete
+            .values(status=RecipientStatus.DELETED)
         )
 
         total_count = 0
@@ -96,7 +104,7 @@ class CampaignService:
             recipient = CampaignRecipient(
                 campaign_id=campaign_id,
                 customer_id=customer.id,
-                status="pending"
+                status=RecipientStatus.PENDING
             )
             self.session.add(recipient)
             total_count += 1
@@ -123,7 +131,7 @@ class CampaignService:
         # Fetch all pending recipients
         stmt = select(CampaignRecipient).where(
             CampaignRecipient.campaign_id == campaign_id,
-            CampaignRecipient.status == "pending"
+            CampaignRecipient.status == RecipientStatus.PENDING
         )
         result = await self.session.execute(stmt)
         recipients = result.scalars().all()
@@ -154,7 +162,7 @@ class CampaignService:
                             trigger_source=f"campaign_{campaign_id}",
                             business_id=campaign.business_id
                         )
-                        success = msg_log.status == "sent"
+                        success = msg_log.status == MessageStatus.SENT
                         external_id = msg_log.external_id
                         error_message = msg_log.error_message
                 elif campaign.channel == CampaignChannel.SMS:
@@ -166,23 +174,23 @@ class CampaignService:
                             trigger_source=f"campaign_{campaign_id}",
                             business_id=campaign.business_id
                         )
-                        success = msg_log.status == "sent"
+                        success = msg_log.status == MessageStatus.SENT
                         external_id = msg_log.external_id
                         error_message = msg_log.error_message
 
                 if success:
-                    recipient.status = "sent"
+                    recipient.status = RecipientStatus.SENT
                     recipient.sent_at = datetime.now(timezone.utc)
                     recipient.external_id = external_id
                     campaign.sent_count += 1
                 else:
-                    recipient.status = "failed"
+                    recipient.status = RecipientStatus.FAILED
                     recipient.error_message = error_message or "Failed to send"
                     campaign.failed_count += 1
 
             except Exception as e:
                 logger.error(f"Error sending campaign {campaign_id} to recipient {recipient.id}: {e}")
-                recipient.status = "failed"
+                recipient.status = RecipientStatus.FAILED
                 recipient.error_message = str(e)
                 campaign.failed_count += 1
 

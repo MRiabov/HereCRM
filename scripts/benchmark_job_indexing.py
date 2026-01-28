@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import select, func
+from sqlalchemy import select
 from src.database import Base
 from src.models import Business, Customer, Job, PipelineStage
 import logging
@@ -79,7 +79,7 @@ async def run_benchmark():
     duration = end_time - start_time
     avg_per_query = (duration / query_count) * 1000  # ms
 
-    print(f"\nBenchmark Results:")
+    print("\nBenchmark Results:")
     print(f"Total time: {duration:.4f} seconds")
     print(f"Total queries: {query_count}")
     print(f"Average time per query: {avg_per_query:.4f} ms")

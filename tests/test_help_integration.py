@@ -6,8 +6,6 @@ from src.database import Base
 from src.models import (
     Business,
     User,
-    ConversationState,
-    ConversationStatus,
 )
 from src.services.whatsapp_service import WhatsappService
 from src.services.template_service import TemplateService

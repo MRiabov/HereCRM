@@ -1,5 +1,4 @@
 import pytest
-import os
 import yaml
 from src.services.template_service import TemplateService
 

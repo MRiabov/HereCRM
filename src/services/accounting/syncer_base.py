@@ -54,7 +54,7 @@ class AbstractSyncer(ABC):
             # Validate mapped data
             validation_error = self._validate_record(qb_data)
             if validation_error:
-                await self._update_status(record, 'failed', error=validation_error)
+                await self._update_status(record, 'FAILED', error=validation_error)
                 return False
             
             # Push to QuickBooks (synchronous call to library)
@@ -70,14 +70,14 @@ class AbstractSyncer(ABC):
             # We need to get the record again to update its status
             record = await self._get_record(business_id, record_id)
             if record:
-                await self._update_status(record, 'failed', error=str(e))
+                await self._update_status(record, 'FAILED', error=str(e))
             return False
         except Exception as e:
             logger.error(f"Unexpected error syncing record {record_id}: {str(e)}")
             # We need to get the record again to update its status
             record = await self._get_record(business_id, record_id)
             if record:
-                await self._update_status(record, 'failed', error=str(e))
+                await self._update_status(record, 'FAILED', error=str(e))
             return False
     
     @abstractmethod
@@ -133,7 +133,7 @@ class AbstractSyncer(ABC):
         
         Args:
             record: The database record to update
-            status: The sync status ('synced', 'failed', 'pending')
+            status: The sync status ('synced', 'FAILED', 'PENDING')
             qb_id: The QuickBooks ID (if sync was successful)
             error: Error message (if sync failed)
         """

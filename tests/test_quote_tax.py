@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from src.services.quote_service import QuoteService
-from src.models import Quote, Business, QuoteStatus, QuoteLineItem, Customer, Job
+from src.models import Quote, Business, QuoteStatus, QuoteLineItem, Job
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.services.tax_calculator import tax_calculator
 

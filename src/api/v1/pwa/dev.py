@@ -4,7 +4,7 @@ from src.database import get_db, engine
 from src.models import Base
 from src.config import settings
 from src.api.dependencies.clerk_auth import get_current_user
-from src.models import User, UserRole, Business, Customer, Job, Service, LineItem, Expense, QuickBooksSyncStatus, PipelineStage, JobStatus
+from src.models import User, UserRole, Business, Customer, Job, Service, LineItem, Expense, PipelineStage, JobStatus
 from datetime import datetime, timedelta, timezone
 import logging
 

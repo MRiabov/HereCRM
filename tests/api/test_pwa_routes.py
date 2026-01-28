@@ -1,7 +1,6 @@
 import pytest
 from httpx import AsyncClient, ASGITransport
 from src.main import app
-from datetime import datetime, timezone
 
 # Helper to act as authenticated user? 
 # The endpoints currently default business_id=1, but in real app we'd need auth headers.
@@ -82,7 +81,7 @@ async def test_create_and_get_job(client):
     job_data = {
         "customer_id": customer_id,
         "description": "Test Job PWA",
-        "status": "pending",
+        "status": "PENDING",
         "value": 150.0
     }
     res = await client.post("/api/v1/pwa/jobs/", json=job_data)

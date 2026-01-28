@@ -1,4 +1,3 @@
-from typing import Optional, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import User, ConversationState, ConversationStatus, Business
 from src.llm_client import LLMParser
@@ -21,7 +20,6 @@ from src.uimodels import (
     GetBillingStatusTool,
 )
 import logging
-import asyncio
 from datetime import datetime, timezone, timedelta
 
 class IdleHandler(ChatHandler):

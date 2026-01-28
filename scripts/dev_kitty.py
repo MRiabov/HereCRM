@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import re
 import subprocess
 import argparse
@@ -59,7 +58,7 @@ def parse_activity_log(content):
             try:
                 # Handle 'Z' if present, otherwise assume UTC
                 ts_str = ts_match.group(1).replace('Z', '+00:00')
-                if not ts_str.endswith('+00:00') and not '+' in ts_str[-6:]:
+                if not ts_str.endswith('+00:00') and '+' not in ts_str[-6:]:
                      ts_str += '+00:00'
                 
                 dt = datetime.fromisoformat(ts_str)

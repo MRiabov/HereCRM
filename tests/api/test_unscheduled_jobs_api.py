@@ -3,7 +3,7 @@ from httpx import AsyncClient, ASGITransport
 from src.main import app
 from src.api.dependencies.clerk_auth import get_current_user, verify_token
 from src.database import get_db
-from src.models import User, Business, UserRole, Customer, Job
+from src.models import User, Business, UserRole, Customer, Job, JobStatus
 from datetime import datetime, timezone
 from sqlalchemy import select
 
@@ -59,7 +59,7 @@ async def test_list_unscheduled_jobs_api(client, async_session):
         business_id=biz.id,
         customer_id=customer.id,
         description="Backlog Job",
-        status="pending",
+        status=JobStatus.PENDING,
         scheduled_at=None,
         employee_id=1
     )
@@ -69,7 +69,7 @@ async def test_list_unscheduled_jobs_api(client, async_session):
         business_id=biz.id,
         customer_id=customer.id,
         description="Scheduled Job",
-        status="pending",
+        status=JobStatus.PENDING,
         scheduled_at=datetime.now(timezone.utc),
         employee_id=1
     )

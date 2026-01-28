@@ -6,7 +6,7 @@ import enum
 from src.database import Base
 from src.models.integration_config import IntegrationConfig, IntegrationType
 from src.models.document import Document, DocumentType
-from src.models.campaign import Campaign, CampaignRecipient, CampaignStatus, CampaignChannel
+from src.models.campaign import Campaign, CampaignRecipient, CampaignStatus, CampaignChannel, RecipientStatus
 from src.models.whatsapp_template import WhatsAppTemplate, WhatsAppTemplateStatus, WhatsAppTemplateCategory
 
 
@@ -40,6 +40,7 @@ class PipelineStage(str, enum.Enum):
 
 class InvoiceStatus(str, enum.Enum):
     PENDING = "PENDING"
+    GENERATED = "GENERATED"
     SENT = "SENT"
     PAID = "PAID"
     OVERDUE = "OVERDUE"
@@ -84,6 +85,8 @@ class RequestStatus(str, enum.Enum):
     PENDING = "PENDING"
     CONVERTED = "CONVERTED"
     DISMISSED = "DISMISSED"
+    COMPLETED = "COMPLETED"
+    LOGGED = "LOGGED"
 
 
 class QuickBooksSyncStatus(str, enum.Enum):
@@ -539,7 +542,7 @@ class ImportJob(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
-    status: Mapped[str] = mapped_column(String, default="PENDING")
+    status: Mapped[str] = mapped_column(String, default=RequestStatus.PENDING)
     file_url: Mapped[str] = mapped_column(String)
     filename: Mapped[Optional[str]] = mapped_column(String)
     record_count: Mapped[int] = mapped_column(Integer, default=0)
