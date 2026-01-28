@@ -25,9 +25,14 @@ os.environ.setdefault("S3_SECRET_ACCESS_KEY", "dummy")
 os.environ.setdefault("STRIPE_SECRET_KEY", "dummy")
 os.environ.setdefault("SECRET_KEY", "dummy")
 
-# Add src to sys.path if not present
-if os.getcwd() not in sys.path:
-    sys.path.append(os.getcwd())
+# Add project root to sys.path
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(script_dir)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+# Also ensure CWD is project_root for relative file saving
+os.chdir(project_root)
 
 from fastapi import FastAPI
 try:
@@ -47,17 +52,29 @@ def generate_schema():
 
     schema = app.openapi()
 
-    # Save JSON
-    json_path = "herecrm-pwa-openapi.json"
-    with open(json_path, "w") as f:
-        json.dump(schema, f, indent=2)
-    print(f"Saved JSON schema to {json_path}")
+    # Paths to save
+    files_to_save = {
+        "herecrm-pwa-openapi.json": lambda f: json.dump(schema, f, indent=2),
+        "herecrm-pwa-openapi.yaml": lambda f: yaml.dump(schema, f, sort_keys=False)
+    }
 
-    # Save YAML
-    yaml_path = "herecrm-pwa-openapi.yaml"
-    with open(yaml_path, "w") as f:
-        yaml.dump(schema, f, sort_keys=False)
-    print(f"Saved YAML schema to {yaml_path}")
+    # Determine potential target directories
+    # 1. Current directory (Backend root)
+    # 2. Sibling PWA directory (if exists)
+    target_dirs = ["."]
+    
+    # Check for PWA sibling directory
+    pwa_sibling = os.path.abspath(os.path.join(os.getcwd(), "..", "HereCRM-PWA"))
+    if os.path.isdir(pwa_sibling):
+        target_dirs.append(pwa_sibling)
+        print(f"Detected PWA sibling at {pwa_sibling}")
+
+    for target_dir in target_dirs:
+        for filename, save_fn in files_to_save.items():
+            path = os.path.join(target_dir, filename)
+            with open(path, "w") as f:
+                save_fn(f)
+            print(f"Saved {filename} to {target_dir}")
 
 if __name__ == "__main__":
     generate_schema()
