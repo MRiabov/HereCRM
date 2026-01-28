@@ -3,7 +3,7 @@ from typing import List, Optional, TYPE_CHECKING
 from sqlalchemy import String, ForeignKey, DateTime, Text, Float, Enum as SAEnum, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 import enum
-from src.models.base_enum import RobustEnum
+from src.models.base_enum import RobustEnum, SafeSAEnum
 from src.database import Base
 
 if TYPE_CHECKING:
@@ -23,7 +23,7 @@ class RecipientStatus(RobustEnum):
     FAILED = "FAILED"
     DELETED = "DELETED"
 
-class CampaignChannel(str, enum.Enum):
+class CampaignChannel(RobustEnum):
     WHATSAPP = "WHATSAPP"
     EMAIL = "EMAIL"
     SMS = "SMS"
@@ -43,8 +43,8 @@ class Campaign(Base):
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     name: Mapped[str] = mapped_column(String, index=True)
     description: Mapped[Optional[str]] = mapped_column(Text)
-    channel: Mapped[CampaignChannel] = mapped_column(SAEnum(CampaignChannel))
-    status: Mapped[CampaignStatus] = mapped_column(SAEnum(CampaignStatus), default=CampaignStatus.DRAFT)
+    channel: Mapped[CampaignChannel] = mapped_column(SafeSAEnum(CampaignChannel))
+    status: Mapped[CampaignStatus] = mapped_column(SafeSAEnum(CampaignStatus), default=CampaignStatus.DRAFT)
     
     # Template/Content
     template_id: Mapped[Optional[str]] = mapped_column(String, nullable=True) # For WhatsApp HSM or similar
@@ -79,7 +79,7 @@ class CampaignRecipient(Base):
     campaign_id: Mapped[int] = mapped_column(ForeignKey("campaigns.id"), index=True)
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), index=True)
     
-    status: Mapped[RecipientStatus] = mapped_column(SAEnum(RecipientStatus), default=RecipientStatus.PENDING)
+    status: Mapped[RecipientStatus] = mapped_column(SafeSAEnum(RecipientStatus), default=RecipientStatus.PENDING)
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     

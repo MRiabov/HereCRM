@@ -12,7 +12,7 @@ from src.models import (
 from enum import Enum
 
 # --- Constants ---
-PHONE_PATTERN = r"(^\+?[1-9]\d{1,14}$|^$)"
+PHONE_PATTERN = r"(^\+?\d{1,15}$|^$)"
 EMAIL_PATTERN = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$|^$)"
 
 # --- Shared / Base Schemas ---
@@ -559,12 +559,25 @@ class CampaignCreate(BaseModel):
     recipient_query: str = Field("all", min_length=1, max_length=500)
 
 
+class WhatsAppButtonType(str, Enum):
+    QUICK_REPLY = "QUICK_REPLY"
+    PHONE_NUMBER = "PHONE_NUMBER"
+    URL = "URL"
+    COPY_CODE = "COPY_CODE"
+
+class WhatsAppButtonSchema(BaseModel):
+    type: WhatsAppButtonType
+    text: Optional[str] = Field(None, max_length=128)
+    phone_number: Optional[str] = Field(None, max_length=20)
+    url: Optional[str] = Field(None, max_length=2000)
+    example: Optional[List[str]] = None
+
 class WhatsAppTemplateComponentSchema(BaseModel):
     type: str = Field(..., pattern="^(HEADER|BODY|FOOTER|BUTTONS)$")
     format: Optional[str] = Field(None, pattern="^(TEXT|IMAGE|VIDEO|DOCUMENT)$")
     text: Optional[str] = Field(None, max_length=2000)
     example: Optional[Dict[str, Any]] = None
-    buttons: Optional[List[Dict[str, Any]]] = None
+    buttons: Optional[List[WhatsAppButtonSchema]] = None
 
 class WhatsAppTemplateSchema(BaseModel):
     id: int = Field(..., ge=1)

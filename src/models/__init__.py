@@ -10,7 +10,7 @@ from src.models.campaign import Campaign, CampaignRecipient, CampaignStatus, Cam
 from src.models.whatsapp_template import WhatsAppTemplate, WhatsAppTemplateStatus, WhatsAppTemplateCategory
 
 
-from src.models.base_enum import RobustEnum
+from src.models.base_enum import RobustEnum, SafeSAEnum
 
 
 class UserRole(RobustEnum):
@@ -106,7 +106,7 @@ class RequestStatus(RobustEnum):
     LOGGED = "LOGGED"
 
 
-class QuickBooksSyncStatus(str, enum.Enum):
+class QuickBooksSyncStatus(RobustEnum):
     PENDING = "PENDING"
     SYNCED = "SYNCED"
     FAILED = "FAILED"
@@ -118,7 +118,7 @@ class SyncType(RobustEnum):
     MANUAL = "MANUAL"
 
 
-class SyncLogStatus(str, enum.Enum):
+class SyncLogStatus(RobustEnum):
     PROCESSING = "PROCESSING"
     SUCCESS = "SUCCESS"
     PARTIAL_SUCCESS = "PARTIAL_SUCCESS"
@@ -172,7 +172,7 @@ class SubscriptionStatus(RobustEnum):
     TRIALING = "trialing"
 
 
-class PaymentMethod(str, enum.Enum):
+class PaymentMethod(RobustEnum):
     CASH = "cash"
     CARD = "card"
     BANK_TRANSFER = "bank_transfer"
@@ -207,14 +207,14 @@ class LedgerEntryType(RobustEnum):
     EXPENSE_REIMBURSEMENT = "EXPENSE_REIMBURSEMENT"
 
 
-class PromotionAction(str, enum.Enum):
+class PromotionAction(RobustEnum):
     SCHEDULE = "SCHEDULE"
     COMPLETE = "COMPLETE"
     LOG = "LOG"
     QUOTE = "QUOTE"
 
 
-class MessageTriggerSource(str, enum.Enum):
+class MessageTriggerSource(RobustEnum):
     MANUAL = "MANUAL"
     BOT_REPLY = "BOT_REPLY"
     SYSTEM_NOTIFICATION = "SYSTEM_NOTIFICATION"
@@ -235,12 +235,12 @@ class MessageTriggerSource(str, enum.Enum):
     INVITATION = "INVITATION"
 
 
-class TriggerSource(str, enum.Enum):
+class TriggerSource(RobustEnum):
     MANUAL = "MANUAL"
     AUTO = "AUTO"
 
 
-class EntityType(str, enum.Enum):
+class EntityType(RobustEnum):
     JOB = "job"
     REQUEST = "request"
     EXPENSE = "expense"
@@ -273,7 +273,7 @@ class Business(Base):
     # Billing Fields (Shimmed from WP00)
     stripe_customer_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     stripe_subscription_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    subscription_status: Mapped[SubscriptionStatus] = mapped_column(SAEnum(SubscriptionStatus), default=SubscriptionStatus.FREE)
+    subscription_status: Mapped[SubscriptionStatus] = mapped_column(SafeSAEnum(SubscriptionStatus), default=SubscriptionStatus.FREE)
     seat_limit: Mapped[int] = mapped_column(Integer, default=1)
     active_addons: Mapped[List[str]] = mapped_column(JSON, default=lambda: ["manage_employees", "campaigns"])
     
@@ -283,16 +283,16 @@ class Business(Base):
     clerk_org_id: Mapped[Optional[str]] = mapped_column(String, unique=True, nullable=True)
 
     # Workflow Settings
-    workflow_invoicing: Mapped[Optional[InvoicingWorkflow]] = mapped_column(SAEnum(InvoicingWorkflow), nullable=True)
-    workflow_quoting: Mapped[Optional[QuotingWorkflow]] = mapped_column(SAEnum(QuotingWorkflow), nullable=True)
-    workflow_payment_timing: Mapped[Optional[PaymentTiming]] = mapped_column(SAEnum(PaymentTiming), nullable=True)
+    workflow_invoicing: Mapped[Optional[InvoicingWorkflow]] = mapped_column(SafeSAEnum(InvoicingWorkflow), nullable=True)
+    workflow_quoting: Mapped[Optional[QuotingWorkflow]] = mapped_column(SafeSAEnum(QuotingWorkflow), nullable=True)
+    workflow_payment_timing: Mapped[Optional[PaymentTiming]] = mapped_column(SafeSAEnum(PaymentTiming), nullable=True)
     workflow_tax_inclusive: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     workflow_include_payment_terms: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     workflow_enable_reminders: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     workflow_show_whatsapp_button: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=False)
     workflow_pipeline_quoted_stage: Mapped[bool] = mapped_column(Boolean, default=True)
-    workflow_job_creation_default: Mapped[Optional[JobCreationDefault]] = mapped_column(SAEnum(JobCreationDefault), nullable=True)
-    workflow_distance_unit: Mapped[DistanceUnit] = mapped_column(SAEnum(DistanceUnit), default=DistanceUnit.MILES)
+    workflow_job_creation_default: Mapped[Optional[JobCreationDefault]] = mapped_column(SafeSAEnum(JobCreationDefault), nullable=True)
+    workflow_distance_unit: Mapped[DistanceUnit] = mapped_column(SafeSAEnum(DistanceUnit), default=DistanceUnit.MILES)
 
     # Automatic Messaging Settings (Feature 003)
     workflow_auto_quote_followup: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -339,11 +339,11 @@ class User(Base):
     phone_number: Mapped[Optional[str]] = mapped_column(String, unique=True, nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String, unique=True, nullable=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
-    role: Mapped[UserRole] = mapped_column(SAEnum(UserRole), default=UserRole.EMPLOYEE)
+    role: Mapped[UserRole] = mapped_column(SafeSAEnum(UserRole), default=UserRole.EMPLOYEE)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
-    preferred_channel: Mapped[MessageType] = mapped_column(SAEnum(MessageType), default=MessageType.WHATSAPP)
+    preferred_channel: Mapped[MessageType] = mapped_column(SafeSAEnum(MessageType), default=MessageType.WHATSAPP)
     preferences: Mapped[dict] = mapped_column(
         JSON, default=lambda: {"confirm_by_default": False}
     )
@@ -395,7 +395,7 @@ class Service(Base):
     # QuickBooks sync tracking
     quickbooks_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
     quickbooks_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    quickbooks_sync_status: Mapped[Optional[QuickBooksSyncStatus]] = mapped_column(SAEnum(QuickBooksSyncStatus), nullable=True, default=QuickBooksSyncStatus.PENDING)
+    quickbooks_sync_status: Mapped[Optional[QuickBooksSyncStatus]] = mapped_column(SafeSAEnum(QuickBooksSyncStatus), nullable=True, default=QuickBooksSyncStatus.PENDING)
     quickbooks_sync_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     @validates("default_price")
@@ -448,7 +448,7 @@ class Customer(Base):
     latitude: Mapped[Optional[float]] = mapped_column(Float)
     longitude: Mapped[Optional[float]] = mapped_column(Float)
     pipeline_stage: Mapped[PipelineStage] = mapped_column(
-        SAEnum(PipelineStage), default=PipelineStage.NOT_CONTACTED
+        SafeSAEnum(PipelineStage), default=PipelineStage.NOT_CONTACTED
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
@@ -469,7 +469,7 @@ class Customer(Base):
     # QuickBooks sync tracking
     quickbooks_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
     quickbooks_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    quickbooks_sync_status: Mapped[Optional[QuickBooksSyncStatus]] = mapped_column(SAEnum(QuickBooksSyncStatus), nullable=True, default=QuickBooksSyncStatus.PENDING)
+    quickbooks_sync_status: Mapped[Optional[QuickBooksSyncStatus]] = mapped_column(SafeSAEnum(QuickBooksSyncStatus), nullable=True, default=QuickBooksSyncStatus.PENDING)
     quickbooks_sync_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
@@ -493,7 +493,7 @@ class Job(Base):
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), index=True)
     description: Mapped[Optional[str]] = mapped_column(Text)
-    status: Mapped[JobStatus] = mapped_column(SAEnum(JobStatus), default=JobStatus.PENDING)
+    status: Mapped[JobStatus] = mapped_column(SafeSAEnum(JobStatus), default=JobStatus.PENDING)
     value: Mapped[Optional[float]] = mapped_column(Float)
 
     # Tax Information (Snapshot)
@@ -544,8 +544,8 @@ class Request(Base):
     # Original field renamed or mapped to description? 
     # Frontend uses 'description', Request model had 'content'. I will use 'description' for consistency.
     description: Mapped[str] = mapped_column(Text)
-    status: Mapped[RequestStatus] = mapped_column(SAEnum(RequestStatus), default=RequestStatus.PENDING)
-    urgency: Mapped[Urgency] = mapped_column(SAEnum(Urgency), default=Urgency.MEDIUM)
+    status: Mapped[RequestStatus] = mapped_column(SafeSAEnum(RequestStatus), default=RequestStatus.PENDING)
+    urgency: Mapped[Urgency] = mapped_column(SafeSAEnum(Urgency), default=Urgency.MEDIUM)
     expected_value: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     
     # Tax Information
@@ -573,13 +573,13 @@ class ConversationState(Base):
 
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
     state: Mapped[ConversationStatus] = mapped_column(
-        SAEnum(ConversationStatus), default=ConversationStatus.IDLE
+        SafeSAEnum(ConversationStatus), default=ConversationStatus.IDLE
     )
     draft_data: Mapped[Optional[Any]] = mapped_column(JSON)
     last_action_metadata: Mapped[Optional[dict]] = mapped_column(JSON)
     pending_action_timestamp: Mapped[Optional[datetime]] = mapped_column(DateTime)
     pending_action_payload: Mapped[Optional[dict]] = mapped_column(JSON)
-    active_channel: Mapped[MessageType] = mapped_column(SAEnum(MessageType), default=MessageType.WHATSAPP)
+    active_channel: Mapped[MessageType] = mapped_column(SafeSAEnum(MessageType), default=MessageType.WHATSAPP)
     last_updated: Mapped[datetime] = mapped_column(
         DateTime,
         default=lambda: datetime.now(timezone.utc),
@@ -598,7 +598,7 @@ class Invoice(Base):
     s3_key: Mapped[str] = mapped_column(String)
     public_url: Mapped[str] = mapped_column(String)
     payment_link: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    status: Mapped[InvoiceStatus] = mapped_column(SAEnum(InvoiceStatus), default=InvoiceStatus.SENT)
+    status: Mapped[InvoiceStatus] = mapped_column(SafeSAEnum(InvoiceStatus), default=InvoiceStatus.SENT)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
@@ -609,11 +609,11 @@ class Invoice(Base):
     # QuickBooks sync tracking
     quickbooks_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
     quickbooks_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    quickbooks_sync_status: Mapped[Optional[QuickBooksSyncStatus]] = mapped_column(SAEnum(QuickBooksSyncStatus), nullable=True, default=QuickBooksSyncStatus.PENDING)
+    quickbooks_sync_status: Mapped[Optional[QuickBooksSyncStatus]] = mapped_column(SafeSAEnum(QuickBooksSyncStatus), nullable=True, default=QuickBooksSyncStatus.PENDING)
     quickbooks_sync_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
-class MessageRole(str, enum.Enum):
+class MessageRole(RobustEnum):
     USER = "USER"
     ASSISTANT = "ASSISTANT"
 
@@ -627,8 +627,8 @@ class Message(Base):
     from_number: Mapped[str] = mapped_column(String, index=True)
     to_number: Mapped[Optional[str]] = mapped_column(String)
     body: Mapped[str] = mapped_column(Text)
-    role: Mapped[MessageRole] = mapped_column(SAEnum(MessageRole))
-    channel_type: Mapped[MessageType] = mapped_column(SAEnum(MessageType), default=MessageType.WHATSAPP)
+    role: Mapped[MessageRole] = mapped_column(SafeSAEnum(MessageRole))
+    channel_type: Mapped[MessageType] = mapped_column(SafeSAEnum(MessageType), default=MessageType.WHATSAPP)
     external_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     is_executed: Mapped[bool] = mapped_column(Boolean, default=False)
     log_metadata: Mapped[Optional[dict]] = mapped_column(JSON)
@@ -641,7 +641,7 @@ class Message(Base):
     user: Mapped[Optional["User"]] = relationship(back_populates="messages")
 
 
-class ImportStatus(str, enum.Enum):
+class ImportStatus(RobustEnum):
     PENDING = "PENDING"
     PROCESSING = "PROCESSING"
     COMPLETED = "COMPLETED"
@@ -653,7 +653,7 @@ class ImportJob(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
-    status: Mapped[ImportStatus] = mapped_column(SAEnum(ImportStatus), default=ImportStatus.PENDING)
+    status: Mapped[ImportStatus] = mapped_column(SafeSAEnum(ImportStatus), default=ImportStatus.PENDING)
     file_url: Mapped[str] = mapped_column(String)
     filename: Mapped[Optional[str]] = mapped_column(String)
     record_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -673,7 +673,7 @@ class Quote(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), index=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
-    status: Mapped[QuoteStatus] = mapped_column(SAEnum(QuoteStatus), default=QuoteStatus.DRAFT)
+    status: Mapped[QuoteStatus] = mapped_column(SafeSAEnum(QuoteStatus), default=QuoteStatus.DRAFT)
     total_amount: Mapped[float] = mapped_column(Float, default=0.0)
 
     # Tax Information
@@ -708,7 +708,7 @@ class Quote(Base):
     # QuickBooks sync tracking
     quickbooks_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
     quickbooks_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    quickbooks_sync_status: Mapped[Optional[QuickBooksSyncStatus]] = mapped_column(SAEnum(QuickBooksSyncStatus), nullable=True, default=QuickBooksSyncStatus.PENDING)
+    quickbooks_sync_status: Mapped[Optional[QuickBooksSyncStatus]] = mapped_column(SafeSAEnum(QuickBooksSyncStatus), nullable=True, default=QuickBooksSyncStatus.PENDING)
     quickbooks_sync_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
@@ -732,9 +732,9 @@ class ExportRequest(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
-    status: Mapped[ExportStatus] = mapped_column(SAEnum(ExportStatus), default=ExportStatus.PENDING)
+    status: Mapped[ExportStatus] = mapped_column(SafeSAEnum(ExportStatus), default=ExportStatus.PENDING)
     query: Mapped[str] = mapped_column(Text)
-    format: Mapped[ExportFormat] = mapped_column(SAEnum(ExportFormat), default=ExportFormat.CSV)
+    format: Mapped[ExportFormat] = mapped_column(SafeSAEnum(ExportFormat), default=ExportFormat.CSV)
     s3_key: Mapped[Optional[str]] = mapped_column(String)
     public_url: Mapped[Optional[str]] = mapped_column(String)
     error_log: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -758,11 +758,11 @@ class MessageLog(Base):
     business_id: Mapped[Optional[int]] = mapped_column(ForeignKey("businesses.id"), index=True)
     recipient_phone: Mapped[str] = mapped_column(String, index=True)
     content: Mapped[str] = mapped_column(Text)
-    message_type: Mapped[MessageType] = mapped_column(SAEnum(MessageType))
+    message_type: Mapped[MessageType] = mapped_column(SafeSAEnum(MessageType))
     status: Mapped[MessageStatus] = mapped_column(
-        SAEnum(MessageStatus), default=MessageStatus.PENDING
+        SafeSAEnum(MessageStatus), default=MessageStatus.PENDING
     )
-    trigger_source: Mapped[MessageTriggerSource] = mapped_column(SAEnum(MessageTriggerSource))
+    trigger_source: Mapped[MessageTriggerSource] = mapped_column(SafeSAEnum(MessageTriggerSource))
     external_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     log_metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
@@ -779,8 +779,8 @@ class Payment(Base):
     invoice_id: Mapped[int] = mapped_column(ForeignKey("invoices.id"), index=True)
     amount: Mapped[float] = mapped_column(Float)
     payment_date: Mapped[datetime] = mapped_column(DateTime)
-    payment_method: Mapped[PaymentMethod] = mapped_column(SAEnum(PaymentMethod), default=PaymentMethod.CASH)
-    status: Mapped[PaymentStatus] = mapped_column(SAEnum(PaymentStatus), default=PaymentStatus.COMPLETED)
+    payment_method: Mapped[PaymentMethod] = mapped_column(SafeSAEnum(PaymentMethod), default=PaymentMethod.CASH)
+    status: Mapped[PaymentStatus] = mapped_column(SafeSAEnum(PaymentStatus), default=PaymentStatus.COMPLETED)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
@@ -791,7 +791,7 @@ class Payment(Base):
     # QuickBooks sync tracking
     quickbooks_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
     quickbooks_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    quickbooks_sync_status: Mapped[Optional[QuickBooksSyncStatus]] = mapped_column(SAEnum(QuickBooksSyncStatus), nullable=True, default=QuickBooksSyncStatus.PENDING)
+    quickbooks_sync_status: Mapped[Optional[QuickBooksSyncStatus]] = mapped_column(SafeSAEnum(QuickBooksSyncStatus), nullable=True, default=QuickBooksSyncStatus.PENDING)
     quickbooks_sync_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
@@ -807,7 +807,7 @@ class SyncLog(Base):
         default=lambda: datetime.now(timezone.utc)
     )
     sync_type: Mapped[SyncType] = mapped_column(
-        SAEnum(SyncType),
+        SafeSAEnum(SyncType),
         nullable=False
     )
     
@@ -818,7 +818,7 @@ class SyncLog(Base):
     
     # Status and errors
     status: Mapped[SyncLogStatus] = mapped_column(
-        SAEnum(SyncLogStatus),
+        SafeSAEnum(SyncLogStatus),
         nullable=False
     )
     error_details: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
@@ -830,7 +830,7 @@ class SyncLog(Base):
     business: Mapped["Business"] = relationship(back_populates="sync_logs")
 
 
-class InvitationStatus(str, enum.Enum):
+class InvitationStatus(RobustEnum):
     PENDING = "PENDING"
     ACCEPTED = "ACCEPTED"
     REJECTED = "REJECTED"
@@ -846,7 +846,7 @@ class Invitation(Base):
     invitee_identifier: Mapped[str] = mapped_column(String, index=True)  # phone or email
     token: Mapped[str] = mapped_column(String, unique=True, index=True)
     status: Mapped[InvitationStatus] = mapped_column(
-        SAEnum(InvitationStatus), default=InvitationStatus.PENDING
+        SafeSAEnum(InvitationStatus), default=InvitationStatus.PENDING
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
@@ -863,7 +863,7 @@ class WageConfiguration(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True)
-    model_type: Mapped[WageModelType] = mapped_column(SAEnum(WageModelType))
+    model_type: Mapped[WageModelType] = mapped_column(SafeSAEnum(WageModelType))
     rate_value: Mapped[float] = mapped_column(Float)
     tax_withholding_rate: Mapped[float] = mapped_column(Float, default=0.0)
     allow_expense_claims: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -872,7 +872,7 @@ class WageConfiguration(Base):
     user: Mapped["User"] = relationship(back_populates="wage_config")
 
 
-class ExpenseCategory(str, enum.Enum):
+class ExpenseCategory(RobustEnum):
     FUEL = "FUEL"
     TOOLS = "TOOLS"
     MATERIAL = "MATERIAL"
@@ -889,7 +889,7 @@ class Expense(Base):
     job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True, index=True)
     employee_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     amount: Mapped[float] = mapped_column(Float)
-    category: Mapped[ExpenseCategory] = mapped_column(SAEnum(ExpenseCategory), default=ExpenseCategory.OTHER)
+    category: Mapped[ExpenseCategory] = mapped_column(SafeSAEnum(ExpenseCategory), default=ExpenseCategory.OTHER)
     description: Mapped[Optional[str]] = mapped_column(Text)
     receipt_url: Mapped[Optional[str]] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(
@@ -908,7 +908,7 @@ class LedgerEntry(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     employee_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     amount: Mapped[float] = mapped_column(Float)
-    entry_type: Mapped[LedgerEntryType] = mapped_column(SAEnum(LedgerEntryType))
+    entry_type: Mapped[LedgerEntryType] = mapped_column(SafeSAEnum(LedgerEntryType))
     description: Mapped[str] = mapped_column(String)
     job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
