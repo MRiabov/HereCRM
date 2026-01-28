@@ -351,15 +351,26 @@ class ToolExecutor:
             return (
                 f"✔ Broadcast Prepared (ID: {campaign.id}): Targeting {count} recipients "
                 f"for '{tool_call.subject}' via {tool_call.channel}.\n\n"
-                f"**Blast Protocol Active**: Please type 'EXECUTE BLAST for campaign {campaign.id}' to begin sending."
-            ), None
+                f"**Blast Protocol Active**: Please type 'EXECUTE BLAST for campaign {campaign.id}' to begin sending.",
+                {
+                    "campaign_id": campaign.id,
+                    "recipient_count": count,
+                    "status": "prepared",
+                    "tool": "MassEmailTool"
+                }
+            )
 
         elif isinstance(tool_call, ExecuteBlastTool):
-            # Run in background to avoid blocking the chat response? 
-            # Actually, execute_campaign iterates and commits, might be slow.
-            # For now, let's start it and return success message.
+            # Run in background to avoid blocking the chat response
             asyncio.create_task(self.campaign_service.execute_campaign(tool_call.campaign_id))
-            return f"🚀 Blast Execution Started for Campaign {tool_call.campaign_id}. I'll notify you when complete.", None
+            return (
+                f"🚀 Blast Execution Started for Campaign {tool_call.campaign_id}. I'll notify you when complete.",
+                {
+                    "campaign_id": tool_call.campaign_id,
+                    "status": "executed",
+                    "tool": "ExecuteBlastTool"
+                }
+            )
         elif isinstance(tool_call, ExportQueryTool):
             return "✔ Access granted to Data Export. Starting export...", None
         elif isinstance(tool_call, ExitDataManagementTool):
@@ -894,7 +905,12 @@ class ToolExecutor:
     ) -> tuple[str, Optional[dict]]:
         service = CRMService(self.session, self.business_id)
         return await service.convert_request(
-            tool.query, tool.action, tool.time, tool.iso_time
+            tool.query,
+            tool.action,
+            tool.time,
+            tool.iso_time,
+            tool.assigned_to,
+            tool.price,
         )
 
     async def _execute_get_pipeline(

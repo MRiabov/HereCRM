@@ -235,6 +235,8 @@ class CRMService:
         action: str,
         time: Optional[str] = None,
         iso_time: Optional[str] = None,
+        assigned_to: Optional[int] = None,
+        price: Optional[float] = None,
     ) -> tuple[str, Optional[dict]]:
         # Find the request
         requests = await self.request_repo.search(query, self.business_id)
@@ -274,6 +276,8 @@ class CRMService:
                 description=f"Converted from request: {req.description}. Time: {time or 'N/A'}",
                 status=JobStatus.scheduled if time else JobStatus.pending,
                 scheduled_at=scheduled_at,
+                employee_id=assigned_to,
+                value=price,
             )
             await self.session.delete(req)
             await self.session.commit()
@@ -285,6 +289,8 @@ class CRMService:
                 "id": job.id,
                 "old_request_description": req.description,
                 "description": job.description,
+                "employee_id": job.employee_id,
+                "price": job.value,
             }
 
         elif action == "complete":
@@ -330,6 +336,12 @@ class CRMService:
                 customer_id=customer_id
             )
             
+            # Apply initial value if provided (assuming the quote service handles it, or we update it here)
+            if price is not None:
+                quote.total_amount = price
+                # If it's a quote, we might want to add a default line item if it's currently empty
+                # But for now let's just update the total.
+            
             # Deletion logic matches 'schedule' action
             await self.session.delete(req)
             await self.session.commit()
@@ -341,6 +353,7 @@ class CRMService:
                 "id": quote.id,
                 "old_request_description": req.description,
                 "customer_name": customers[0].name if customers else "General Customer",
+                "price": quote.total_amount,
             }
 
         return f"Unknown action: {action}", None

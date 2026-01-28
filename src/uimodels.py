@@ -268,6 +268,12 @@ class ConvertRequestTool(BaseModel):
     iso_time: Optional[str] = Field(
         None, description="ISO 8601 formatted datetime string (parsed by LLM)"
     )
+    assigned_to: Optional[int] = Field(
+        None, description="Optional ID of the professional to assign the job/quote to"
+    )
+    price: Optional[float] = Field(
+        None, description="Optional initial value or price for the job/quote"
+    )
 
 
 
