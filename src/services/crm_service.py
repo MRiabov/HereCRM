@@ -1,7 +1,7 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from src.models import Job, JobStatus, Customer, PipelineStage, Business, PaymentTiming, Request, LineItem, Service, User
+from src.models import Job, JobStatus, Customer, PipelineStage, Business, PaymentTiming, Request, LineItem, Service, User, Urgency, RequestStatus, ConversationStatus, ConversationState
 from src.repositories import JobRepository, CustomerRepository, RequestRepository
 from src.events import event_bus, JOB_CREATED, JOB_BOOKED, JOB_SCHEDULED, JOB_UPDATED, JOB_ASSIGNED, JOB_UNASSIGNED, JOB_PAID
 from datetime import datetime, timedelta, timezone
@@ -166,25 +166,115 @@ class CRMService:
         self,
         description: str,
         customer_id: Optional[int] = None,
-        urgency: str = "Medium",
+        urgency: Urgency = Urgency.MEDIUM,
         expected_value: Optional[float] = None,
-        expected_line_items: Optional[str] = None,
+        items: Optional[list] = None,
         follow_up_date: Optional[datetime] = None,
         customer_details: Optional[dict] = None,
+        subtotal: Optional[float] = 0.0,
+        tax_amount: Optional[float] = 0.0,
+        tax_rate: Optional[float] = 0.0,
     ) -> Request:
+        calculated_duration = 0
+        calculated_value = 0.0
+        if items:
+            calculated_duration, calculated_value = await self._calculate_duration_and_total(items)
+        
+        final_value = expected_value if expected_value is not None else calculated_value
+
         request = Request(
             business_id=self.business_id,
             customer_id=customer_id,
             description=description,
             urgency=urgency,
-            expected_value=expected_value,
-            expected_line_items=expected_line_items,
+            expected_value=final_value,
+            subtotal=subtotal or final_value,
+            tax_amount=tax_amount,
+            tax_rate=tax_rate,
             follow_up_date=follow_up_date,
             customer_details=customer_details,
-            status="pending"
+            status=RequestStatus.PENDING
         )
+
+        if items:
+            request.line_items = [
+                LineItem(
+                    service_id=item.get('service_id'),
+                    description=item.get('description'),
+                    quantity=item.get('quantity', 1.0),
+                    unit_price=item.get('unit_price', 0.0),
+                    total_price=item.get('quantity', 1.0) * item.get('unit_price', 0.0)
+                ) for item in items
+            ]
+
         self.request_repo.add(request)
         await self.session.commit()
+        await self.session.refresh(request, attribute_names=['line_items'])
+        return request
+
+    async def update_request(
+        self,
+        request_id: int,
+        description: Optional[str] = None,
+        status: Optional[str | RequestStatus] = None,
+        urgency: Optional[Urgency | str] = None,
+        expected_value: Optional[float] = None,
+        items: Optional[list] = None,
+        follow_up_date: Optional[datetime] = None,
+        customer_id: Optional[int] = None,
+        subtotal: Optional[float] = None,
+        tax_amount: Optional[float] = None,
+        tax_rate: Optional[float] = None,
+    ) -> Request:
+        request = await self.request_repo.get_by_id(request_id, self.business_id)
+        if not request:
+             raise ValueError(f"Request with ID {request_id} not found.")
+
+        if items is not None:
+            _, calculated_value = await self._calculate_duration_and_total(items)
+            
+            # Clear existing items
+            request.line_items.clear()
+            
+            # Update line items
+            for item in items:
+                request.line_items.append(
+                    LineItem(
+                        service_id=item.get('service_id'),
+                        description=item.get('description'),
+                        quantity=item.get('quantity', 1.0),
+                        unit_price=item.get('unit_price', 0.0),
+                        total_price=item.get('quantity', 1.0) * item.get('unit_price', 0.0)
+                    )
+                )
+            
+            # Update expected value if not strictly provided but items changed
+            if expected_value is None:
+                request.expected_value = calculated_value
+                request.subtotal = calculated_value
+
+        if description is not None:
+            request.description = description
+        if status is not None:
+            # Simple status update for now
+            request.status = status
+        if urgency is not None:
+            request.urgency = urgency
+        if expected_value is not None:
+            request.expected_value = expected_value
+        if subtotal is not None:
+            request.subtotal = subtotal
+        if tax_amount is not None:
+            request.tax_amount = tax_amount
+        if tax_rate is not None:
+            request.tax_rate = tax_rate
+        if follow_up_date is not None:
+            request.follow_up_date = follow_up_date
+        if customer_id is not None:
+            request.customer_id = customer_id
+
+        await self.session.commit()
+        await self.session.refresh(request, attribute_names=['line_items'])
         return request
 
     async def get_active_job_for_customer(self, phone_number: str) -> Optional[Job]:
@@ -243,7 +333,9 @@ class CRMService:
         if not requests:
             return f"Could not find request matching '{query}'", None
 
-        req = requests[0]
+        # Load with line items
+        req = await self.request_repo.get_by_id(requests[0].id, self.business_id)
+        assert req is not None
 
         if action == "schedule":
             # Promotion logic: Request -> Job
@@ -277,7 +369,16 @@ class CRMService:
                 status=JobStatus.scheduled if time else JobStatus.pending,
                 scheduled_at=scheduled_at,
                 employee_id=assigned_to,
-                value=price,
+                value=price or req.expected_value,
+                items=[{
+                    'description': item.description,
+                    'quantity': item.quantity,
+                    'unit_price': item.unit_price,
+                    'service_id': item.service_id
+                } for item in req.line_items] if req.line_items else None,
+                subtotal=req.subtotal,
+                tax_amount=req.tax_amount,
+                tax_rate=req.tax_rate
             )
             await self.session.delete(req)
             await self.session.commit()
@@ -375,8 +476,10 @@ class CRMService:
         lines = ["### Pipeline Breakdown"]
         # Order them logically if possible, or just alphabetical
         stages = [
+            "new_lead",
             "not_contacted",
             "contacted",
+            "quoted",
             "converted_once",
             "converted_recurrent",
             "not_interested",

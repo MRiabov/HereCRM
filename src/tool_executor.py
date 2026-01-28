@@ -801,30 +801,49 @@ class ToolExecutor:
 
         return "Could not find a job to schedule. Try adding a job first.", None
 
-    async def _execute_store_request(  # Renamed from _execute_store_request
+    async def _execute_store_request(
         self,
-        tool: AddRequestTool,  # Changed type hint from StoreRequestTool to AddRequestTool
-    ) -> Tuple[str, Optional[Dict[str, Any]]]:  # Changed return type hint
-        req = Request(
-            business_id=self.business_id, description=tool.description, status="pending"
+        tool: AddRequestTool,
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        from src.services.crm_service import CRMService
+        crm = CRMService(self.session, self.business_id, self.user_id)
+        
+        customer_id = None
+        if tool.customer_name:
+            customer = await self.customer_repo.get_by_name(tool.customer_name, self.business_id)
+            if customer:
+                customer_id = customer.id
+        if not customer_id and tool.customer_phone:
+            customer = await self.customer_repo.get_by_phone(tool.customer_phone, self.business_id)
+            if customer:
+                customer_id = customer.id
+
+        items = []
+        if tool.line_items:
+            for item in tool.line_items:
+                items.append({
+                    "description": item.description,
+                    "quantity": item.quantity,
+                    "unit_price": item.unit_price or 0.0,
+                    "service_id": item.service_id
+                })
+
+        req = await crm.create_request(
+            description=tool.description,
+            customer_id=customer_id,
+            urgency=tool.urgency,
+            expected_value=tool.expected_value,
+            items=items if items else None,
+            customer_details=tool.customer_details.dict() if tool.customer_details else None
         )
-        self.request_repo.add(req)
-        await self.session.flush()
         
         # Check for implicit contact event
-        if tool.customer_name or tool.customer_phone:
-            customer = None
-            if tool.customer_name:
-                customer = await self.customer_repo.get_by_name(tool.customer_name, self.business_id)
-            if not customer and tool.customer_phone:
-                customer = await self.customer_repo.get_by_phone(tool.customer_phone, self.business_id)
-            
-            if customer:
-                from src.events import event_bus
-                await event_bus.emit(
-                    "CONTACT_EVENT",
-                    {"customer_id": customer.id, "business_id": self.business_id}
-                )
+        if customer_id:
+            from src.events import event_bus
+            await event_bus.emit(
+                "CONTACT_EVENT",
+                {"customer_id": customer_id, "business_id": self.business_id}
+            )
         return self.template_service.render(
             "request_stored", description=tool.description[:50]
         ), {
@@ -1585,6 +1604,15 @@ class ToolExecutor:
         
         if tool.enable_reminders is not None:
             updates["workflow_enable_reminders"] = tool.enable_reminders
+
+        if tool.pipeline_quoted_stage is not None:
+            updates["workflow_pipeline_quoted_stage"] = tool.pipeline_quoted_stage
+
+        if tool.job_creation_default:
+            try:
+                updates["workflow_job_creation_default"] = JobCreationDefault(tool.job_creation_default.lower())
+            except ValueError:
+                return f"Error: Invalid job_creation_default value '{tool.job_creation_default}'. Use: mark_done, unscheduled, auto_schedule, scheduled_today.", None
             
         if not updates:
             return "No updates provided.", None

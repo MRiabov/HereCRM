@@ -52,7 +52,7 @@ class WebhookPayload(BaseModel):
 
 
 class GenericWebhookPayload(BaseModel):
-    identity: str = Field(..., description="Phone number or email of the CRM user")
+    identity: str = Field(..., description="Phone number or email of the CRM user", max_length=100)
     message: str = Field(..., max_length=5000)
     source: str = Field("generic", max_length=100)
 
@@ -499,9 +499,9 @@ async def generic_webhook(
 
 
 class TextGridWebhookPayload(BaseModel):
-    from_number: str = Field(..., alias="from")
-    to_number: str = Field(..., alias="to")
-    text: str
+    from_number: str = Field(..., alias="from", max_length=20, pattern=r"^\+?[1-9]\d{1,14}$")
+    to_number: str = Field(..., alias="to", max_length=20, pattern=r"^\+?[1-9]\d{1,14}$")
+    text: str = Field(..., max_length=1000)
 
 
 @router.post("/webhooks/textgrid")

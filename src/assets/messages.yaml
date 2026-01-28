@@ -62,7 +62,7 @@ request_summary: |
   Request details:
   {client_details}
   - Time: {time}
-  - Description: {description}
+  - Description: {description}{line_items}
 confirm_prompt: "Please confirm: {summary}\n(Reply 'Yes' to confirm, 'No' to cancel)"
 confirm_edit_prompt: "Review changes: {summary}\n(Reply 'Yes' to update, 'No' to cancel)"
 warning_no_contact_details: "⚠️ Warning: could not find a contact detail to send the {type}! Generate the {type} without sending?"

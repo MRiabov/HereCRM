@@ -1,10 +1,52 @@
 import logging
-from src.repositories import CustomerRepository, JobRepository
+from src.repositories import CustomerRepository, JobRepository, BusinessRepository
 from src.models import PipelineStage
 import src.database
-from src.events import event_bus, JOB_CREATED, CONTACT_EVENT
+from src.events import event_bus, JOB_CREATED, CONTACT_EVENT, QUOTE_SENT
 
 logger = logging.getLogger(__name__)
+
+@event_bus.on(QUOTE_SENT)
+async def handle_quote_sent(data: dict) -> None:
+    """
+    Handle QUOTE_SENT event.
+    Updates customer stage to QUOTED if enabled, otherwise to CONTACTED.
+    """
+    customer_id = data.get("customer_id")
+    business_id = data.get("business_id")
+    
+    if not customer_id or not business_id:
+        return
+
+    async with src.database.AsyncSessionLocal() as session:
+        customer_repo = CustomerRepository(session)
+        business_repo = BusinessRepository(session)
+        
+        customer = await customer_repo.get_by_id(customer_id, business_id)
+        business = await business_repo.get_by_id(business_id)
+        
+        if not customer or not business:
+            return
+
+        # Terminal stages or already converted/returning should not be downgraded to quoted
+        terminal_stages = [
+            PipelineStage.CONVERTED_ONCE,
+            PipelineStage.CONVERTED_RECURRENT,
+            PipelineStage.NOT_INTERESTED,
+            PipelineStage.LOST
+        ]
+        if customer.pipeline_stage in terminal_stages:
+            return
+
+        target_stage = PipelineStage.CONTACTED
+        if business.workflow_pipeline_quoted_stage:
+            target_stage = PipelineStage.QUOTED
+        
+        if customer.pipeline_stage != target_stage:
+            old_stage = customer.pipeline_stage
+            customer.pipeline_stage = target_stage
+            await session.commit()
+            logger.info(f"Updated customer {customer_id} to {target_stage} (was {old_stage}) due to quote sent")
 
 @event_bus.on(JOB_CREATED)
 async def handle_job_created(data: dict) -> None:

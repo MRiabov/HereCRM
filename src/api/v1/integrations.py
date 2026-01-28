@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 from src.api.dependencies.auth import get_api_key_auth
@@ -14,24 +14,24 @@ from src.config import settings
 router = APIRouter(prefix="/api/v1/integrations", tags=["integrations"])
 
 class ProvisionRequest(BaseModel):
-    auth_id: str
-    config_type: str  # INBOUND_KEY, META_CAPI, WEBHOOK
-    label: str
+    auth_id: str = Field(..., max_length=100)
+    config_type: str = Field(..., max_length=50)  # INBOUND_KEY, META_CAPI, WEBHOOK
+    label: str = Field(..., max_length=100)
     payload: dict
 
 class LeadRequest(BaseModel):
-    name: str
-    phone: str
-    email: Optional[str] = None
-    source: Optional[str] = "api"
+    name: str = Field(..., max_length=100)
+    phone: str = Field(..., max_length=20)
+    email: Optional[str] = Field(None, max_length=100)
+    source: Optional[str] = Field("api", max_length=50)
 
 class ServiceRequest(BaseModel):
-    name: str
-    phone: str
-    email: Optional[str] = None
-    address: Optional[str] = None
-    service_type: Optional[str] = None
-    notes: Optional[str] = None
+    name: str = Field(..., max_length=100)
+    phone: str = Field(..., max_length=20)
+    email: Optional[str] = Field(None, max_length=100)
+    address: Optional[str] = Field(None, max_length=255)
+    service_type: Optional[str] = Field(None, max_length=100)
+    notes: Optional[str] = Field(None, max_length=1000)
 
 @router.post("/provision", status_code=status.HTTP_201_CREATED)
 
@@ -94,8 +94,8 @@ async def create_lead(
             business_id=business_id,
             name=payload.name,
             phone=payload.phone,
-            # Customer model has no email field, so we store in details
-            details=f"Email: {payload.email}\nSource: {payload.source}" if payload.email else f"Source: {payload.source}"
+            email=payload.email,
+            details=f"Source: {payload.source}"
         )
         customer_repo.add(customer)
         await db.flush()
@@ -124,8 +124,8 @@ async def create_request(
             business_id=business_id,
             name=payload.name,
             phone=payload.phone,
-            street=payload.address,
-            details=f"Email: {payload.email}" if payload.email else None
+            email=payload.email,
+            street=payload.address
         )
         customer_repo.add(customer)
         await db.flush()

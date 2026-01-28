@@ -4,9 +4,6 @@ from src.api.dependencies.clerk_auth import verify_token
 
 router = APIRouter()
 
-# Public endpoints
-router.include_router(analytics_proxy.router, prefix="/analytics/proxy", tags=["pwa-analytics"])
-
 # Protected endpoints
 protected_router = APIRouter(dependencies=[Depends(verify_token)])
 protected_router.include_router(dashboard.router, prefix="/dashboard", tags=["pwa-dashboard"])
@@ -32,3 +29,6 @@ protected_router.include_router(templates.router, prefix="/templates", tags=["pw
 protected_router.include_router(dev.router, prefix="/dev", tags=["pwa-dev"])
 
 router.include_router(protected_router)
+
+# Public endpoints - include AFTER protected to avoid catch-all conflicts
+router.include_router(analytics_proxy.router, prefix="/analytics/proxy", tags=["pwa-analytics"])

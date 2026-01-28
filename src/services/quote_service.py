@@ -216,12 +216,23 @@ class QuoteService:
         """
         Promotes a customer request to a quote.
         """
-        stmt = select(Request).where(Request.id == request_id)
+        stmt = select(Request).options(selectinload(Request.line_items)).where(Request.id == request_id)
         result = await self.session.execute(stmt)
         request = result.scalars().first()
         
         if not request:
             raise ValueError(f"Request {request_id} not found")
+
+        # Use request's line items if no items provided
+        if not items and request.line_items:
+            items = [
+                {
+                    "description": item.description,
+                    "quantity": item.quantity,
+                    "unit_price": item.unit_price,
+                    "service_id": item.service_id
+                } for item in request.line_items
+            ]
 
         # Reuse create_quote logic if items provided
         if items:

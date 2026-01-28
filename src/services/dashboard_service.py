@@ -5,6 +5,7 @@ from sqlalchemy import select, or_, func, desc
 from sqlalchemy.orm import selectinload, joinedload
 
 from src.models import Job, User, UserRole, Invoice, Customer
+from src.schemas.pwa import ActivityType
 
 class DashboardService:
     def __init__(self, session: AsyncSession):
@@ -44,7 +45,7 @@ class DashboardService:
         invoices = result.scalars().unique().all()
         for inv in invoices:
             activities.append({
-                "type": "invoice",
+                "type": ActivityType.INVOICE,
                 "title": "Invoice Generated",
                 "description": f"Invoice generated for {inv.job.customer.name} - ${inv.job.value or 0.0:.2f}",
                 "timestamp": inv.created_at
@@ -62,7 +63,7 @@ class DashboardService:
         jobs = result.scalars().unique().all()
         for job in jobs:
             activities.append({
-                "type": "job",
+                "type": ActivityType.JOB,
                 "title": "New Job",
                 "description": f"Job created for {job.customer.name}: {job.description}",
                 "timestamp": job.created_at
@@ -79,7 +80,7 @@ class DashboardService:
         customers = result.scalars().all()
         for cust in customers:
             activities.append({
-                "type": "lead",
+                "type": ActivityType.LEAD,
                 "title": "New Customer",
                 "description": f"Customer {cust.name} added to pipeline",
                 "timestamp": cust.created_at

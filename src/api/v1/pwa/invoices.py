@@ -29,7 +29,15 @@ async def create_invoice(
 
     invoice_service = InvoiceService(session)
     try:
-        invoice = await invoice_service.create_invoice(job, force_regenerate=invoice_data.force_regenerate)
+        invoice = await invoice_service.create_invoice(
+            job, 
+            force_regenerate=invoice_data.force_regenerate,
+            invoice_number=invoice_data.invoice_number,
+            issued_at=invoice_data.issued_at,
+            due_date=invoice_data.due_date,
+            notes=invoice_data.notes,
+            items=[item.model_dump() for item in invoice_data.items] if invoice_data.items else None
+        )
         await session.commit()
         
         return InvoiceSchema(

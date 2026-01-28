@@ -31,6 +31,7 @@ class PipelineStage(str, enum.Enum):
     NEW_LEAD = "new_lead"
     NOT_CONTACTED = "not_contacted"
     CONTACTED = "contacted"
+    QUOTED = "quoted"
     CONVERTED_ONCE = "converted_once"
     CONVERTED_RECURRENT = "converted_recurrent"
     NOT_INTERESTED = "not_interested"
@@ -43,6 +44,12 @@ class InvoiceStatus(str, enum.Enum):
     PAID = "paid"
     OVERDUE = "overdue"
     CANCELLED = "cancelled"
+
+
+class Urgency(str, enum.Enum):
+    LOW = "Low"
+    MEDIUM = "Medium"
+    HIGH = "High"
 
 
 class ExportStatus(str, enum.Enum):
@@ -176,6 +183,7 @@ class Business(Base):
     workflow_include_payment_terms: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     workflow_enable_reminders: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     workflow_show_whatsapp_button: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=False)
+    workflow_pipeline_quoted_stage: Mapped[bool] = mapped_column(Boolean, default=True)
     workflow_job_creation_default: Mapped[Optional[JobCreationDefault]] = mapped_column(SAEnum(JobCreationDefault), nullable=True)
     workflow_distance_unit: Mapped[str] = mapped_column(String, default="mi")
 
@@ -294,15 +302,17 @@ class LineItem(Base):
     __tablename__ = "line_items"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id"), index=True)
+    job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True, index=True)
     service_id: Mapped[Optional[int]] = mapped_column(ForeignKey("services.id"), nullable=True, index=True)
     description: Mapped[str] = mapped_column(String)
     quantity: Mapped[float] = mapped_column(Float, default=1.0)
     unit_price: Mapped[float] = mapped_column(Float)
     total_price: Mapped[float] = mapped_column(Float)
+    request_id: Mapped[Optional[int]] = mapped_column(ForeignKey("requests.id"), nullable=True, index=True)
 
     # Relationships
-    job: Mapped["Job"] = relationship(back_populates="line_items")
+    job: Mapped[Optional["Job"]] = relationship(back_populates="line_items")
+    request: Mapped[Optional["Request"]] = relationship(back_populates="line_items")
     service: Mapped[Optional["Service"]] = relationship(back_populates="line_items")
 
     @validates("quantity", "unit_price", "total_price")
@@ -428,9 +438,14 @@ class Request(Base):
     # Frontend uses 'description', Request model had 'content'. I will use 'description' for consistency.
     description: Mapped[str] = mapped_column(Text)
     status: Mapped[RequestStatus] = mapped_column(SAEnum(RequestStatus), default=RequestStatus.PENDING)
-    urgency: Mapped[str] = mapped_column(String, default="Medium")
+    urgency: Mapped[Urgency] = mapped_column(SAEnum(Urgency), default=Urgency.MEDIUM)
     expected_value: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    expected_line_items: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    
+    # Tax Information
+    subtotal: Mapped[float] = mapped_column(Float, default=0.0)
+    tax_amount: Mapped[float] = mapped_column(Float, default=0.0)
+    tax_rate: Mapped[float] = mapped_column(Float, default=0.0)
+
     follow_up_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     
     # For leads where we haven't created a customer record yet
@@ -443,6 +458,7 @@ class Request(Base):
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="requests")
     customer: Mapped[Optional["Customer"]] = relationship()
+    line_items: Mapped[List["LineItem"]] = relationship(back_populates="request", cascade="all, delete-orphan")
 
 
 class ConversationState(Base):

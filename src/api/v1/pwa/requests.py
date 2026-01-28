@@ -56,9 +56,12 @@ async def create_request(
         customer_id=data.customer_id,
         urgency=data.urgency,
         expected_value=data.expected_value,
-        expected_line_items=data.expected_line_items,
+        items=[item.dict() for item in data.items] if data.items else None,
         follow_up_date=data.follow_up_date,
-        customer_details=data.customer_details
+        customer_details=data.customer_details,
+        subtotal=data.subtotal,
+        tax_amount=data.tax_amount,
+        tax_rate=data.tax_rate
     )
     return request
 
@@ -68,17 +71,23 @@ async def update_request(
     data: RequestUpdate,
     service: CRMService = Depends(get_crm_service)
 ):
-    request = await service.request_repo.get_by_id(request_id, service.business_id)
-    if not request:
-        raise HTTPException(status_code=404, detail="Request not found")
-    
-    update_data = data.dict(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(request, key, value)
-    
-    await service.session.commit()
-    await service.session.refresh(request)
-    return request
+    try:
+        request = await service.update_request(
+            request_id=request_id,
+            description=data.description,
+            status=data.status,
+            urgency=data.urgency,
+            expected_value=data.expected_value,
+            items=[item.dict() for item in data.items] if data.items is not None else None,
+            follow_up_date=data.follow_up_date,
+            customer_id=data.customer_id,
+            subtotal=data.subtotal,
+            tax_amount=data.tax_amount,
+            tax_rate=data.tax_rate
+        )
+        return request
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 @router.delete("/{request_id}")
 async def delete_request(

@@ -13,8 +13,10 @@ async def close_client():
 
 router = APIRouter()
 
+@router.api_route("", methods=["GET", "POST", "PUT", "PATCH", "DELETE"], include_in_schema=False)
+@router.api_route("/", methods=["GET", "POST", "PUT", "PATCH", "DELETE"], include_in_schema=False)
 @router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
-async def proxy_posthog(request: Request, path: str):
+async def proxy_posthog(request: Request, path: str = ""):
     """
     Proxies requests to PostHog to bypass ad-blockers and avoid console errors.
     """

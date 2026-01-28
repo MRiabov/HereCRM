@@ -3082,19 +3082,37 @@ components:
           type: string
           title: Description
         urgency:
-          type: string
-          title: Urgency
-          default: Medium
+          $ref: '#/components/schemas/Urgency'
         expected_value:
           anyOf:
           - type: number
           - type: 'null'
           title: Expected Value
-        expected_line_items:
+        subtotal:
           anyOf:
-          - type: string
+          - type: number
           - type: 'null'
-          title: Expected Line Items
+          title: Subtotal
+          default: 0.0
+        tax_amount:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Tax Amount
+          default: 0.0
+        tax_rate:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Tax Rate
+          default: 0.0
+        items:
+          anyOf:
+          - type: array
+            items:
+              $ref: '#/components/schemas/LineItemCreate'
+          - type: 'null'
+          title: Items
         follow_up_date:
           anyOf:
           - type: string
@@ -3122,18 +3140,24 @@ components:
         status:
           $ref: '#/components/schemas/RequestStatus'
         urgency:
-          type: string
-          title: Urgency
+          $ref: '#/components/schemas/Urgency'
         expected_value:
           anyOf:
           - type: number
           - type: 'null'
           title: Expected Value
-        expected_line_items:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Expected Line Items
+        subtotal:
+          type: number
+          title: Subtotal
+          default: 0.0
+        tax_amount:
+          type: number
+          title: Tax Amount
+          default: 0.0
+        tax_rate:
+          type: number
+          title: Tax Rate
+          default: 0.0
         follow_up_date:
           anyOf:
           - type: string
@@ -3159,6 +3183,12 @@ components:
           anyOf:
           - $ref: '#/components/schemas/CustomerSchema'
           - type: 'null'
+        line_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LineItemSchema'
+          title: Line Items
+          default: []
       type: object
       required:
       - id
@@ -3187,19 +3217,35 @@ components:
           - type: 'null'
         urgency:
           anyOf:
-          - type: string
+          - $ref: '#/components/schemas/Urgency'
           - type: 'null'
-          title: Urgency
         expected_value:
           anyOf:
           - type: number
           - type: 'null'
           title: Expected Value
-        expected_line_items:
+        subtotal:
           anyOf:
-          - type: string
+          - type: number
           - type: 'null'
-          title: Expected Line Items
+          title: Subtotal
+        tax_amount:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Tax Amount
+        tax_rate:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Tax Rate
+        items:
+          anyOf:
+          - type: array
+            items:
+              $ref: '#/components/schemas/LineItemCreate'
+          - type: 'null'
+          title: Items
         follow_up_date:
           anyOf:
           - type: string
@@ -3452,6 +3498,13 @@ components:
       - msg
       - type
       title: ValidationError
+    Urgency:
+      type: string
+      enum:
+      - Low
+      - Medium
+      - High
+      title: Urgency
     WageConfigurationSchema:
       properties:
         model_type:

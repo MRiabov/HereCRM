@@ -1,19 +1,23 @@
 from typing import Optional, List, ClassVar
 from pydantic.v1 import BaseModel, Field, validator
 
+# --- Constants ---
+PHONE_PATTERN = r"^\+?[1-9]\d{1,14}$"
+EMAIL_PATTERN = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+
 # Allowlist for settings that can be updated via LLM
-ALLOWED_SETTING_KEYS = ["confirm_by_default", "language", "timezone", "notifications", "default_city", "default_country", "payment_link", "tax_inclusive", "include_payment_terms", "job_creation_default", "geocoding_safeguard_enabled", "geocoding_max_distance_km"]
+ALLOWED_SETTING_KEYS = ["confirm_by_default", "language", "timezone", "notifications", "default_city", "default_country", "payment_link", "tax_inclusive", "include_payment_terms", "job_creation_default", "geocoding_safeguard_enabled", "geocoding_max_distance_km", "workflow_pipeline_quoted_stage"]
 
 
 class LineItemInfo(BaseModel):
     """Information about a single line item."""
 
-    description: str = Field(..., description="Description of the service or item")
+    description: str = Field(..., description="Description of the service or item", max_length=500)
     quantity: float = Field(1.0, description="Quantity or amount")
     unit_price: Optional[float] = Field(None, description="Price per unit")
     total_price: Optional[float] = Field(None, description="Total price for this line item")
     service_id: Optional[int] = Field(None, description="The ID of the matching service from the catalog")
-    service_name: Optional[str] = Field(None, description="The canonical name of the service from the catalog")
+    service_name: Optional[str] = Field(None, description="The canonical name of the service from the catalog", max_length=100)
 
     @validator("quantity", "unit_price", "total_price")
     def validate_non_negative(cls, v, field):
@@ -30,7 +34,7 @@ class AddJobTool(BaseModel):
 
     customer_name: str = Field(..., description="Name of the customer", max_length=100)
     customer_phone: Optional[str] = Field(
-        None, description="Phone number of the customer", max_length=20
+        None, description="Phone number of the customer", max_length=20, regex=PHONE_PATTERN
     )
     location: Optional[str] = Field(
         None, description="Address or location of the job (e.g. 'High Street 44')", max_length=200
@@ -46,7 +50,7 @@ class AddJobTool(BaseModel):
         None, description="Details of the work to be done", max_length=500
     )
     status: Optional[str] = Field(
-        None, description="Status: 'pending', 'done', 'scheduled'"
+        None, description="Status: 'pending', 'done', 'scheduled'", max_length=20
     )
     line_items: Optional[List[LineItemInfo]] = Field(
         None, description="List of structured line items for the job"
@@ -80,7 +84,7 @@ class AddLeadTool(BaseModel):
     Triggered when adding a person/entity without specific job details or 'request' keyword."""
 
     name: str = Field(..., description="Name of the customer/lead", max_length=100)
-    phone: Optional[str] = Field(None, description="Phone number", max_length=20)
+    phone: Optional[str] = Field(None, description="Phone number", max_length=20, regex=PHONE_PATTERN)
     street: Optional[str] = Field(
         None, description="Street address (e.g. 'High Street 44')", max_length=200
     )
@@ -111,7 +115,7 @@ class EditCustomerTool(BaseModel):
         ..., description="Name or phone to find the customer", max_length=100
     )
     name: Optional[str] = Field(None, description="New name", max_length=100)
-    phone: Optional[str] = Field(None, description="New phone number", max_length=20)
+    phone: Optional[str] = Field(None, description="New phone number", max_length=20, regex=PHONE_PATTERN)
     location: Optional[str] = Field(None, description="New address", max_length=200)
     details: Optional[str] = Field(
         None, description="New details/notes", max_length=500
@@ -130,7 +134,7 @@ class ScheduleJobTool(BaseModel):
     )
     customer_name: Optional[str] = Field(None, description="Name of the customer", max_length=100)
     customer_phone: Optional[str] = Field(
-        None, description="Phone number of the customer", max_length=20
+        None, description="Phone number of the customer", max_length=20, regex=PHONE_PATTERN
     )
     location: Optional[str] = Field(
         None, description="Address or location of the job (e.g. 'High Street 44')", max_length=200
@@ -169,21 +173,21 @@ class ScheduleJobTool(BaseModel):
 
 class LeadInfo(BaseModel):
     """Details about a lead or customer."""
-    name: Optional[str] = Field(None, description="Full name")
-    phone: Optional[str] = Field(None, description="Phone number")
-    email: Optional[str] = Field(None, description="Email address")
-    address: Optional[str] = Field(None, description="Physical address")
+    name: Optional[str] = Field(None, description="Full name", max_length=100)
+    phone: Optional[str] = Field(None, description="Phone number", max_length=20, regex=PHONE_PATTERN)
+    email: Optional[str] = Field(None, description="Email address", max_length=100, regex=EMAIL_PATTERN)
+    address: Optional[str] = Field(None, description="Physical address", max_length=255)
 
 class AddRequestTool(BaseModel):
     """Store a general request or note.
     ONLY triggered if user explicitly says 'add request' or similar."""
 
-    description: str = Field(..., description="The content of the request or note")
+    description: str = Field(..., description="The content of the request or note", max_length=2000)
     customer_name: Optional[str] = Field(
         None, description="Name of the customer if mentioned", max_length=100
     )
     customer_phone: Optional[str] = Field(
-        None, description="Phone number of the customer if mentioned", max_length=20
+        None, description="Phone number of the customer if mentioned", max_length=20, regex=PHONE_PATTERN
     )
     customer_details: Optional[LeadInfo] = Field(
         None, description="Structured details about the customer/lead"
@@ -192,13 +196,13 @@ class AddRequestTool(BaseModel):
         None, description="Address or location involved in the request", max_length=200
     )
     urgency: str = Field(
-        "Medium", description="Urgency level: 'Low', 'Medium', 'High'"
+        "Medium", description="Urgency level: 'Low', 'Medium', 'High'", max_length=20
     )
     expected_value: Optional[float] = Field(
         None, description="Estimated value of the request"
     )
-    expected_line_items: Optional[str] = Field(
-        None, description="Expected line items or services (as a text description)"
+    line_items: Optional[List[LineItemInfo]] = Field(
+        None, description="List of structured line items for the request"
     )
     time: str = Field(
         "anytime",
@@ -224,21 +228,25 @@ class SearchTool(BaseModel):
     entity_type: Optional[str] = Field(
         None,
         description="Filter by entity type: 'job', 'customer', 'request', 'lead'. If not specified, searches all.",
+        max_length=20
     )
     query_type: Optional[str] = Field(
         "general",
         description="Type of query: 'general' (text match), 'added' (created_at), 'scheduled' (scheduled_at). Defaults to 'general' if not time-based.",
+        max_length=20
     )
     min_date: Optional[str] = Field(
         None,
         description="Start date for range filtering in ISO format (YYYY-MM-DDTHH:MM:SS)",
+        max_length=30
     )
     max_date: Optional[str] = Field(
         None,
         description="End date for range filtering in ISO format (YYYY-MM-DDTHH:MM:SS)",
+        max_length=30
     )
     status: Optional[str] = Field(
-        None, description="Filter by status (e.g., 'pending', 'done', 'completed')"
+        None, description="Filter by status (e.g., 'pending', 'done', 'completed')", max_length=50
     )
     radius: Optional[float] = Field(
         None, description="Search radius in meters (default 200m if location provided)"
@@ -250,10 +258,10 @@ class SearchTool(BaseModel):
         None, description="Longitude for proximity search"
     )
     center_address: Optional[str] = Field(
-        None, description="Address for proximity search (e.g., 'High Street 34')"
+        None, description="Address for proximity search (e.g., 'High Street 34')", max_length=255
     )
     pipeline_stage: Optional[str] = Field(
-        None, description="Filter by pipeline stage (e.g., 'not_contacted', 'lost')"
+        None, description="Filter by pipeline stage (e.g., 'not_contacted', 'quoted', 'lost')", max_length=50
     )
 
 
@@ -280,16 +288,16 @@ class ConvertRequestTool(BaseModel):
     """Convert a general request or a query into a specific action like scheduling or logging."""
 
     query: str = Field(
-        ..., description="Name, phone number or content to identifying the entity"
+        ..., description="Name, phone number or content to identifying the entity", max_length=100
     )
     action: str = Field(
-        ..., description="Action to perform: 'schedule', 'complete', 'log', or 'quote'"
+        ..., description="Action to perform: 'schedule', 'complete', 'log', or 'quote'", max_length=20
     )
     time: Optional[str] = Field(
-        None, description="Optional time for scheduling or reminders"
+        None, description="Optional time for scheduling or reminders", max_length=100
     )
     iso_time: Optional[str] = Field(
-        None, description="ISO 8601 formatted datetime string (parsed by LLM)"
+        None, description="ISO 8601 formatted datetime string (parsed by LLM)", max_length=50
     )
     assigned_to: Optional[int] = Field(
         None, description="Optional ID of the professional to assign the job/quote to"
@@ -311,6 +319,7 @@ class SendStatusTool(BaseModel):
     status_type: str = Field(
         "on_way",
         description="Type of status: 'on_way', 'running_late', 'start_job', 'finish_job'",
+        max_length=20
     )
     message_content: Optional[str] = Field(
         None,
@@ -329,7 +338,7 @@ class GetPipelineTool(BaseModel):
     """Get a summary of the sales pipeline (funnel).
     Triggered when the user asks about the health of the business, pipeline status, or funnel."""
 
-    ignore_me: str = Field("pipeline", description="Ignored field, default to 'pipeline'")
+    ignore_me: str = Field("pipeline", description="Ignored field, default to 'pipeline'", max_length=20)
 
 
 class UpdateCustomerStageTool(BaseModel):
@@ -341,14 +350,15 @@ class UpdateCustomerStageTool(BaseModel):
     )
     stage: str = Field(
         ...,
-        description="The new pipeline stage: 'not_contacted', 'contacted', 'converted_once', 'converted_recurrent', 'not_interested', 'lost'",
+        description="The new pipeline stage: 'not_contacted', 'contacted', 'quoted', 'converted_once', 'converted_recurrent', 'not_interested', 'lost'",
+        max_length=50
     )
 
 
 class AddServiceTool(BaseModel):
     """Add a new service to the catalog."""
 
-    name: str = Field(..., description="Name of the service (e.g. 'Window Cleaning')")
+    name: str = Field(..., description="Name of the service (e.g. 'Window Cleaning')", max_length=100)
     price: float = Field(..., description="Default price for the service")
 
     @validator("price")
@@ -361,8 +371,8 @@ class AddServiceTool(BaseModel):
 class EditServiceTool(BaseModel):
     """Edit an existing service."""
 
-    original_name: str = Field(..., description="The name of the service to edit (to find it)")
-    new_name: Optional[str] = Field(None, description="New name for the service")
+    original_name: str = Field(..., description="The name of the service to edit (to find it)", max_length=100)
+    new_name: Optional[str] = Field(None, description="New name for the service", max_length=100)
     new_price: Optional[float] = Field(None, description="New default price")
     
     @validator("new_price")
@@ -375,7 +385,7 @@ class EditServiceTool(BaseModel):
 class DeleteServiceTool(BaseModel):
     """Delete a service from the catalog."""
 
-    name: str = Field(..., description="Name of the service to delete")
+    name: str = Field(..., description="Name of the service to delete", max_length=100)
 
 
 class ListServicesTool(BaseModel):
@@ -390,12 +400,12 @@ class ExitSettingsTool(BaseModel):
 class ExportQueryTool(BaseModel):
     """Export data based on a natural language query."""
 
-    query: str = Field(..., description="The specific keywords to search for (e.g., 'Dublin' if the user says 'customers in Dublin', or 'all' for everything).")
-    format: str = Field("csv", description="The desired output format: 'csv', 'excel', or 'json'.")
-    entity_type: Optional[str] = Field(None, description="Type of entity to export: 'customer', 'job', 'lead'. If unspecified, infer from query or default to customer.")
-    status: Optional[str] = Field(None, description="Filter by status or pipeline stage (e.g., 'pending', 'lost', 'completed').")
-    min_date: Optional[str] = Field(None, description="Start date for filtering in ISO 8601 format.")
-    max_date: Optional[str] = Field(None, description="End date for filtering in ISO 8601 format.")
+    query: str = Field(..., description="The specific keywords to search for (e.g., 'Dublin' if the user says 'customers in Dublin', or 'all' for everything).", max_length=500)
+    format: str = Field("csv", description="The desired output format: 'csv', 'excel', or 'json'.", max_length=10)
+    entity_type: Optional[str] = Field(None, description="Type of entity to export: 'customer', 'job', 'lead'. If unspecified, infer from query or default to customer.", max_length=20)
+    status: Optional[str] = Field(None, description="Filter by status or pipeline stage (e.g., 'pending', 'lost', 'completed').", max_length=50)
+    min_date: Optional[str] = Field(None, description="Start date for filtering in ISO 8601 format.", max_length=30)
+    max_date: Optional[str] = Field(None, description="End date for filtering in ISO 8601 format.", max_length=30)
 
     @validator("format")
     def validate_format(cls, v):
@@ -413,8 +423,8 @@ class RequestUpgradeTool(BaseModel):
     """Request an upgrade for seats or addons.
     Triggered when user wants to 'buy seats', 'add user limit', 'purchase addon', or 'upgrade plan'."""
     
-    item_type: str = Field(..., description="Type of item: 'seat', 'addon', or 'messaging'")
-    item_id: Optional[str] = Field(None, description="Specific addon ID if type is 'addon' (e.g., 'campaign_manager'). Leave empty for seats.")
+    item_type: str = Field(..., description="Type of item: 'seat', 'addon', or 'messaging'", max_length=20)
+    item_id: Optional[str] = Field(None, description="Specific addon ID if type is 'addon' (e.g., 'campaign_manager'). Leave empty for seats.", max_length=50)
     quantity: int = Field(1, description="Number of items to add")
 
     @validator("item_type")
@@ -442,10 +452,10 @@ class MassEmailTool(BaseModel):
     """Send a mass email or message to multiple customers.
     Requires 'campaigns' addon."""
     required_scope: ClassVar[str] = "campaigns"
-    subject: str = Field(..., description="Subject of the email")
-    body: str = Field(..., description="Content of the message")
-    recipient_query: str = Field("all", description="Filter for recipients (e.g. 'all', 'Dublin customers')")
-    channel: str = Field("whatsapp", description="Channel: 'whatsapp', 'email', 'sms'")
+    subject: str = Field(..., description="Subject of the email", max_length=200)
+    body: str = Field(..., description="Content of the message", max_length=5000)
+    recipient_query: str = Field("all", description="Filter for recipients (e.g. 'all', 'Dublin customers')", max_length=500)
+    channel: str = Field("whatsapp", description="Channel: 'whatsapp', 'email', 'sms'", max_length=20)
 
 class ExecuteBlastTool(BaseModel):
     """Execute a previously prepared broadcast campaign.
@@ -456,13 +466,13 @@ class ManageEmployeesTool(BaseModel):
     """Access employee management features (shifts, roles).
     Requires 'manage_employees' addon."""
     required_scope: ClassVar[str] = "manage_employees"
-    action: str = Field(..., description="Action: 'list', 'assign_shift', 'view_availability'")
-    details: Optional[str] = Field(None, description="Details for the action")
+    action: str = Field(..., description="Action: 'list', 'assign_shift', 'view_availability'", max_length=50)
+    details: Optional[str] = Field(None, description="Details for the action", max_length=500)
 
 
 class QuoteLineItemInput(BaseModel):
     """A single line item in a quote."""
-    description: str = Field(..., description="Description of the service or item")
+    description: str = Field(..., description="Description of the service or item", max_length=500)
     quantity: float = Field(1.0, description="Quantity or amount")
     price: float = Field(..., description="Price per unit")
 
@@ -476,13 +486,13 @@ class QuoteLineItemInput(BaseModel):
 class CreateQuoteTool(BaseModel):
     """Create and send a quote to a customer.
     Triggered when user wants to 'send a quote', 'create proposal', or 'give price'."""
-    customer_identifier: str = Field(..., description="Name or Phone of the customer to find.")
+    customer_identifier: str = Field(..., description="Name or Phone of the customer to find.", max_length=100)
     items: List[QuoteLineItemInput] = Field(..., description="List of items in the quote")
 class LocateEmployeeTool(BaseModel):
     """Locate an employee or list location of all employees.
     Triggered when admin/dispatcher asks 'Where is John?' or 'Where are my techs?'."""
     employee_name: Optional[str] = Field(
-        None, description="Name of the employee to locate. If omitted, lists all."
+        None, description="Name of the employee to locate. If omitted, lists all.", max_length=100
     )
 
 
@@ -490,14 +500,14 @@ class CheckETATool(BaseModel):
     """Check the estimated time of arrival for a technician to a customer.
     Triggered when customer asks 'When will you arrive?', 'Where is the tech?', 'ETA'."""
     customer_query: Optional[str] = Field(
-        None, description="Name/Phone of customer if admin is asking. If customer asks, leave empty to use sender."
+        None, description="Name/Phone of customer if admin is asking. If customer asks, leave empty to use sender.", max_length=100
     )
 
 
 class AutorouteTool(BaseModel):
     """Preview or execute automatic job routing to minimize distance and maximize jobs.
     Triggered when user says 'autoroute', 'optimize schedule', or 'plan my day'."""
-    date: Optional[str] = Field(None, description="The date to optimize for (YYYY-MM-DD). Defaults to today.")
+    date: Optional[str] = Field(None, description="The date to optimize for (YYYY-MM-DD). Defaults to today.", max_length=10)
     apply: bool = Field(False, description="If True, applies the schedule and assigns jobs to technicians.")
     notify: bool = Field(True, description="If True (and apply is True), notifies technicians and customers.")
 
@@ -537,11 +547,12 @@ class UpdateWorkflowSettingsTool(BaseModel):
     Allowed values for invoicing/quoting: 'never', 'manual', 'automatic'.
     Allowed values for payment_timing: 'always_paid_on_spot', 'usually_paid_on_spot', 'paid_later'."""
 
-    invoicing: Optional[str] = Field(None, description="Invoicing workflow: 'never', 'manual', 'automatic'")
-    quoting: Optional[str] = Field(None, description="Quoting workflow: 'never', 'manual', 'automatic'")
-    payment_timing: Optional[str] = Field(None, description="Payment timing: 'always_paid_on_spot', 'usually_paid_on_spot', 'paid_later'")
+    invoicing: Optional[str] = Field(None, description="Invoicing workflow: 'never', 'manual', 'automatic'", max_length=20)
+    quoting: Optional[str] = Field(None, description="Quoting workflow: 'never', 'manual', 'automatic'", max_length=20)
+    payment_timing: Optional[str] = Field(None, description="Payment timing: 'always_paid_on_spot', 'usually_paid_on_spot', 'paid_later'", max_length=30)
     enable_reminders: Optional[bool] = Field(None, description="Whether to send auto-reminders")
-    job_creation_default: Optional[str] = Field(None, description="Job creation default: 'mark_done', 'unscheduled', 'auto_schedule'")
+    pipeline_quoted_stage: Optional[bool] = Field(None, description="Whether to show the 'Quoted' stage in the sales pipeline")
+    job_creation_default: Optional[str] = Field(None, description="Job creation default: 'mark_done', 'unscheduled', 'auto_schedule'", max_length=20)
 
 
 class ExitAccountingTool(BaseModel):
@@ -593,8 +604,8 @@ class AddExpenseTool(BaseModel):
     Triggered when user says 'Add expense', 'Log cost', 'I spent $X on [item]'."""
 
     amount: float = Field(..., description="The amount spent")
-    description: str = Field(..., description="What was the expense for?")
-    category: str = Field("General", description="Expense category (e.g., Fuel, Supplies, Parking)")
+    description: str = Field(..., description="What was the expense for?", max_length=500)
+    category: str = Field("General", description="Expense category (e.g., Fuel, Supplies, Parking)", max_length=100)
     job_id: Optional[int] = Field(None, description="The ID of the job this expense is linked to, if any")
 
     @validator("amount")

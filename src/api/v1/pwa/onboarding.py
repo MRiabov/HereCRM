@@ -20,6 +20,7 @@ class OnboardingChoice(BaseModel):
     business_name: Optional[str] = None
 
 @router.post("/choice")
+@router.post("/choice/")
 async def process_onboarding_choice(
     payload: OnboardingChoice,
     current_user: User = Depends(get_current_user),

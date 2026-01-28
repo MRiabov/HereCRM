@@ -192,7 +192,6 @@ class RequestRepository(BaseRepository[Request]):
             # Search in description and customer_details (JSON) or linked customer name
             conditions.append(or_(
                 Request.description.ilike(f"%{query}%"),
-                Request.expected_line_items.ilike(f"%{query}%"),
                 # JSON search for customer_details (Postgres/SQLite specific but ilike usually works on strings)
                 # For SQLite/PG JSON search we might need something more specific if this fails, 
                 # but often cast to string works for basic search.
@@ -226,11 +225,11 @@ class RequestRepository(BaseRepository[Request]):
     async def get_by_id(self, id: int, business_id: int) -> Optional[Request]:
         query = (
             select(Request)
-            .options(joinedload(Request.customer))
+            .options(joinedload(Request.customer), joinedload(Request.line_items))
             .where(Request.id == id, Request.business_id == business_id)
         )
         result = await self.session.execute(query)
-        return result.scalar_one_or_none()
+        return result.unique().scalar_one_or_none()
 
 
 class CustomerAvailabilityRepository(BaseRepository[CustomerAvailability]):

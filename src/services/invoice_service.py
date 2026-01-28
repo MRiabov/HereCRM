@@ -24,7 +24,16 @@ class InvoiceService:
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
-    async def create_invoice(self, job: Job, force_regenerate: bool = False) -> Invoice:
+    async def create_invoice(
+        self, 
+        job: Job, 
+        force_regenerate: bool = False,
+        invoice_number: Optional[str] = None,
+        issued_at: Optional[datetime] = None,
+        due_date: Optional[datetime] = None,
+        notes: Optional[str] = None,
+        items: Optional[list] = None
+    ) -> Invoice:
         """
         Creates a new invoice for the job.
         If an invoice already exists and force_regenerate is False, returns the existing one.
@@ -42,7 +51,15 @@ class InvoiceService:
 
         # 1. Generate PDF
         try:
-            pdf_bytes = self.pdf_generator.generate_invoice(job, payment_link=payment_link)
+            pdf_bytes = self.pdf_generator.generate_invoice(
+                job, 
+                invoice_date=issued_at, 
+                payment_link=payment_link,
+                invoice_number=invoice_number,
+                due_date=due_date,
+                notes=notes,
+                items=items
+            )
         except (ValueError, RuntimeError) as e:
             logger.error(f"Failed to generate PDF for job {job.id}: {e}")
             raise RuntimeError(f"PDF generation failed: {e}") from e
