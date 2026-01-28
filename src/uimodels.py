@@ -166,6 +166,14 @@ class ScheduleJobTool(BaseModel):
     longitude: Optional[float] = Field(None, description="Geocoded longitude")
 
 
+
+class LeadInfo(BaseModel):
+    """Details about a lead or customer."""
+    name: Optional[str] = Field(None, description="Full name")
+    phone: Optional[str] = Field(None, description="Phone number")
+    email: Optional[str] = Field(None, description="Email address")
+    address: Optional[str] = Field(None, description="Physical address")
+
 class AddRequestTool(BaseModel):
     """Store a general request or note.
     ONLY triggered if user explicitly says 'add request' or similar."""
@@ -176,6 +184,21 @@ class AddRequestTool(BaseModel):
     )
     customer_phone: Optional[str] = Field(
         None, description="Phone number of the customer if mentioned", max_length=20
+    )
+    customer_details: Optional[LeadInfo] = Field(
+        None, description="Structured details about the customer/lead"
+    )
+    location: Optional[str] = Field(
+        None, description="Address or location involved in the request", max_length=200
+    )
+    urgency: str = Field(
+        "Medium", description="Urgency level: 'Low', 'Medium', 'High'"
+    )
+    expected_value: Optional[float] = Field(
+        None, description="Estimated value of the request"
+    )
+    expected_line_items: Optional[str] = Field(
+        None, description="Expected line items or services (as a text description)"
     )
     time: str = Field(
         "anytime",
