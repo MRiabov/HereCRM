@@ -141,3 +141,5 @@ crm.db
 data/
 *.log
 *.pid
+backend.log.1
+scripts/throwaway/
