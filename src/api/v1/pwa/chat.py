@@ -402,7 +402,7 @@ async def execute_tool(
     
     # 3. Execute
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-    messages_path = os.path.join(base_dir, "assets", "messages.yaml")
+    messages_path = os.path.join(base_dir, "assets", "messages.jinja")
     template_service = TemplateService(yaml_path=messages_path)
     
     executor = ToolExecutor(

@@ -1,0 +1,569 @@
+{% macro error_upgrade_required(scope) -%}
+⛔ *Upgrade Required*
+This feature requires the '{{ scope }}' addon.
+
+Type 'billing' to see your current status and available upgrades.
+
+{%- endmacro %}
+
+{% macro error_user_required() -%}
+Error: User access required.
+{%- endmacro %}
+
+{% macro error_unknown_tool() -%}
+Error: Unknown tool in draft.
+{%- endmacro %}
+
+{% macro error_no_draft() -%}
+No draft to execute.
+{%- endmacro %}
+
+{% macro error_undo_nothing() -%}
+Nothing to undo.
+{%- endmacro %}
+
+{% macro error_undo_failed() -%}
+Could not perform undo for this action.
+{%- endmacro %}
+
+{% macro error_unclear_input() -%}
+Sorry, we couldn't understand your request.
+
+Available commands:
+- *Add Job*: 'Add: John, 123 Main St, 086 456 123, $50'
+- *Add Lead*: 'Add lead: John, 123 Main St, 086 456 123'
+- *Schedule*: 'Schedule John tomorrow at 2pm' or "Schedule John 0871235678 tommorrow at 14:00"
+- *Search*: 'Find John' or 'Show all jobs' or 'Find lead of High Street 34'
+- *Requests*: Somebody asked to call later? Store it as a request for later review. 'Add request: John on High Street 34, call 0871235678 tomorrow at 12:00'
+- *Promote*: Want to convert request to job? 'Promote request for High Street 34 to job'
+- *Pipeline*: 'Show pipeline', 'Show Lost customers' or 'Mark John as Not Interested'
+- *Invoice*: 'Send invoice to John'
+- *Status*: 'On my way to John'
+- *Teams*: 'Show schedule' or 'Where are my employees?'
+- *Assign*: 'Assign job 123 to John'
+- *Expenses*: 'Add expense 50 for fuel'
+- *Payroll*: 'Check balance' or 'Record payout 500'
+- *Reporting*: 'Export expenses to csv'
+- *Edit*: 'Edit Job, Lead or Request: John on High Street 34, call 0871235678 tomorrow at 12:00'
+- *Settings*: 'Update settings'
+
+Note: Identify customers by phone or address to avoid duplicates. On SMS/Email, actions auto-confirm after 45s unless cancelled.
+
+Type 'help' for more details.
+
+{%- endmacro %}
+
+{% macro error_edit_nothing() -%}
+Nothing to edit.
+{%- endmacro %}
+
+{% macro edit_last_prompt(category, details) -%}
+Edit the last {{ category }} ({{ details }}). Type the details as you would before.
+{%- endmacro %}
+
+{% macro client_details(address, name, phone) -%}
+- Client details:
+    - Name: {{ name }}
+    - Phone: {{ phone }}
+    - Address: {{ address }}
+
+{%- endmacro %}
+
+{% macro job_summary(category, client_details, description, line_items, price, status) -%}
+{{ category }} summary:
+{{ client_details }}
+- Status: {{ status }}
+- Value: {{ price }}
+- Description: {{ description }}{{ line_items }}
+
+{%- endmacro %}
+
+{% macro lead_summary(client_details, description) -%}
+Lead details:
+{{ client_details }}
+- Description: {{ description }}
+
+{%- endmacro %}
+
+{% macro schedule_summary(client_details, time) -%}
+Schedule Job:
+{{ client_details }}
+- Time: {{ time }}
+
+{%- endmacro %}
+
+{% macro request_summary(client_details, description, line_items, time) -%}
+Request details:
+{{ client_details }}
+- Time: {{ time }}
+- Description: {{ description }}{{ line_items }}
+
+{%- endmacro %}
+
+{% macro confirm_prompt(summary) -%}
+Please confirm:
+{{ summary }}
+(Reply 'Yes' to confirm, 'No' to cancel)
+{%- endmacro %}
+
+{% macro confirm_edit_prompt(summary) -%}
+Review changes:
+{{ summary }}
+(Reply 'Yes' to update, 'No' to cancel)
+{%- endmacro %}
+
+{% macro warning_no_contact_details(type) -%}
+⚠️ Warning: could not find a contact detail to send the {{ type }}! Generate the {{ type }} without sending?
+{%- endmacro %}
+
+{% macro action_cancelled() -%}
+Action cancelled.
+{%- endmacro %}
+
+{% macro undo_hint() -%}
+(Reply 'undo' to revert)
+{%- endmacro %}
+
+{% macro job_added(category, location, name, price_info) -%}
+✔ {{ category }} added: {{ name }} – {{ location }}{{ price_info }} (Reply 'undo' or 'edit last')
+{%- endmacro %}
+
+{% macro job_scheduled(name, time) -%}
+✔ Scheduled {{ name }} for {{ time }}
+{%- endmacro %}
+
+{% macro request_stored(description) -%}
+✔ Request stored: {{ description }}...
+{%- endmacro %}
+
+{% macro setting_updated(key, value) -%}
+✔ Updated setting '{{ key }}' to '{{ value }}'
+{%- endmacro %}
+
+{% macro search_no_results(query) -%}
+No results found for '{{ query }}'
+{%- endmacro %}
+
+{% macro undo_deleted(entity_type) -%}
+Undone: Deleted {{ entity_type }}.
+{%- endmacro %}
+
+{% macro undo_job_reverted() -%}
+Undone: Job status reverted.
+{%- endmacro %}
+
+{% macro undo_request_reverted() -%}
+Undone: Request status reverted.
+{%- endmacro %}
+
+{% macro undo_promotion_reverted() -%}
+Undone: Reverted Job promotion back to Request.
+{%- endmacro %}
+
+{% macro undo_setting_reverted(key) -%}
+Undone: Restored setting '{{ key }}' to its previous value.
+{%- endmacro %}
+
+{% macro help_summary() -%}
+Help: Commands & usage
+{%- endmacro %}
+
+{% macro convert_success(description) -%}
+✔ Converted Request to Job: {{ description }}
+{%- endmacro %}
+
+{% macro convert_failed(query) -%}
+Could not find request matching '{{ query }}'
+{%- endmacro %}
+
+{% macro job_multiple_found(query) -%}
+Multiple customers found matching '{{ query }}'. Please be more specific (e.g., use full name or phone).
+{%- endmacro %}
+
+{% macro undo_deleted_job(customer_name) -%}
+Undone: Deleted job for {{ customer_name }}
+{%- endmacro %}
+
+{% macro billing_status(addons, plan, seats) -%}
+*Subscription Status*:
+- Plan: {{ plan }}
+- Seats: {{ seats }}
+- Messages: 1000/mo included (then $0.02/msg)
+- Active Addons: {{ addons }}
+
+{%- endmacro %}
+
+{% macro billing_upgrade_quote(description, url) -%}
+*Upgrade Quote*:
+{{ description }}
+
+To proceed, use this secure link:
+{{ url }}
+
+{%- endmacro %}
+
+{% macro payment_link_ready(url) -%}
+*Payment Link Ready*:
+Please follow this link to complete your payment:
+{{ url }}
+
+{%- endmacro %}
+
+{% macro settings_menu() -%}
+⚙️ *Settings Mode*
+
+Options:
+- *Workflow*: 'Workflow settings'
+- *Accounting*: 'Accounting settings'
+- *Integrations*: 'Google Calendar', 'QuickBooks'
+- *Payroll*: 'Payroll settings'
+- *Services*: 'List', 'Add Service [Name] [Price]'
+- *Preferences*: 'Confirm by default [true/false]'
+- *Exit*: 'Exit' or 'Back'
+
+{%- endmacro %}
+
+{% macro settings_workflow_menu() -%}
+📋 *Workflow Settings*
+
+Options:
+- *Invoicing*: 'Set invoicing [never/manual/automatic]'
+- *Quoting*: 'Set quoting [never/manual/automatic]'
+- *Payments*: 'Set payment timing [on_spot/usually_on_spot/later]'
+- *Tax*: 'Include tax [true/false]'
+- *Terms*: 'Show terms [true/false]'
+- *Reminders*: 'Reminders [true/false]'
+- *Back*: 'Back'
+
+{%- endmacro %}
+
+{% macro settings_accounting_menu() -%}
+📊 *Accounting & Integrations*
+
+Options:
+- *QuickBooks*: 'Connect QuickBooks', 'Disconnect QuickBooks'
+- *Google Calendar*: 'Connect Google Calendar'
+- *Sync*: 'Sync QuickBooks now'
+- *Status*: 'QuickBooks status'
+- *Back*: 'Back'
+
+{%- endmacro %}
+
+{% macro settings_payroll_menu() -%}
+💰 *Payroll & Expenses*
+
+Options:
+- *Expenses*: 'Add expense [amount] [desc]'
+- *Wages*: 'Check balance', 'Record payout [amount]'
+- *Tracking*: 'Check in', 'Start job #123'
+- *Back*: 'Back'
+
+{%- endmacro %}
+
+{% macro service_list(services) -%}
+*Service Catalog*:
+{{ services }}
+
+{%- endmacro %}
+
+{% macro service_added(name, price) -%}
+✅ Service *'{{ name }}'* added at ${{ price }}.
+{%- endmacro %}
+
+{% macro service_deleted(id) -%}
+🗑️ Service {{ id }} deleted.
+{%- endmacro %}
+
+{% macro error_service_not_found(id) -%}
+❌ Service {{ id }} not found.
+{%- endmacro %}
+
+{% macro error_invalid_service_format() -%}
+❌ Invalid format. Usage: 'Add Service [Name] [Price]'
+{%- endmacro %}
+
+{% macro employee_not_found(name) -%}
+❌ Could not find employee named '{{ name }}'.
+{%- endmacro %}
+
+{% macro employee_ambiguous(matches) -%}
+❓ Status: Ambiguous. Did you mean {{ matches }}?
+{%- endmacro %}
+
+{% macro job_assigned(employee_name, job_id) -%}
+✅ Assigned Job #{{ job_id }} to {{ employee_name }}.
+{%- endmacro %}
+
+{% macro error_invalid_date(date) -%}
+❌ Invalid date format: {{ date }}. Please use YYYY-MM-DD.
+{%- endmacro %}
+
+{% macro help_message() -%}
+Here are some *key* ways I can assist you:
+
+- *Add Jobs*: e.g. "Fix sink for John $50"
+- *Add Leads*: e.g. "Register client: Sarah in Dublin"
+- *Schedule*: e.g. "Schedule John for tomorrow 2pm"
+- *Teams*: e.g. "Show schedule" or "Where are my employees?"
+- *Assign*: e.g. "Assign job 123 to John"
+
+**Advanced commands:**
+
+- *Search*: 'Find John' or 'Show all jobs' or 'Find lead of High Street 34'
+- *Requests*: Store a request for later review: 'Add request: John on High Street 34, call 0871235678 tomorrow at 12:00'
+- *Promote to Job/Quote: Convert a request into a job/quote: 'Promote request for High Street 34 to job'
+- *Sales Pipeline*: View sales funnel or update customer status: 'Show sales pipeline', 'Show Lost customers', 'Mark John as Not Interested'
+- *Invoice*: Generate and send an invoice: 'Send invoice to John'
+- *Send Status*: Notify customer you are on the way: 'On my way to John'. The client receives "Hello, I'm on my way to you. Will be there soon." (configurable)
+- *Google Calendar*: Sync jobs to your calendar: 'Connect Google Calendar'
+- *Edit*: Modify an entry: 'Edit Job, Lead or Request: John on High Street 34...'
+- *Settings*: Configure preferences: 'Update settings'
+
+Note: Identify customers by phone or address to avoid duplicates.
+
+{%- endmacro %}
+
+{% macro welcome_message() -%}
+Welcome to HereCRM! 🚀
+
+I'm your AI assistant to help you manage your business via WhatsApp.
+
+To get started, would you like to:
+1. *Create a new business*
+2. *Join an existing one*
+
+(Reply with '1' or '2')
+
+{%- endmacro %}
+
+{% macro onboarding_join_prompt() -%}
+Please provide the *invitation code* or the *phone number* of the business owner you'd like to join.
+{%- endmacro %}
+
+{% macro onboarding_create_success() -%}
+Great! Your business has been set up. You can now start adding jobs, leads, and managing your team. Type 'help' to see what I can do!
+{%- endmacro %}
+
+{% macro onboarding_invalid_choice() -%}
+I didn't quite get that. Please reply with '1' to create a new business or '2' to join an existing one.
+{%- endmacro %}
+
+{% macro welcome_back() -%}
+Welcome back! 👋
+
+What can I help you with today?
+(Type 'help' to see available commands)
+
+{%- endmacro %}
+
+{% macro billing_status_header() -%}
+💳 *Billing & Subscription*
+{%- endmacro %}
+
+{% macro billing_status_body(addons, available_upgrades, estimated_cost, free_limit, message_usage, seat_limit, seats_used, status) -%}
+Status: {{ status }}
+Seats: {{ seats_used }}/{{ seat_limit }}
+Messages: {{ message_usage }} used (Free limit: {{ free_limit }})
+Est. Cost: €{{ '{:.2f}'.format(estimated_cost) }}
+
+*Active Addons*:
+{{ addons }}
+
+*Available Upgrades*:
+{{ available_upgrades }}
+
+To *buy seats*, *add users*, *purchase addons*, or *upgrade seats*, type 'upgrade [item]' to get a payment link and purchase.
+
+{%- endmacro %}
+
+{% macro upgrade_link_message(action, url) -%}
+🔗 Here is your secure link to {{ action }}: {{ url }}
+(Link expires in 24 hours)
+{%- endmacro %}
+
+{% macro billing_error(error) -%}
+❌ Billing error: {{ error }}
+{%- endmacro %}
+
+{% macro quickbooks_connect_prompt(url) -%}
+To connect your QuickBooks Online account, please use this secure link:
+{{ url }}
+
+(Link expires in 15 minutes)
+
+{%- endmacro %}
+
+{% macro quickbooks_connected() -%}
+✅ QuickBooks connected successfully! Your data will now sync automatically every hour.
+{%- endmacro %}
+
+{% macro quickbooks_disconnected() -%}
+✅ QuickBooks account has been disconnected. Synchronization has stopped.
+{%- endmacro %}
+
+{% macro quickbooks_sync_started() -%}
+🔄 Sync started. This may take a few moments...
+{%- endmacro %}
+
+{% macro quickbooks_sync_complete(count) -%}
+✅ QuickBooks sync completed. {{ count }} records synced.
+{%- endmacro %}
+
+{% macro quickbooks_status(connected, errors, last_sync, sync_status) -%}
+📊 *QuickBooks Status*:
+- Connected: {{ connected }}
+- Last Sync: {{ last_sync }}
+- Status: {{ sync_status }}
+
+Errors:
+{{ errors }}
+
+Type 'Sync QuickBooks now' to force a sync.
+
+{%- endmacro %}
+
+{% macro quickbooks_error(error) -%}
+❌ QuickBooks Error: {{ error }}
+{%- endmacro %}
+
+{% macro qb_connect_link(url) -%}
+🔗 *Connect QuickBooks*
+
+Please click this link to authorize the connection:
+{{ url }}
+
+(Link expires in 5 minutes)
+
+{%- endmacro %}
+
+{% macro qb_connected() -%}
+✅ QuickBooks account connected successfully.
+{%- endmacro %}
+
+{% macro qb_disconnected() -%}
+✅ QuickBooks account disconnected.
+{%- endmacro %}
+
+{% macro qb_status(realm_id, status) -%}
+**QuickBooks Status**
+{{ status }}
+Realm ID: {{ realm_id }}
+
+{%- endmacro %}
+
+{% macro qb_not_connected() -%}
+❌ Not connected to QuickBooks.
+{%- endmacro %}
+
+{% macro qb_sync_error(error) -%}
+⚠️ QuickBooks sync error: {{ error }}
+{%- endmacro %}
+
+{% macro quote_proposal(link, name, total) -%}
+Hi {{ name }}, here is your quote for {{ total }}: {{ link }}. Reply 'Confirm' to book.
+{%- endmacro %}
+
+{% macro quote_summary(client_details, description, line_items, total) -%}
+Quote details:
+{{ client_details }}
+- Description: {{ description }}
+- Value: {{ total }}{{ line_items }}
+
+{%- endmacro %}
+
+{% macro confirm_quote_prompt(summary) -%}
+Review Quote: {{ summary }}
+(Reply 'Confirm' to accept, 'No' to cancel)
+{%- endmacro %}
+
+{% macro quote_accepted(customer_name, job_id) -%}
+✅ Quote accepted! Job #{{ job_id }} created for {{ customer_name }}.
+{%- endmacro %}
+
+{% macro autoroute_preview(date, routes) -%}
+🚛 *Route Preview ({{ date }})*:
+{{ routes }}
+
+(Type 'Apply' to confirm these assignments)
+
+{%- endmacro %}
+
+{% macro autoroute_applied(count) -%}
+✅ Route optimization applied. {{ count }} jobs assigned.
+{%- endmacro %}
+
+{% macro tracking_started(name) -%}
+📍 Tracking started for {{ name }}.
+{%- endmacro %}
+
+{% macro eta_response(location, minutes, name) -%}
+⏱️ ETA: {{ name }} is approximately {{ minutes }} minutes away from {{ location }}.
+{%- endmacro %}
+
+{% macro employee_location(location, name, time) -%}
+📍 {{ name }} is currently at {{ location }} (updated {{ time }} ago).
+{%- endmacro %}
+
+{% macro rbac_denied(tool) -%}
+⛔ *Access Denied*: You do not have permission to use the '{{ tool }}' tool.
+{%- endmacro %}
+
+{% macro expense_added(amount, description) -%}
+✅ Expense recorded: {{ amount }} for '{{ description }}'.
+{%- endmacro %}
+
+{% macro payout_recorded(amount, employee_name) -%}
+💸 Payout recorded: {{ amount }} to {{ employee_name }}.
+{%- endmacro %}
+
+{% macro balance_report(balance, currency, last_payout_date, name) -%}
+💰 *Payroll Balance*:
+- Employee: {{ name }}
+- Owed: {{ currency }}{{ balance }}
+- Last Payout: {{ last_payout_date }}
+
+{%- endmacro %}
+
+{% macro job_completed(job_id) -%}
+✅ Job #{{ job_id }} marked as COMPLETED.
+{%- endmacro %}
+
+{% macro next_job_guide(location, name) -%}
+➡️ Next Job: {{ name }} at {{ location }}. Type 'Start' when you arrive.
+{%- endmacro %}
+
+{% macro shift_started(name, time) -%}
+🏁 Shift started at {{ time }} for {{ name }}.
+{%- endmacro %}
+
+{% macro workflow_blocked(setting) -%}
+⚠️ This action is currently disabled by your business workflow settings ({{ setting }}).
+{%- endmacro %}
+
+{% macro stripe_setup_prompt(url) -%}
+🔗 Click here to connect your Stripe account and start accepting payments: {{ url }}
+{%- endmacro %}
+
+{% macro stripe_connected() -%}
+✅ Stripe connected successfully! You can now send invoices with payment links.
+{%- endmacro %}
+
+{% macro stripe_payment_received(amount, customer_name, job_id) -%}
+💰 Payment received! {{ customer_name }} paid {{ amount }} for Job #{{ job_id }}.
+{%- endmacro %}
+
+{% macro google_calendar_connect_prompt(url) -%}
+To connect your Google Calendar, please use this secure link:
+{{ url }}
+
+Once connected, your assigned jobs will automatically appear as events on your calendar.
+
+{%- endmacro %}
+
+{% macro google_calendar_connected() -%}
+✅ Google Calendar connected successfully! Your jobs will now sync automatically.
+{%- endmacro %}
+
+{% macro google_calendar_disconnected() -%}
+✅ Google Calendar has been disconnected.
+{%- endmacro %}
