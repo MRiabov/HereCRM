@@ -3,6 +3,172 @@ info:
   title: HereCRM PWA API
   version: 1.0.0
 paths:
+  /api/v1/pwa/analytics/proxy/{path}:
+    delete:
+      tags:
+      - pwa-analytics
+      summary: Proxy Posthog
+      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
+        errors.
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__delete
+      parameters:
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - pwa-analytics
+      summary: Proxy Posthog
+      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
+        errors.
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__get
+      parameters:
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    patch:
+      tags:
+      - pwa-analytics
+      summary: Proxy Posthog
+      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
+        errors.
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__patch
+      parameters:
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - pwa-analytics
+      summary: Proxy Posthog
+      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
+        errors.
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__post
+      parameters:
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - pwa-analytics
+      summary: Proxy Posthog
+      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
+        errors.
+      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__put
+      parameters:
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/pwa/backup/trigger:
+    post:
+      tags:
+      - pwa-backup
+      summary: Trigger Backup
+      description: "Endpoint for automated backups. \nProtected by a secret header\
+        \ instead of Clerk auth."
+      operationId: trigger_backup_api_v1_pwa_backup_trigger_post
+      parameters:
+      - name: request
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Request
+      - name: x-cron-secret
+        in: header
+        required: false
+        schema:
+          type: string
+          title: X-Cron-Secret
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/pwa/onboarding/choice/:
     post:
       tags:
@@ -2250,137 +2416,6 @@ paths:
           - {}
           - type: 'null'
           title: Request
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /api/v1/pwa/analytics/proxy/{path}:
-    delete:
-      tags:
-      - pwa-analytics
-      summary: Proxy Posthog
-      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
-        errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__delete
-      parameters:
-      - name: path
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    get:
-      tags:
-      - pwa-analytics
-      summary: Proxy Posthog
-      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
-        errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__get
-      parameters:
-      - name: path
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    patch:
-      tags:
-      - pwa-analytics
-      summary: Proxy Posthog
-      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
-        errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__patch
-      parameters:
-      - name: path
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    post:
-      tags:
-      - pwa-analytics
-      summary: Proxy Posthog
-      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
-        errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__post
-      parameters:
-      - name: path
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    put:
-      tags:
-      - pwa-analytics
-      summary: Proxy Posthog
-      description: Proxies requests to PostHog to bypass ad-blockers and avoid console
-        errors.
-      operationId: proxy_posthog_api_v1_pwa_analytics_proxy__path__put
-      parameters:
-      - name: path
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Path
       responses:
         '200':
           description: Successful Response

@@ -1,8 +1,12 @@
 from fastapi import APIRouter, Depends
-from src.api.v1.pwa import jobs, customers, chat, invoices, settings, onboarding, billing, routing, expenses, quickbooks, user, business, quotes, addresses, services, data_management, requests, analytics_proxy, marketing, templates, dev
+from src.api.v1.pwa import jobs, customers, chat, invoices, settings, onboarding, billing, routing, expenses, quickbooks, user, business, quotes, addresses, services, data_management, requests, analytics_proxy, marketing, templates, dev, backup
 from src.api.dependencies.clerk_auth import verify_token
 
 router = APIRouter()
+
+# Public/Special endpoints
+router.include_router(analytics_proxy.router, prefix="/analytics/proxy", tags=["pwa-analytics"])
+router.include_router(backup.router, prefix="/backup", tags=["pwa-backup"])
 
 # Protected endpoints
 protected_router = APIRouter(dependencies=[Depends(verify_token)])

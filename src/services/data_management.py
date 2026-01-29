@@ -293,3 +293,51 @@ class DataManagementService:
             
         await self.session.commit()
         return export_req
+
+    async def backup_db(self) -> str:
+        """
+        Creates a backup of the SQLite database and uploads it to S3.
+        Using sqlite3's backup method for safety.
+        """
+        import sqlite3
+        import os
+        from src.database import DATABASE_URL
+        
+        # Extract file path from URL
+        db_path = DATABASE_URL.split("///")[-1]
+        if ":memory:" in db_path:
+            raise ValueError("Cannot backup in-memory database")
+            
+        backup_path = f"{db_path}.backup"
+        
+        # SQLite backup using standard library
+        try:
+            # We connect to the source DB file
+            src = sqlite3.connect(db_path)
+            # Create a backup DB file
+            dst = sqlite3.connect(backup_path)
+            with dst:
+                src.backup(dst)
+            dst.close()
+            src.close()
+            
+            # Read the backup file
+            with open(backup_path, "rb") as f:
+                content = f.read()
+                
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            s3_key = f"backups/crm_db_{timestamp}.sqlite"
+            
+            # Upload to S3
+            public_url = storage_service.upload_file(content, s3_key, "application/x-sqlite3")
+            
+            # Clean up local backup file
+            os.remove(backup_path)
+            
+            return public_url
+            
+        except Exception as e:
+            if os.path.exists(backup_path):
+                os.remove(backup_path)
+            logger.exception("Database backup failed")
+            raise e

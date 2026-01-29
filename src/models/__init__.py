@@ -844,7 +844,7 @@ class Invitation(Base):
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     inviter_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     invitee_identifier: Mapped[str] = mapped_column(String, index=True)  # phone or email
-    token: Mapped[str] = mapped_column(String, unique=True, index=True)
+    token: Mapped[str] = mapped_column(String, unique=True, index=True) 
     status: Mapped[InvitationStatus] = mapped_column(
         SafeSAEnum(InvitationStatus), default=InvitationStatus.PENDING
     )
