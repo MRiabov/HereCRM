@@ -1,7 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import flag_modified
 from src.repositories import BusinessRepository
 from src.models import InvoicingWorkflow, QuotingWorkflow, PaymentTiming, JobCreationDefault
 from typing import Any, Dict
+import json
+import os
 
 class WorkflowSettingsService:
     def __init__(self, session: AsyncSession):
@@ -16,7 +19,7 @@ class WorkflowSettingsService:
         if not business:
             raise ValueError(f"Business {business_id} not found")
 
-        return {
+        settings_dict = {
             "workflow_invoicing": business.workflow_invoicing or InvoicingWorkflow.MANUAL,
             "workflow_quoting": business.workflow_quoting or QuotingWorkflow.MANUAL,
             "workflow_payment_timing": business.workflow_payment_timing or PaymentTiming.USUALLY_PAID_ON_SPOT,
@@ -40,6 +43,11 @@ class WorkflowSettingsService:
             "billing_cycle_anchor": business.billing_cycle_anchor,
             "marketing_settings": business.marketing_settings or {},
         }
+        
+        with open('/tmp/backend_debug_get.log', 'a') as f:
+            f.write(f"DEBUG: get_settings for business {business_id}: {settings_dict['marketing_settings']}\n")
+            
+        return settings_dict
 
     async def update_settings(self, business_id: int, **settings) -> Dict[str, Any]:
         """
@@ -84,7 +92,18 @@ class WorkflowSettingsService:
                 elif key == "workflow_job_creation_default" and isinstance(value, str):
                     value = JobCreationDefault(value.upper())
                 
+                if key == 'marketing_settings':
+                    with open('/tmp/backend_debug.log', 'a') as f:
+                        f.write(f"DEBUG: Updating marketing_settings to type {type(value)}: {value}\n")
+                        f.write(f"DEBUG: Previous marketing_settings: {business.marketing_settings}\n")
+
                 setattr(business, key, value)
+                
+                if key == 'marketing_settings':
+                    flag_modified(business, 'marketing_settings')
         
         await self.session.flush()
+        with open('/tmp/backend_debug.log', 'a') as f:
+            f.write(f"DEBUG: Session flushed. Dirty: {self.session.dirty}\n")
+            f.write(f"DEBUG: Business marketing_settings after flush: {business.marketing_settings}\n")
         return await self.get_settings(business_id)

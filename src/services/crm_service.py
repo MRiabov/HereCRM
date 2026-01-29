@@ -1,10 +1,11 @@
-from typing import Optional
+from typing import Optional, List, Dict
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from src.models import Job, JobStatus, Customer, PipelineStage, Business, PaymentTiming, Request, LineItem, Service, Urgency, RequestStatus, PromotionAction
+from sqlalchemy import select, or_
+from sqlalchemy.orm import selectinload
+from src.models import Job, JobStatus, Customer, PipelineStage, Business, PaymentTiming, Request, LineItem, Service, Urgency, RequestStatus, PromotionAction, User, UserRole
 from src.repositories import JobRepository, CustomerRepository, RequestRepository
 from src.events import event_bus, JOB_CREATED, JOB_BOOKED, JOB_SCHEDULED, JOB_UPDATED, JOB_ASSIGNED, JOB_UNASSIGNED, JOB_PAID
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 from src.services.quote_service import QuoteService
 from src.services.geocoding import GeocodingService
 
@@ -763,4 +764,95 @@ class CRMService:
             "cost_labor": cost_labor,
             "net_profit": net_profit
         }
+
+    async def get_employee_schedules(self, target_date: date, timezone_str: str = "UTC") -> Dict[Optional[User], List[Job]]:
+        """
+        Query all users with roles member or owner for the business.
+        Query all jobs for the given date assigned to these users OR unassigned.
+        Return a structured dict: {user_obj_or_None: [job_list]}.
+        
+        The query is timezone-aware: target_date is interpreted in timezone_str.
+        """
+        import pytz
+        try:
+            tz = pytz.timezone(timezone_str)
+        except Exception:
+            tz = pytz.UTC
+
+        # 1. Fetch all employees (Owners and Members)
+        stmt = select(User).where(
+            User.business_id == self.business_id,
+            User.role.in_([UserRole.OWNER, UserRole.MANAGER, UserRole.EMPLOYEE])
+        )
+        result = await self.session.execute(stmt)
+        employees = result.scalars().all()
+
+        # 2. Fetch jobs for these employees on the target date
+        # Convert local date range to UTC
+        local_start = datetime.combine(target_date, datetime.min.time())
+        local_end = datetime.combine(target_date, datetime.max.time())
+        
+        # Localize and then normalize to UTC
+        start_of_day = tz.localize(local_start).astimezone(pytz.UTC)
+        end_of_day = tz.localize(local_end).astimezone(pytz.UTC)
+
+        # Pre-initialize the schedule map
+        schedule: Dict[Optional[User], List[Job]] = {emp: [] for emp in employees}
+        schedule[None] = []  # Entry for unassigned jobs
+
+        # Query jobs assigned to any of these employees OR unassigned on this date
+        employee_ids = [emp.id for emp in employees]
+        
+        job_stmt = select(Job).where(
+            Job.business_id == self.business_id,
+            or_(
+                Job.employee_id.in_(employee_ids) if employee_ids else False,
+                Job.employee_id.is_(None)
+            ),
+            Job.scheduled_at >= start_of_day,
+            Job.scheduled_at <= end_of_day
+        ).options(
+            selectinload(Job.customer),
+            selectinload(Job.employee),
+            selectinload(Job.employee).selectinload(User.wage_config),
+            selectinload(Job.line_items)
+        ).order_by(Job.scheduled_at.asc())
+
+        job_result = await self.session.execute(job_stmt)
+        jobs = job_result.scalars().all()
+
+        # Group jobs by employee
+        for job in jobs:
+            if job.employee_id is None:
+                schedule[None].append(job)
+                continue
+                
+            for emp in employees:
+                if job.employee_id == emp.id:
+                    schedule[emp].append(job)
+                    break
+
+        return schedule
+
+    async def get_unscheduled_jobs(self) -> List[Job]:
+        """
+        Query all jobs where (employee_id is None OR scheduled_at is None) AND status is pending.
+        """
+        stmt = select(Job).where(
+            Job.business_id == self.business_id,
+            or_(
+                Job.employee_id.is_(None),
+                Job.scheduled_at.is_(None)
+            ),
+            Job.status == JobStatus.PENDING
+        ).options(
+            selectinload(Job.customer),
+            selectinload(Job.employee),
+            selectinload(Job.employee).selectinload(User.wage_config),
+            selectinload(Job.line_items)
+        ).order_by(Job.created_at.desc())
+
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
 

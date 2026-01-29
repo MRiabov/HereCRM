@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.repositories import CustomerRepository, JobRepository, RequestRepository
 from src.services.geocoding import GeocodingService
 from src.uimodels import SearchTool
+from src.models import EntityType
 
 
 class SearchService:
@@ -51,11 +52,11 @@ class SearchService:
             params.radius = 200.0  # Default 200m
 
         # Dispatch based on entity_type
-        if params.entity_type == 'customer' or params.entity_type == 'lead':
+        if params.entity_type in [EntityType.CUSTOMER, EntityType.LEAD]:
             results.extend(await self._search_customers(params, business_id, min_date, max_date))
-        elif params.entity_type == 'job':
+        elif params.entity_type == EntityType.JOB:
             results.extend(await self._search_jobs(params, business_id, min_date, max_date))
-        elif params.entity_type == 'request':
+        elif params.entity_type == EntityType.REQUEST:
             results.extend(await self._search_requests(params, business_id, min_date, max_date))
         else:
             # Aggregate all

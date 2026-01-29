@@ -147,7 +147,7 @@ async def test_parse_search(mock_parser):
     mock_tool_call.function.arguments = json.dumps(
         {
             "query": "John",
-            "entity_type": "job",
+            "entity_type": "JOB",
         }
     )
 
@@ -160,7 +160,7 @@ async def test_parse_search(mock_parser):
     result = await parser.parse("find jobs for John")
     assert isinstance(result, SearchTool)
     assert result.query == "John"
-    assert result.entity_type == "job"
+    assert result.entity_type == "JOB"
 
 
 @pytest.mark.asyncio

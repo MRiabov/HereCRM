@@ -25,7 +25,8 @@ async def test_export_customers_csv(async_session: AsyncSession):
         mock_storage.upload_file.return_value = "https://s3.fake/export.csv"
         
         # Action: Export All Customers
-        filters = {"entity_type": "customer"}
+        from src.models import EntityType
+        filters = {"entity_type": EntityType.CUSTOMER}
         result = await service.export_data(business.id, query="all", format=ExportFormat.CSV, filters=filters)
         
         # Verify
@@ -66,7 +67,8 @@ async def test_export_jobs_filtered(async_session: AsyncSession):
         mock_storage.upload_file.return_value = "https://s3.fake/jobs.xlsx"
         
         # Action: Export Jobs with Status=pending
-        filters = {"entity_type": "job", "status": JobStatus.PENDING}
+        from src.models import EntityType
+        filters = {"entity_type": EntityType.JOB, "status": JobStatus.PENDING}
         result = await service.export_data(business.id, query="all", format=ExportFormat.EXCEL, filters=filters)
         
         assert result.status == ExportStatus.COMPLETED

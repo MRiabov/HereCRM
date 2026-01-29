@@ -363,12 +363,13 @@ class CustomerRepository(BaseRepository[Customer]):
             # IMPORTANT: We are searching for customers, but filtering by JOB properties
 
         # Entity Type logic (Lead VS generic Customer)
-        elif entity_type == "lead" or (query and "lead" in query.lower()):
+        from src.models import EntityType
+        if entity_type in [EntityType.LEAD, "lead"] or (query and "lead" in query.lower()):
             # A lead is a customer with 0 jobs.
             # We need a left join on Job to verify count or null
             stmt = select(Customer).outerjoin(Job)
             conditions.append(Job.id.is_(None))
-        elif entity_type == "customer":
+        elif entity_type in [EntityType.CUSTOMER, "customer"]:
             # Explicitly customer means HAS jobs? or just anyone?
             # Usually strict "customer" implies having bought something, but for simplicity
             # let's assume it means ANYONE unless "leads" is specified

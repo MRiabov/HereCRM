@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
 from src.services.crm_service import CRMService
-from src.services.dashboard_service import DashboardService
 from src.schemas.pwa import JobListResponse, JobSchema, JobCreate, JobUpdate
 from src.models import User
 from src.api.dependencies.clerk_auth import get_current_user
@@ -17,7 +16,7 @@ async def get_services(
     session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return CRMService(session, business_id=current_user.business_id, user_id=current_user.id), DashboardService(session)
+    return CRMService(session, business_id=current_user.business_id, user_id=current_user.id)
 
 @router.get("/", response_model=List[JobListResponse])
 async def list_jobs(
@@ -28,7 +27,7 @@ async def list_jobs(
     unscheduled: bool = False,
     page: int = 1,
     limit: int = 50,
-    services: tuple[CRMService, DashboardService] = Depends(get_services),
+    crm_service: CRMService = Depends(get_services),
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -38,11 +37,10 @@ async def list_jobs(
     If unscheduled is true, returns jobs without schedule or assignment.
     Otherwise, returns daily schedule for employees (defaults to today).
     """
-    crm_service, dashboard_service = services
     skip = (page - 1) * limit
 
     if unscheduled:
-        jobs = await dashboard_service.get_unscheduled_jobs(crm_service.business_id)
+        jobs = await crm_service.get_unscheduled_jobs()
         # Apply manual pagination for unscheduled as it's a specialized query
         return [
             JobListResponse(
@@ -101,8 +99,7 @@ async def list_jobs(
     
     # Get schedules for all employees
     # DashboardService returns {User: [Job]}
-    schedules = await dashboard_service.get_employee_schedules(
-        crm_service.business_id, 
+    schedules = await crm_service.get_employee_schedules(
         target_date,
         timezone_str=current_user.timezone
     )
@@ -132,9 +129,8 @@ async def list_jobs(
 @router.get("/{job_id}", response_model=JobSchema)
 async def get_job(
     job_id: int,
-    services: tuple[CRMService, DashboardService] = Depends(get_services)
+    crm_service: CRMService = Depends(get_services)
 ):
-    crm_service, _ = services
     job = await crm_service.job_repo.get_with_line_items(job_id, crm_service.business_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -143,9 +139,8 @@ async def get_job(
 @router.post("/", response_model=JobSchema)
 async def create_job(
     job_data: JobCreate,
-    services: tuple[CRMService, DashboardService] = Depends(get_services)
+    crm_service: CRMService = Depends(get_services)
 ):
-    crm_service, _ = services
     try:
         job = await crm_service.create_job(
             customer_id=job_data.customer_id,
@@ -167,9 +162,8 @@ async def create_job(
 async def update_job(
     job_id: int,
     job_update: JobUpdate,
-    services: tuple[CRMService, DashboardService] = Depends(get_services)
+    crm_service: CRMService = Depends(get_services)
 ):
-    crm_service, _ = services
     try:
         job = await crm_service.update_job(
             job_id=job_id,

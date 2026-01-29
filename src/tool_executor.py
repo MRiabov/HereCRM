@@ -37,14 +37,12 @@ from src.services.campaign_service import CampaignService
 from src.services.postmark_service import PostmarkService
 from src.services.chat_utils import format_line_items
 from src.services.billing_service import BillingService
-from src.services.dashboard_service import DashboardService
 from src.services.assignment_service import AssignmentService
 from src.services.rbac_service import RBACService
 from src.services.workflow import WorkflowSettingsService
 from src.services.expenses import ExpenseService
 from src.services.time_tracking import TimeTrackingService
 from src.services.quote_service import QuoteService
-from src.lib.text_formatter import render_employee_dashboard
 from src.uimodels import (
     AddJobTool,
     AddLeadTool,
@@ -96,7 +94,6 @@ from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.quote_tools import QuoteCreationHandler
 from src.tools.routing_tools import AutorouteToolExecutor
 from src.tools.employee_management import (
-    ShowScheduleTool, 
     AssignJobTool,
     PromoteUserTool,
     DismissUserTool,
@@ -134,9 +131,6 @@ class ToolExecutor:
         self.campaign_service = CampaignService(session, self.search_service, PostmarkService())
         self.invoice_service = InvoiceService(session)
         self.billing_service = BillingService(session)
-        self.dashboard_service = DashboardService(session)
-        self.billing_service = BillingService(session)
-        self.dashboard_service = DashboardService(session)
         self.assignment_service = AssignmentService(session, self.business_id)
         self.quote_service = QuoteService(session)
         self.rbac_service = RBACService()
@@ -209,8 +203,6 @@ class ToolExecutor:
             ExitDataManagementTool,
             GetBillingStatusTool,
             RequestUpgradeTool,
-            ShowScheduleTool,
-            ShowScheduleTool,
             AssignJobTool,
             CreateQuoteTool,
             LocateEmployeeTool,
@@ -370,8 +362,6 @@ class ToolExecutor:
             return await self._execute_get_billing_status(tool_call)
         elif isinstance(tool_call, RequestUpgradeTool):
             return await self._execute_request_upgrade(tool_call)
-        elif isinstance(tool_call, ShowScheduleTool):
-            return await self._execute_show_schedule(tool_call)
         elif isinstance(tool_call, AssignJobTool):
             return await self._execute_assign_job(tool_call)
         elif isinstance(tool_call, CreateQuoteTool):
@@ -1327,55 +1317,6 @@ class ToolExecutor:
             "customer_name": customer.name
         }
 
-    async def _execute_show_schedule(
-        self, tool: ShowScheduleTool
-    ) -> Tuple[str, Optional[Dict[str, Any]]]:
-        from datetime import date
-        target_date = date.today()
-        if tool.date:
-            try:
-                target_date = date.fromisoformat(tool.date)
-            except ValueError:
-                return self.template_service.render("error_invalid_date", date=tool.date), None
-
-        schedule = await self.dashboard_service.get_employee_schedules(self.business_id, target_date)
-        unscheduled = await self.dashboard_service.get_unscheduled_jobs(self.business_id)
-        
-        # WP03 presentation layer call
-        report = render_employee_dashboard({
-            "employees": [{"name": emp.name, "jobs": jobs} for emp, jobs in schedule.items()],
-            "UNSCHEDULED": unscheduled
-        })
-        
-        # Serialize data for the frontend
-        serialized_employees = []
-        for emp, jobs in schedule.items():
-            serialized_employees.append({
-                "name": emp.name,
-                "role": emp.role,
-                "jobs": [{
-                    "id": job.id,
-                    "customer_name": job.customer.name if job.customer else "Unknown",
-                    "description": job.description,
-                    "scheduled_at": job.scheduled_at.isoformat() if job.scheduled_at else None,
-                    "status": job.status
-                } for job in jobs]
-            })
-
-        serialized_unscheduled = [{
-            "id": job.id,
-            "customer_name": job.customer.name if job.customer else "Unknown",
-            "description": job.description,
-            "status": job.status
-        } for job in unscheduled]
-
-        return report, {
-            "action": "query", 
-            "entity": "dashboard", 
-            "date": target_date.isoformat(),
-            "employees": serialized_employees,
-            "UNSCHEDULED": serialized_unscheduled
-        }
 
     async def _execute_assign_job(
         self, tool: AssignJobTool

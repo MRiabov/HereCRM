@@ -57,6 +57,19 @@ class GeocodingService:
                 logger.error("GeoApify API key is missing.")
             return None, None, None
 
+        if self.api_key == "MOCK_GEOAPIFY_KEY":
+            logger.info(f"Using mock geocoding results for: {address}")
+            # Return fixed coordinates for San Francisco as a mock
+            return 37.7749, -122.4194, {
+                "formatted": address,
+                "city": "San Francisco",
+                "country": "United States",
+                "postcode": "94103",
+                "street": "Market St",
+                "lat": 37.7749,
+                "lon": -122.4194
+            }
+
         params = {"text": address, "format": "json", "limit": 1, "apiKey": self.api_key}
 
         try:

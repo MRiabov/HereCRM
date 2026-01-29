@@ -18,3 +18,5 @@ Examples of commit names:
 - (spec) Specified spec 025 (when edited spec.md at spec 025)
 - (refactor) Make webhook logic more modular
 - (debug) fix the test failure at [...]
+
+In addition, don't stage throwaway scripts. If (most commonly in backend) a script has names like "repro_", "debug_...", "verify_...", "check_"... and they are especially in root repo, it's likely intermediate, throwawy reproduction scripts that I don't need. Notify me about them. Maybe put them into `/scripts/throwaway/` folder.

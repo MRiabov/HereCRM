@@ -5,52 +5,6 @@
     "version": "1.0.0"
   },
   "paths": {
-    "/api/v1/pwa/dashboard/stats": {
-      "get": {
-        "tags": [
-          "pwa-dashboard"
-        ],
-        "summary": "Get Dashboard Stats",
-        "operationId": "get_dashboard_stats_api_v1_pwa_dashboard_stats_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DashboardStats"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/pwa/dashboard/recent-activity": {
-      "get": {
-        "tags": [
-          "pwa-dashboard"
-        ],
-        "summary": "Get Recent Activity",
-        "operationId": "get_recent_activity_api_v1_pwa_dashboard_recent_activity_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/RecentActivity"
-                  },
-                  "type": "array",
-                  "title": "Response Get Recent Activity Api V1 Pwa Dashboard Recent Activity Get"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/pwa/onboarding/choice/": {
       "post": {
         "tags": [
@@ -59,15 +13,31 @@
         "summary": "Process Onboarding Choice",
         "description": "Handle the user's choice to either keep their auto-created business \nor join an existing one via invite code.",
         "operationId": "process_onboarding_choice_api_v1_pwa_onboarding_choice__post",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/OnboardingChoice"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -99,15 +69,31 @@
         "summary": "Process Onboarding Choice",
         "description": "Handle the user's choice to either keep their auto-created business \nor join an existing one via invite code.",
         "operationId": "process_onboarding_choice_api_v1_pwa_onboarding_choice_post",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/OnboardingChoice"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -234,6 +220,20 @@
               "default": 50,
               "title": "Limit"
             }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
           }
         ],
         "responses": {
@@ -269,6 +269,22 @@
         ],
         "summary": "Create Job",
         "operationId": "create_job_api_v1_pwa_jobs__post",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -319,6 +335,20 @@
               "type": "integer",
               "title": "Job Id"
             }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
           }
         ],
         "responses": {
@@ -358,6 +388,20 @@
             "schema": {
               "type": "integer",
               "title": "Job Id"
+            }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
             }
           }
         ],
@@ -454,6 +498,20 @@
               "default": 50,
               "title": "Limit"
             }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
           }
         ],
         "responses": {
@@ -489,6 +547,22 @@
         ],
         "summary": "Create Customer",
         "operationId": "create_customer_api_v1_pwa_customers__post",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -539,6 +613,20 @@
               "type": "integer",
               "title": "Customer Id"
             }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
           }
         ],
         "responses": {
@@ -578,6 +666,20 @@
             "schema": {
               "type": "integer",
               "title": "Customer Id"
+            }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
             }
           }
         ],
@@ -704,6 +806,20 @@
               ],
               "title": "Max Date"
             }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
           }
         ],
         "responses": {
@@ -739,6 +855,22 @@
         ],
         "summary": "Create Request",
         "operationId": "create_request_api_v1_pwa_requests__post",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -789,6 +921,20 @@
               "type": "integer",
               "title": "Request Id"
             }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
           }
         ],
         "responses": {
@@ -826,6 +972,20 @@
             "schema": {
               "type": "integer",
               "title": "Request Id"
+            }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
             }
           }
         ],
@@ -866,6 +1026,20 @@
             "schema": {
               "type": "integer",
               "title": "Request Id"
+            }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
             }
           }
         ],
@@ -911,17 +1085,43 @@
         "summary": "Get Assistant History",
         "description": "Returns AI Assistant history for the current user (where from_number/to_number is 'system').",
         "operationId": "get_assistant_history_api_v1_pwa_chat_history_get",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/ChatMessage"
                   },
-                  "type": "array",
                   "title": "Response Get Assistant History Api V1 Pwa Chat History Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -944,6 +1144,20 @@
             "schema": {
               "type": "integer",
               "title": "Customer Id"
+            }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
             }
           }
         ],
@@ -982,15 +1196,31 @@
         ],
         "summary": "Send Message",
         "operationId": "send_message_api_v1_pwa_chat_send_post",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ChatSendRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -1021,15 +1251,31 @@
         ],
         "summary": "Execute Tool",
         "operationId": "execute_tool_api_v1_pwa_chat_execute_post",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ChatExecuteRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -1068,6 +1314,20 @@
             "schema": {
               "type": "integer",
               "title": "Message Id"
+            }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
             }
           }
         ],
@@ -1126,6 +1386,20 @@
               ],
               "title": "Search"
             }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
           }
         ],
         "responses": {
@@ -1161,6 +1435,22 @@
         ],
         "summary": "Create Invoice",
         "operationId": "create_invoice_api_v1_pwa_invoices__post",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1211,6 +1501,20 @@
               "type": "integer",
               "title": "Invoice Id"
             }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
           }
         ],
         "responses": {
@@ -1260,6 +1564,20 @@
               ],
               "title": "Search"
             }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
           }
         ],
         "responses": {
@@ -1295,6 +1613,22 @@
         ],
         "summary": "Create Quote",
         "operationId": "create_quote_api_v1_pwa_quotes__post",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1345,6 +1679,20 @@
               "type": "integer",
               "title": "Quote Id"
             }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
           }
         ],
         "responses": {
@@ -1394,6 +1742,20 @@
               ],
               "title": "Search"
             }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
           }
         ],
         "responses": {
@@ -1432,17 +1794,43 @@
         "summary": "List Services",
         "description": "List services for the current business.",
         "operationId": "list_services_api_v1_pwa_services__get",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/ServiceSchema"
                   },
-                  "type": "array",
                   "title": "Response List Services Api V1 Pwa Services  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1456,15 +1844,31 @@
         "summary": "Create Service",
         "description": "Create a new service in the catalog.",
         "operationId": "create_service_api_v1_pwa_services__post",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ServiceCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -1507,6 +1911,20 @@
               "type": "integer",
               "title": "Service Id"
             }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
           }
         ],
         "responses": {
@@ -1540,6 +1958,22 @@
         ],
         "summary": "Get Workflow Settings",
         "operationId": "get_workflow_settings_api_v1_pwa_settings_workflow_get",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1547,6 +1981,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BusinessSettingsSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1559,15 +2003,31 @@
         ],
         "summary": "Update Workflow Settings",
         "operationId": "update_workflow_settings_api_v1_pwa_settings_workflow_patch",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/BusinessSettingsUpdate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -1601,12 +2061,38 @@
         "summary": "Get Billing Prices",
         "description": "Exposes billing configuration (prices, products, addons) to the frontend.",
         "operationId": "get_billing_prices_api_v1_pwa_billing_prices_get",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -1621,15 +2107,31 @@
         "summary": "Create Checkout Session",
         "description": "Creates a Stripe checkout session for a specific upgrade.",
         "operationId": "create_checkout_session_api_v1_pwa_billing_checkout_post",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CheckoutSessionRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -1701,6 +2203,20 @@
               ],
               "title": "Country"
             }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
           }
         ],
         "responses": {
@@ -1750,6 +2266,20 @@
                 }
               ],
               "title": "Date"
+            }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
             }
           }
         ],
@@ -1811,6 +2341,20 @@
               "default": true,
               "title": "Notify"
             }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
           }
         ],
         "responses": {
@@ -1859,6 +2403,20 @@
               ],
               "title": "Search"
             }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
           }
         ],
         "responses": {
@@ -1895,6 +2453,22 @@
         "summary": "Create Expense",
         "description": "Create a new expense.",
         "operationId": "create_expense_api_v1_pwa_expenses__post",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1936,12 +2510,38 @@
         ],
         "summary": "Connect Quickbooks",
         "operationId": "connect_quickbooks_api_v1_pwa_quickbooks_connect_get",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -1982,6 +2582,20 @@
               "type": "string",
               "title": "State"
             }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
           }
         ],
         "responses": {
@@ -2013,12 +2627,38 @@
         ],
         "summary": "Disconnect Quickbooks",
         "operationId": "disconnect_quickbooks_api_v1_pwa_quickbooks_disconnect_post",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -2032,12 +2672,38 @@
         ],
         "summary": "Trigger Sync",
         "operationId": "trigger_sync_api_v1_pwa_quickbooks_sync_post",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -2052,12 +2718,38 @@
         "summary": "Get Integrations",
         "description": "Returns the status of all user integrations.",
         "operationId": "get_integrations_api_v1_pwa_user_integrations_get",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -2087,6 +2779,20 @@
                 }
               ],
               "title": "Success Url"
+            }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
             }
           }
         ],
@@ -2120,12 +2826,38 @@
         "summary": "Disconnect Google Calendar",
         "description": "Disconnects Google Calendar for the current user.",
         "operationId": "disconnect_google_calendar_api_v1_pwa_user_integrations_google_calendar_delete",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -2140,17 +2872,43 @@
         "summary": "List Employees",
         "description": "Returns a list of all employees in the business, including their wage configurations.",
         "operationId": "list_employees_api_v1_pwa_business_employees_get",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/UserSchema"
                   },
-                  "type": "array",
                   "title": "Response List Employees Api V1 Pwa Business Employees Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -2174,6 +2932,20 @@
             "schema": {
               "type": "integer",
               "title": "Employee Id"
+            }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
             }
           }
         ],
@@ -2217,12 +2989,38 @@
         "summary": "Get Business Info",
         "description": "Returns general business information including seat counts.",
         "operationId": "get_business_info_api_v1_pwa_business_info_get",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -2236,15 +3034,31 @@
         ],
         "summary": "Trigger Export",
         "operationId": "trigger_export_api_v1_pwa_data_management_export_post",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ExportCreateRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -2277,6 +3091,22 @@
         ],
         "summary": "Get Data Activity",
         "operationId": "get_data_activity_api_v1_pwa_data_management_activity_get",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -2284,6 +3114,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DataActivitySchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -2298,17 +3138,43 @@
         ],
         "summary": "List Campaigns",
         "operationId": "list_campaigns_api_v1_pwa_marketing__get",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/CampaignSchema"
                   },
-                  "type": "array",
                   "title": "Response List Campaigns Api V1 Pwa Marketing  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -2321,15 +3187,31 @@
         ],
         "summary": "Create Campaign",
         "operationId": "create_campaign_api_v1_pwa_marketing__post",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CampaignCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -2382,6 +3264,20 @@
               "default": "WHATSAPP",
               "title": "Channel"
             }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
           }
         ],
         "responses": {
@@ -2421,6 +3317,20 @@
             "schema": {
               "type": "integer",
               "title": "Campaign Id"
+            }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
             }
           }
         ],
@@ -2464,6 +3374,20 @@
               "type": "integer",
               "title": "Campaign Id"
             }
+          },
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
           }
         ],
         "responses": {
@@ -2495,17 +3419,43 @@
         ],
         "summary": "List Templates",
         "operationId": "list_templates_api_v1_pwa_templates__get",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/WhatsAppTemplateSchema"
                   },
-                  "type": "array",
                   "title": "Response List Templates Api V1 Pwa Templates  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -2518,15 +3468,31 @@
         ],
         "summary": "Create Template",
         "operationId": "create_template_api_v1_pwa_templates__post",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WhatsAppTemplateCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -2559,12 +3525,38 @@
         ],
         "summary": "Sync Templates",
         "operationId": "sync_templates_api_v1_pwa_templates_sync_post",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -2578,12 +3570,38 @@
         ],
         "summary": "Reset Db",
         "operationId": "reset_db_api_v1_pwa_dev_reset_db_post",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -2597,12 +3615,38 @@
         ],
         "summary": "Clear Backend Errors",
         "operationId": "clear_backend_errors_api_v1_pwa_dev_errors_delete",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -2614,12 +3658,38 @@
         ],
         "summary": "Get Backend Errors",
         "operationId": "get_backend_errors_api_v1_pwa_dev_errors_get",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -2826,15 +3896,6 @@
   },
   "components": {
     "schemas": {
-      "ActivityType": {
-        "type": "string",
-        "enum": [
-          "invoice",
-          "job",
-          "lead"
-        ],
-        "title": "ActivityType"
-      },
       "AddressSearchResult": {
         "properties": {
           "id": {
@@ -4174,41 +5235,6 @@
         },
         "type": "object",
         "title": "CustomerUpdate"
-      },
-      "DashboardStats": {
-        "properties": {
-          "revenue_monthly": {
-            "type": "number",
-            "minimum": 0.0,
-            "title": "Revenue Monthly"
-          },
-          "active_leads_count": {
-            "type": "integer",
-            "minimum": 0.0,
-            "title": "Active Leads Count"
-          },
-          "leads_need_followup": {
-            "type": "integer",
-            "minimum": 0.0,
-            "title": "Leads Need Followup"
-          },
-          "pipeline_breakdown": {
-            "additionalProperties": {
-              "type": "integer"
-            },
-            "type": "object",
-            "title": "Pipeline Breakdown",
-            "description": "Map of pipeline stage to count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "revenue_monthly",
-          "active_leads_count",
-          "leads_need_followup",
-          "pipeline_breakdown"
-        ],
-        "title": "DashboardStats"
       },
       "DataActivitySchema": {
         "properties": {
@@ -5708,48 +6734,6 @@
           "AUTOMATIC"
         ],
         "title": "QuotingWorkflow"
-      },
-      "RecentActivity": {
-        "properties": {
-          "type": {
-            "$ref": "#/components/schemas/ActivityType"
-          },
-          "title": {
-            "type": "string",
-            "maxLength": 200,
-            "title": "Title"
-          },
-          "description": {
-            "type": "string",
-            "maxLength": 500,
-            "title": "Description"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Timestamp"
-          },
-          "metadata": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Metadata"
-          }
-        },
-        "type": "object",
-        "required": [
-          "type",
-          "title",
-          "description",
-          "timestamp"
-        ],
-        "title": "RecentActivity"
       },
       "RequestCreate": {
         "properties": {

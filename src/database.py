@@ -1,9 +1,12 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from typing import List, Optional, Any
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from sqlalchemy import create_engine
 from sqlalchemy.pool import StaticPool
 import logging
 import os
+import asyncio
+from typing import Dict
 
 # Using relative path for SQLite database as default
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./data/crm.db")
@@ -52,8 +55,63 @@ class Base(DeclarativeBase):
     pass
 
 
-async def get_db():
-    async with AsyncSessionLocal() as session:
+# Detector and registry for dynamic engines (test isolation)
+class EngineRegistry:
+    def __init__(self):
+        self._engines: Dict[str, async_sessionmaker] = {}
+        self._lock = asyncio.Lock()
+
+    async def get_session_maker(self, db_name: str) -> async_sessionmaker:
+        if db_name in self._engines:
+            return self._engines[db_name]
+
+        async with self._lock:
+            if db_name in self._engines:
+                return self._engines[db_name]
+
+            # Create new engine for the specific test database
+            # Ensure it's in a safe directory (e.g., ./data/tests/)
+            os.makedirs("./data/tests", exist_ok=True)
+            db_url = f"sqlite+aiosqlite:///./data/tests/{db_name}.db"
+            
+            new_engine = create_async_engine(
+                db_url, 
+                echo=False, 
+                connect_args={"check_same_thread": False},
+                poolclass=StaticPool
+            )
+            
+            # Initialize schema
+            async with new_engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            
+            new_session_maker = async_sessionmaker(
+                bind=new_engine,
+                class_=AsyncSession,
+                expire_on_commit=False,
+            )
+            self._engines[db_name] = new_session_maker
+            logging.info(f"Initialized dynamic test database: {db_name}")
+            return new_session_maker
+
+    async def dispose_all(self):
+        for maker in self._engines.values():
+            await maker.kw['bind'].dispose()
+
+engine_registry = EngineRegistry()
+
+async def get_db(request: Optional[Any] = None):
+    # Try to get database name from header for test isolation
+    db_name = None
+    if request:
+        db_name = request.headers.get("X-Test-Database")
+    
+    if db_name:
+        session_maker = await engine_registry.get_session_maker(db_name)
+    else:
+        session_maker = AsyncSessionLocal
+
+    async with session_maker() as session:
         yield session
 
 

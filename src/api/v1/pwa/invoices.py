@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -74,7 +74,7 @@ async def list_invoices(
     ignore_keywords = ["all", "invoices", "show invoices", "show all invoices", "list invoices"]
     if search and search.strip().lower() not in ignore_keywords:
         # Search by Invoice ID (if numeric), Customer Name, or Job Description
-        search_filters = [
+        search_filters: List[Any] = [
             Customer.name.ilike(f"%{search}%"),
             Job.description.ilike(f"%{search}%")
         ]

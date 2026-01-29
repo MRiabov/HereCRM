@@ -229,7 +229,8 @@ class DataManagementService:
             entity_type_raw = filters.get("entity_type")
             if entity_type_raw:
                 try:
-                    entity_type = EntityType(str(entity_type_raw).lower())
+                    # RobustEnum handles casing via _missing_
+                    entity_type = EntityType(entity_type_raw)
                 except ValueError:
                     entity_type = EntityType.CUSTOMER
             else:

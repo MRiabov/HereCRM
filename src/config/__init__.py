@@ -66,6 +66,7 @@ class Settings(BaseSettings):
 
     # Security
     secret_key: str = "dev_secret_key_change_me_in_production"
+    allowed_origins: list[str] = ["*"]
 
     # Clerk Settings
     clerk_secret_key: Optional[str] = None

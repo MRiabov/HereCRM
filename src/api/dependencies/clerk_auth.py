@@ -126,17 +126,34 @@ class VerifyToken:
 
     async def _get_mock_user(self, db: AsyncSession) -> User:
         # Get or create a mock user
+        from sqlalchemy.exc import IntegrityError
+        
+        # Try to find existing user first
         result = await db.execute(select(User).options(joinedload(User.business)).where(User.email == "mock@example.com"))
         user = result.scalar_one_or_none()
-        if not user:
-            # Create Mock Business
+        if user:
+            return user
+
+        # Not found, try to create
+        try:
+            # Create Mock Business if not exists
             biz_result = await db.execute(select(Business).where(Business.name == "Mock Business"))
             business = biz_result.scalar_one_or_none()
             if not business:
                 business = Business(name="Mock Business", clerk_org_id="org_mock")
                 db.add(business)
-                await db.flush()
+                try:
+                    await db.flush()
+                except IntegrityError:
+                    # Someone else might have created it
+                    await db.rollback()
+                    biz_result = await db.execute(select(Business).where(Business.name == "Mock Business"))
+                    business = biz_result.scalar_one_or_none()
             
+            if not business:
+                # This shouldn't happen if rollback worked and we re-fetched
+                raise Exception("Failed to resolve Mock Business")
+
             user = User(
                 clerk_id="user_mock",
                 name="Mock User",
@@ -148,7 +165,15 @@ class VerifyToken:
             db.add(user)
             await db.commit()
             await db.refresh(user)
-        return user
+            return user
+        except IntegrityError:
+            # Concurrent creation attempt, rollback and fetch again
+            await db.rollback()
+            result = await db.execute(select(User).options(joinedload(User.business)).where(User.email == "mock@example.com"))
+            user = result.scalar_one_or_none()
+            if user:
+                return user
+            raise
 
 
 # Singleton instance for route injection

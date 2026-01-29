@@ -1,5 +1,5 @@
 import uuid
-from typing import List, Optional
+from typing import List, Optional, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,7 +30,7 @@ async def list_quotes(
 
     ignore_keywords = ["all", "quotes", "show quotes", "show all quotes", "list quotes"]
     if search and search.strip().lower() not in ignore_keywords:
-        search_filters = [
+        search_filters: List[Any] = [
             Customer.name.ilike(f"%{search}%"),
         ]
         if search.isdigit():

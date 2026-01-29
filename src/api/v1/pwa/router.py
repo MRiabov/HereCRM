@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends
-from src.api.v1.pwa import dashboard, jobs, customers, chat, invoices, settings, onboarding, billing, routing, expenses, quickbooks, user, business, quotes, addresses, services, data_management, requests, analytics_proxy, marketing, templates, dev
+from src.api.v1.pwa import jobs, customers, chat, invoices, settings, onboarding, billing, routing, expenses, quickbooks, user, business, quotes, addresses, services, data_management, requests, analytics_proxy, marketing, templates, dev
 from src.api.dependencies.clerk_auth import verify_token
 
 router = APIRouter()
 
 # Protected endpoints
 protected_router = APIRouter(dependencies=[Depends(verify_token)])
-protected_router.include_router(dashboard.router, prefix="/dashboard", tags=["pwa-dashboard"])
 protected_router.include_router(onboarding.router, prefix="/onboarding", tags=["pwa-onboarding"])
 protected_router.include_router(jobs.router, prefix="/jobs", tags=["pwa-jobs"])
 protected_router.include_router(customers.router, prefix="/customers", tags=["pwa-customers"])
