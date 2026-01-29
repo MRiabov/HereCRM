@@ -167,6 +167,24 @@
     }
   },
   {
+    "id": "spec-008-how-to-query",
+    "feature_spec": "008-help",
+    "user_context": { "role": "OWNER", "channel": "WHATSAPP" },
+    "user_input": "Help, how do I add a lead?",
+    "expected_logic": {
+      "tool_called": "HelpTool"
+    }
+  },
+  {
+    "id": "spec-008-how-to-query-no-prefix",
+    "feature_spec": "008-help",
+    "user_context": { "role": "OWNER", "channel": "WHATSAPP" },
+    "user_input": "How do I add a lead?",
+    "expected_logic": {
+      "tool_called": "HelpTool"
+    }
+  },
+  {
     "id": "spec-001-cold-start",
     "feature_spec": "001-onboarding",
     "user_context": { "role": "OWNER", "channel": "WHATSAPP" },
