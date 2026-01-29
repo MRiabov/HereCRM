@@ -14,9 +14,13 @@ class ShowScheduleTool(BaseModel):
 
 class AssignJobTool(BaseModel):
     """Assign a specific job to an employee by name.
-    Use this when the user says 'Assign job #123 to John' or similar."""
+    Use this when the user says 'Assign job #123 to John' or similar.
+    If the Job ID is unknown, provide a job_query (e.g. address or description)."""
 
-    job_id: int = Field(..., description="The ID of the job to assign")
+    job_id: Optional[int] = Field(None, description="The ID of the job to assign")
+    job_query: Optional[str] = Field(
+        None, description="The address or description of the job if ID is unknown"
+    )
     assign_to_name: str = Field(
         ..., description="The name of the employee to assign the job to"
     )
