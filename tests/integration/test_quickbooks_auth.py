@@ -26,7 +26,7 @@ def auth_service(async_session, mock_credentials_db):
     env_vars = {
         "QB_CLIENT_ID": "test_client_id",
         "QB_CLIENT_SECRET": "test_client_secret",
-        "QB_REDIRECT_URI": "http://localhost:8000/callback"
+        "QB_REDIRECT_URI": f"http://localhost:{os.getenv('BACKEND_PORT', '8000')}/callback"
     }
     with mock.patch("src.services.accounting.quickbooks_auth.get_credentials_db") as mock_get_db, \
          mock.patch.dict(os.environ, env_vars):
