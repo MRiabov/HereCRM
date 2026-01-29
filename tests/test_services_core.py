@@ -1,7 +1,7 @@
 import pytest
 from datetime import date, datetime, time
 from src.models import Business, User, Job, Customer, UserRole, JobStatus
-from src.services.dashboard_service import DashboardService
+from src.services.crm_service import CRMService
 from src.services.assignment_service import AssignmentService
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from src.database import Base
@@ -56,7 +56,7 @@ async def test_assignment_service(test_session: AsyncSession):
     assert job.employee_id is None
 
 @pytest.mark.asyncio
-async def test_dashboard_service_schedules(test_session: AsyncSession):
+async def test_crm_service_schedules(test_session: AsyncSession):
     # Setup
     biz = Business(name="Test Biz")
     test_session.add(biz)
@@ -88,8 +88,8 @@ async def test_dashboard_service_schedules(test_session: AsyncSession):
     test_session.add_all([job1, job2])
     await test_session.commit()
 
-    dashboard_service = DashboardService(test_session)
-    schedules = await dashboard_service.get_employee_schedules(biz.id, today)
+    crm_service = CRMService(test_session, biz.id)
+    schedules = await crm_service.get_employee_schedules(today)
     
     # schedules contains user1, user2 AND None (for unassigned)
     assert len(schedules) == 3
@@ -110,7 +110,7 @@ async def test_dashboard_service_schedules(test_session: AsyncSession):
             assert jobs[0].description == "Job 2"
 
 @pytest.mark.asyncio
-async def test_dashboard_service_unscheduled(test_session: AsyncSession):
+async def test_crm_service_unscheduled(test_session: AsyncSession):
     # Setup
     biz = Business(name="Test Biz")
     test_session.add(biz)
@@ -129,8 +129,8 @@ async def test_dashboard_service_unscheduled(test_session: AsyncSession):
     test_session.add_all([job1, job2])
     await test_session.commit()
 
-    dashboard_service = DashboardService(test_session)
-    unscheduled = await dashboard_service.get_unscheduled_jobs(biz.id)
+    crm_service = CRMService(test_session, biz.id)
+    unscheduled = await crm_service.get_unscheduled_jobs()
     
     assert len(unscheduled) == 1
     assert unscheduled[0].description == "Unscheduled Job"

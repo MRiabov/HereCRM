@@ -82,9 +82,7 @@ async def test_core_crud_operations(async_session):
     # Schedule logic usually filters jobs by date
     today = datetime.now(timezone.utc).date()
     # Assuming list_jobs returns jobs for a date range
-    from src.services.dashboard_service import DashboardService
-    dashboard_service = DashboardService(async_session)
-    schedules = await dashboard_service.get_employee_schedules(business.id, today)
+    schedules = await crm_service.get_employee_schedules(today)
     
     # Check if our job is in there (might be under 'unassigned' if no employee set)
     all_jobs = []
@@ -92,7 +90,7 @@ async def test_core_crud_operations(async_session):
         all_jobs.extend(user_jobs)
     
     # Also check unscheduled if it wasn't scheduled correctly
-    unscheduled = await dashboard_service.get_unscheduled_jobs(business.id)
+    unscheduled = await crm_service.get_unscheduled_jobs()
     all_jobs.extend(unscheduled)
     
     assert any(j.id == job.id for j in all_jobs)

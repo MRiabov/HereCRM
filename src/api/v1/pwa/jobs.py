@@ -98,7 +98,7 @@ async def list_jobs(
     target_date = date_from or datetime.now(timezone.utc).date()
     
     # Get schedules for all employees
-    # DashboardService returns {User: [Job]}
+    # CRMService returns {User: [Job]}
     schedules = await crm_service.get_employee_schedules(
         target_date,
         timezone_str=current_user.timezone

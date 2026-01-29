@@ -3,7 +3,7 @@ from datetime import datetime, date, timezone
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
 from src.models import Business, Job, Customer, JobStatus
-from src.services.dashboard_service import DashboardService
+from src.services.crm_service import CRMService
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -63,11 +63,11 @@ async def test_schedule_timezone_filtering():
         session.add_all([job_a, job_b, job_c])
         await session.commit()
         
-        # 3. Test DashboardService
-        service = DashboardService(session)
+        # 3. Test CRMService
+        service = CRMService(session, biz.id)
         
         # Query for Jan 27 in EST
-        schedule = await service.get_employee_schedules(biz.id, target_date, timezone_str=tz_str)
+        schedule = await service.get_employee_schedules(target_date, timezone_str=tz_str)
         
         all_jobs = []
         for emp_jobs in schedule.values():
