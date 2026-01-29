@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.database import get_db, engine
 from src.models import Base
@@ -7,7 +7,7 @@ from src.api.dependencies.clerk_auth import get_current_user
 from src.models import (
     User, UserRole, Business, Customer, Job, Service, LineItem, Expense, 
     PipelineStage, JobStatus, Invoice, InvoiceStatus, Quote, QuoteStatus, 
-    QuoteLineItem, Request, RequestStatus, Urgency, WageConfiguration, 
+    QuoteLineItem, Request as CRMRequest, RequestStatus, Urgency, WageConfiguration, 
     WageModelType, LedgerEntry, LedgerEntryType, ExpenseCategory,
     Campaign, CampaignRecipient, CampaignStatus, CampaignChannel, RecipientStatus,
     WhatsAppTemplate, WhatsAppTemplateStatus, WhatsAppTemplateCategory,
@@ -49,49 +49,50 @@ async def populate_demo_data(db: AsyncSession):
         business_id=business.id,
         role=UserRole.OWNER
     )
+    # Technician 1
     tech1 = User(
-        clerk_id="user_demo_tech_1",
+        clerk_id="user_tech1",
         name="Tech One",
-        email="tech1@demo.com",
-        phone_number="+353872222221",
-        business_id=business.id,
-        role=UserRole.EMPLOYEE
-    )
-    tech2 = User(
-        clerk_id="user_demo_tech_2",
-        name="Tech Two",
-        email="tech2@demo.com",
+        email="tech1@example.com",
         phone_number="+353872222222",
         business_id=business.id,
         role=UserRole.EMPLOYEE
     )
-    # Match the test expect getByText('John Staff')
-    staff = User(
-        clerk_id="user_demo_staff",
-        name="John Staff",
-        email="staff@demo.com",
-        phone_number="+353872222223",
+    # Technician 2
+    tech2 = User(
+        clerk_id="user_tech2",
+        name="Tech Two",
+        email="tech2@example.com",
+        phone_number="+353873333333",
         business_id=business.id,
         role=UserRole.EMPLOYEE
+    )
+    # Staff / Manager
+    staff = User(
+        clerk_id="user_staff",
+        name="Office Staff",
+        email="staff@example.com",
+        phone_number="+353870000000",
+        business_id=business.id,
+        role=UserRole.MANAGER
     )
     db.add_all([owner, tech1, tech2, staff])
     await db.flush()
 
-    # 3. Create Service Catalog
+    # 3. Create Services
     services = [
-        Service(business_id=business.id, name="AC Tune-up", default_price=120.0, estimated_duration=60),
-        Service(business_id=business.id, name="Boiler Repair", default_price=250.0, estimated_duration=120),
-        Service(business_id=business.id, name="Window Cleaning", default_price=50.0, estimated_duration=60),
-        Service(business_id=business.id, name="Power Washing", default_price=200.0, estimated_duration=120),
+        Service(business_id=business.id, name="Window Cleaning", description="Exterior and interior window cleaning", default_price=120.0),
+        Service(business_id=business.id, name="Gutter Cleaning", description="Clear debris from gutters", default_price=80.0),
+        Service(business_id=business.id, name="Fix Leak", description="Standard plumbing repair", default_price=150.0),
     ]
     db.add_all(services)
     await db.flush()
 
     # 4. Create Customers
     customers = [
-        Customer(business_id=business.id, name="John Doe", phone="+353871234567", email="john@example.com", street="123 Main St", city="Dublin", pipeline_stage=PipelineStage.CONVERTED_RECURRENT),
-        Customer(business_id=business.id, name="Jane Smith", phone="+353875550123", email="jane@example.com", street="45 Grafton St", city="Dublin", pipeline_stage=PipelineStage.CONTACTED),
-        Customer(business_id=business.id, name="Alice Smith", phone="+353873333333", email="alice@example.com", street="123 O'Connell St", city="Dublin", pipeline_stage=PipelineStage.CONVERTED_RECURRENT),
+        Customer(business_id=business.id, name="John Doe", phone="+353871234567", email="john@example.com", street="123 Main St", city="Dublin", pipeline_stage=PipelineStage.CONTACTED),
+        Customer(business_id=business.id, name="Jane Smith", phone="+353871234569", email="jane@example.com", street="45 Grafton St", city="Dublin", pipeline_stage=PipelineStage.QUOTED),
+        Customer(business_id=business.id, name="Alice Wonderland", phone="+353871111112", email="alice@example.com", street="123 O'Connell St", city="Dublin", pipeline_stage=PipelineStage.CONTACTED),
         Customer(business_id=business.id, name="Bob Builder", phone="+353874444444", email="bob@example.com", street="78 Wall St", city="Dublin", pipeline_stage=PipelineStage.NOT_CONTACTED),
         Customer(business_id=business.id, name="Charlie Brown", phone="+353875555555", email="charlie@example.com", street="10 Temple Bar", city="Dublin", pipeline_stage=PipelineStage.NOT_CONTACTED),
         Customer(business_id=business.id, name="John Smith", phone="+353871234568", email="john.smith@example.com", street="124 Main St", city="Dublin", pipeline_stage=PipelineStage.CONTACTED),
@@ -223,7 +224,7 @@ async def populate_demo_data(db: AsyncSession):
     db.add(exp1)
 
     # 9. Requests
-    req1 = Request(
+    req1 = CRMRequest(
         business_id=business.id,
         customer_id=customers[0].id,
         description="Leaking pipe in kitchen",
@@ -278,9 +279,6 @@ async def populate_demo_data(db: AsyncSession):
 
     await db.commit()
 
-    await db.commit()
-
-
 @router.post("/reset-db")
 async def reset_db(
     db: AsyncSession = Depends(get_db),
@@ -317,3 +315,17 @@ async def reset_db(
     except Exception as e:
         logger.exception("Database reset failed")
         raise HTTPException(status_code=500, detail=f"Reset failed: {str(e)}")
+
+@router.get("/errors")
+async def get_backend_errors(request: Request):
+    if not settings.dev_mode:
+        raise HTTPException(status_code=403, detail="Only in dev mode")
+    errors = getattr(request.app.state, "backend_errors", [])
+    return {"errors": errors}
+
+@router.delete("/errors")
+async def clear_backend_errors(request: Request):
+    if not settings.dev_mode:
+        raise HTTPException(status_code=403, detail="Only in dev mode")
+    request.app.state.backend_errors = []
+    return {"status": "SUCCESS"}

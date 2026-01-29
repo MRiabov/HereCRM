@@ -1603,6 +1603,29 @@ paths:
           content:
             application/json:
               schema: {}
+  /api/v1/pwa/dev/errors:
+    delete:
+      tags:
+      - pwa-dev
+      summary: Clear Backend Errors
+      operationId: clear_backend_errors_api_v1_pwa_dev_errors_delete
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+    get:
+      tags:
+      - pwa-dev
+      summary: Get Backend Errors
+      operationId: get_backend_errors_api_v1_pwa_dev_errors_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
   /api/v1/pwa/analytics/proxy/{path}:
     delete:
       tags:

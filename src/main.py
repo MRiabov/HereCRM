@@ -23,16 +23,19 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
-    # Force-check schema consistency
-    from src.utils.schema_validation import validate_db_schema
-    mismatches = validate_db_schema()
-    if mismatches:
-        # Filter out minor things or handle specific cases if needed
-        # For now, we throw on ANY mismatch to ensure dev discipline
-        error_msg = f"Database schema mismatch detected: {mismatches}"
-        logger_for_mismatch = logging.getLogger("src.main")
-        logger_for_mismatch.error(error_msg)
-        raise RuntimeError(error_msg)
+    # Force-check schema consistency - SKIP for in-memory database as validation uses a separate connection
+    if ":memory:" not in str(engine.url):
+        from src.utils.schema_validation import validate_db_schema
+        mismatches = validate_db_schema()
+        if mismatches:
+            # Filter out minor things or handle specific cases if needed
+            # For now, we throw on ANY mismatch to ensure dev discipline
+            error_msg = f"Database schema mismatch detected: {mismatches}"
+            logger_for_mismatch = logging.getLogger("src.main")
+            logger_for_mismatch.error(error_msg)
+            raise RuntimeError(error_msg)
+    else:
+        logging.getLogger("src.main").info("Skipping schema validation for in-memory database")
     
     # Register Event Listeners
     app.state.event_bus = event_bus
@@ -76,7 +79,7 @@ app = FastAPI(lifespan=lifespan)
 # CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify actual origins
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
