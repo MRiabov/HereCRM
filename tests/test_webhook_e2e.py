@@ -48,9 +48,10 @@ async def test_webhook_e2e():
     phone = "999888777"
     async with engine_test.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     async with TestingSessionLocal() as db:
         from src.models import Business, User, UserRole
+
         biz = Business(name="E2E Biz")
         db.add(biz)
         await db.flush()

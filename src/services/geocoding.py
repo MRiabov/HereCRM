@@ -8,20 +8,25 @@ from src.models import User
 logger = logging.getLogger(__name__)
 
 
-def calculate_haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+def calculate_haversine_distance(
+    lat1: float, lon1: float, lat2: float, lon2: float
+) -> float:
     """
-    Calculate the great circle distance between two points 
+    Calculate the great circle distance between two points
     on the earth (specified in decimal degrees) in kilometers.
     """
-    # Convert decimal degrees to radians 
+    # Convert decimal degrees to radians
     lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
 
-    # Haversine formula 
-    dlon = lon2 - lon1 
-    dlat = lat2 - lat1 
-    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-    c = 2 * math.asin(math.sqrt(a)) 
-    r = 6371 # Radius of earth in kilometers. Use 3956 for miles
+    # Haversine formula
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+    )
+    c = 2 * math.asin(math.sqrt(a))
+    r = 6371  # Radius of earth in kilometers. Use 3956 for miles
     return c * r
 
 
@@ -30,6 +35,7 @@ class GeocodingService:
 
     def __init__(self):
         from src.config import settings
+
         self.base_url = "https://api.geoapify.com/v1/geocode/search"
         self.api_key = settings.geoapify_key
 
@@ -60,23 +66,25 @@ class GeocodingService:
         if self.api_key == "MOCK_GEOAPIFY_KEY":
             logger.info(f"Using mock geocoding results for: {address}")
             # Return fixed coordinates for San Francisco as a mock
-            return 37.7749, -122.4194, {
-                "formatted": address,
-                "city": "San Francisco",
-                "country": "United States",
-                "postcode": "94103",
-                "street": "Market St",
-                "lat": 37.7749,
-                "lon": -122.4194
-            }
+            return (
+                37.7749,
+                -122.4194,
+                {
+                    "formatted": address,
+                    "city": "San Francisco",
+                    "country": "United States",
+                    "postcode": "94103",
+                    "street": "Market St",
+                    "lat": 37.7749,
+                    "lon": -122.4194,
+                },
+            )
 
         params = {"text": address, "format": "json", "limit": 1, "apiKey": self.api_key}
 
         try:
             client = self.get_client()
-            response = await client.get(
-                self.base_url, params=params
-            )
+            response = await client.get(self.base_url, params=params)
             response.raise_for_status()
             data = response.json()
 
@@ -97,32 +105,40 @@ class GeocodingService:
             logger.error(f"Error parsing geocoding response: {e}")
             return None, None, None
 
-    async def _check_usage(self, session: Optional[AsyncSession], user_id: Optional[int]) -> bool:
+    async def _check_usage(
+        self, session: Optional[AsyncSession], user_id: Optional[int]
+    ) -> bool:
         if not session or not user_id:
             return True
-        
+
         user = await session.get(User, user_id)
         if not user:
             return True
-        
+
         if user.geocoding_count >= 1000:
             logger.warning(f"User {user_id} reached geocoding limit.")
             return False
-            
+
         user.geocoding_count += 1
         return True
 
     async def geocode(
-        self, 
+        self,
         address: str,
         default_city: Optional[str] = None,
         default_country: Optional[str] = None,
         safeguard_enabled: bool = False,
         max_distance_km: float = 100.0,
         session: Optional[AsyncSession] = None,
-        user_id: Optional[int] = None
+        user_id: Optional[int] = None,
     ) -> Tuple[
-        Optional[float], Optional[float], Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]
+        Optional[float],
+        Optional[float],
+        Optional[str],
+        Optional[str],
+        Optional[str],
+        Optional[str],
+        Optional[str],
     ]:
         """
         Geocodes an address and returns (lat, lon, street, city, country, postal_code, full_address).
@@ -137,12 +153,12 @@ class GeocodingService:
             parts.append(default_city)
         if default_country:
             parts.append(default_country)
-            
+
         if parts:
             query_address = f"{address}, {', '.join(parts)}"
 
         lat, lon, details = await self.get_coordinates(query_address)
-        
+
         if not lat and query_address != address:
             # Fallback to original address if enhanced query fails
             lat, lon, details = await self.get_coordinates(address)
@@ -150,11 +166,17 @@ class GeocodingService:
         # Apply Safeguard
         if safeguard_enabled and default_city and lat and lon:
             # Get coordinates for the default city to check distance
-            ref_lat, ref_lon, _ = await self.get_coordinates(f"{default_city}, {default_country}" if default_country else default_city)
+            ref_lat, ref_lon, _ = await self.get_coordinates(
+                f"{default_city}, {default_country}"
+                if default_country
+                else default_city
+            )
             if ref_lat and ref_lon:
                 distance = calculate_haversine_distance(ref_lat, ref_lon, lat, lon)
                 if distance > max_distance_km:
-                    logger.warning(f"Geocoding result for '{address}' is {distance:.2f}km away from {default_city}, exceeding safeguard limit of {max_distance_km}km.")
+                    logger.warning(
+                        f"Geocoding result for '{address}' is {distance:.2f}km away from {default_city}, exceeding safeguard limit of {max_distance_km}km."
+                    )
                     return None, None, None, None, None, None, None
 
         if not details:
@@ -162,7 +184,7 @@ class GeocodingService:
             city = default_city
             country = default_country
             postcode = None
-            
+
             addr_parts = [p for p in [street, city, country, postcode] if p]
             full_address = ", ".join(addr_parts) if addr_parts else address
             return lat, lon, street, city, country, postcode, full_address
@@ -174,11 +196,11 @@ class GeocodingService:
             street = f"{house_number} {street}"
         elif house_number:
             street = house_number
-        
+
         city = details.get("city") or details.get("municipality") or default_city
         country = details.get("country") or default_country
         postcode = details.get("postcode")
-        
+
         full_address = details.get("formatted")
         if not full_address:
             addr_parts = [p for p in [street, city, country, postcode] if p]

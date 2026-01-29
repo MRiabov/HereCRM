@@ -1,4 +1,5 @@
 import os
+
 os.environ["OPENROUTER_API_KEY"] = "sk-dummy"
 os.environ["WHATSAPP_TOKEN"] = "dummy"
 
@@ -8,12 +9,14 @@ from unittest.mock import MagicMock, patch, AsyncMock
 from src.llm_client import LLMParser
 from src.uimodels import AddJobTool
 
+
 @pytest.fixture
 def mock_parser():
     with patch("src.llm_client.AsyncOpenAI") as MockOpenAI:
         mock_client = MockOpenAI.return_value
         parser = LLMParser()
         yield parser, mock_client
+
 
 @pytest.mark.asyncio
 async def test_parse_add_job_with_line_items(mock_parser):
@@ -27,8 +30,8 @@ async def test_parse_add_job_with_line_items(mock_parser):
             "customer_name": "John Doe",
             "line_items": [
                 {"description": "Window Clean", "total_price": 50.0},
-                {"description": "Gutter Clean", "total_price": 30.0}
-            ]
+                {"description": "Gutter Clean", "total_price": 30.0},
+            ],
         }
     )
 
@@ -38,9 +41,7 @@ async def test_parse_add_job_with_line_items(mock_parser):
 
     mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
 
-    result = await parser.parse(
-        "John Doe, Window Clean $50, Gutter Clean $30"
-    )
+    result = await parser.parse("John Doe, Window Clean $50, Gutter Clean $30")
 
     assert isinstance(result, AddJobTool)
     assert result.customer_name == "John Doe"

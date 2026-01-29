@@ -10,6 +10,7 @@ from src.services.auth_service import AuthService
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/clerk", tags=["webhooks"])
 
+
 @router.post("")
 async def clerk_webhook(
     request: Request,
@@ -28,11 +29,13 @@ async def clerk_webhook(
     svix_signature = request.headers.get("svix-signature")
 
     if not all([svix_id, svix_timestamp, svix_signature]):
-        logger.warning(f"Missing svix headers: id={svix_id}, timestamp={svix_timestamp}, signature={svix_signature}")
+        logger.warning(
+            f"Missing svix headers: id={svix_id}, timestamp={svix_timestamp}, signature={svix_signature}"
+        )
         raise HTTPException(status_code=400, detail="Missing svix headers")
 
     payload = await request.body()
-    
+
     # Verify signature
     try:
         wh = Webhook(webhook_secret)
@@ -51,9 +54,9 @@ async def clerk_webhook(
 
     event_type = event.get("type")
     data = event.get("data")
-    
+
     auth_service = AuthService(db)
-    
+
     try:
         if event_type in ["user.created", "user.updated"]:
             await auth_service.sync_clerk_user(data)
@@ -63,7 +66,7 @@ async def clerk_webhook(
             await auth_service.sync_clerk_membership(data)
         else:
             logger.info(f"Unhandled Clerk event type: {event_type}")
-            
+
         await db.commit()
     except Exception as e:
         logger.error(f"Error processing Clerk webhook {event_type}: {e}")

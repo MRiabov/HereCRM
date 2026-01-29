@@ -4,6 +4,7 @@ from src.services.channels.base import SMSMessagingService
 from src.services.channels.textgrid import TextGridService
 from src.services.twilio_service import TwilioService
 
+
 @lru_cache()
 def get_sms_service() -> SMSMessagingService:
     """
@@ -13,8 +14,12 @@ def get_sms_service() -> SMSMessagingService:
     # Get configuration for the 'SMS' channel
     # Defaulting to 'textgrid' as per requirements
     sms_config = channels_config.channels.get("SMS")
-    provider = sms_config.provider.lower() if sms_config and sms_config.provider else "textgrid"
-    
+    provider = (
+        sms_config.provider.lower()
+        if sms_config and sms_config.provider
+        else "textgrid"
+    )
+
     if provider == "twilio":
         return TwilioService()
     else:

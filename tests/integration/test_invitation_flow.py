@@ -2,10 +2,18 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from sqlalchemy import select
 
-from src.models import Business, User, UserRole, ConversationStatus, Invitation, InvitationStatus
+from src.models import (
+    Business,
+    User,
+    UserRole,
+    ConversationStatus,
+    Invitation,
+    InvitationStatus,
+)
 from src.services.whatsapp_service import WhatsappService
 from src.services.invitation import InvitationService
 from src.tools.employee_management import InviteUserTool
+
 
 @pytest.mark.asyncio
 async def test_invitation_flow_end_to_end(async_session):
@@ -29,24 +37,27 @@ async def test_invitation_flow_end_to_end(async_session):
     # 2. Setup Service with mocked components
     mock_parser = AsyncMock()
     mock_template = MagicMock()
-    
+
     def mock_render(key, **kwargs):
-        if key == "welcome_back": return "Welcome back"
-        if key == "welcome_message": return "Welcome to HereCRM"
+        if key == "welcome_back":
+            return "Welcome back"
+        if key == "welcome_message":
+            return "Welcome to HereCRM"
         return f"[{key}]"
+
     mock_template.render.side_effect = mock_render
-    
+
     # We need a real InvitationService connected to DB
     invitation_service = InvitationService(async_session)
-    
+
     # Mock BillingService to avoid dependency
     mock_billing = AsyncMock()
-    
+
     service = WhatsappService(
         session=async_session,
         parser=mock_parser,
         template_service=mock_template,
-        billing_service=mock_billing
+        billing_service=mock_billing,
     )
     # Inject real service to ensure it uses the test session
     service.invitation_service = invitation_service
@@ -55,9 +66,10 @@ async def test_invitation_flow_end_to_end(async_session):
     # Logic is hardcoded in _handle_idle for now
     msg = await service.handle_message("Employee Management", user_phone="owner_123")
     assert "Employee Management mode" in msg
-    
+
     # Verify state
     from src.repositories import ConversationStateRepository
+
     state_repo = ConversationStateRepository(async_session)
     state = await state_repo.get_by_user_id(owner.id)
     assert state.state == ConversationStatus.EMPLOYEE_MANAGEMENT
@@ -66,10 +78,10 @@ async def test_invitation_flow_end_to_end(async_session):
     # Mock parser to return InviteUserTool when called with parse_employee_management
     invite_tool = InviteUserTool(identifier="+999888777")
     mock_parser.parse_employee_management.return_value = invite_tool
-    
+
     msg = await service.handle_message("Invite +999888777", user_phone="owner_123")
     assert "Invitation sent" in msg
-    
+
     # Verify DB Invitation
     stmt = select(Invitation).where(Invitation.invitee_identifier == "+999888777")
     res = await async_session.execute(stmt)
@@ -84,10 +96,10 @@ async def test_invitation_flow_end_to_end(async_session):
     # We need to simulate a NEW message from a NEW number
     # handle_message(is_new_user=False) initially, but internally it checks DB.
     # Since +999888777 is not in DB, it goes to "not user" block.
-    
+
     msg = await service.handle_message("Join", user_phone="+999888777")
     assert "Welcome" in msg
-    
+
     # Verify User created
     stmt = select(User).where(User.phone_number == "+999888777")
     res = await async_session.execute(stmt)

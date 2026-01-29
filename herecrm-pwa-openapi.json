@@ -208,7 +208,7 @@
           "pwa-backup"
         ],
         "summary": "Trigger Backup",
-        "description": "Endpoint for automated backups. \nProtected by a secret header instead of Clerk auth.",
+        "description": "Endpoint for automated backups.\nProtected by a secret header instead of Clerk auth.",
         "operationId": "trigger_backup_api_v1_pwa_backup_trigger_post",
         "parameters": [
           {
@@ -263,7 +263,7 @@
           "pwa-onboarding"
         ],
         "summary": "Process Onboarding Choice",
-        "description": "Handle the user's choice to either keep their auto-created business \nor join an existing one via invite code.",
+        "description": "Handle the user's choice to either keep their auto-created business\nor join an existing one via invite code.",
         "operationId": "process_onboarding_choice_api_v1_pwa_onboarding_choice__post",
         "parameters": [
           {
@@ -319,7 +319,7 @@
           "pwa-onboarding"
         ],
         "summary": "Process Onboarding Choice",
-        "description": "Handle the user's choice to either keep their auto-created business \nor join an existing one via invite code.",
+        "description": "Handle the user's choice to either keep their auto-created business\nor join an existing one via invite code.",
         "operationId": "process_onboarding_choice_api_v1_pwa_onboarding_choice_post",
         "parameters": [
           {
@@ -4938,6 +4938,18 @@
             ],
             "title": "Last Name"
           },
+          "company_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Name"
+          },
           "phone": {
             "anyOf": [
               {
@@ -5133,6 +5145,18 @@
             ],
             "title": "Last Name"
           },
+          "company_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Name"
+          },
           "phone": {
             "anyOf": [
               {
@@ -5275,6 +5299,18 @@
               }
             ],
             "title": "Last Name"
+          },
+          "company_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Name"
           },
           "phone": {
             "anyOf": [

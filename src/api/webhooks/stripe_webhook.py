@@ -11,11 +11,12 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+
 @router.post("/stripe")
 async def stripe_webhook(
     request: Request,
     stripe_signature: str = Header(None),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Handle Stripe webhooks.
@@ -50,7 +51,7 @@ async def stripe_webhook(
         billing_service = BillingService(db)
         await billing_service.process_webhook(event)
     except Exception as e:
-         logger.error(f"Error processing webhook: {e}")
-         raise HTTPException(status_code=500, detail="Internal processing error")
+        logger.error(f"Error processing webhook: {e}")
+        raise HTTPException(status_code=500, detail="Internal processing error")
 
     return {"status": "SUCCESS"}

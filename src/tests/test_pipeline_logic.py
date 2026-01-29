@@ -8,6 +8,7 @@ from src.services.pipeline_handlers import handle_job_created, handle_contact_ev
 # Since we use EventBus which is global, we need to mock or ensure it works in tests.
 from src.events import event_bus
 
+
 # Integration test using the real EventBus subscriptions
 @pytest.fixture(autouse=True)
 def setup_event_subscriptions():
@@ -27,8 +28,9 @@ async def test_customer_creation_default_stage(session: AsyncSession):
     repo = CustomerRepository(session)
     repo.add(customer)
     await session.flush()
-    
+
     assert customer.pipeline_stage == PipelineStage.NOT_CONTACTED
+
 
 @pytest.mark.asyncio
 async def test_job_creation_progression(session: AsyncSession):
@@ -37,25 +39,26 @@ async def test_job_creation_progression(session: AsyncSession):
     crm = CRMService(session, business_id)
     customer = Customer(name="Test Progression", business_id=business_id)
     session.add(customer)
-    await session.commit() 
-    
+    await session.commit()
+
     assert customer.pipeline_stage == PipelineStage.NOT_CONTACTED
-    
+
     # Act 1: Create First Job
     # create_job now emits JOB_CREATED which should trigger progression automatically
     await crm.create_job(customer_id=customer.id, description="Job 1")
-    await session.commit() 
-    
+    await session.commit()
+
     # Refresh customer
     await session.refresh(customer)
     assert customer.pipeline_stage == PipelineStage.CONVERTED_ONCE
-    
+
     # Act 2: Create Second Job
     await crm.create_job(customer_id=customer.id, description="Job 2")
-    await session.commit() 
-    
+    await session.commit()
+
     await session.refresh(customer)
     assert customer.pipeline_stage == PipelineStage.CONVERTED_RECURRENT
+
 
 @pytest.mark.asyncio
 async def test_convert_request_progression(session: AsyncSession):
@@ -64,18 +67,24 @@ async def test_convert_request_progression(session: AsyncSession):
     name = "Target Customer"
     customer = Customer(name=name, business_id=business_id)
     from src.models import Request
-    req = Request(business_id=business_id, description=f"Request from {name}", status=RequestStatus.PENDING)
+
+    req = Request(
+        business_id=business_id,
+        description=f"Request from {name}",
+        status=RequestStatus.PENDING,
+    )
     session.add(customer)
     session.add(req)
     await session.commit()
-    
+
     # Act: Convert Request to Job (using the name as query to match customer)
     # This should now emit JOB_CREATED because convert_request calls create_job
     await crm.convert_request(query=name, action="SCHEDULE")
     await session.commit()
-    
+
     await session.refresh(customer)
     assert customer.pipeline_stage == PipelineStage.CONVERTED_ONCE
+
 
 @pytest.mark.asyncio
 async def test_contact_event_progression(session: AsyncSession):
@@ -83,13 +92,15 @@ async def test_contact_event_progression(session: AsyncSession):
     customer = Customer(name="Test Contact", business_id=business_id)
     session.add(customer)
     await session.commit()
-    
+
     assert customer.pipeline_stage == PipelineStage.NOT_CONTACTED
-    
+
     # Act: Emit CONTACT_EVENT
-    await event_bus.emit("CONTACT_EVENT", {"customer_id": customer.id, "business_id": business_id})
+    await event_bus.emit(
+        "CONTACT_EVENT", {"customer_id": customer.id, "business_id": business_id}
+    )
     await session.commit()
-    
+
     await session.refresh(customer)
     assert customer.pipeline_stage == PipelineStage.CONTACTED
 
@@ -133,7 +144,3 @@ async def test_pipeline_summary(session: AsyncSession):
     # The order of names might vary, so check presence individually
     assert "C3" in report
     assert "C4" in report
-
-
-
-

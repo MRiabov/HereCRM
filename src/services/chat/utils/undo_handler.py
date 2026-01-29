@@ -6,6 +6,7 @@ from src.models import User, ConversationState, Request
 from src.repositories import JobRepository, RequestRepository, UserRepository
 from src.services.template_service import TemplateService
 
+
 class UndoHandler:
     def __init__(self, session: AsyncSession, template_service: TemplateService):
         self.session = session
@@ -40,14 +41,18 @@ class UndoHandler:
                 repo = JobRepository(self.session)
                 job = await repo.get_by_id(entity_id, user.business_id)
                 if job:
-                    job.status = cast(str, metadata.get("old_status", JobStatus.PENDING))
+                    job.status = cast(
+                        str, metadata.get("old_status", JobStatus.PENDING)
+                    )
                     state_record.last_action_metadata = None
                     return self.template_service.render("undo_job_reverted")
             elif entity_type == "request" and isinstance(entity_id, int):
                 repo = RequestRepository(self.session)
                 req = await repo.get_by_id(entity_id, user.business_id)
                 if req:
-                    req.status = cast(str, metadata.get("old_status", JobStatus.PENDING))
+                    req.status = cast(
+                        str, metadata.get("old_status", JobStatus.PENDING)
+                    )
                     state_record.last_action_metadata = None
                     return self.template_service.render("undo_request_reverted")
 
@@ -86,7 +91,9 @@ class UndoHandler:
 
         return self.template_service.render("error_undo_failed")
 
-    async def handle_edit_last(self, user: User, state_record: ConversationState) -> str:
+    async def handle_edit_last(
+        self, user: User, state_record: ConversationState
+    ) -> str:
         metadata = state_record.last_action_metadata
         if not metadata:
             return self.template_service.render("error_edit_nothing")

@@ -7,6 +7,7 @@ from src.repositories import CustomerRepository
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
+
 @pytest_asyncio.fixture
 async def test_session():
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
@@ -21,6 +22,7 @@ async def test_session():
 
     await engine.dispose()
 
+
 @pytest.mark.asyncio
 async def test_search_filter_pipeline_stage(test_session):
     """Test filtering customers by exact pipeline stage."""
@@ -29,40 +31,57 @@ async def test_search_filter_pipeline_stage(test_session):
     await test_session.commit()
 
     # Create customers in different stages
-    c1 = Customer(name="Alice", business_id=biz.id, pipeline_stage=PipelineStage.NOT_CONTACTED)
-    c2 = Customer(name="Bob", business_id=biz.id, pipeline_stage=PipelineStage.CONTACTED)
-    c3 = Customer(name="Charlie", business_id=biz.id, pipeline_stage=PipelineStage.CONVERTED_ONCE)
+    c1 = Customer(
+        name="Alice", business_id=biz.id, pipeline_stage=PipelineStage.NOT_CONTACTED
+    )
+    c2 = Customer(
+        name="Bob", business_id=biz.id, pipeline_stage=PipelineStage.CONTACTED
+    )
+    c3 = Customer(
+        name="Charlie", business_id=biz.id, pipeline_stage=PipelineStage.CONVERTED_ONCE
+    )
     c4 = Customer(name="Dave", business_id=biz.id, pipeline_stage=PipelineStage.LOST)
-    
+
     test_session.add_all([c1, c2, c3, c4])
     await test_session.commit()
-    
+
     repo = CustomerRepository(test_session)
-    
+
     # 1. Search for LOST
-    results_lost = await repo.search(query="all", business_id=biz.id, pipeline_stage="LOST")
+    results_lost = await repo.search(
+        query="all", business_id=biz.id, pipeline_stage="LOST"
+    )
     assert len(results_lost) == 1
     assert results_lost[0].name == "Dave"
-    
+
     # 2. Search for NOT_CONTACTED
-    results_nc = await repo.search(query="all", business_id=biz.id, pipeline_stage="NOT_CONTACTED")
+    results_nc = await repo.search(
+        query="all", business_id=biz.id, pipeline_stage="NOT_CONTACTED"
+    )
     assert len(results_nc) == 1
     assert results_nc[0].name == "Alice"
-    
+
     # 3. Search for CONVERTED_ONCE
-    results_co = await repo.search(query="all", business_id=biz.id, pipeline_stage="CONVERTED_ONCE")
+    results_co = await repo.search(
+        query="all", business_id=biz.id, pipeline_stage="CONVERTED_ONCE"
+    )
     assert len(results_co) == 1
     assert results_co[0].name == "Charlie"
-    
+
     # 4. Search with Name + Stage
     # "Bob" in Contacted -> Should find Bob
-    results_bob = await repo.search(query="Bob", business_id=biz.id, pipeline_stage="CONTACTED")
+    results_bob = await repo.search(
+        query="Bob", business_id=biz.id, pipeline_stage="CONTACTED"
+    )
     assert len(results_bob) == 1
     assert results_bob[0].name == "Bob"
-    
+
     # "Bob" in Lost -> Should find NOBODY
-    results_bob_lost = await repo.search(query="Bob", business_id=biz.id, pipeline_stage="LOST")
+    results_bob_lost = await repo.search(
+        query="Bob", business_id=biz.id, pipeline_stage="LOST"
+    )
     assert len(results_bob_lost) == 0
+
 
 @pytest.mark.asyncio
 async def test_search_pipeline_defaults(test_session):
@@ -70,13 +89,15 @@ async def test_search_pipeline_defaults(test_session):
     biz = Business(name="Def Biz")
     test_session.add(biz)
     await test_session.commit()
-    
+
     c1 = Customer(name="Alice", business_id=biz.id, pipeline_stage=PipelineStage.LOST)
-    c2 = Customer(name="Bob", business_id=biz.id, pipeline_stage=PipelineStage.NOT_CONTACTED)
+    c2 = Customer(
+        name="Bob", business_id=biz.id, pipeline_stage=PipelineStage.NOT_CONTACTED
+    )
     test_session.add_all([c1, c2])
     await test_session.commit()
-    
+
     repo = CustomerRepository(test_session)
-    
+
     results = await repo.search(query="all", business_id=biz.id)
     assert len(results) == 2

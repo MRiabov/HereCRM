@@ -13,6 +13,7 @@ from src.uimodels import HelpTool
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
+
 @pytest_asyncio.fixture
 async def test_session():
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
@@ -27,12 +28,16 @@ async def test_session():
 
     await engine.dispose()
 
+
 @pytest.fixture
 def template_service():
     return TemplateService()
 
+
 @pytest.mark.asyncio
-async def test_help_tool_integration(test_session: AsyncSession, template_service: TemplateService):
+async def test_help_tool_integration(
+    test_session: AsyncSession, template_service: TemplateService
+):
     # Setup User
     biz = Business(name="Test Biz")
     test_session.add(biz)
@@ -48,18 +53,20 @@ async def test_help_tool_integration(test_session: AsyncSession, template_servic
     # Mock HelpService
     with patch("src.services.chat.handlers.idle.HelpService") as MockHelpService:
         mock_help_instance = MockHelpService.return_value
-        mock_help_instance.generate_help_response = AsyncMock(return_value="RAG Response")
-        
+        mock_help_instance.generate_help_response = AsyncMock(
+            return_value="RAG Response"
+        )
+
         service = WhatsappService(test_session, mock_parser, template_service)
         user_phone = "123456789"
-        
+
         response = await service.handle_message("Help me", user_phone=user_phone)
-        
+
         assert response == "RAG Response"
         MockHelpService.assert_called_once_with(test_session, mock_parser)
         mock_help_instance.generate_help_response.assert_called_once_with(
             user_query="Help me",
             business_id=biz.id,
             user_id=user.id,
-            channel="WHATSAPP"
+            channel="WHATSAPP",
         )

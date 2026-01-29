@@ -1,4 +1,3 @@
-
 import pytest
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
@@ -7,13 +6,16 @@ from src.repositories import CustomerRepository
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
+
 @pytest.mark.asyncio
 async def test_customer_spatial_optimization():
     # Setup DB
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    SessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+    SessionLocal = async_sessionmaker(
+        bind=engine, class_=AsyncSession, expire_on_commit=False
+    )
 
     async with SessionLocal() as session:
         # Create Business
@@ -27,7 +29,7 @@ async def test_customer_spatial_optimization():
             business_id=biz.id,
             latitude=53.3498,
             longitude=-6.2603,
-            phone="123"
+            phone="123",
         )
 
         # Customer in Cork (far from Dublin)
@@ -37,7 +39,7 @@ async def test_customer_spatial_optimization():
             business_id=biz.id,
             latitude=51.8985,
             longitude=-8.4756,
-            phone="456"
+            phone="456",
         )
 
         # Customer just outside 10km radius from Dublin
@@ -48,7 +50,7 @@ async def test_customer_spatial_optimization():
             business_id=biz.id,
             latitude=53.3498 + 0.15,
             longitude=-6.2603,
-            phone="789"
+            phone="789",
         )
 
         session.add_all([cust_dublin, cust_cork, cust_far_dublin])
@@ -63,7 +65,7 @@ async def test_customer_spatial_optimization():
             business_id=biz.id,
             center_lat=53.3498,
             center_lon=-6.2603,
-            radius=10000.0
+            radius=10000.0,
         )
 
         assert len(results_dublin) == 1
@@ -76,7 +78,7 @@ async def test_customer_spatial_optimization():
             business_id=biz.id,
             center_lat=51.8985,
             center_lon=-8.4756,
-            radius=20000.0
+            radius=20000.0,
         )
 
         assert len(results_cork) == 1
@@ -91,7 +93,7 @@ async def test_customer_spatial_optimization():
             business_id=biz.id,
             center_lat=53.3498,
             center_lon=-6.2603,
-            radius=300000.0
+            radius=300000.0,
         )
 
         # Should find all 3
@@ -105,18 +107,10 @@ async def test_customer_spatial_optimization():
         # Point B: 0, -179
         # Distance approx 222km
         cust_east = Customer(
-            name="East",
-            business_id=biz.id,
-            latitude=0,
-            longitude=179,
-            phone="111"
+            name="East", business_id=biz.id, latitude=0, longitude=179, phone="111"
         )
         cust_west = Customer(
-            name="West",
-            business_id=biz.id,
-            latitude=0,
-            longitude=-179,
-            phone="222"
+            name="West", business_id=biz.id, latitude=0, longitude=-179, phone="222"
         )
         session.add_all([cust_east, cust_west])
         await session.commit()
@@ -127,7 +121,7 @@ async def test_customer_spatial_optimization():
             business_id=biz.id,
             center_lat=0,
             center_lon=179,
-            radius=500000.0
+            radius=500000.0,
         )
 
         ids_dateline = [c.id for c in results_dateline]

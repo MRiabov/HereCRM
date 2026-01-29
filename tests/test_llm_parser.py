@@ -295,10 +295,12 @@ async def test_parse_retry_success(mock_parser):
     mock_message_2 = MagicMock(tool_calls=[mock_tool_call])
     mock_response_2 = MagicMock(choices=[MagicMock(message=mock_message_2)])
 
-    mock_client.chat.completions.create = AsyncMock(side_effect=[mock_response_1, mock_response_2])
+    mock_client.chat.completions.create = AsyncMock(
+        side_effect=[mock_response_1, mock_response_2]
+    )
 
     result = await parser.parse("fix faucet for John $50")
-    
+
     # Verify it retried
     assert mock_client.chat.completions.create.call_count == 2
     assert isinstance(result, AddJobTool)
@@ -316,10 +318,12 @@ async def test_parse_retry_failure_returns_none(mock_parser):
     mock_message_2 = MagicMock(tool_calls=None, content="Still no idea.")
     mock_response_2 = MagicMock(choices=[MagicMock(message=mock_message_2)])
 
-    mock_client.chat.completions.create = AsyncMock(side_effect=[mock_response_1, mock_response_2])
+    mock_client.chat.completions.create = AsyncMock(
+        side_effect=[mock_response_1, mock_response_2]
+    )
 
     result = await parser.parse("something vague")
-    
+
     assert mock_client.chat.completions.create.call_count == 2
     assert result is None
 
@@ -341,10 +345,12 @@ async def test_parse_settings_retry_success(mock_parser):
     mock_message_2 = MagicMock(tool_calls=[mock_tool_call])
     mock_response_2 = MagicMock(choices=[MagicMock(message=mock_message_2)])
 
-    mock_client.chat.completions.create = AsyncMock(side_effect=[mock_response_1, mock_response_2])
+    mock_client.chat.completions.create = AsyncMock(
+        side_effect=[mock_response_1, mock_response_2]
+    )
 
     result = await parser.parse_settings("add service new service 100")
-    
+
     assert mock_client.chat.completions.create.call_count == 2
     assert isinstance(result, AddServiceTool)
     assert result.name == "New Service"
@@ -358,7 +364,7 @@ async def test_parse_retry_json_error(mock_parser):
     mock_tool_call_bad = MagicMock()
     mock_tool_call_bad.function.name = "AddJobTool"
     mock_tool_call_bad.function.arguments = "{ invalid json }"
-    
+
     mock_message_1 = MagicMock()
     mock_message_1.tool_calls = [mock_tool_call_bad]
     mock_message_1.content = "Some content"
@@ -373,10 +379,12 @@ async def test_parse_retry_json_error(mock_parser):
     mock_message_2 = MagicMock(tool_calls=[mock_tool_call_good])
     mock_response_2 = MagicMock(choices=[MagicMock(message=mock_message_2)])
 
-    mock_client.chat.completions.create = AsyncMock(side_effect=[mock_response_1, mock_response_2])
+    mock_client.chat.completions.create = AsyncMock(
+        side_effect=[mock_response_1, mock_response_2]
+    )
 
     result = await parser.parse("fix faucet for John $50")
-    
+
     assert mock_client.chat.completions.create.call_count == 2
     assert isinstance(result, AddJobTool)
     assert result.customer_name == "Retry John"
@@ -390,9 +398,9 @@ async def test_parse_retry_validation_error(mock_parser):
     mock_tool_call_bad = MagicMock()
     mock_tool_call_bad.function.name = "AddJobTool"
     mock_tool_call_bad.function.arguments = json.dumps(
-        {"customer_name": "John", "price": "not a number"} # price expects float
+        {"customer_name": "John", "price": "not a number"}  # price expects float
     )
-    
+
     mock_message_1 = MagicMock()
     mock_message_1.tool_calls = [mock_tool_call_bad]
     mock_message_1.content = None
@@ -407,10 +415,12 @@ async def test_parse_retry_validation_error(mock_parser):
     mock_message_2 = MagicMock(tool_calls=[mock_tool_call_good])
     mock_response_2 = MagicMock(choices=[MagicMock(message=mock_message_2)])
 
-    mock_client.chat.completions.create = AsyncMock(side_effect=[mock_response_1, mock_response_2])
+    mock_client.chat.completions.create = AsyncMock(
+        side_effect=[mock_response_1, mock_response_2]
+    )
 
     result = await parser.parse("fix faucet for John $50")
-    
+
     assert mock_client.chat.completions.create.call_count == 2
     assert isinstance(result, AddJobTool)
     assert result.price == 50.0
@@ -427,16 +437,16 @@ async def test_parse_data_management_retry(mock_parser):
     # Second call returns valid export tool
     mock_tool_call = MagicMock()
     mock_tool_call.function.name = "ExportQueryTool"
-    mock_tool_call.function.arguments = json.dumps(
-        {"query": "all customers"}
-    )
+    mock_tool_call.function.arguments = json.dumps({"query": "all customers"})
     mock_message_2 = MagicMock(tool_calls=[mock_tool_call])
     mock_response_2 = MagicMock(choices=[MagicMock(message=mock_message_2)])
 
-    mock_client.chat.completions.create = AsyncMock(side_effect=[mock_response_1, mock_response_2])
+    mock_client.chat.completions.create = AsyncMock(
+        side_effect=[mock_response_1, mock_response_2]
+    )
 
     result = await parser.parse_data_management("export everything")
-    
+
     assert mock_client.chat.completions.create.call_count == 2
     assert isinstance(result, ExportQueryTool)
     assert result.query == "all customers"

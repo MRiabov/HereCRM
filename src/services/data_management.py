@@ -7,12 +7,26 @@ from datetime import datetime, timezone
 from typing import Dict, Any, Tuple, Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from src.models import Customer, Job, ImportJob, ExportRequest, PipelineStage, Expense, LedgerEntry, ExportStatus, JobStatus, ExportFormat, EntityType, ImportStatus
+from src.models import (
+    Customer,
+    Job,
+    ImportJob,
+    ExportRequest,
+    PipelineStage,
+    Expense,
+    LedgerEntry,
+    ExportStatus,
+    JobStatus,
+    ExportFormat,
+    EntityType,
+    ImportStatus,
+)
 from src.repositories import BusinessRepository, CustomerRepository, JobRepository
 
 logger = logging.getLogger(__name__)
 
 from src.services.storage import storage_service
+
 
 class DataManagementService:
     def __init__(self, session: AsyncSession):
@@ -21,7 +35,9 @@ class DataManagementService:
         self.job_repo = JobRepository(session)
         self.business_repo = BusinessRepository(session)
 
-    async def import_data(self, business_id: int, file_url: str, media_type: str) -> ImportJob:
+    async def import_data(
+        self, business_id: int, file_url: str, media_type: str
+    ) -> ImportJob:
         """
         Orchestrates the data import process.
         """
@@ -29,7 +45,7 @@ class DataManagementService:
             business_id=business_id,
             status=ImportStatus.PROCESSING,
             file_url=file_url,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(timezone.utc),
         )
         self.session.add(import_job)
         await self.session.commit()
@@ -37,7 +53,10 @@ class DataManagementService:
 
         try:
             import os
-            allow_local = os.environ.get("ALLOW_LOCAL_IMPORT", "false").lower() == "true"
+
+            allow_local = (
+                os.environ.get("ALLOW_LOCAL_IMPORT", "false").lower() == "true"
+            )
 
             if file_url.startswith(("http://", "https://")):
                 async with httpx.AsyncClient() as client:
@@ -45,11 +64,15 @@ class DataManagementService:
                     response.raise_for_status()
                     content = response.content
             elif allow_local:
-                logger.warning(f"Local file import attempted and allowed for: {file_url}")
+                logger.warning(
+                    f"Local file import attempted and allowed for: {file_url}"
+                )
                 with open(file_url, "rb") as f:
                     content = f.read()
             else:
-                raise ValueError("Local file import is disabled or scheme is unsupported. Use a valid http/https URL.")
+                raise ValueError(
+                    "Local file import is disabled or scheme is unsupported. Use a valid http/https URL."
+                )
 
             df = self._parse_file(content, media_type, file_url)
             import_job.record_count = len(df)
@@ -58,7 +81,7 @@ class DataManagementService:
 
             async with self.session.begin_nested():
                 await self._process_dataframe(business_id, df)
-            
+
             import_job.status = ImportStatus.COMPLETED
             import_job.completed_at = datetime.now(timezone.utc)
 
@@ -66,15 +89,21 @@ class DataManagementService:
             logger.exception("Import failed")
             import_job.status = ImportStatus.FAILED
             import_job.error_log = [{"error": str(e)}]
-        
+
         await self.session.commit()
         await self.session.refresh(import_job)
         return import_job
 
-    def _parse_file(self, content: bytes, media_type: str, filename: str) -> pd.DataFrame:
+    def _parse_file(
+        self, content: bytes, media_type: str, filename: str
+    ) -> pd.DataFrame:
         if "csv" in media_type or filename.endswith(".csv"):
             return pd.read_csv(io.BytesIO(content))
-        elif "excel" in media_type or "spreadsheet" in media_type or filename.endswith(".xlsx"):
+        elif (
+            "excel" in media_type
+            or "spreadsheet" in media_type
+            or filename.endswith(".xlsx")
+        ):
             return pd.read_excel(io.BytesIO(content))
         elif "json" in media_type or filename.endswith(".json"):
             return pd.read_json(io.BytesIO(content))
@@ -102,7 +131,7 @@ class DataManagementService:
                     business_id=business_id,
                     name=name,
                     phone=phone,
-                    pipeline_stage=PipelineStage.NOT_CONTACTED
+                    pipeline_stage=PipelineStage.NOT_CONTACTED,
                 )
                 self.session.add(customer)
                 await self.session.flush()
@@ -114,7 +143,9 @@ class DataManagementService:
             if not pd.isna(row.get("notes")):
                 customer.details = row.get("notes")
 
-            if not pd.isna(row.get("job_description")) or not pd.isna(row.get("job_price")):
+            if not pd.isna(row.get("job_description")) or not pd.isna(
+                row.get("job_price")
+            ):
                 job_status_raw = row.get("job_status", "PENDING")
                 try:
                     job_status = JobStatus(str(job_status_raw).upper())
@@ -125,103 +156,201 @@ class DataManagementService:
                     business_id=business_id,
                     customer_id=customer.id,
                     description=row.get("job_description"),
-                    value=float(row.get("job_price", 0)) if not pd.isna(row.get("job_price")) else None,
+                    value=float(row.get("job_price", 0))
+                    if not pd.isna(row.get("job_price"))
+                    else None,
                     status=job_status,
-                    location=row.get("address")
+                    location=row.get("address"),
                 )
                 self.session.add(job)
 
-    async def _get_export_data(self, business_id: int, entity_type: Optional[EntityType], query: str, filters: Dict[str, Any]) -> Tuple[pd.DataFrame, str]:
+    async def _get_export_data(
+        self,
+        business_id: int,
+        entity_type: Optional[EntityType],
+        query: str,
+        filters: Dict[str, Any],
+    ) -> Tuple[pd.DataFrame, str]:
         min_date = None
         max_date = None
         if filters.get("min_date"):
             try:
-                min_date = datetime.fromisoformat(filters["min_date"].replace("Z", "+00:00"))
-            except ValueError: pass
+                min_date = datetime.fromisoformat(
+                    filters["min_date"].replace("Z", "+00:00")
+                )
+            except ValueError:
+                pass
         if filters.get("max_date"):
             try:
-                max_date = datetime.fromisoformat(filters["max_date"].replace("Z", "+00:00"))
-            except ValueError: pass
+                max_date = datetime.fromisoformat(
+                    filters["max_date"].replace("Z", "+00:00")
+                )
+            except ValueError:
+                pass
 
         if not entity_type:
-             entity_type = EntityType.CUSTOMER
+            entity_type = EntityType.CUSTOMER
 
         data = []
         if entity_type == EntityType.JOB:
-            headers = ["id", "customer", "description", "status", "value", "scheduled_at", "location", "created_at"]
-            jobs = await self.job_repo.search(query=query, business_id=business_id, status=filters.get("status"), min_date=min_date, max_date=max_date, query_type="ADDED")
+            headers = [
+                "id",
+                "customer",
+                "description",
+                "status",
+                "value",
+                "scheduled_at",
+                "location",
+                "created_at",
+            ]
+            jobs = await self.job_repo.search(
+                query=query,
+                business_id=business_id,
+                status=filters.get("status"),
+                min_date=min_date,
+                max_date=max_date,
+                query_type="ADDED",
+            )
             for j in jobs:
-                data.append({
-                    "id": j.id,
-                    "customer": j.customer.name if j.customer else "",
-                    "description": j.description,
-                    "status": j.status,
-                    "value": j.value,
-                    "scheduled_at": j.scheduled_at,
-                    "location": j.location or (j.customer.street if j.customer else ""),
-                    "created_at": j.created_at
-                })
+                data.append(
+                    {
+                        "id": j.id,
+                        "customer": j.customer.name if j.customer else "",
+                        "description": j.description,
+                        "status": j.status,
+                        "value": j.value,
+                        "scheduled_at": j.scheduled_at,
+                        "location": j.location
+                        or (j.customer.street if j.customer else ""),
+                        "created_at": j.created_at,
+                    }
+                )
             return pd.DataFrame(data, columns=headers), "jobs"
 
         elif entity_type == EntityType.REQUEST:
-            headers = ["id", "customer", "description", "status", "urgency", "expected_value", "created_at"]
+            headers = [
+                "id",
+                "customer",
+                "description",
+                "status",
+                "urgency",
+                "expected_value",
+                "created_at",
+            ]
             from src.repositories import RequestRepository
+
             req_repo = RequestRepository(self.session)
-            requests = await req_repo.search(query=query, business_id=business_id, status=filters.get("status"), min_date=min_date, max_date=max_date)
+            requests = await req_repo.search(
+                query=query,
+                business_id=business_id,
+                status=filters.get("status"),
+                min_date=min_date,
+                max_date=max_date,
+            )
             for r in requests:
-                data.append({
-                    "id": r.id,
-                    "customer": r.customer.name if r.customer else (r.customer_details.get("name") if r.customer_details else ""),
-                    "description": r.description,
-                    "status": r.status,
-                    "urgency": r.urgency,
-                    "expected_value": r.expected_value,
-                    "created_at": r.created_at
-                })
+                data.append(
+                    {
+                        "id": r.id,
+                        "customer": r.customer.name
+                        if r.customer
+                        else (
+                            r.customer_details.get("name") if r.customer_details else ""
+                        ),
+                        "description": r.description,
+                        "status": r.status,
+                        "urgency": r.urgency,
+                        "expected_value": r.expected_value,
+                        "created_at": r.created_at,
+                    }
+                )
             return pd.DataFrame(data, columns=headers), "requests"
 
         elif entity_type == EntityType.EXPENSE:
             headers = ["date", "amount", "category", "description", "job_id"]
             stmt = select(Expense).where(Expense.business_id == business_id)
-            if min_date: stmt = stmt.where(Expense.created_at >= min_date)
-            if max_date: stmt = stmt.where(Expense.created_at <= max_date)
+            if min_date:
+                stmt = stmt.where(Expense.created_at >= min_date)
+            if max_date:
+                stmt = stmt.where(Expense.created_at <= max_date)
             result = await self.session.execute(stmt)
             for e in result.scalars().all():
-                data.append({"date": e.created_at, "amount": e.amount, "category": e.category, "description": e.description, "job_id": e.job_id})
+                data.append(
+                    {
+                        "date": e.created_at,
+                        "amount": e.amount,
+                        "category": e.category,
+                        "description": e.description,
+                        "job_id": e.job_id,
+                    }
+                )
             return pd.DataFrame(data, columns=headers), "expenses"
 
         elif entity_type == EntityType.LEDGER:
             headers = ["date", "employee_id", "amount", "type", "description"]
             stmt = select(LedgerEntry).where(LedgerEntry.business_id == business_id)
-            if min_date: stmt = stmt.where(LedgerEntry.created_at >= min_date)
-            if max_date: stmt = stmt.where(LedgerEntry.created_at <= max_date)
+            if min_date:
+                stmt = stmt.where(LedgerEntry.created_at >= min_date)
+            if max_date:
+                stmt = stmt.where(LedgerEntry.created_at <= max_date)
             result = await self.session.execute(stmt)
             for le in result.scalars().all():
-                data.append({"date": le.created_at, "employee_id": le.employee_id, "amount": le.amount, "type": le.entry_type, "description": le.description})
+                data.append(
+                    {
+                        "date": le.created_at,
+                        "employee_id": le.employee_id,
+                        "amount": le.amount,
+                        "type": le.entry_type,
+                        "description": le.description,
+                    }
+                )
             return pd.DataFrame(data, columns=headers), "ledger"
 
-        else: # customer
+        else:  # customer
             headers = ["id", "name", "phone", "email", "address", "stage", "created_at"]
             # Fallback to customer if entity_type is None or something else
             e_type = entity_type.value if entity_type else "customer"
-            customers = await self.customer_repo.search(query=query, business_id=business_id, entity_type=e_type, pipeline_stage=filters.get("status"), min_date=min_date, max_date=max_date, query_type="ADDED")
+            customers = await self.customer_repo.search(
+                query=query,
+                business_id=business_id,
+                entity_type=e_type,
+                pipeline_stage=filters.get("status"),
+                min_date=min_date,
+                max_date=max_date,
+                query_type="ADDED",
+            )
             for c in customers:
-                data.append({"id": c.id, "name": c.name, "phone": c.phone, "email": c.email, "address": f"{c.street or ''} {c.city or ''}".strip(), "stage": c.pipeline_stage.value, "created_at": c.created_at})
+                data.append(
+                    {
+                        "id": c.id,
+                        "name": c.name,
+                        "phone": c.phone,
+                        "email": c.email,
+                        "address": f"{c.street or ''} {c.city or ''}".strip(),
+                        "stage": c.pipeline_stage.value,
+                        "created_at": c.created_at,
+                    }
+                )
             return pd.DataFrame(data, columns=headers), "customers"
 
-    async def export_data(self, business_id: int, query: str, format: ExportFormat, filters: Dict[str, Any] = None) -> ExportRequest:
+    async def export_data(
+        self,
+        business_id: int,
+        query: str,
+        format: ExportFormat,
+        filters: Dict[str, Any] = None,
+    ) -> ExportRequest:
         query = query or ""
         filters = filters or {}
-        
+
         export_req = ExportRequest(
             business_id=business_id,
             query=query or "",
-            format=format, # Store as enum member
+            format=format,  # Store as enum member
             status=ExportStatus.PROCESSING,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(timezone.utc),
         )
         self.session.add(export_req)
-        await self.session.commit() # Commit early so we have the record
+        await self.session.commit()  # Commit early so we have the record
         await self.session.refresh(export_req)
 
         try:
@@ -235,30 +364,48 @@ class DataManagementService:
                     entity_type = EntityType.CUSTOMER
             else:
                 entity_type = None
-            
+
             # Decide if we are doing a single file or a ZIP
-            if format == ExportFormat.ZIP or entity_type == EntityType.ALL or (query.lower() == "all" and not entity_type):
+            if (
+                format == ExportFormat.ZIP
+                or entity_type == EntityType.ALL
+                or (query.lower() == "all" and not entity_type)
+            ):
                 # Export EVERYTHING
-                entities = [EntityType.CUSTOMER, EntityType.JOB, EntityType.REQUEST, EntityType.EXPENSE, EntityType.LEDGER]
+                entities = [
+                    EntityType.CUSTOMER,
+                    EntityType.JOB,
+                    EntityType.REQUEST,
+                    EntityType.EXPENSE,
+                    EntityType.LEDGER,
+                ]
                 zip_buffer = io.BytesIO()
-                with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+                with zipfile.ZipFile(
+                    zip_buffer, "a", zipfile.ZIP_DEFLATED, False
+                ) as zip_file:
                     for ent in entities:
-                        df, name = await self._get_export_data(business_id, ent, query, filters)
+                        df, name = await self._get_export_data(
+                            business_id, ent, query, filters
+                        )
                         if not df.empty:
                             csv_buffer = io.BytesIO()
                             df.to_csv(csv_buffer, index=False)
                             zip_file.writestr(f"{name}.csv", csv_buffer.getvalue())
-                
+
                 zip_buffer.seek(0)
                 file_bytes = zip_buffer.read()
                 content_type = "application/zip"
-                filename = f"export_all_{business_id}_{int(datetime.now().timestamp())}.zip"
+                filename = (
+                    f"export_all_{business_id}_{int(datetime.now().timestamp())}.zip"
+                )
                 export_req.format = ExportFormat.ZIP
             else:
                 # Single file export
-                df, name = await self._get_export_data(business_id, entity_type, query, filters)
+                df, name = await self._get_export_data(
+                    business_id, entity_type, query, filters
+                )
                 output = io.BytesIO()
-                
+
                 if format == ExportFormat.EXCEL:
                     ext = "xlsx"
                     for col in df.columns:
@@ -274,7 +421,7 @@ class DataManagementService:
                     ext = "csv"
                     df.to_csv(output, index=False)
                     content_type = "text/csv"
-                
+
                 filename = f"export_{name}_{business_id}_{int(datetime.now().timestamp())}.{ext}"
                 output.seek(0)
                 file_bytes = output.read()
@@ -290,7 +437,7 @@ class DataManagementService:
             logger.exception("Export failed")
             export_req.status = ExportStatus.FAILED
             export_req.error_log = str(e)
-            
+
         await self.session.commit()
         return export_req
 
@@ -302,14 +449,14 @@ class DataManagementService:
         import sqlite3
         import os
         from src.database import DATABASE_URL
-        
+
         # Extract file path from URL
         db_path = DATABASE_URL.split("///")[-1]
         if ":memory:" in db_path:
             raise ValueError("Cannot backup in-memory database")
-            
+
         backup_path = f"{db_path}.backup"
-        
+
         # SQLite backup using standard library
         try:
             # We connect to the source DB file
@@ -320,22 +467,24 @@ class DataManagementService:
                 src.backup(dst)
             dst.close()
             src.close()
-            
+
             # Read the backup file
             with open(backup_path, "rb") as f:
                 content = f.read()
-                
+
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             s3_key = f"backups/crm_db_{timestamp}.sqlite"
-            
+
             # Upload to S3
-            public_url = storage_service.upload_file(content, s3_key, "application/x-sqlite3")
-            
+            public_url = storage_service.upload_file(
+                content, s3_key, "application/x-sqlite3"
+            )
+
             # Clean up local backup file
             os.remove(backup_path)
-            
+
             return public_url
-            
+
         except Exception as e:
             if os.path.exists(backup_path):
                 os.remove(backup_path)

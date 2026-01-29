@@ -17,15 +17,19 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 try:
     from src.config import settings
+
     DEFAULT_SECRET = settings.whatsapp_app_secret
 except Exception:
     DEFAULT_SECRET = os.getenv("WHATSAPP_APP_SECRET", "dummy_secret")
 
-st.set_page_config(page_title="HereCRM - Text-based CRM", page_icon="src/assets/favicon.webp")
+st.set_page_config(
+    page_title="HereCRM - Text-based CRM", page_icon="src/assets/favicon.webp"
+)
 
 # --- PWA Support ---
 try:
     from pwa import inject_pwa
+
     inject_pwa()
 except ImportError:
     pass  # PWA module not found or failed to load
@@ -43,34 +47,39 @@ def render_header(title: str, subtitle: str = None):
 
 def is_valid_phone(phone: str) -> bool:
     # Basic international format validation: + followed by 1-15 digits
-    # Or just digits if no plus. 
-    # We strip spaces/dashes before checking in our backend, but let's be 
+    # Or just digits if no plus.
+    # We strip spaces/dashes before checking in our backend, but let's be
     # helpful in the UI.
     clean_phone = "".join(c for c in phone if c.isdigit() or c == "+")
     return bool(re.match(r"^\+?[1-9]\d{1,14}$", clean_phone))
 
+
 # --- Phone Number Modal/Overlay ---
 if "phone_number" not in st.session_state:
     render_header("Welcome to HereCRM", "Please enter your phone number to continue")
-    
+
     with st.container(border=True):
         temp_phone = st.text_input(
-            "Phone Number", 
+            "Phone Number",
             placeholder="+1 234 567 8900",
-            help="Enter your international phone number."
+            help="Enter your international phone number.",
         )
-        
+
         is_valid = True
         if temp_phone:
             if not is_valid_phone(temp_phone):
-                st.error("⚠️ Invalid phone format. Please use international format (e.g. +353 89 948 5670)")
+                st.error(
+                    "⚠️ Invalid phone format. Please use international format (e.g. +353 89 948 5670)"
+                )
                 is_valid = False
             else:
                 st.success("✅ Phone format looks good!")
-        
+
         if st.button("Start Chatting", disabled=not temp_phone or not is_valid):
             # Normalize before saving
-            st.session_state.phone_number = "".join(c for c in temp_phone if c.isdigit() or c == "+")
+            st.session_state.phone_number = "".join(
+                c for c in temp_phone if c.isdigit() or c == "+"
+            )
             st.rerun()
     st.stop()
 
@@ -106,15 +115,20 @@ with st.sidebar:
     with st.expander("General", expanded=True):
         st.text_input("API Base URL", value=api_url, disabled=True)
         if secret:
-            st.text_input("Security Protocol", value="HMAC-SHA256 Enabled", disabled=True)
+            st.text_input(
+                "Security Protocol", value="HMAC-SHA256 Enabled", disabled=True
+            )
         else:
             st.error("Security Key Missing")
-        
+
         if st.button("Clear Chat History", type="secondary"):
             st.session_state.messages = []
             st.rerun()
-        
-        dev_mode = st.checkbox("Dev Mode", value=False, help="Show technical details and traces")
+
+        dev_mode = st.checkbox(
+            "Dev Mode", value=False, help="Show technical details and traces"
+        )
+
 
 def load_history():
     try:
@@ -126,15 +140,19 @@ def load_history():
     except Exception as e:
         st.error(f"Error loading history: {e}")
 
-if "messages" not in st.session_state or st.session_state.get("last_phone") != phone_number:
+
+if (
+    "messages" not in st.session_state
+    or st.session_state.get("last_phone") != phone_number
+):
     st.session_state.last_phone = phone_number
-    st.session_state.messages = []  
+    st.session_state.messages = []
     load_history()
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
-        
+
         if message.get("metadata") and dev_mode:
             with st.expander("🔍 Trace: Technical Details"):
                 st.json(message["metadata"])
@@ -168,7 +186,7 @@ if prompt := st.chat_input("Type a message..."):
                     f"{api_url}/webhook",
                     content=payload_bytes,
                     headers=headers,
-                    timeout=60.0
+                    timeout=60.0,
                 )
 
                 if response.status_code == 200:
@@ -180,4 +198,3 @@ if prompt := st.chat_input("Type a message..."):
                     st.error(f"Backend Error {response.status_code}: {response.text}")
             except Exception as e:
                 st.error(f"Connection failed: {str(e)}")
-

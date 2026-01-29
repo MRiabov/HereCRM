@@ -42,7 +42,7 @@ async def test_inference_logic_with_catalog(test_session: AsyncSession):
         business_id=biz.id,
         name="Window Clean",
         default_price=50.0,
-        description="Standard window cleaning"
+        description="Standard window cleaning",
     )
     test_session.add(svc)
     await test_session.flush()
@@ -52,7 +52,7 @@ async def test_inference_logic_with_catalog(test_session: AsyncSession):
     # 1. Test inference by total_price
     raw_items = [LineItemInfo(description="Window Clean", total_price=100.0)]
     inferred = await inference_service.infer_line_items(biz.id, raw_items)
-    
+
     assert len(inferred) == 1
     assert inferred[0].service_id == svc.id
     assert inferred[0].quantity == 2.0
@@ -62,7 +62,7 @@ async def test_inference_logic_with_catalog(test_session: AsyncSession):
     # 2. Test inference by quantity
     raw_items = [LineItemInfo(description="window", quantity=3.0)]
     inferred = await inference_service.infer_line_items(biz.id, raw_items)
-    
+
     assert len(inferred) == 1
     assert inferred[0].service_id == svc.id
     assert inferred[0].quantity == 3.0
@@ -82,36 +82,38 @@ async def test_tool_executor_with_line_items(
     test_session.add(user)
     await test_session.flush()
 
-    svc = Service(
-        business_id=biz.id,
-        name="Gutter Clean",
-        default_price=40.0
-    )
+    svc = Service(business_id=biz.id, name="Gutter Clean", default_price=40.0)
     test_session.add(svc)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
-    
+    executor = ToolExecutor(
+        test_session, biz.id, user.id, user.phone_number, template_service
+    )
+
     tool = AddJobTool(
         customer_name="Alice",
         line_items=[
             LineItemInfo(description="Gutter Clean", quantity=2.0),
-            LineItemInfo(description="Random Repair", total_price=30.0)
-        ]
+            LineItemInfo(description="Random Repair", total_price=30.0),
+        ],
     )
 
     result, metadata = await executor.execute(tool)
-    
+
     # Verify Job and Line Items in DB
     from sqlalchemy import select
     from sqlalchemy.orm import selectinload
 
-    stmt = select(Job).options(selectinload(Job.line_items)).where(Job.id == metadata["id"])
+    stmt = (
+        select(Job)
+        .options(selectinload(Job.line_items))
+        .where(Job.id == metadata["id"])
+    )
     res = await test_session.execute(stmt)
     job = res.unique().scalar_one()
-    
+
     assert len(job.line_items) == 2
-    
+
     # Check Gutter Clean (Catalog match)
     gutter_item = next(li for li in job.line_items if "Gutter" in li.description)
     assert gutter_item.service_id == svc.id

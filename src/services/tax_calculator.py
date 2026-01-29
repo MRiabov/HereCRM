@@ -4,6 +4,7 @@ from src.models import Business, Customer
 
 logger = logging.getLogger(__name__)
 
+
 class TaxCalculator:
     """
     Service to calculate taxes for quotes and invoices.
@@ -14,10 +15,7 @@ class TaxCalculator:
         self.default_tax_rate = default_tax_rate
 
     def calculate_quote_tax(
-        self,
-        lines: List[Dict],
-        business: Business,
-        customer: Optional[Customer] = None
+        self, lines: List[Dict], business: Business, customer: Optional[Customer] = None
     ) -> Dict[str, float]:
         """
         Calculates subtotal, tax, and total based on business settings.
@@ -34,7 +32,11 @@ class TaxCalculator:
         # Determine tax rate
         # TODO: Integrate with Stripe Tax API here using customer location
         # Priority: Business preference -> Default calculator rate
-        tax_rate = business.default_tax_rate if business.default_tax_rate is not None else self.default_tax_rate
+        tax_rate = (
+            business.default_tax_rate
+            if business.default_tax_rate is not None
+            else self.default_tax_rate
+        )
 
         # Calculate raw total from lines
         raw_total = 0.0
@@ -60,8 +62,9 @@ class TaxCalculator:
             "subtotal": round(subtotal, 2),
             "tax_amount": round(tax_amount, 2),
             "tax_rate": tax_rate,
-            "total_amount": round(total_amount, 2)
+            "total_amount": round(total_amount, 2),
         }
+
 
 # Global instance
 tax_calculator = TaxCalculator()

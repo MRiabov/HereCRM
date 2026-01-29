@@ -8,6 +8,7 @@ from src.repositories import UserRepository, ConversationStateRepository
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
+
 @pytest_asyncio.fixture
 async def test_session():
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
@@ -22,6 +23,7 @@ async def test_session():
 
     await engine.dispose()
 
+
 @pytest.mark.asyncio
 async def test_user_creation_and_lookup(test_session: AsyncSession):
     # Setup
@@ -35,7 +37,7 @@ async def test_user_creation_and_lookup(test_session: AsyncSession):
     user1 = User(phone_number="12345", business_id=biz.id)
     test_session.add(user1)
     await test_session.commit()
-    
+
     assert user1.id is not None
     assert user1.phone_number == "12345"
 
@@ -62,6 +64,7 @@ async def test_user_creation_and_lookup(test_session: AsyncSession):
     found_by_email = await user_repo.get_by_email("test@example.com")
     assert found_by_email.id == user2.id
 
+
 @pytest.mark.asyncio
 async def test_conversation_state_linkage(test_session: AsyncSession):
     # Setup
@@ -74,7 +77,7 @@ async def test_conversation_state_linkage(test_session: AsyncSession):
     await test_session.flush()
 
     state_repo = ConversationStateRepository(test_session)
-    
+
     # 1. Create state
     state = ConversationState(user_id=user.id)
     state_repo.add(state)
@@ -82,7 +85,7 @@ async def test_conversation_state_linkage(test_session: AsyncSession):
 
     found_state = await state_repo.get_by_user_id(user.id)
     assert found_state.user_id == user.id
-    
+
     # 2. Verify link
     res = await test_session.execute(select(User).where(User.id == user.id))
     u = res.scalar_one()

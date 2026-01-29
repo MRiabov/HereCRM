@@ -1,12 +1,12 @@
-
 import pytest
 from unittest.mock import AsyncMock, patch
 from src.services.geocoding import GeocodingService
 
+
 @pytest.mark.asyncio
 async def test_nominatim_parsing_success():
     service = GeocodingService()
-    
+
     mock_response = {
         "results": [
             {
@@ -17,34 +17,35 @@ async def test_nominatim_parsing_success():
                 "city": "Dublin",
                 "country": "Ireland",
                 "postcode": "D08",
-                "formatted": "34 High Street, Dublin, Ireland, D08"
+                "formatted": "34 High Street, Dublin, Ireland, D08",
             }
         ]
     }
-    
+
     with patch("src.services.geocoding.GeocodingService.get_client") as mock_get_client:
         mock_client = AsyncMock()
         mock_get_client.return_value = mock_client
         mock_client.get.return_value = AsyncMock(
-            status_code=200,
-            json=lambda: mock_response,
-            raise_for_status=lambda: None
+            status_code=200, json=lambda: mock_response, raise_for_status=lambda: None
         )
-        
-        lat, lon, street, city, country, postcode, full_address = await service.geocode("34 High St", default_city="London")
-        
+
+        lat, lon, street, city, country, postcode, full_address = await service.geocode(
+            "34 High St", default_city="London"
+        )
+
         assert lat == 53.344
         assert lon == -6.267
         assert street == "34 High Street"
-        assert city == "Dublin" # Overrides default
+        assert city == "Dublin"  # Overrides default
         assert country == "Ireland"
         assert postcode == "D08"
         assert "34 High Street, Dublin, Ireland, D08" in full_address
 
+
 @pytest.mark.asyncio
 async def test_nominatim_parsing_fallback():
     service = GeocodingService()
-    
+
     # Simulate missing details but successful lat/lon
     mock_response = {
         "results": [
@@ -55,18 +56,18 @@ async def test_nominatim_parsing_fallback():
             }
         ]
     }
-    
+
     with patch("src.services.geocoding.GeocodingService.get_client") as mock_get_client:
         mock_client = AsyncMock()
         mock_get_client.return_value = mock_client
         mock_client.get.return_value = AsyncMock(
-            status_code=200,
-            json=lambda: mock_response,
-            raise_for_status=lambda: None
+            status_code=200, json=lambda: mock_response, raise_for_status=lambda: None
         )
-        
-        lat, lon, street, city, country, postcode, full_address = await service.geocode("High Street", default_city="Dublin", default_country="Ireland")
-        
+
+        lat, lon, street, city, country, postcode, full_address = await service.geocode(
+            "High Street", default_city="Dublin", default_country="Ireland"
+        )
+
         assert lat == 53.344
         assert lon == -6.267
         assert street is None

@@ -21,12 +21,13 @@ from src.models import (
     IntegrationType as IntegrationType,
     Invitation,
     InvitationStatus,
-    Expense
+    Expense,
 )
 from .base import BaseRepository, normalize_phone, haversine_distance
-from src.repositories.integration_repository import IntegrationRepository as IntegrationRepository
+from src.repositories.integration_repository import (
+    IntegrationRepository as IntegrationRepository,
+)
 from src.services.cache import ServiceCatalogCache
-
 
 
 class UserRepository(BaseRepository[User]):
@@ -36,12 +37,14 @@ class UserRepository(BaseRepository[User]):
     async def get_team_members(self, business_id: int) -> List[User]:
         query = select(User).where(
             User.business_id == business_id,
-            User.role.in_([UserRole.EMPLOYEE, UserRole.MANAGER, UserRole.OWNER])
+            User.role.in_([UserRole.EMPLOYEE, UserRole.MANAGER, UserRole.OWNER]),
         )
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_by_id(self, id: int, business_id: Optional[int] = None) -> Optional[User]:
+    async def get_by_id(
+        self, id: int, business_id: Optional[int] = None
+    ) -> Optional[User]:
         query = select(User).options(joinedload(User.wage_config)).where(User.id == id)
         if business_id:
             query = query.where(User.business_id == business_id)
@@ -153,7 +156,9 @@ class ServiceRepository(BaseRepository[Service]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def update(self, service_id: int, business_id: int, **kwargs) -> Optional[Service]:
+    async def update(
+        self, service_id: int, business_id: int, **kwargs
+    ) -> Optional[Service]:
         service = await self.get_by_id(service_id, business_id)
         if not service:
             return None
@@ -190,20 +195,26 @@ class RequestRepository(BaseRepository[Request]):
         ignore_keywords = ["all", "requests", "show requests", "list requests"]
         if query and query.strip().lower() not in ignore_keywords:
             # Search in description and customer_details (JSON) or linked customer name
-            conditions.append(or_(
-                Request.description.ilike(f"%{query}%"),
-                # JSON search for customer_details (Postgres/SQLite specific but ilike usually works on strings)
-                # For SQLite/PG JSON search we might need something more specific if this fails, 
-                # but often cast to string works for basic search.
-                sa.cast(Request.customer_details, sa.String).ilike(f"%{query}%"),
-                # Join with customer to search by name
-                Customer.name.ilike(f"%{query}%"),
-                Customer.phone.ilike(f"%{norm_query}%" if (norm_query := normalize_phone(query)) else f"%{query}%")
-            ))
+            conditions.append(
+                or_(
+                    Request.description.ilike(f"%{query}%"),
+                    # JSON search for customer_details (Postgres/SQLite specific but ilike usually works on strings)
+                    # For SQLite/PG JSON search we might need something more specific if this fails,
+                    # but often cast to string works for basic search.
+                    sa.cast(Request.customer_details, sa.String).ilike(f"%{query}%"),
+                    # Join with customer to search by name
+                    Customer.name.ilike(f"%{query}%"),
+                    Customer.phone.ilike(
+                        f"%{norm_query}%"
+                        if (norm_query := normalize_phone(query))
+                        else f"%{query}%"
+                    ),
+                )
+            )
 
         if status:
             conditions.append(Request.status == status)
-        
+
         if urgency:
             conditions.append(Request.urgency == urgency)
 
@@ -236,14 +247,23 @@ class CustomerAvailabilityRepository(BaseRepository[CustomerAvailability]):
     def __init__(self, session: AsyncSession):
         super().__init__(session, CustomerAvailability)
 
-    async def get_for_customer(self, customer_id: int, min_date: Optional[datetime] = None, max_date: Optional[datetime] = None) -> List[CustomerAvailability]:
+    async def get_for_customer(
+        self,
+        customer_id: int,
+        min_date: Optional[datetime] = None,
+        max_date: Optional[datetime] = None,
+    ) -> List[CustomerAvailability]:
         conditions = [CustomerAvailability.customer_id == customer_id]
         if min_date:
             conditions.append(CustomerAvailability.end_time >= min_date)
         if max_date:
             conditions.append(CustomerAvailability.start_time <= max_date)
-        
-        stmt = select(CustomerAvailability).where(and_(*conditions)).order_by(CustomerAvailability.start_time)
+
+        stmt = (
+            select(CustomerAvailability)
+            .where(and_(*conditions))
+            .order_by(CustomerAvailability.start_time)
+        )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
@@ -256,17 +276,15 @@ class CustomerRepository(BaseRepository[Customer]):
         if not customer_ids:
             return {}
         stmt = (
-            select(
-                Job.customer_id,
-                func.count(Job.id),
-                func.sum(Job.value)
-            )
+            select(Job.customer_id, func.count(Job.id), func.sum(Job.value))
             .where(Job.customer_id.in_(customer_ids))
             .group_by(Job.customer_id)
         )
         result = await self.session.execute(stmt)
-        return {row[0]: {"job_count": row[1], "total_value": row[2] or 0.0} for row in result.all()}
-
+        return {
+            row[0]: {"job_count": row[1], "total_value": row[2] or 0.0}
+            for row in result.all()
+        }
 
     async def get_by_name(self, name: str, business_id: int) -> Optional[Customer]:
         query = select(Customer).where(
@@ -288,8 +306,7 @@ class CustomerRepository(BaseRepository[Customer]):
 
     async def get_by_email(self, email: str, business_id: int) -> Optional[Customer]:
         query = select(Customer).where(
-            Customer.email.ilike(email), 
-            Customer.business_id == business_id
+            Customer.email.ilike(email), Customer.business_id == business_id
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
@@ -364,7 +381,10 @@ class CustomerRepository(BaseRepository[Customer]):
 
         # Entity Type logic (Lead VS generic Customer)
         from src.models import EntityType
-        if entity_type in [EntityType.LEAD, "lead"] or (query and "lead" in query.lower()):
+
+        if entity_type in [EntityType.LEAD, "lead"] or (
+            query and "lead" in query.lower()
+        ):
             # A lead is a customer with 0 jobs.
             # We need a left join on Job to verify count or null
             stmt = select(Customer).outerjoin(Job)
@@ -393,28 +413,36 @@ class CustomerRepository(BaseRepository[Customer]):
             deg_rad = math.degrees(radius / 6371000)
             lat_min, lat_max = center_lat - deg_rad, center_lat + deg_rad
             # Adjust longitude delta based on latitude
-            lon_delta = deg_rad / math.cos(math.radians(center_lat)) if abs(center_lat) < 89 else 180
+            lon_delta = (
+                deg_rad / math.cos(math.radians(center_lat))
+                if abs(center_lat) < 89
+                else 180
+            )
             lon_min, lon_max = center_lon - lon_delta, center_lon + lon_delta
 
             conditions.append(Customer.latitude.between(lat_min, lat_max))
 
             # Handle Dateline wrapping
             if lon_min < -180:
-                conditions.append(or_(
-                    Customer.longitude.between(lon_min + 360, 180),
-                    Customer.longitude.between(-180, lon_max)
-                ))
+                conditions.append(
+                    or_(
+                        Customer.longitude.between(lon_min + 360, 180),
+                        Customer.longitude.between(-180, lon_max),
+                    )
+                )
             elif lon_max > 180:
-                conditions.append(or_(
-                    Customer.longitude.between(lon_min, 180),
-                    Customer.longitude.between(-180, lon_max - 360)
-                ))
+                conditions.append(
+                    or_(
+                        Customer.longitude.between(lon_min, 180),
+                        Customer.longitude.between(-180, lon_max - 360),
+                    )
+                )
             else:
                 conditions.append(Customer.longitude.between(lon_min, lon_max))
 
         # Combine all DB conditions
         stmt = stmt.where(and_(*conditions)).distinct()
-        
+
         # If no radius filtering, apply pagination in DB
         if not (center_lat is not None and center_lon is not None and radius):
             stmt = stmt.offset(skip).limit(limit)
@@ -437,27 +465,34 @@ class CustomerRepository(BaseRepository[Customer]):
 
         return customers
 
-    async def get_pipeline_summary(self, business_id: int, example_limit: int = 5) -> dict[PipelineStage, dict]:
+    async def get_pipeline_summary(
+        self, business_id: int, example_limit: int = 5
+    ) -> dict[PipelineStage, dict]:
         # Aggregate counts and total job values directly in the database
         stats_stmt = (
             select(
-                Customer.pipeline_stage, 
+                Customer.pipeline_stage,
                 func.count(Customer.id.distinct()),
-                func.sum(Job.value)
+                func.sum(Job.value),
             )
             .outerjoin(Job, Customer.id == Job.customer_id)
             .where(Customer.business_id == business_id)
             .group_by(Customer.pipeline_stage)
         )
         result = await self.session.execute(stats_stmt)
-        stats = {row[0]: {"count": row[1], "value": row[2] or 0.0} for row in result.all()}
+        stats = {
+            row[0]: {"count": row[1], "value": row[2] or 0.0} for row in result.all()
+        }
 
         summary = {}
         for stage in PipelineStage:
             # Fetch up to `example_limit` examples for each stage
             example_stmt = (
                 select(Customer)
-                .where(Customer.business_id == business_id, Customer.pipeline_stage == stage)
+                .where(
+                    Customer.business_id == business_id,
+                    Customer.pipeline_stage == stage,
+                )
                 .limit(example_limit)
             )
             example_result = await self.session.execute(example_stmt)
@@ -467,11 +502,9 @@ class CustomerRepository(BaseRepository[Customer]):
             summary[stage] = {
                 "count": stage_stats["count"],
                 "value": stage_stats["value"],
-                "examples": examples
+                "examples": examples,
             }
         return summary
-
-
 
     async def get_leads(self, business_id: int) -> List[Customer]:
         return await self.search(
@@ -527,24 +560,41 @@ class JobRepository(BaseRepository[Job]):
         if center_lat is not None and center_lon is not None and radius:
             deg_rad = math.degrees(radius / 6371000)
             lat_min, lat_max = center_lat - deg_rad, center_lat + deg_rad
-            lon_delta = deg_rad / math.cos(math.radians(center_lat)) if abs(center_lat) < 89 else 180
+            lon_delta = (
+                deg_rad / math.cos(math.radians(center_lat))
+                if abs(center_lat) < 89
+                else 180
+            )
             lon_min, lon_max = center_lon - lon_delta, center_lon + lon_delta
 
-            eff_lat, eff_lon = func.coalesce(Job.latitude, Customer.latitude), func.coalesce(Job.longitude, Customer.longitude)
+            eff_lat, eff_lon = (
+                func.coalesce(Job.latitude, Customer.latitude),
+                func.coalesce(Job.longitude, Customer.longitude),
+            )
             conditions.append(eff_lat.between(lat_min, lat_max))
             conditions.append(eff_lon.between(lon_min, lon_max))
 
-            stmt = select(Job).join(Job.customer).options(
-                contains_eager(Job.customer).joinedload(Customer.availability), 
-                joinedload(Job.line_items),
-                joinedload(Job.employee).joinedload(User.wage_config)
-            ).where(and_(*conditions))
+            stmt = (
+                select(Job)
+                .join(Job.customer)
+                .options(
+                    contains_eager(Job.customer).joinedload(Customer.availability),
+                    joinedload(Job.line_items),
+                    joinedload(Job.employee).joinedload(User.wage_config),
+                )
+                .where(and_(*conditions))
+            )
         else:
-            stmt = select(Job).join(Job.customer).options(
-                contains_eager(Job.customer).joinedload(Customer.availability), 
-                joinedload(Job.line_items),
-                joinedload(Job.employee).joinedload(User.wage_config)
-            ).where(and_(*conditions))
+            stmt = (
+                select(Job)
+                .join(Job.customer)
+                .options(
+                    contains_eager(Job.customer).joinedload(Customer.availability),
+                    joinedload(Job.line_items),
+                    joinedload(Job.employee).joinedload(User.wage_config),
+                )
+                .where(and_(*conditions))
+            )
 
         # If no radius filtering, apply pagination in DB
         if not (center_lat is not None and center_lon is not None and radius):
@@ -558,15 +608,17 @@ class JobRepository(BaseRepository[Job]):
             filtered = []
             for j in jobs:
                 j_lat, j_lon = j.latitude, j.longitude
-                
+
                 if j_lat is None or j_lon is None:
-                    if j.customer and j.customer.latitude is not None and j.customer.longitude is not None:
+                    if (
+                        j.customer
+                        and j.customer.latitude is not None
+                        and j.customer.longitude is not None
+                    ):
                         j_lat, j_lon = j.customer.latitude, j.customer.longitude
 
                 if j_lat is not None and j_lon is not None:
-                    dist = haversine_distance(
-                        center_lat, center_lon, j_lat, j_lon
-                    )
+                    dist = haversine_distance(center_lat, center_lon, j_lat, j_lon)
                     if dist <= radius:
                         filtered.append(j)
             # Apply pagination to filtered list
@@ -583,7 +635,7 @@ class JobRepository(BaseRepository[Job]):
                 joinedload(Job.customer),
                 joinedload(Job.line_items),
                 joinedload(Job.business),
-                joinedload(Job.employee).joinedload(User.wage_config)
+                joinedload(Job.employee).joinedload(User.wage_config),
             )
             .where(Job.customer_id == customer_id, Job.business_id == business_id)
             .order_by(Job.id.desc())
@@ -595,6 +647,7 @@ class JobRepository(BaseRepository[Job]):
 
     async def get_count_by_customer(self, customer_id: int, business_id: int) -> int:
         from sqlalchemy import func
+
         stmt = select(func.count()).where(
             Job.customer_id == customer_id, Job.business_id == business_id
         )
@@ -605,22 +658,24 @@ class JobRepository(BaseRepository[Job]):
         stmt = (
             select(Job)
             .options(
-                joinedload(Job.line_items), 
+                joinedload(Job.line_items),
                 joinedload(Job.customer),
-                joinedload(Job.employee).joinedload(User.wage_config)
+                joinedload(Job.employee).joinedload(User.wage_config),
             )
             .where(Job.id == job_id, Job.business_id == business_id)
         )
         result = await self.session.execute(stmt)
         return result.unique().scalar_one_or_none()
 
-    async def get_by_customer(self, customer_id: int, business_id: int, skip: int = 0, limit: int = 100) -> List[Job]:
+    async def get_by_customer(
+        self, customer_id: int, business_id: int, skip: int = 0, limit: int = 100
+    ) -> List[Job]:
         stmt = (
             select(Job)
             .options(
                 joinedload(Job.line_items),
                 joinedload(Job.customer),
-                joinedload(Job.employee).joinedload(User.wage_config)
+                joinedload(Job.employee).joinedload(User.wage_config),
             )
             .where(Job.customer_id == customer_id, Job.business_id == business_id)
             .order_by(Job.scheduled_at.desc())
@@ -648,16 +703,24 @@ class ExpenseRepository(BaseRepository[Expense]):
         max_date: Optional[datetime] = None,
     ) -> List[Expense]:
         conditions = [Expense.business_id == business_id]
-        
-        ignore_keywords = ["all", "expenses", "show expenses", "show all expenses", "list expenses"]
+
+        ignore_keywords = [
+            "all",
+            "expenses",
+            "show expenses",
+            "show all expenses",
+            "list expenses",
+        ]
         if query and query.strip().lower() not in ignore_keywords:
-            conditions.append(or_(
-                Expense.description.ilike(f"%{query}%"),
-                Expense.category.ilike(f"%{query}%"),
-                Job.description.ilike(f"%{query}%"),
-                Customer.name.ilike(f"%{query}%")
-            ))
-        
+            conditions.append(
+                or_(
+                    Expense.description.ilike(f"%{query}%"),
+                    Expense.category.ilike(f"%{query}%"),
+                    Job.description.ilike(f"%{query}%"),
+                    Customer.name.ilike(f"%{query}%"),
+                )
+            )
+
         if job_id:
             conditions.append(Expense.job_id == job_id)
         if employee_id:
@@ -710,29 +773,34 @@ def update_job_value(mapper, connection, target):
     # We use connection.execute directly which is safe in synchronous flush
     try:
         # Calculate new total using a scalar subquery that is compatible with direct execution
-        new_total_stmt = select(func.sum(LineItem.total_price)).where(LineItem.job_id == job_id).scalar_subquery()
-        
+        new_total_stmt = (
+            select(func.sum(LineItem.total_price))
+            .where(LineItem.job_id == job_id)
+            .scalar_subquery()
+        )
+
         connection.execute(
-            sa.update(Job)
-            .where(Job.id == job_id)
-            .values(value=new_total_stmt)
+            sa.update(Job).where(Job.id == job_id).values(value=new_total_stmt)
         )
 
         # Stale Object State Fix: Update the Job object in the session if it exists
         from sqlalchemy.orm import object_session
+
         session = object_session(target)
         if session:
             # Look for the job in the identity map to avoid a fresh DB query/lazy load
             from sqlalchemy.orm.util import identity_key
+
             key = identity_key(Job, (job_id,))
             job = session.identity_map.get(key)
             if job:
                 # We can't easily get the new_total here without a sync query (which triggers the error)
                 # But we can at least mark it as expired so it reloads correctly next time it's accessed
-                session.expire(job, ['value'])
+                session.expire(job, ["value"])
     except Exception:
         # Listeners should be robust
         pass
+
 
 event.listen(LineItem, "after_insert", update_job_value)
 event.listen(LineItem, "after_update", update_job_value)
@@ -743,6 +811,7 @@ event.listen(LineItem, "after_delete", update_job_value)
 def invalidate_service_cache(mapper, connection, target):
     if target.business_id:
         ServiceCatalogCache.get_instance().invalidate(target.business_id)
+
 
 event.listen(Service, "after_insert", invalidate_service_cache)
 event.listen(Service, "after_update", invalidate_service_cache)
@@ -763,7 +832,7 @@ class InvitationRepository(BaseRepository[Invitation]):
         identifier = normalize_phone(identifier)
         query = select(Invitation).where(
             Invitation.invitee_identifier == identifier,
-            Invitation.status == InvitationStatus.PENDING
+            Invitation.status == InvitationStatus.PENDING,
         )
         result = await self.session.execute(query)
         return list(result.scalars().all())
@@ -775,7 +844,7 @@ class InvitationRepository(BaseRepository[Invitation]):
             sa.update(Invitation)
             .where(
                 Invitation.status == InvitationStatus.PENDING,
-                Invitation.expires_at < now
+                Invitation.expires_at < now,
             )
             .values(status=InvitationStatus.EXPIRED)
         )

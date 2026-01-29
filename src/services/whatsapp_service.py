@@ -6,7 +6,13 @@ from src.repositories import (
     UserRepository,
     BusinessRepository,
 )
-from src.models import ConversationState, ConversationStatus, Message, MessageRole, MessageType
+from src.models import (
+    ConversationState,
+    ConversationStatus,
+    Message,
+    MessageRole,
+    MessageType,
+)
 from src.llm_client import LLMParser
 from src.services.template_service import TemplateService
 from src.services.data_management import DataManagementService
@@ -63,14 +69,24 @@ class WhatsappService:
             self.undo_handler,
             self.geocoding_service,
             self.invitation_service,
-            self.auto_confirm_service
+            self.auto_confirm_service,
         )
         self.settings_handler = SettingsHandler(session, parser, template_service)
-        self.data_management_handler = DataManagementHandler(session, parser, template_service, self.data_service)
-        self.billing_handler = BillingHandler(session, template_service, self.summary_generator)
-        self.employee_handler = EmployeeHandler(session, parser, template_service, self.invitation_service)
-        self.onboarding_handler = OnboardingHandler(session, template_service, self.invitation_service)
-        self.confirmation_handler = ConfirmationHandler(session, template_service, self.draft_executor, self.idle_handler)
+        self.data_management_handler = DataManagementHandler(
+            session, parser, template_service, self.data_service
+        )
+        self.billing_handler = BillingHandler(
+            session, template_service, self.summary_generator
+        )
+        self.employee_handler = EmployeeHandler(
+            session, parser, template_service, self.invitation_service
+        )
+        self.onboarding_handler = OnboardingHandler(
+            session, template_service, self.invitation_service
+        )
+        self.confirmation_handler = ConfirmationHandler(
+            session, template_service, self.draft_executor, self.idle_handler
+        )
 
     async def handle_message(
         self,
@@ -82,8 +98,10 @@ class WhatsappService:
         media_url: Optional[str] = None,
         media_type: Optional[str] = None,
     ) -> str:
-        self.logger.debug(f"DEBUG: handle_message entered. user_id={user_id}, user_phone={user_phone}, channel={channel}")
-        
+        self.logger.debug(
+            f"DEBUG: handle_message entered. user_id={user_id}, user_phone={user_phone}, channel={channel}"
+        )
+
         self._current_metadata = {}
         # 1. Identify User
         if user_id:
@@ -97,18 +115,20 @@ class WhatsappService:
             # Handle "Join" for new users
             if message_text.strip().lower().startswith("join"):
                 active_identity = user_phone or "unknown"
-                success, msg, new_user = await self.invitation_service.process_join(active_identity)
+                success, msg, new_user = await self.invitation_service.process_join(
+                    active_identity
+                )
                 if success and new_user:
                     # User created, let's proceed to log the message and set up state
                     user = new_user
                     is_new_user = True
-                    reply = msg # The process_join returns the welcome message
+                    reply = msg  # The process_join returns the welcome message
                 else:
                     return self.template_service.render("error_user_required")
             else:
                 return self.template_service.render("error_user_required")
 
-        # Use the identity they chose for this message as the "from_number" 
+        # Use the identity they chose for this message as the "from_number"
         active_identity = user_phone or user.phone_number or user.email or "unknown"
 
         # Log User Message
@@ -118,7 +138,7 @@ class WhatsappService:
             from_number=active_identity,
             body=message_text,
             role=MessageRole.USER,
-            channel_type=channel
+            channel_type=channel,
         )
         self.session.add(user_msg)
         await self.session.flush()
@@ -150,10 +170,10 @@ class WhatsappService:
                     location_coords = (lat, lng)
                 except ValueError:
                     pass
-        
+
         # Fallback: Check text for map links
         if not location_coords:
-             location_coords = LocationService.parse_location_from_text(message_text)
+            location_coords = LocationService.parse_location_from_text(message_text)
 
         if location_coords:
             lat, lng = location_coords
@@ -165,18 +185,27 @@ class WhatsappService:
             self.logger.info(f"New user onboarding for {active_identity}")
             state_record.state = ConversationStatus.ONBOARDING
             reply = self.template_service.render("welcome_message")
-        
+
         # Dispatch to Handlers
         if not reply:
             if state_record.state == ConversationStatus.ONBOARDING:
                 self.logger.info(f"User {user.id} in ONBOARDING mode")
-                reply = await self.onboarding_handler.handle(user, state_record, message_text)
-            elif state_record.state in [ConversationStatus.WAITING_CONFIRM, ConversationStatus.PENDING_AUTO_CONFIRM]:
+                reply = await self.onboarding_handler.handle(
+                    user, state_record, message_text
+                )
+            elif state_record.state in [
+                ConversationStatus.WAITING_CONFIRM,
+                ConversationStatus.PENDING_AUTO_CONFIRM,
+            ]:
                 self.logger.info(f"User {user.id} in CONFIRMATION mode")
-                reply = await self.confirmation_handler.handle(user, state_record, message_text)
+                reply = await self.confirmation_handler.handle(
+                    user, state_record, message_text
+                )
             elif state_record.state == ConversationStatus.SETTINGS:
                 self.logger.info(f"User {user.id} in SETTINGS mode")
-                reply = await self.settings_handler.handle(user, state_record, message_text)
+                reply = await self.settings_handler.handle(
+                    user, state_record, message_text
+                )
             elif state_record.state == ConversationStatus.DATA_MANAGEMENT:
                 self.logger.info(f"User {user.id} in DATA_MANAGEMENT mode")
                 reply = await self.data_management_handler.handle(
@@ -184,10 +213,14 @@ class WhatsappService:
                 )
             elif state_record.state == ConversationStatus.BILLING:
                 self.logger.info(f"User {user.id} in BILLING mode")
-                reply = await self.billing_handler.handle(user, state_record, message_text)
+                reply = await self.billing_handler.handle(
+                    user, state_record, message_text
+                )
             elif state_record.state == ConversationStatus.EMPLOYEE_MANAGEMENT:
                 self.logger.info(f"User {user.id} in EMPLOYEE_MANAGEMENT mode")
-                reply = await self.employee_handler.handle(user, state_record, message_text)
+                reply = await self.employee_handler.handle(
+                    user, state_record, message_text
+                )
             else:
                 reply = await self.idle_handler.handle(user, state_record, message_text)
                 # Capture metadata from idle handler if available
@@ -203,20 +236,21 @@ class WhatsappService:
             body=reply,
             role=MessageRole.ASSISTANT,
             channel_type=channel,
-            log_metadata=self._current_metadata if self._current_metadata else None
+            log_metadata=self._current_metadata if self._current_metadata else None,
         )
         self.session.add(assistant_msg)
-        
+
         # T023 - Usage-Based Billing: Count assistant reply
         if self.billing_service:
             await self.billing_service.track_message_sent(user.business_id)
 
         # Dispatch SMS if channel is SMS or user identity suggests SMS
         effective_channel = state_record.active_channel or channel
-        
+
         if effective_channel == MessageType.SMS and user.phone_number:
             try:
                 from src.services.sms_factory import get_sms_service
+
                 await get_sms_service().send_sms(user.phone_number, reply)
             except Exception as e:
                 self.logger.error(f"Failed to send SMS reply to {user.id}: {e}")

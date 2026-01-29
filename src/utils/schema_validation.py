@@ -7,6 +7,7 @@ from src.database import Base, DATABASE_URL
 
 logger = logging.getLogger(__name__)
 
+
 def validate_db_schema() -> List[Any]:
     """
     Compares the current SQLAlchemy metadata with the actual database schema.
@@ -15,15 +16,15 @@ def validate_db_schema() -> List[Any]:
     # Convert async sqlite URL to sync for Alembic comparison
     # Alembic/SQLAlchemy comparison tools work best with sync engines
     sync_url = DATABASE_URL.replace("sqlite+aiosqlite://", "sqlite://")
-    
+
     # Using a sync engine for schema inspection
     engine = create_engine(sync_url)
-    
+
     try:
         with engine.connect() as connection:
             mc = MigrationContext.configure(connection)
             diff = compare_metadata(mc, Base.metadata)
-            
+
             if diff:
                 logger.error("Database schema mismatch detected!")
                 for change in diff:

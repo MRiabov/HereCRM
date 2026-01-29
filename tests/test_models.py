@@ -2,7 +2,18 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Customer, Job, Invoice, MessageLog, MessageType, MessageStatus, JobStatus, InvoiceStatus, MessageTriggerSource
+from src.models import (
+    Business,
+    Customer,
+    Job,
+    Invoice,
+    MessageLog,
+    MessageType,
+    MessageStatus,
+    JobStatus,
+    InvoiceStatus,
+    MessageTriggerSource,
+)
 from src.repositories import JobRepository
 
 # Use in-memory SQLite for tests
@@ -38,13 +49,19 @@ async def test_tenant_isolation(test_session: AsyncSession):
 
     # Create Job for A
     job_a = Job(
-        business_id=biz_a.id, customer_id=1, description="Cleaning A", status=JobStatus.PENDING
+        business_id=biz_a.id,
+        customer_id=1,
+        description="Cleaning A",
+        status=JobStatus.PENDING,
     )  # Mock customer ID
     test_session.add(job_a)
 
     # Create Job for B
     job_b = Job(
-        business_id=biz_b.id, customer_id=2, description="Cleaning B", status=JobStatus.PENDING
+        business_id=biz_b.id,
+        customer_id=2,
+        description="Cleaning B",
+        status=JobStatus.PENDING,
     )
     test_session.add(job_b)
 
@@ -63,8 +80,6 @@ async def test_tenant_isolation(test_session: AsyncSession):
     assert job_lookup is None
 
 
-
-
 @pytest.mark.asyncio
 async def test_invoice_relationship(test_session: AsyncSession):
     # Setup
@@ -76,7 +91,12 @@ async def test_invoice_relationship(test_session: AsyncSession):
     test_session.add(customer)
     await test_session.flush()
 
-    job = Job(business_id=biz.id, customer_id=customer.id, description="Job", status=JobStatus.PENDING)
+    job = Job(
+        business_id=biz.id,
+        customer_id=customer.id,
+        description="Job",
+        status=JobStatus.PENDING,
+    )
     test_session.add(job)
     await test_session.flush()
 
@@ -85,7 +105,7 @@ async def test_invoice_relationship(test_session: AsyncSession):
         job_id=job.id,
         s3_key="key123.pdf",
         public_url="http://s3.com/key123.pdf",
-        status=InvoiceStatus.SENT
+        status=InvoiceStatus.SENT,
     )
     test_session.add(invoice)
     await test_session.commit()
@@ -94,11 +114,14 @@ async def test_invoice_relationship(test_session: AsyncSession):
     await test_session.refresh(job)
     # Re-fetch because of async session relationship behavior
     from sqlalchemy import select
+
     res = await test_session.execute(select(Job).where(Job.id == job.id))
     job_refetched = res.scalar_one()
     assert job_refetched.description == "Job"
-    
-    res_inv = await test_session.execute(select(Invoice).where(Invoice.job_id == job.id))
+
+    res_inv = await test_session.execute(
+        select(Invoice).where(Invoice.job_id == job.id)
+    )
     inv_found = res_inv.scalar_one()
     assert inv_found.s3_key == "key123.pdf"
     assert inv_found.job_id == job.id
@@ -106,7 +129,6 @@ async def test_invoice_relationship(test_session: AsyncSession):
 
 @pytest.mark.asyncio
 async def test_message_log_creation(test_session: AsyncSession):
-
     log = MessageLog(
         recipient_phone="1234567890",
         content="Hello Test",
@@ -120,7 +142,9 @@ async def test_message_log_creation(test_session: AsyncSession):
     # Query it back
     from sqlalchemy import select
 
-    result = await test_session.execute(select(MessageLog).where(MessageLog.id == log.id))
+    result = await test_session.execute(
+        select(MessageLog).where(MessageLog.id == log.id)
+    )
     db_log = result.scalar_one()
 
     assert db_log.recipient_phone == "1234567890"

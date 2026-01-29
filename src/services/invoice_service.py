@@ -11,6 +11,7 @@ from src.services.pdf_generator import PDFGenerator
 
 logger = logging.getLogger(__name__)
 
+
 class InvoiceService:
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -21,19 +22,23 @@ class InvoiceService:
         """
         Retrieves the most recent invoice for a given job.
         """
-        stmt = select(Invoice).where(Invoice.job_id == job_id).order_by(desc(Invoice.created_at))
+        stmt = (
+            select(Invoice)
+            .where(Invoice.job_id == job_id)
+            .order_by(desc(Invoice.created_at))
+        )
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
     async def create_invoice(
-        self, 
-        job: Job, 
+        self,
+        job: Job,
         force_regenerate: bool = False,
         invoice_number: Optional[str] = None,
         issued_at: Optional[datetime] = None,
         due_date: Optional[datetime] = None,
         notes: Optional[str] = None,
-        items: Optional[list] = None
+        items: Optional[list] = None,
     ) -> Invoice:
         """
         Creates a new invoice for the job.
@@ -46,20 +51,20 @@ class InvoiceService:
                 return existing
 
         logger.info(f"Generating new invoice for job {job.id}")
-        
+
         # 0. Fetch payment link snapshot from business
         payment_link = job.business.payment_link if job.business else None
 
         # 1. Generate PDF
         try:
             pdf_bytes = self.pdf_generator.generate_invoice(
-                job, 
-                invoice_date=issued_at, 
+                job,
+                invoice_date=issued_at,
                 payment_link=payment_link,
                 invoice_number=invoice_number,
                 due_date=due_date,
                 notes=notes,
-                items=items
+                items=items,
             )
         except (ValueError, RuntimeError) as e:
             logger.error(f"Failed to generate PDF for job {job.id}: {e}")
@@ -69,14 +74,11 @@ class InvoiceService:
         filename = f"invoices/invoice_{job.id}_{int(datetime.now().timestamp())}.pdf"
         try:
             public_url = self.s3_service.upload_file(
-                file_content=pdf_bytes,
-                key=filename,
-                content_type="application/pdf"
+                file_content=pdf_bytes, key=filename, content_type="application/pdf"
             )
         except StorageError as e:
             logger.error(f"S3 upload failed for job {job.id}: {e}")
             raise RuntimeError(f"S3 upload failed: {e}") from e
-
 
         # 3. Save to Database
         invoice = Invoice(
@@ -84,9 +86,9 @@ class InvoiceService:
             s3_key=filename,
             public_url=public_url,
             payment_link=payment_link,
-            status=InvoiceStatus.GENERATED
+            status=InvoiceStatus.GENERATED,
         )
         self.session.add(invoice)
         await self.session.flush()
-        
+
         return invoice

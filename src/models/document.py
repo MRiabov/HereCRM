@@ -4,10 +4,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database import Base
 import enum
 
+
 class DocumentType(str, enum.Enum):
     INTERNAL = "internal"
     CUSTOMER_UPLOAD = "customer_upload"
     GENERATED = "generated"
+
 
 class Document(Base):
     __tablename__ = "documents"
@@ -18,7 +20,9 @@ class Document(Base):
     s3_key: Mapped[str] = mapped_column(String)
     public_url: Mapped[str] = mapped_column(String)
     mime_type: Mapped[str] = mapped_column(String)
-    doc_type: Mapped[DocumentType] = mapped_column(SAEnum(DocumentType), default=DocumentType.INTERNAL)
+    doc_type: Mapped[DocumentType] = mapped_column(
+        SAEnum(DocumentType), default=DocumentType.INTERNAL
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )

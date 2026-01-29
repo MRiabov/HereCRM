@@ -17,6 +17,7 @@ import logging
 # Suppress SQLAlchemy logging
 logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
 
+
 async def run_benchmark():
     # Use in-memory SQLite for benchmark
     engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
@@ -39,7 +40,7 @@ async def run_benchmark():
             customer = Customer(
                 business_id=business.id,
                 name=f"Customer {i}",
-                pipeline_stage=PipelineStage.NOT_CONTACTED
+                pipeline_stage=PipelineStage.NOT_CONTACTED,
             )
             customers.append(customer)
         session.add_all(customers)
@@ -53,7 +54,7 @@ async def run_benchmark():
                     business_id=business.id,
                     customer_id=customer.id,
                     description=f"Job {j} for {customer.name}",
-                    status=JobStatus.pending
+                    status=JobStatus.pending,
                 )
                 jobs.append(job)
         session.add_all(jobs)
@@ -86,6 +87,7 @@ async def run_benchmark():
     print(f"Average time per query: {avg_per_query:.4f} ms")
 
     await engine.dispose()
+
 
 if __name__ == "__main__":
     asyncio.run(run_benchmark())

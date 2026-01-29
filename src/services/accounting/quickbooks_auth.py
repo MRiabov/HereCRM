@@ -58,20 +58,26 @@ class QuickBooksAuthService:
         """
         # 1. Update Credentials DB (Synchronous)
         with get_credentials_db() as cred_db:
-            cred = cred_db.query(QuickBooksCredential).filter_by(business_id=business_id).first()
-            
-            expiry_time = datetime.now(timezone.utc) + timedelta(seconds=token_data["expires_in"])
-            
+            cred = (
+                cred_db.query(QuickBooksCredential)
+                .filter_by(business_id=business_id)
+                .first()
+            )
+
+            expiry_time = datetime.now(timezone.utc) + timedelta(
+                seconds=token_data["expires_in"]
+            )
+
             if not cred:
                 # We need to use create_engine with pysqlcipher3 if possible, but here we just use the session
                 cred = QuickBooksCredential(business_id=business_id)
                 cred_db.add(cred)
-            
+
             cred.realm_id = token_data["realm_id"]
             cred.access_token = token_data["access_token"]
             cred.refresh_token = token_data["refresh_token"]
             cred.token_expiry = expiry_time
-            
+
             cred_db.commit()
 
         # 2. Update Business in Main DB (Asynchronous)
@@ -83,14 +89,20 @@ class QuickBooksAuthService:
     async def get_credentials(self, business_id: int) -> QuickBooksCredential:
         """Retrieve credentials from credentials_db."""
         with get_credentials_db() as cred_db:
-            cred = cred_db.query(QuickBooksCredential).filter_by(business_id=business_id).first()
+            cred = (
+                cred_db.query(QuickBooksCredential)
+                .filter_by(business_id=business_id)
+                .first()
+            )
             return cred
 
     async def disconnect(self, business_id: int):
         """Delete credentials and update Business status."""
         # 1. Delete from Credentials DB
         with get_credentials_db() as cred_db:
-            cred_db.query(QuickBooksCredential).filter_by(business_id=business_id).delete()
+            cred_db.query(QuickBooksCredential).filter_by(
+                business_id=business_id
+            ).delete()
             cred_db.commit()
 
         # 2. Update Business in Main DB
@@ -99,7 +111,9 @@ class QuickBooksAuthService:
             business.quickbooks_connected = False
             await self.main_db.commit()
 
-    async def ensure_active_token(self, cred: QuickBooksCredential) -> QuickBooksCredential:
+    async def ensure_active_token(
+        self, cred: QuickBooksCredential
+    ) -> QuickBooksCredential:
         """
         Check if token is expiring and refresh if needed.
         Returns a valid credential.
@@ -108,10 +122,10 @@ class QuickBooksAuthService:
             return None
 
         business_id = cred.business_id
-        
+
         # Check if expiring in next 5 minutes
         now = datetime.now(timezone.utc)
-        
+
         # Ensure cred.token_expiry is timezone-aware for comparison if it's not
         expiry = cred.token_expiry
         if expiry.tzinfo is None:
@@ -134,7 +148,7 @@ class QuickBooksAuthService:
                 "expires_in": auth_client.expires_in,
             }
             await self.save_credentials(business_id, token_data)
-            
+
             # Return fresh credential
             return await self.get_credentials(business_id)
 

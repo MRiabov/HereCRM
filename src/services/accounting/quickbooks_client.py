@@ -31,9 +31,13 @@ class QuickBooksClient:
     def get_auth_url(self, csrf_token: str) -> str:
         """Generates the authorization URL for QuickBooks Online."""
         auth_client = self.get_auth_client()
-        return auth_client.get_authorization_url([Scopes.ACCOUNTING], state_token=csrf_token)
+        return auth_client.get_authorization_url(
+            [Scopes.ACCOUNTING], state_token=csrf_token
+        )
 
-    def get_quickbooks_client(self, realm_id: str, access_token: str, refresh_token: str):
+    def get_quickbooks_client(
+        self, realm_id: str, access_token: str, refresh_token: str
+    ):
         """Returns an authorized QuickBooks client instance."""
         auth_client = self.get_auth_client(
             access_token=access_token,

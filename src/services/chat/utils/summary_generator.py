@@ -19,6 +19,7 @@ from src.uimodels import (
 )
 from src.tools.invoice_tools import SendInvoiceTool
 
+
 class SummaryGenerator:
     def __init__(self, session: AsyncSession, template_service: TemplateService):
         self.session = session
@@ -52,14 +53,18 @@ class SummaryGenerator:
 
         # Use category if available (e.g. for AddJobTool)
         if isinstance(tool_call, CreateQuoteTool):
-            customers = await customer_repo.search(tool_call.customer_identifier, user.business_id)
+            customers = await customer_repo.search(
+                tool_call.customer_identifier, user.business_id
+            )
             customer = customers[0] if customers and len(customers) == 1 else None
 
             client_details = self.template_service.render(
                 "client_details",
                 name=customer.name if customer else tool_call.customer_identifier,
                 phone=customer.phone if customer else "Not supplied",
-                address=customer.street if customer else "Not supplied", # Assuming street for address
+                address=customer.street
+                if customer
+                else "Not supplied",  # Assuming street for address
             )
 
             line_items_detail = ""
@@ -67,7 +72,9 @@ class SummaryGenerator:
             if tool_call.items:
                 line_items_detail = "\nItems:"
                 for item in tool_call.items:
-                    line_items_detail += f"\n- {item.description}: {item.quantity} x ${item.price:.2f}"
+                    line_items_detail += (
+                        f"\n- {item.description}: {item.quantity} x ${item.price:.2f}"
+                    )
                     total_amount += item.quantity * item.price
 
             summary = self.template_service.render(
@@ -80,7 +87,9 @@ class SummaryGenerator:
 
             # Check for contact details
             if customer and not (customer.phone or customer.email):
-                warning = self.template_service.render("warning_no_contact_details", type="quote")
+                warning = self.template_service.render(
+                    "warning_no_contact_details", type="quote"
+                )
                 summary = f"{summary}\n\n{warning}"
 
             return summary
@@ -144,12 +153,18 @@ class SummaryGenerator:
             return f"Updating {tool_call.query}: {change_summary}"
 
         if isinstance(tool_call, ScheduleJobTool):
-            customers = await customer_repo.search(tool_call.customer_query, user.business_id) if tool_call.customer_query else []
+            customers = (
+                await customer_repo.search(tool_call.customer_query, user.business_id)
+                if tool_call.customer_query
+                else []
+            )
             customer = customers[0] if customers and len(customers) == 1 else None
 
             client_details = self.template_service.render(
                 "client_details",
-                name=customer.name if customer else (tool_call.customer_query or "Unknown"),
+                name=customer.name
+                if customer
+                else (tool_call.customer_query or "Unknown"),
                 phone=customer.phone if customer else "Not supplied",
                 address=customer.street if customer else "Not supplied",
             )
@@ -160,13 +175,21 @@ class SummaryGenerator:
             )
 
         if isinstance(tool_call, AddRequestTool):
-            customers = await customer_repo.search(tool_call.customer_name, user.business_id) if tool_call.customer_name else []
+            customers = (
+                await customer_repo.search(tool_call.customer_name, user.business_id)
+                if tool_call.customer_name
+                else []
+            )
             customer = customers[0] if customers and len(customers) == 1 else None
 
             client_details = self.template_service.render(
                 "client_details",
-                name=customer.name if customer else (tool_call.customer_name or "Not supplied"),
-                phone=customer.phone if customer else (tool_call.customer_phone or "Not supplied"),
+                name=customer.name
+                if customer
+                else (tool_call.customer_name or "Not supplied"),
+                phone=customer.phone
+                if customer
+                else (tool_call.customer_phone or "Not supplied"),
                 address=customer.street if customer else "Not supplied",
             )
             line_items_detail = ""
@@ -200,7 +223,9 @@ class SummaryGenerator:
             summary = f"Generate and send invoice to {customer.name if customer else tool_call.query}\n{client_details}"
 
             if customer and not (customer.phone or customer.email):
-                warning = self.template_service.render("warning_no_contact_details", type="invoice")
+                warning = self.template_service.render(
+                    "warning_no_contact_details", type="invoice"
+                )
                 summary = f"{summary}\n\n{warning}"
 
             return summary
@@ -217,7 +242,7 @@ class SummaryGenerator:
                 "schedule": "Schedule",
                 "complete": "Complete",
                 "log": "Log",
-                "quote": "Quote"
+                "quote": "Quote",
             }
             act = action_map.get(tool_call.action, tool_call.action).capitalize()
             return f"Convert to {act}: {tool_call.query}"

@@ -1,4 +1,3 @@
-
 import pytest
 from datetime import date, timedelta
 from src.models import Business, Job, Customer, User, UserRole, JobStatus
@@ -8,9 +7,11 @@ from src.services.template_service import TemplateService
 from sqlalchemy.ext.asyncio import AsyncSession
 from unittest.mock import MagicMock, patch, AsyncMock
 
+
 @pytest.fixture
 def template_service():
     return TemplateService()
+
 
 @pytest.mark.asyncio
 async def test_execute_show_schedule(
@@ -21,7 +22,12 @@ async def test_execute_show_schedule(
     test_session.add(biz)
     await test_session.flush()
 
-    user = User(name="John Tech", phone_number="123456789", business_id=biz.id, role=UserRole.MANAGER)
+    user = User(
+        name="John Tech",
+        phone_number="123456789",
+        business_id=biz.id,
+        role=UserRole.MANAGER,
+    )
     test_session.add(user)
     await test_session.flush()
 
@@ -38,7 +44,7 @@ async def test_execute_show_schedule(
         description="Scheduled Job",
         status=JobStatus.SCHEDULED,
         scheduled_at=today,
-        employee_id=user.id
+        employee_id=user.id,
     )
     test_session.add(job1)
 
@@ -47,23 +53,28 @@ async def test_execute_show_schedule(
         business_id=biz.id,
         customer_id=customer.id,
         description="Unscheduled Job",
-        status=JobStatus.PENDING
+        status=JobStatus.PENDING,
     )
     test_session.add(job2)
     await test_session.flush()
 
     # Mock GeocodingService etc as needed by ToolExecutor
-    with patch("src.events.event_bus.emit", new_callable=AsyncMock), \
-         patch("src.tool_executor.GeocodingService") as link_mock, \
-         patch("src.services.crm_service.GeocodingService") as crm_mock:
-        
+    with (
+        patch("src.events.event_bus.emit", new_callable=AsyncMock),
+        patch("src.tool_executor.GeocodingService") as link_mock,
+        patch("src.services.crm_service.GeocodingService") as crm_mock,
+    ):
         mock_geo = MagicMock()
-        mock_geo.geocode = AsyncMock(return_value=(None, None, None, None, None, None, None))
+        mock_geo.geocode = AsyncMock(
+            return_value=(None, None, None, None, None, None, None)
+        )
         link_mock.return_value = mock_geo
         crm_mock.return_value = mock_geo
-        
-        executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
-        
+
+        executor = ToolExecutor(
+            test_session, biz.id, user.id, user.phone_number, template_service
+        )
+
         # Execute Tool
         tool = ShowScheduleTool(date=today.isoformat())
         result, metadata = await executor.execute(tool)
@@ -82,7 +93,7 @@ async def test_execute_show_schedule(
         assert metadata["action"] == "query"
         assert metadata["entity"] == "schedule_report"
         assert metadata["date"] == today.isoformat()
-        
+
         # Check Employees in Metadata
         employees_data = metadata["employees"]
         assert len(employees_data) >= 1

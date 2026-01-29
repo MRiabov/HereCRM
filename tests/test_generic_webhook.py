@@ -13,6 +13,7 @@ TestingSessionLocal = async_sessionmaker(
     bind=engine_test, class_=AsyncSession, expire_on_commit=False
 )
 
+
 @pytest.fixture
 async def db_session():
     # Create tables
@@ -25,6 +26,7 @@ async def db_session():
     # Teardown
     async with engine_test.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
 
 @pytest.mark.asyncio
 async def test_generic_webhook_email_onboarding():
@@ -47,14 +49,16 @@ async def test_generic_webhook_email_onboarding():
         mock_parse.return_value = "Mocked Response"
         mock_template_service.render.side_effect = lambda key, **kwargs: key
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as ac:
             with patch("src.api.routes.settings.generic_webhook_secret", "test-secret"):
                 # 1. New User via Email (Generic Webhook)
                 email = "zapier_test@example.com"
                 payload = {
                     "identity": email,
                     "message": "Hello from Zapier",
-                    "source": LeadSource.ZAPIER
+                    "source": LeadSource.ZAPIER,
                 }
 
                 # Fail without header
@@ -63,9 +67,9 @@ async def test_generic_webhook_email_onboarding():
 
                 # Succeed with header
                 response = await ac.post(
-                    "/webhooks/generic", 
-                    json=payload, 
-                    headers={"X-API-Key": "test-secret"}
+                    "/webhooks/generic",
+                    json=payload,
+                    headers={"X-API-Key": "test-secret"},
                 )
                 assert response.status_code == 200
             data = response.json()
@@ -75,11 +79,13 @@ async def test_generic_webhook_email_onboarding():
             # Verify User created in DB
             async with TestingSessionLocal() as session:
                 from src.repositories import UserRepository
+
                 user_repo = UserRepository(session)
                 user = await user_repo.get_by_email(email)
                 assert user is not None
                 assert user.email == email
                 assert user.role == "OWNER"
+
 
 @pytest.mark.asyncio
 async def test_generic_webhook_existing_user_phone():
@@ -97,6 +103,7 @@ async def test_generic_webhook_existing_user_phone():
     phone = "1234567890"
     async with TestingSessionLocal() as session:
         from src.models import User, Business
+
         biz = Business(name="Existing Biz")
         session.add(biz)
         await session.flush()
@@ -112,18 +119,20 @@ async def test_generic_webhook_existing_user_phone():
         mock_parse.return_value = "Processing command"
         mock_template_service.render.side_effect = lambda key, **kwargs: key
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as ac:
             with patch("src.api.routes.settings.generic_webhook_secret", "test-secret"):
                 payload = {
                     "identity": phone,
                     "message": "Status update",
-                    "source": LeadSource.CRON
+                    "source": LeadSource.CRON,
                 }
 
                 response = await ac.post(
-                    "/webhooks/generic", 
+                    "/webhooks/generic",
                     json=payload,
-                    headers={"X-API-Key": "test-secret"}
+                    headers={"X-API-Key": "test-secret"},
                 )
                 assert response.status_code == 200
                 data = response.json()
@@ -134,6 +143,7 @@ async def test_generic_webhook_existing_user_phone():
             assert data["reply"] == "Processing command"
             assert data["source"] == LeadSource.CRON
 
+
 @pytest.mark.asyncio
 async def test_generic_webhook_rate_limit():
     async def override_get_db():
@@ -141,24 +151,24 @@ async def test_generic_webhook_rate_limit():
             yield session
 
     app.dependency_overrides[get_db] = override_get_db
-    
+
     with (
         patch("src.api.routes.settings.generic_webhook_secret", "test-secret"),
         patch("src.api.routes.check_rate_limit") as mock_check,
     ):
-        mock_check.return_value = True # Limit exceeded
-        
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        mock_check.return_value = True  # Limit exceeded
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as ac:
             payload = {
                 "identity": "limited@example.com",
                 "message": "Hello",
-                "source": "zapier"
+                "source": "zapier",
             }
 
             response = await ac.post(
-                "/webhooks/generic", 
-                json=payload,
-                headers={"X-API-Key": "test-secret"}
+                "/webhooks/generic", json=payload, headers={"X-API-Key": "test-secret"}
             )
             assert response.status_code == 200
             data = response.json()

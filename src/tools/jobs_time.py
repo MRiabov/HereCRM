@@ -2,6 +2,7 @@ from datetime import timezone
 from src.services.time_tracking import TimeTrackingService
 from src.uimodels import StartJobTool, FinishJobTool
 
+
 class JobTimeTools:
     def __init__(self, service: TimeTrackingService):
         self.service = service

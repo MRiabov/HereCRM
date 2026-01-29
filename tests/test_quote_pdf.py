@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch, AsyncMock
 from src.services.quote_service import QuoteService
 from src.models import Quote, Customer, Business, QuoteStatus, QuoteLineItem
 
+
 @pytest.fixture
 def mock_session():
     session = AsyncMock()
@@ -11,15 +12,18 @@ def mock_session():
     session.commit = AsyncMock()
     return session
 
+
 @pytest.fixture
 def mock_s3_service():
     with patch("src.services.quote_service.storage_service") as mock:
         yield mock
 
+
 @pytest.fixture
 def mock_pdf_generator():
     with patch("src.services.quote_service.pdf_generator") as mock:
         yield mock
+
 
 @pytest.mark.asyncio
 async def test_send_quote_success(mock_session, mock_s3_service, mock_pdf_generator):
@@ -32,7 +36,11 @@ async def test_send_quote_success(mock_session, mock_s3_service, mock_pdf_genera
         business_id=789,
         status=QuoteStatus.DRAFT,
         total_amount=500.0,
-        items=[QuoteLineItem(description="Test Item", quantity=1, unit_price=500.0, total=500.0)]
+        items=[
+            QuoteLineItem(
+                description="Test Item", quantity=1, unit_price=500.0, total=500.0
+            )
+        ],
     )
     quote.customer = Customer(name="Test Customer")
     quote.business = Business(name="Test Business")
@@ -59,8 +67,11 @@ async def test_send_quote_success(mock_session, mock_s3_service, mock_pdf_genera
     mock_session.commit.assert_called_once()
     mock_session.refresh.assert_called_once_with(quote)
 
+
 @pytest.mark.asyncio
-async def test_send_quote_pdf_failure(mock_session, mock_s3_service, mock_pdf_generator):
+async def test_send_quote_pdf_failure(
+    mock_session, mock_s3_service, mock_pdf_generator
+):
     service = QuoteService(mock_session)
     quote = Quote(id=123, customer_id=456, status=QuoteStatus.DRAFT)
 
@@ -75,6 +86,6 @@ async def test_send_quote_pdf_failure(mock_session, mock_s3_service, mock_pdf_ge
     with pytest.raises(RuntimeError, match="Failed to process quote PDF"):
         await service.send_quote(123)
 
-    assert quote.status == QuoteStatus.DRAFT # Should not change status
+    assert quote.status == QuoteStatus.DRAFT  # Should not change status
     mock_s3_service.upload_file.assert_not_called()
     mock_session.commit.assert_not_called()

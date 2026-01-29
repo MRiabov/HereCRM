@@ -7,13 +7,14 @@ from src.tools.employee_management import ExitEmployeeManagementTool, InviteUser
 from src.services.chat.handlers.base import ChatHandler
 import logging
 
+
 class EmployeeHandler(ChatHandler):
     def __init__(
         self,
         session: AsyncSession,
         parser: LLMParser,
         template_service: TemplateService,
-        invitation_service: InvitationService
+        invitation_service: InvitationService,
     ):
         self.session = session
         self.parser = parser
@@ -21,7 +22,9 @@ class EmployeeHandler(ChatHandler):
         self.invitation_service = invitation_service
         self.logger = logging.getLogger(__name__)
 
-    async def handle(self, user: User, state_record: ConversationState, message_text: str) -> str:
+    async def handle(
+        self, user: User, state_record: ConversationState, message_text: str
+    ) -> str:
         # Check manual exit just in case parser fails or as fast path
         if message_text.lower().strip() in ["exit", "quit", "back", "done"]:
             state_record.state = ConversationStatus.IDLE
@@ -30,7 +33,9 @@ class EmployeeHandler(ChatHandler):
         tool_call = await self.parser.parse_employee_management(message_text)
 
         if not tool_call:
-            return "I didn't understand. You can 'Invite +123456789'. Type 'exit' to quit."
+            return (
+                "I didn't understand. You can 'Invite +123456789'. Type 'exit' to quit."
+            )
 
         if isinstance(tool_call, ExitEmployeeManagementTool):
             state_record.state = ConversationStatus.IDLE

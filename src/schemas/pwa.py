@@ -3,11 +3,30 @@ from datetime import datetime
 from typing import List, Optional, Any, Dict
 from pydantic import BaseModel, ConfigDict, Field, AnyHttpUrl
 from src.models import (
-    JobStatus, PipelineStage, InvoicingWorkflow, QuotingWorkflow, 
-    PaymentTiming, JobCreationDefault, WageModelType, QuoteStatus, SyncLogStatus,
-    CampaignStatus, CampaignChannel, WhatsAppTemplateStatus, WhatsAppTemplateCategory,
-    InvoiceStatus, ExportStatus, ExportFormat, RequestStatus, UserRole, MessageRole,
-    ExpenseCategory, LedgerEntryType, EntityType, DistanceUnit, OnboardingChoiceType
+    JobStatus,
+    PipelineStage,
+    InvoicingWorkflow,
+    QuotingWorkflow,
+    PaymentTiming,
+    JobCreationDefault,
+    WageModelType,
+    QuoteStatus,
+    SyncLogStatus,
+    CampaignStatus,
+    CampaignChannel,
+    WhatsAppTemplateStatus,
+    WhatsAppTemplateCategory,
+    InvoiceStatus,
+    ExportStatus,
+    ExportFormat,
+    RequestStatus,
+    UserRole,
+    MessageRole,
+    ExpenseCategory,
+    LedgerEntryType,
+    EntityType,
+    DistanceUnit,
+    OnboardingChoiceType,
 )
 from enum import Enum
 
@@ -17,6 +36,7 @@ EMAIL_PATTERN = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$|^$)"
 
 # --- Shared / Base Schemas ---
 
+
 class WageConfigurationSchema(BaseModel):
     model_type: WageModelType
     rate_value: float = Field(..., ge=0)
@@ -24,6 +44,7 @@ class WageConfigurationSchema(BaseModel):
     allow_expense_claims: bool
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class UserSchema(BaseModel):
     id: int = Field(..., ge=1)
@@ -40,11 +61,13 @@ class UserSchema(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class CustomerSchema(BaseModel):
     id: int = Field(..., ge=1)
     name: Optional[str] = Field(None, max_length=200)
     first_name: Optional[str] = Field(None, max_length=100)
     last_name: Optional[str] = Field(None, max_length=100)
+    company_name: Optional[str] = Field(None, max_length=100)
     phone: Optional[str] = Field(None, pattern=PHONE_PATTERN)
     email: Optional[str] = Field(None, pattern=EMAIL_PATTERN)
     street: Optional[str] = Field(None, max_length=255)
@@ -69,11 +92,13 @@ class LineItemSchema(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class LineItemCreate(BaseModel):
     description: str = Field(..., min_length=1, max_length=500)
     quantity: float = Field(1.0, ge=0)
     unit_price: float = Field(..., ge=0)
     service_id: Optional[int] = Field(None, ge=1)
+
 
 class JobSchema(BaseModel):
     id: int = Field(..., ge=1)
@@ -93,40 +118,52 @@ class JobSchema(BaseModel):
     line_items: List[LineItemSchema] = []
 
     model_config = ConfigDict(from_attributes=True)
-    
+
 
 class OnboardingChoice(BaseModel):
     choice: OnboardingChoiceType
     invite_code: Optional[str] = Field(None, min_length=1, max_length=50)
     business_name: Optional[str] = Field(None, min_length=1, max_length=100)
 
+
 # --- Pipeline Schemas ---
+
 
 class PipelineStageStats(BaseModel):
     count: int = Field(..., ge=0)
     value: float = Field(..., ge=0)
 
+
 class PipelineStats(BaseModel):
-    pipeline_breakdown: Dict[str, PipelineStageStats] = Field(..., description="Map of pipeline stage to stats object")
-    #dev note: the str above could be an enum BTW.
-    
+    pipeline_breakdown: Dict[str, PipelineStageStats] = Field(
+        ..., description="Map of pipeline stage to stats object"
+    )
+    # dev note: the str above could be an enum BTW.
+
+
 class ActivityType(str, Enum):
     INVOICE = "invoice"
     JOB = "job"
     LEAD = "lead"
 
+
 class RecentActivity(BaseModel):
-    type: ActivityType # 'invoice', 'lead', 'job'
+    type: ActivityType  # 'invoice', 'lead', 'job'
     title: str = Field(..., max_length=200)
     description: str = Field(..., max_length=500)
     timestamp: datetime
-    metadata: Optional[Dict[str, Any]] = None # Keeping generic for activity as it varies widely
+    metadata: Optional[Dict[str, Any]] = (
+        None  # Keeping generic for activity as it varies widely
+    )
+
 
 # --- Job Schemas ---
 
+
 class JobListResponse(BaseModel):
-    date: str = Field(..., max_length=20) # YYYY-MM-DD or "Unscheduled"
+    date: str = Field(..., max_length=20)  # YYYY-MM-DD or "Unscheduled"
     jobs: List[JobSchema]
+
 
 class JobCreate(BaseModel):
     customer_id: int = Field(..., ge=1)
@@ -136,9 +173,12 @@ class JobCreate(BaseModel):
     value: Optional[float] = Field(None, ge=0)
     location: Optional[str] = Field(None, max_length=255)
     employee_id: Optional[int] = Field(None, ge=1)
-    estimated_duration: Optional[int] = Field(None, ge=0) # Optional now, will be auto-calculated if items provided
+    estimated_duration: Optional[int] = Field(
+        None, ge=0
+    )  # Optional now, will be auto-calculated if items provided
     postal_code: Optional[str] = Field(None, max_length=20)
     items: Optional[List[LineItemCreate]] = None
+
 
 class JobUpdate(BaseModel):
     description: Optional[str] = Field(None, max_length=1000)
@@ -151,7 +191,9 @@ class JobUpdate(BaseModel):
     postal_code: Optional[str] = Field(None, max_length=20)
     items: Optional[List[LineItemCreate]] = None
 
+
 # --- Chat Schemas ---
+
 
 class ChatMessageMetadataSchema(BaseModel):
     tool_name: Optional[str] = Field(None, max_length=100)
@@ -160,6 +202,7 @@ class ChatMessageMetadataSchema(BaseModel):
     description: Optional[str] = Field(None, max_length=500)
     tool: Optional[str] = Field(None, max_length=100)
     data: Optional[Dict[str, Any]] = None
+
 
 class ChatMessage(BaseModel):
     id: Optional[int] = Field(None, ge=1)
@@ -170,51 +213,61 @@ class ChatMessage(BaseModel):
     is_executed: bool = False
     metadata: Optional[ChatMessageMetadataSchema] = None
 
+
 class ChatMessageUpdate(BaseModel):
     message: str = Field(..., max_length=5000)
+
 
 class ChatSendRequest(BaseModel):
     customer_id: int = Field(..., ge=0)
     message: str = Field(..., max_length=5000)
     retry_id: Optional[str] = Field(None, max_length=100)
 
+
 class ChatExecuteRequest(BaseModel):
     tool_name: str = Field(..., max_length=100)
     arguments: Dict[str, Any]
 
+
 # --- Customer Schemas ---
+
 
 class CustomerCreate(BaseModel):
     name: Optional[str] = Field(None, max_length=200)
     first_name: Optional[str] = Field(None, max_length=100)
     last_name: Optional[str] = Field(None, max_length=100)
+    company_name: Optional[str] = Field(None, max_length=100)
     phone: Optional[str] = Field(None, pattern=PHONE_PATTERN)
     email: Optional[str] = Field(None, pattern=EMAIL_PATTERN)
     street: Optional[str] = Field(None, max_length=255)
     city: Optional[str] = Field(None, max_length=100)
     pipeline_stage: Optional[PipelineStage] = None
+
 
 class CustomerUpdate(BaseModel):
     name: Optional[str] = Field(None, max_length=200)
     first_name: Optional[str] = Field(None, max_length=100)
     last_name: Optional[str] = Field(None, max_length=100)
+    company_name: Optional[str] = Field(None, max_length=100)
     phone: Optional[str] = Field(None, pattern=PHONE_PATTERN)
     email: Optional[str] = Field(None, pattern=EMAIL_PATTERN)
     street: Optional[str] = Field(None, max_length=255)
     city: Optional[str] = Field(None, max_length=100)
     pipeline_stage: Optional[PipelineStage] = None
 
+
 class InvoiceSchema(BaseModel):
     id: int = Field(..., ge=1)
     job_id: int = Field(..., ge=1)
-    invoice_number: Optional[str] = Field(None, max_length=50) # Added
+    invoice_number: Optional[str] = Field(None, max_length=50)  # Added
     total_amount: float = Field(..., ge=0)
     status: InvoiceStatus
     created_at: datetime
     public_url: str = Field(..., max_length=500)
-    customer_name: Optional[str] = Field(None, max_length=200) # Enriched
+    customer_name: Optional[str] = Field(None, max_length=200)  # Enriched
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class InvoiceCreate(BaseModel):
     job_id: int = Field(..., ge=1)
@@ -226,7 +279,9 @@ class InvoiceCreate(BaseModel):
     notes: Optional[str] = Field(None, max_length=1000)
     items: Optional[List[LineItemCreate]] = None
 
+
 # --- Quote Schemas ---
+
 
 class QuoteLineItemSchema(BaseModel):
     id: int = Field(..., ge=1)
@@ -238,10 +293,11 @@ class QuoteLineItemSchema(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class QuoteSchema(BaseModel):
     id: int = Field(..., ge=1)
     customer_id: int = Field(..., ge=1)
-    quote_number: Optional[str] = Field(None, max_length=50) # Added
+    quote_number: Optional[str] = Field(None, max_length=50)  # Added
     total_amount: float = Field(..., ge=0)
     status: QuoteStatus
     external_token: str = Field(..., min_length=1, max_length=100)
@@ -252,6 +308,7 @@ class QuoteSchema(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class QuoteCreate(BaseModel):
     customer_id: int = Field(..., ge=1)
     title: Optional[str] = Field(None, max_length=200)
@@ -260,6 +317,7 @@ class QuoteCreate(BaseModel):
     items: List[LineItemCreate]
     total_amount: Optional[float] = Field(None, ge=0)
     status: QuoteStatus = QuoteStatus.DRAFT
+
 
 class CustomerDetailsSchema(BaseModel):
     first_name: Optional[str] = Field(None, max_length=100)
@@ -270,7 +328,9 @@ class CustomerDetailsSchema(BaseModel):
     city: Optional[str] = Field(None, max_length=100)
     notes: Optional[str] = Field(None, max_length=500)
 
+
 # --- Request Schemas ---
+
 
 class RequestSchema(BaseModel):
     id: int = Field(..., ge=1)
@@ -287,8 +347,9 @@ class RequestSchema(BaseModel):
     created_at: datetime
     customer: Optional[CustomerSchema] = None
     line_items: List[LineItemSchema] = []
-    
+
     model_config = ConfigDict(from_attributes=True)
+
 
 class RequestCreate(BaseModel):
     customer_id: Optional[int] = Field(None, ge=1)
@@ -302,6 +363,7 @@ class RequestCreate(BaseModel):
     follow_up_date: Optional[datetime] = None
     customer_details: Optional[CustomerDetailsSchema] = None
 
+
 class RequestUpdate(BaseModel):
     description: Optional[str] = Field(None, max_length=2000)
     status: Optional[RequestStatus] = None
@@ -314,7 +376,9 @@ class RequestUpdate(BaseModel):
     follow_up_date: Optional[datetime] = None
     customer_id: Optional[int] = Field(None, ge=1)
 
+
 # --- Service Catalog Schemas ---
+
 
 class ServiceSchema(BaseModel):
     id: int = Field(..., ge=1)
@@ -322,8 +386,9 @@ class ServiceSchema(BaseModel):
     description: Optional[str] = Field(None, max_length=500)
     default_price: float = Field(..., ge=0)
     estimated_duration: int = Field(..., ge=0)
-    
+
     model_config = ConfigDict(from_attributes=True)
+
 
 class ServiceCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
@@ -331,7 +396,9 @@ class ServiceCreate(BaseModel):
     default_price: float = Field(..., ge=0)
     estimated_duration: int = Field(60, ge=0)
 
+
 # --- Finance Schemas ---
+
 
 class ExpenseSchema(BaseModel):
     id: int = Field(..., ge=1)
@@ -341,8 +408,9 @@ class ExpenseSchema(BaseModel):
     created_at: datetime
     receipt_url: Optional[str] = Field(None, max_length=500)
     job_id: Optional[int] = None
-    
+
     model_config = ConfigDict(from_attributes=True)
+
 
 class ExpenseCreate(BaseModel):
     amount: float = Field(..., ge=0)
@@ -352,6 +420,7 @@ class ExpenseCreate(BaseModel):
     vendor: Optional[str] = Field(None, max_length=100)
     date: Optional[datetime] = None
 
+
 class LedgerEntrySchema(BaseModel):
     id: int = Field(..., ge=1)
     employee_id: int = Field(..., ge=1)
@@ -359,12 +428,14 @@ class LedgerEntrySchema(BaseModel):
     type: LedgerEntryType
     description: str = Field(..., max_length=500)
     created_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
+
 
 # --- Settings & Workflow ---
 
 # --- Marketing & Automation ---
+
 
 class MarketingTriggerSettingsSchema(BaseModel):
     jobBooked: bool = True
@@ -373,14 +444,19 @@ class MarketingTriggerSettingsSchema(BaseModel):
     reviewRequest: bool = True
     quoteFollowup: bool = False
 
+
 class MarketingTemplateSchema(BaseModel):
     name: str = Field(..., max_length=100)
     text: str = Field(..., max_length=5000)
     status: str = Field("DRAFT", pattern="^(DRAFT|PENDING|APPROVED|REJECTED)$")
 
+
 class MarketingSettingsSchema(BaseModel):
-    triggers: MarketingTriggerSettingsSchema = Field(default_factory=MarketingTriggerSettingsSchema)
+    triggers: MarketingTriggerSettingsSchema = Field(
+        default_factory=MarketingTriggerSettingsSchema
+    )
     templates: Dict[str, MarketingTemplateSchema] = Field(default_factory=dict)
+
 
 class BusinessSettingsSchema(BaseModel):
     workflow_invoicing: Optional[InvoicingWorkflow]
@@ -391,7 +467,9 @@ class BusinessSettingsSchema(BaseModel):
     workflow_enable_reminders: Optional[bool]
     workflow_show_whatsapp_button: Optional[bool]
     workflow_pipeline_quoted_stage: bool
-    workflow_job_creation_default: Optional[JobCreationDefault] = JobCreationDefault.UNSCHEDULED
+    workflow_job_creation_default: Optional[JobCreationDefault] = (
+        JobCreationDefault.UNSCHEDULED
+    )
     workflow_distance_unit: Optional[DistanceUnit] = DistanceUnit.MILES
     workflow_auto_quote_followup: bool
     workflow_quote_followup_delay_hrs: int = Field(..., ge=0)
@@ -409,6 +487,7 @@ class BusinessSettingsSchema(BaseModel):
     invite_code: Optional[str] = Field(None, max_length=50)
     billing_cycle_anchor: Optional[datetime] = None
     marketing_settings: Optional[MarketingSettingsSchema] = None
+
 
 class BusinessSettingsUpdate(BaseModel):
     workflow_invoicing: Optional[InvoicingWorkflow] = None
@@ -432,13 +511,16 @@ class BusinessSettingsUpdate(BaseModel):
     default_tax_rate: Optional[float] = Field(None, ge=0)
     marketing_settings: Optional[MarketingSettingsSchema] = None
 
+
 class WageConfigurationUpdate(BaseModel):
     model_type: Optional[WageModelType] = None
     rate_value: Optional[float] = None
     tax_withholding_rate: Optional[float] = None
     allow_expense_claims: Optional[bool] = None
 
+
 # --- Search ---
+
 
 class SearchResultMetadataSchema(BaseModel):
     phone: Optional[str] = Field(None, max_length=20)
@@ -451,6 +533,7 @@ class SearchResultMetadataSchema(BaseModel):
     status: Optional[str] = Field(None, max_length=50)
     created_at: Optional[str] = Field(None, max_length=50)
 
+
 class SearchResult(BaseModel):
     type: EntityType
     id: int = Field(..., ge=1)
@@ -458,11 +541,14 @@ class SearchResult(BaseModel):
     subtitle: Optional[str] = Field(None, max_length=200)
     metadata: Optional[SearchResultMetadataSchema] = None
 
+
 class GlobalSearchResponse(BaseModel):
     query: str = Field(..., max_length=200)
     results: List[SearchResult]
 
+
 # --- Routing Schemas ---
+
 
 class RoutingStep(BaseModel):
     job_id: int = Field(..., ge=1)
@@ -472,22 +558,26 @@ class RoutingStep(BaseModel):
     duration_to_next: Optional[float] = Field(None, ge=0)
     job: JobSchema
 
+
 class RouteSchema(BaseModel):
     employee_id: int = Field(..., ge=1)
     employee_name: str = Field(..., max_length=100)
     steps: List[RoutingStep]
 
+
 class RoutingMetrics(BaseModel):
-    total_distance: float = Field(..., ge=0) # meters
-    total_duration: float = Field(..., ge=0) # seconds
+    total_distance: float = Field(..., ge=0)  # meters
+    total_duration: float = Field(..., ge=0)  # seconds
     jobs_assigned: int = Field(..., ge=0)
     unassigned_count: int = Field(..., ge=0)
+
 
 class RoutingResponse(BaseModel):
     date: str = Field(..., max_length=20)
     metrics: RoutingMetrics
     routes: List[RouteSchema]
     unassigned_jobs: List[JobSchema]
+
 
 class GeocodeResponse(BaseModel):
     latitude: Optional[float] = Field(None, ge=-90, le=90)
@@ -498,9 +588,11 @@ class GeocodeResponse(BaseModel):
     postal_code: Optional[str] = Field(None, max_length=20)
     full_address: Optional[str] = Field(None, max_length=500)
 
+
 class AddressSearchType(str, Enum):
     CUSTOMER = "customer"
     JOB = "job"
+
 
 class AddressSearchResult(BaseModel):
     id: int = Field(..., ge=1)
@@ -511,6 +603,7 @@ class AddressSearchResult(BaseModel):
 
 # --- Data Management ---
 
+
 class ImportJobSchema(BaseModel):
     id: int = Field(..., ge=1)
     filename: Optional[str] = Field(None, max_length=255)
@@ -520,6 +613,7 @@ class ImportJobSchema(BaseModel):
     completed_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class ExportRequestSchema(BaseModel):
     id: int = Field(..., ge=1)
@@ -532,15 +626,19 @@ class ExportRequestSchema(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class DataActivitySchema(BaseModel):
     imports: List[ImportJobSchema]
     exports: List[ExportRequestSchema]
 
+
 class ExportCreateRequest(BaseModel):
     query: Optional[str] = Field(None, max_length=500)
-    format: ExportFormat # 'CSV', 'Excel', 'JSON'
+    format: ExportFormat  # 'CSV', 'Excel', 'JSON'
+
 
 # --- Marketing Schemas ---
+
 
 class CampaignSchema(BaseModel):
     id: int = Field(..., ge=1)
@@ -554,6 +652,7 @@ class CampaignSchema(BaseModel):
     sent_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class CampaignCreate(BaseModel):
     name: str = Field(..., max_length=100)
@@ -569,6 +668,7 @@ class WhatsAppButtonType(str, Enum):
     URL = "URL"
     COPY_CODE = "COPY_CODE"
 
+
 class WhatsAppButtonSchema(BaseModel):
     type: WhatsAppButtonType
     text: Optional[str] = Field(None, max_length=128)
@@ -576,12 +676,14 @@ class WhatsAppButtonSchema(BaseModel):
     url: Optional[str] = Field(None, max_length=2000)
     example: Optional[List[str]] = None
 
+
 class WhatsAppTemplateComponentSchema(BaseModel):
     type: str = Field(..., pattern="^(HEADER|BODY|FOOTER|BUTTONS)$")
     format: Optional[str] = Field(None, pattern="^(TEXT|IMAGE|VIDEO|DOCUMENT)$")
     text: Optional[str] = Field(None, max_length=2000)
     example: Optional[Dict[str, Any]] = None
     buttons: Optional[List[WhatsAppButtonSchema]] = None
+
 
 class WhatsAppTemplateSchema(BaseModel):
     id: int = Field(..., ge=1)
@@ -594,6 +696,7 @@ class WhatsAppTemplateSchema(BaseModel):
     rejection_reason: Optional[str] = Field(None, max_length=500)
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class WhatsAppTemplateCreate(BaseModel):
     name: str = Field(..., max_length=100)

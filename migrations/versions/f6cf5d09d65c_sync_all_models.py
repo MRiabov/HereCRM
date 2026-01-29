@@ -5,13 +5,13 @@ Revises: f71c2f67e64c
 Create Date: 2026-01-26 19:43:34.668267
 
 """
+
 from typing import Sequence, Union
 
 
-
 # revision identifiers, used by Alembic.
-revision: str = 'f6cf5d09d65c'
-down_revision: Union[str, Sequence[str], None] = 'f71c2f67e64c'
+revision: str = "f6cf5d09d65c"
+down_revision: Union[str, Sequence[str], None] = "f71c2f67e64c"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

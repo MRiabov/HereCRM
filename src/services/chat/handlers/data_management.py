@@ -8,13 +8,14 @@ from src.uimodels import ExitDataManagementTool, ExportQueryTool
 from src.services.chat.handlers.base import ChatHandler
 import logging
 
+
 class DataManagementHandler(ChatHandler):
     def __init__(
         self,
         session: AsyncSession,
         parser: LLMParser,
         template_service: TemplateService,
-        data_service: DataManagementService
+        data_service: DataManagementService,
     ):
         self.session = session
         self.parser = parser
@@ -28,7 +29,7 @@ class DataManagementHandler(ChatHandler):
         state_record: ConversationState,
         message_text: str,
         media_url: Optional[str] = None,
-        media_type: Optional[str] = None
+        media_type: Optional[str] = None,
     ) -> str:
         # Handle file upload for import
         if media_url:
@@ -55,7 +56,7 @@ class DataManagementHandler(ChatHandler):
                     "entity_type": tool_call.entity_type,
                     "status": tool_call.status,
                     "min_date": tool_call.min_date,
-                    "max_date": tool_call.max_date
+                    "max_date": tool_call.max_date,
                 }
                 filters = {k: v for k, v in filters.items() if v is not None}
 
