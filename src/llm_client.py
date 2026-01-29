@@ -492,6 +492,9 @@ class LLMParser:
         for attempt in range(2):
             try:
                 start_time = time.perf_counter()
+                if os.getenv("DEBUG_LLM"):
+                    print(f"\n--- LLM MESSAGES ---\n{json.dumps(messages, indent=2)}")
+                    print(f"\n--- LLM TOOLS ---\n{json.dumps(tools, indent=2)}")
                 response = await self.client.chat.completions.create(
                     model=self.model,
                     messages=messages,
