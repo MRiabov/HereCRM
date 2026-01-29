@@ -1,6 +1,7 @@
 from pydantic.v1 import BaseModel, Field
 from typing import Optional
 
+
 class ShowScheduleTool(BaseModel):
     """Show the schedule for all employees for today.
     Use this when the user wants to see what the team is doing or check availability."""

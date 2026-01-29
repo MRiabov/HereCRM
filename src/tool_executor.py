@@ -43,6 +43,7 @@ from src.services.workflow import WorkflowSettingsService
 from src.services.expenses import ExpenseService
 from src.services.time_tracking import TimeTrackingService
 from src.services.quote_service import QuoteService
+from src.lib.text_formatter import render_schedule_report
 from src.uimodels import (
     AddJobTool,
     AddLeadTool,
@@ -94,6 +95,7 @@ from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.quote_tools import QuoteCreationHandler
 from src.tools.routing_tools import AutorouteToolExecutor
 from src.tools.employee_management import (
+    ShowScheduleTool,
     AssignJobTool,
     PromoteUserTool,
     DismissUserTool,
@@ -407,6 +409,8 @@ class ToolExecutor:
              return await self.job_time_tools.finish_job(tool_call), None
         elif isinstance(tool_call, AddExpenseTool):
              return await self.expense_tools.add_expense(tool_call, self.user_id)
+        elif isinstance(tool_call, ShowScheduleTool):
+             return await self._execute_show_schedule(tool_call)
         return "Unknown tool call", None
 
     # ... (other methods unchanged)
@@ -1317,6 +1321,67 @@ class ToolExecutor:
             "customer_name": customer.name
         }
 
+
+    async def _execute_show_schedule(
+        self, tool: ShowScheduleTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        from datetime import date
+        target_date = date.today()
+        if tool.date:
+            try:
+                target_date = date.fromisoformat(tool.date)
+            except ValueError:
+                return self.template_service.render("error_invalid_date", date=tool.date), None
+
+        # Use CRMService for data fetching
+        crm_service = CRMService(self.session, self.business_id)
+        schedule = await crm_service.get_employee_schedules(target_date)
+        unscheduled = await crm_service.get_unscheduled_jobs()
+        
+        # Render report using the new template
+        report_employees = []
+        for emp, jobs in schedule.items():
+            if emp is None:
+                continue
+            report_employees.append({"name": emp.name, "jobs": jobs})
+            
+        report = render_schedule_report({
+            "employees": report_employees,
+            "UNSCHEDULED": unscheduled,
+            "date_str": target_date.strftime("%Y-%m-%d")
+        })
+        
+        # Serialize data for the frontend
+        serialized_employees = []
+        for emp, jobs in schedule.items():
+            if emp is None:
+                continue
+            serialized_employees.append({
+                "name": emp.name,
+                "role": emp.role,
+                "jobs": [{
+                    "id": job.id,
+                    "customer_name": job.customer.name if job.customer else "Unknown",
+                    "description": job.description,
+                    "scheduled_at": job.scheduled_at.isoformat() if job.scheduled_at else None,
+                    "status": job.status
+                } for job in jobs]
+            })
+
+        serialized_unscheduled = [{
+            "id": job.id,
+            "customer_name": job.customer.name if job.customer else "Unknown",
+            "description": job.description,
+            "status": job.status
+        } for job in unscheduled]
+
+        return report, {
+            "action": "query", 
+            "entity": "schedule_report", # Changed from 'dashboard'
+            "date": target_date.isoformat(),
+            "employees": serialized_employees,
+            "UNSCHEDULED": serialized_unscheduled
+        }
 
     async def _execute_assign_job(
         self, tool: AssignJobTool

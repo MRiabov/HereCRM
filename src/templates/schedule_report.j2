@@ -1,0 +1,21 @@
+
+### Daily Schedule for {{ date_str }}
+
+{% for employee in employees %}
+**{{ employee.name }}**:
+{% if employee.jobs %}
+{% for job in employee.jobs %}
+- **{{ job.scheduled_at.strftime('%H:%M') }}**: {{ job.customer.name }} - {{ job.description }} ({{ job.status.value }})
+{% endfor %}
+{% else %}
+- *No jobs scheduled*
+{% endif %}
+
+{% endfor %}
+
+{% if UNSCHEDULED %}
+**Unscheduled / Backlog**:
+{% for job in UNSCHEDULED %}
+- {{ job.customer.name }}: {{ job.description }} (ID: {{ job.id }})
+{% endfor %}
+{% endif %}

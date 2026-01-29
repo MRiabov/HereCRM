@@ -39,7 +39,6 @@ from src.uimodels import (
 )
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.employee_management import (
-    ShowScheduleTool,
     AssignJobTool,
     InviteUserTool,
     ExitEmployeeManagementTool,
@@ -216,14 +215,6 @@ class LLMParser:
                 "name": "SendInvoiceTool",
                 "description": "Send a professional PDF invoice to a customer for their last job.",
                 "parameters": SendInvoiceTool.schema(),
-            },
-        })
-        self.tools.append({
-            "type": "function",
-            "function": {
-                "name": "ShowScheduleTool",
-                "description": tool_desc.get("ShowScheduleTool", "Show the schedule for all employees for today. Use when user wants to see team status."),
-                "parameters": ShowScheduleTool.schema(),
             },
         })
         self.tools.append({
@@ -817,7 +808,6 @@ class LLMParser:
             "SendStatusTool": SendStatusTool,
             "GetBillingStatusTool": GetBillingStatusTool,
             "RequestUpgradeTool": RequestUpgradeTool,
-            "ShowScheduleTool": ShowScheduleTool,
             "AssignJobTool": AssignJobTool,
             "CreateQuoteTool": CreateQuoteTool,
             "LocateEmployeeTool": LocateEmployeeTool,
