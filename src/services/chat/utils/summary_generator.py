@@ -62,13 +62,12 @@ class SummaryGenerator:
                 address=customer.street if customer else "Not supplied", # Assuming street for address
             )
 
-            line_items_detail = ""
             total_amount = 0.0
             if tool_call.items:
-                line_items_detail = "\nItems:"
                 for item in tool_call.items:
-                    line_items_detail += f"\n- {item.description}: {item.quantity} x ${item.price:.2f}"
                     total_amount += item.quantity * item.price
+
+            line_items_detail = self.template_service.render("quote_line_items_detail", items=tool_call.items)
 
             summary = self.template_service.render(
                 "quote_summary",
@@ -130,18 +129,14 @@ class SummaryGenerator:
             )
 
         if isinstance(tool_call, EditCustomerTool):
-            changes = []
-            if tool_call.name:
-                changes.append(f"Name to '{tool_call.name}'")
-            if tool_call.phone:
-                changes.append(f"Phone to '{tool_call.phone}'")
-            if tool_call.location:
-                changes.append(f"Address to '{tool_call.location}'")
-            if tool_call.details:
-                changes.append(f"Notes to '{tool_call.details}'")
-
-            change_summary = ", ".join(changes) if changes else "no changes"
-            return f"Updating {tool_call.query}: {change_summary}"
+            return self.template_service.render(
+                "edit_customer_summary",
+                query=tool_call.query,
+                name=tool_call.name,
+                phone=tool_call.phone,
+                location=tool_call.location,
+                details=tool_call.details
+            )
 
         if isinstance(tool_call, ScheduleJobTool):
             customers = await customer_repo.search(tool_call.customer_query, user.business_id) if tool_call.customer_query else []
@@ -213,14 +208,11 @@ class SummaryGenerator:
             return f"request upgrade for {tool_call.quantity} x {item}"
 
         if isinstance(tool_call, ConvertRequestTool):
-            action_map = {
-                "schedule": "Schedule",
-                "complete": "Complete",
-                "log": "Log",
-                "quote": "Quote"
-            }
-            act = action_map.get(tool_call.action, tool_call.action).capitalize()
-            return f"Convert to {act}: {tool_call.query}"
+            return self.template_service.render(
+                "convert_request_summary",
+                query=tool_call.query,
+                action=tool_call.action
+            )
 
         if hasattr(tool_call, "description") and tool_call.description:
             return f"{name}: {tool_call.description}"

@@ -89,6 +89,9 @@ class LLMParser:
         
         # We reuse TemplateService as a generic YAML loader for prompts
         self.prompts_service = TemplateService(yaml_path=prompts_path)
+        # Also load message templates for prompt construction macros
+        self.message_service = TemplateService()
+
         tool_desc = self.prompts_service.templates.get("tool_descriptions", {})
         self.system_instruction = self.prompts_service.render("system_instruction")
 
@@ -764,29 +767,20 @@ class LLMParser:
         # We removed strict "help" and "hi" filtering to let the LLM handle 
         # varied intents and context better, especially for PWA chat.
 
-        # 2. Construct Prompt
-        system_instruction = self.prompts_service.render("system_instruction")
-        if service_catalog:
-            system_instruction += self.prompts_service.render(
-                "service_catalog_matching", service_catalog=service_catalog
-            )
+        # 2. Construct Prompt using Jinja macro
+        base_instruction = self.prompts_service.render("system_instruction")
         
-        if user_context:
-            system_instruction += f"\n\nUSER CONTEXT:\n- Role: {user_context.get('role', 'unknown')}\n"
-            if "active_addons" in user_context:
-                system_instruction += f"- Active Addons: {user_context['active_addons']}\n"
-            for key, val in user_context.items():
-                if key not in ["role", "active_addons", "channel"]:
-                     system_instruction += f"- {key}: {val}\n"
-
-        # 3. Channel constraints
         config_loader = get_channel_config_loader()
         channel_config = config_loader.get_channel_config(channel_name)
         max_length = channel_config.get("max_length", 4096)
-        
-        # If max_length is restrictive (e.g. SMS), add instruction
-        if max_length < 200:
-             system_instruction += f"\nIMPORTANT: The user is on a character-limited channel (max {max_length} chars). Keep your response Extremely concise. No fluff."
+
+        system_instruction = self.message_service.render(
+            "system_instruction_full",
+            base_instruction=base_instruction,
+            service_catalog=service_catalog,
+            user_context=user_context,
+            max_length=max_length
+        )
 
         messages = [{"role": "system", "content": system_instruction}]
 

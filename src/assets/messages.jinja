@@ -567,3 +567,64 @@ Once connected, your assigned jobs will automatically appear as events on your c
 {% macro google_calendar_disconnected() -%}
 ✅ Google Calendar has been disconnected.
 {%- endmacro %}
+
+{% macro system_instruction_full(base_instruction, service_catalog, user_context, max_length) -%}
+{{ base_instruction }}
+
+{% if service_catalog %}
+SERVICE CATALOG MATCHING:
+The following services are available (ID: Name - Price):
+{{ service_catalog }}
+
+MATCHING RULES:
+1. If a line item matches a service in the CATALOG (semantically or strictly - most of the time there is a match):
+   - Set 'service_id' to the integer ID from the catalog.
+   - Set 'service_name' to the EXACT Name from the catalog.
+   - Set 'description' to the EXACT catalog service name. DO NOT shorten or abbreviate!
+     Example: If catalog has "Exterior Window Cleaning", use "Exterior Window Cleaning" - NOT "windows".
+   - Set 'unit_price' to the catalog price (unless user specifies a custom overriding price).
+   - ALWAYS leave 'total_price' as NULL; the backend will calculate it from quantity and unit price.
+2. If NO match is found in the catalog, leave 'service_id' and 'service_name' as null and extract details from text.
+{% endif %}
+
+{% if user_context %}
+
+USER CONTEXT:
+- Role: {{ user_context.get('role', 'unknown') }}
+{% if user_context.get('active_addons') %}
+- Active Addons: {{ user_context.get('active_addons') }}
+{% endif %}
+{% for key, val in user_context.items() %}
+{% if key not in ['role', 'active_addons', 'channel'] %}
+- {{ key }}: {{ val }}
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if max_length and max_length < 200 %}
+IMPORTANT: The user is on a character-limited channel (max {{ max_length }} chars). Keep your response Extremely concise. No fluff.
+{% endif %}
+{%- endmacro %}
+
+{% macro edit_customer_summary(query, name, phone, location, details) -%}
+Updating {{ query }}:
+{%- set changes = [] -%}
+{%- if name -%}{% set _ = changes.append("Name to '" ~ name ~ "'") %}{%- endif -%}
+{%- if phone -%}{% set _ = changes.append("Phone to '" ~ phone ~ "'") %}{%- endif -%}
+{%- if location -%}{% set _ = changes.append("Address to '" ~ location ~ "'") %}{%- endif -%}
+{%- if details -%}{% set _ = changes.append("Notes to '" ~ details ~ "'") %}{%- endif -%}
+{{ changes | join(", ") if changes else "no changes" }}
+{%- endmacro %}
+
+{% macro convert_request_summary(query, action) -%}
+Convert to {{ action | capitalize }}: {{ query }}
+{%- endmacro %}
+
+{% macro quote_line_items_detail(items) -%}
+{% if items %}
+Items:
+{% for item in items %}
+- {{ item.description }}: {{ item.quantity }} x ${{ "%.2f"|format(item.price) }}
+{% endfor %}
+{% endif %}
+{%- endmacro %}

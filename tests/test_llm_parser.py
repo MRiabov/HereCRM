@@ -160,7 +160,8 @@ async def test_parse_search(mock_parser):
     result = await parser.parse("find jobs for John")
     assert isinstance(result, SearchTool)
     assert result.query == "John"
-    assert result.entity_type == "job"
+    # Pydantic converts "job" to EntityType.JOB ("JOB")
+    assert result.entity_type == "JOB"
 
 
 @pytest.mark.asyncio
