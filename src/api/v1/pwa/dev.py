@@ -15,7 +15,7 @@ from src.models import (
     Invitation, InvitationStatus, Message, MessageRole, MessageType,
     MessageStatus, MessageLog, MessageTriggerSource, Payment, PaymentMethod,
     PaymentStatus, SyncLog, SyncType, SyncLogStatus, ConversationStatus,
-    ConversationState
+    ConversationState, IntegrationConfig, Document
 )
 from datetime import datetime, timedelta, timezone
 import logging
@@ -24,7 +24,7 @@ import uuid
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-async def populate_demo_data(db: AsyncSession):
+async def populate_demo_data(db: AsyncSession, owner_clerk_id: str):
     # 1. Create a Demo Business
     business = Business(
         name="Demo Home Services",
@@ -38,9 +38,6 @@ async def populate_demo_data(db: AsyncSession):
     await db.flush()
 
     # 2. Create Users
-    # Use the actual clerk ID from E2E tests if available, otherwise fallback
-    owner_clerk_id = "user_38td2lMr5JN9ZvyReFkzCKh6E2B" 
-    
     owner = User(
         clerk_id=owner_clerk_id,
         name="Demo Owner",
@@ -90,13 +87,13 @@ async def populate_demo_data(db: AsyncSession):
 
     # 4. Create Customers
     customers = [
-        Customer(business_id=business.id, name="John Doe", phone="+353871234567", email="john@example.com", street="123 Main St", city="Dublin", pipeline_stage=PipelineStage.CONTACTED),
-        Customer(business_id=business.id, name="Jane Smith", phone="+353871234569", email="jane@example.com", street="45 Grafton St", city="Dublin", pipeline_stage=PipelineStage.QUOTED),
-        Customer(business_id=business.id, name="Alice Wonderland", phone="+353871111112", email="alice@example.com", street="123 O'Connell St", city="Dublin", pipeline_stage=PipelineStage.CONTACTED),
-        Customer(business_id=business.id, name="Bob Builder", phone="+353874444444", email="bob@example.com", street="78 Wall St", city="Dublin", pipeline_stage=PipelineStage.NOT_CONTACTED),
-        Customer(business_id=business.id, name="Charlie Brown", phone="+353875555555", email="charlie@example.com", street="10 Temple Bar", city="Dublin", pipeline_stage=PipelineStage.NOT_CONTACTED),
-        Customer(business_id=business.id, name="John Smith", phone="+353871234568", email="john.smith@example.com", street="124 Main St", city="Dublin", pipeline_stage=PipelineStage.CONTACTED),
-        Customer(business_id=business.id, name="Test Customer", phone="+353879999999", email="test@example.com", street="99 Test Rd", city="Dublin", pipeline_stage=PipelineStage.NOT_CONTACTED),
+        Customer(business_id=business.id, name="John Doe", first_name="John", last_name="Doe", phone="+353871234567", email="john@example.com", street="123 Main St", city="Dublin", pipeline_stage=PipelineStage.CONTACTED),
+        Customer(business_id=business.id, name="Jane Smith", first_name="Jane", last_name="Smith", phone="+353871234569", email="jane@example.com", street="45 Grafton St", city="Dublin", pipeline_stage=PipelineStage.QUOTED),
+        Customer(business_id=business.id, name="Alice Wonderland", first_name="Alice", last_name="Wonderland", phone="+353871111112", email="alice@example.com", street="123 O'Connell St", city="Dublin", pipeline_stage=PipelineStage.CONTACTED),
+        Customer(business_id=business.id, name="Bob Builder", first_name="Bob", last_name="Builder", phone="+353874444444", email="bob@example.com", street="78 Wall St", city="Dublin", pipeline_stage=PipelineStage.NOT_CONTACTED),
+        Customer(business_id=business.id, name="Charlie Brown", first_name="Charlie", last_name="Brown", phone="+353875555555", email="charlie@example.com", street="10 Temple Bar", city="Dublin", pipeline_stage=PipelineStage.NOT_CONTACTED),
+        Customer(business_id=business.id, name="John Smith", first_name="John", last_name="Smith", phone="+353871234568", email="john.smith@example.com", street="124 Main St", city="Dublin", pipeline_stage=PipelineStage.CONTACTED),
+        Customer(business_id=business.id, name="Test Customer", first_name="Test", last_name="Customer", phone="+353879999999", email="test@example.com", street="99 Test Rd", city="Dublin", pipeline_stage=PipelineStage.NOT_CONTACTED),
     ]
     db.add_all(customers)
     await db.flush()
@@ -109,6 +106,9 @@ async def populate_demo_data(db: AsyncSession):
         description="Fix leaking tap",
         status=JobStatus.COMPLETED,
         value=150.0,
+        subtotal=138.57,
+        tax_amount=11.43,
+        tax_rate=8.25,
         location="123 Main St",
         employee_id=tech1.id,
         scheduled_at=datetime.now(timezone.utc) - timedelta(days=2),
@@ -121,6 +121,9 @@ async def populate_demo_data(db: AsyncSession):
         description="Morning Repair",
         status=JobStatus.SCHEDULED,
         value=120.0,
+        subtotal=110.85,
+        tax_amount=9.15,
+        tax_rate=8.25,
         location="45 Grafton St",
         employee_id=tech1.id,
         scheduled_at=datetime.now(timezone.utc).replace(hour=10, minute=0, second=0, microsecond=0) + timedelta(days=1)
@@ -132,6 +135,9 @@ async def populate_demo_data(db: AsyncSession):
         description="Afternoon Install",
         status=JobStatus.SCHEDULED,
         value=300.0,
+        subtotal=277.14,
+        tax_amount=22.86,
+        tax_rate=8.25,
         location="123 O'Connell St",
         employee_id=tech2.id,
         scheduled_at=datetime.now(timezone.utc).replace(hour=14, minute=0, second=0, microsecond=0) + timedelta(days=1)
@@ -143,6 +149,9 @@ async def populate_demo_data(db: AsyncSession):
         description="John Boiler Repair",
         status=JobStatus.PENDING,
         value=500.0,
+        subtotal=461.89,
+        tax_amount=38.11,
+        tax_rate=8.25,
         location="124 Main St",
         scheduled_at=datetime.now(timezone.utc) + timedelta(days=3)
     )
@@ -153,6 +162,9 @@ async def populate_demo_data(db: AsyncSession):
         description="Test Job",
         status=JobStatus.PENDING,
         value=100.0,
+        subtotal=92.38,
+        tax_amount=7.62,
+        tax_rate=8.25,
         location="99 Test Rd",
         scheduled_at=datetime.now(timezone.utc) + timedelta(days=4)
     )
@@ -163,6 +175,9 @@ async def populate_demo_data(db: AsyncSession):
         description="Fix Leak",
         status=JobStatus.COMPLETED,
         value=150.0,
+        subtotal=138.57,
+        tax_amount=11.43,
+        tax_rate=8.25,
         location="10 Temple Bar",
         scheduled_at=datetime.now(timezone.utc) - timedelta(days=1)
     )
@@ -172,6 +187,9 @@ async def populate_demo_data(db: AsyncSession):
         description="AC Service",
         status=JobStatus.SCHEDULED,
         value=200.0,
+        subtotal=184.76,
+        tax_amount=15.24,
+        tax_rate=8.25,
         location="10 Temple Bar",
         scheduled_at=datetime.now(timezone.utc) + timedelta(days=2)
     )
@@ -199,9 +217,9 @@ async def populate_demo_data(db: AsyncSession):
         business_id=business.id,
         status=QuoteStatus.SENT,
         total_amount=500.0,
-        subtotal=500.0,
-        tax_amount=0.0,
-        tax_rate=0.0,
+        subtotal=461.89,
+        tax_amount=38.11,
+        tax_rate=8.25,
         title="Standard Maintenance",
         external_token=str(uuid.uuid4()),
         created_at=datetime.now(timezone.utc) - timedelta(days=3)
@@ -230,6 +248,9 @@ async def populate_demo_data(db: AsyncSession):
         description="Leaking pipe in kitchen",
         status=RequestStatus.PENDING,
         urgency=Urgency.HIGH,
+        subtotal=0,
+        tax_amount=0,
+        tax_rate=0,
         created_at=datetime.now(timezone.utc) - timedelta(hours=5)
     )
     db.add(req1)
@@ -309,7 +330,9 @@ async def reset_db(
             await conn.run_sync(Base.metadata.create_all)
         
         # Re-populate
-        await populate_demo_data(db)
+        if not current_user.clerk_id:
+             raise HTTPException(status_code=400, detail="Current user has no Clerk ID")
+        await populate_demo_data(db, current_user.clerk_id)
         
         return {"status": "SUCCESS", "message": "Database reset and demo data populated. You might need to sign in again if your user was deleted (but demo users were created)."}
     except Exception as e:
