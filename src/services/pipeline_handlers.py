@@ -61,7 +61,8 @@ async def handle_job_created(data: dict) -> None:
         logger.error("Missing customer_id or business_id in JOB_CREATED event")
         return
 
-    async with src.database.AsyncSessionLocal() as session:
+    session_maker = await src.database.get_session_maker()
+    async with session_maker() as session:
         job_repo = JobRepository(session)
         customer_repo = CustomerRepository(session)
         
@@ -97,7 +98,8 @@ async def handle_contact_event(data: dict) -> None:
     if not customer_id or not business_id:
         return
 
-    async with src.database.AsyncSessionLocal() as session:
+    session_maker = await src.database.get_session_maker()
+    async with session_maker() as session:
         customer_repo = CustomerRepository(session)
         customer = await customer_repo.get_by_id(customer_id, business_id)
         

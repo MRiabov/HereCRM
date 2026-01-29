@@ -1,4 +1,5 @@
 import jwt
+import asyncio
 from fastapi import Request, HTTPException, status, Depends
 from jwt import PyJWKClient
 from src.config import settings
@@ -16,6 +17,7 @@ class VerifyToken:
             raise ValueError("CLERK_JWKS_URL is not configured")
         self.jwks_client = PyJWKClient(settings.clerk_jwks_url)
         self.clerk_client = Clerk(bearer_auth=settings.clerk_secret_key)
+        self._mock_user_lock = asyncio.Lock()
 
     async def __call__(self, request: Request, db: AsyncSession = Depends(get_db)) -> User:
         import os
@@ -128,52 +130,59 @@ class VerifyToken:
         # Get or create a mock user
         from sqlalchemy.exc import IntegrityError
         
-        # Try to find existing user first
+        # Try to find existing user first without lock
         result = await db.execute(select(User).options(joinedload(User.business)).where(User.email == "mock@example.com"))
         user = result.scalar_one_or_none()
         if user:
             return user
 
-        # Not found, try to create
-        try:
-            # Create Mock Business if not exists
-            biz_result = await db.execute(select(Business).where(Business.name == "Mock Business"))
-            business = biz_result.scalar_one_or_none()
-            if not business:
-                business = Business(name="Mock Business", clerk_org_id="org_mock")
-                db.add(business)
-                try:
-                    await db.flush()
-                except IntegrityError:
-                    # Someone else might have created it
-                    await db.rollback()
-                    biz_result = await db.execute(select(Business).where(Business.name == "Mock Business"))
-                    business = biz_result.scalar_one_or_none()
-            
-            if not business:
-                # This shouldn't happen if rollback worked and we re-fetched
-                raise Exception("Failed to resolve Mock Business")
-
-            user = User(
-                clerk_id="user_mock",
-                name="Mock User",
-                email="mock@example.com",
-                phone_number="5550000",
-                business_id=business.id,
-                role=UserRole.OWNER
-            )
-            db.add(user)
-            await db.commit()
-            await db.refresh(user)
-            return user
-        except IntegrityError:
-            # Concurrent creation attempt, rollback and fetch again
-            await db.rollback()
+        async with self._mock_user_lock:
+            # Re-check after acquiring lock
             result = await db.execute(select(User).options(joinedload(User.business)).where(User.email == "mock@example.com"))
             user = result.scalar_one_or_none()
             if user:
                 return user
-            raise
+
+            # Not found, try to create
+            try:
+                # Create Mock Business if not exists
+                biz_result = await db.execute(select(Business).where(Business.name == "Mock Business"))
+                business = biz_result.scalar_one_or_none()
+                if not business:
+                    business = Business(name="Mock Business", clerk_org_id="org_mock")
+                    db.add(business)
+                    try:
+                        await db.flush()
+                    except IntegrityError:
+                        # Someone else might have created it (though lock should prevent this in same process)
+                        await db.rollback()
+                        biz_result = await db.execute(select(Business).where(Business.name == "Mock Business"))
+                        business = biz_result.scalar_one_or_none()
+                
+                if not business:
+                    # This shouldn't happen if rollback worked and we re-fetched
+                    raise Exception("Failed to resolve Mock Business")
+
+                user = User(
+                    clerk_id="user_mock",
+                    name="Mock User",
+                    email="mock@example.com",
+                    phone_number="5550000",
+                    business_id=business.id,
+                    role=UserRole.OWNER
+                )
+                db.add(user)
+                await db.commit()
+                await db.refresh(user)
+                return user
+            except IntegrityError:
+                # Concurrent creation attempt, rollback and fetch again
+                await db.rollback()
+                result = await db.execute(select(User).options(joinedload(User.business)).where(User.email == "mock@example.com"))
+                user = result.scalar_one_or_none()
+                if user:
+                    return user
+                raise
 
 
 # Singleton instance for route injection

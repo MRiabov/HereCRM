@@ -104,6 +104,13 @@ class EngineRegistry:
 
 engine_registry = EngineRegistry()
 
+async def get_session_maker() -> async_sessionmaker:
+    """Utility to get the correct session maker based on current ContextVar."""
+    db_name = current_db_name.get()
+    if db_name:
+        return await engine_registry.get_session_maker(db_name)
+    return AsyncSessionLocal
+
 async def get_db(request: Optional[Any] = None):
     # Try to get database name from header for test isolation
     db_name = None
