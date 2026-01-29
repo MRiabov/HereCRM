@@ -51,7 +51,7 @@ class VerifyToken:
                 return await self._get_mock_user(db)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Token validation failed: {str(e)}",
+                detail="Token validation failed",
             )
 
         clerk_id = payload.get("sub")
@@ -124,7 +124,7 @@ class VerifyToken:
             return user
         except Exception as e:
             await db.rollback()
-            raise HTTPException(status_code=500, detail=f"JIT sync failed: {str(e)}")
+            raise HTTPException(status_code=500, detail="User synchronization failed")
 
     async def _get_mock_user(self, db: AsyncSession) -> User:
         # Get or create a mock user
