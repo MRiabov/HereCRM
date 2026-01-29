@@ -6,10 +6,14 @@ from sqlalchemy.pool import StaticPool
 import logging
 import os
 import asyncio
-from typing import Dict
+from typing import Dict, Optional, Any
+from contextvars import ContextVar
 
 # Using relative path for SQLite database as default
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./data/crm.db")
+
+# ContextVar to track current test database name for background workers
+current_db_name: ContextVar[Optional[str]] = ContextVar("current_db_name", default=None)
 
 # Helper to ensure database directory exists if using SQLite
 if "sqlite" in DATABASE_URL:
@@ -106,13 +110,17 @@ async def get_db(request: Optional[Any] = None):
     if request:
         db_name = request.headers.get("X-Test-Database")
     
-    if db_name:
-        session_maker = await engine_registry.get_session_maker(db_name)
-    else:
-        session_maker = AsyncSessionLocal
+    token = current_db_name.set(db_name)
+    try:
+        if db_name:
+            session_maker = await engine_registry.get_session_maker(db_name)
+        else:
+            session_maker = AsyncSessionLocal
 
-    async with session_maker() as session:
-        yield session
+        async with session_maker() as session:
+            yield session
+    finally:
+        current_db_name.reset(token)
 
 
 # Credentials database setup (SQLCipher-encrypted)

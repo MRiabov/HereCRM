@@ -274,6 +274,14 @@ class MessagingService:
             await self._worker_task
             logger.info("MessagingService stopped")
 
+    async def _get_session_maker(self):
+        from src.database import current_db_name
+        db_name = current_db_name.get()
+        if db_name:
+            from src.database import engine_registry
+            return await engine_registry.get_session_maker(db_name)
+        return self.session_factory
+
     # Event Handlers
 
     async def handle_job_created(self, data: dict):
@@ -290,7 +298,8 @@ class MessagingService:
             
         logger.info(f"Handling JOB_CREATED for job {job_id}")
         
-        async with self.session_factory() as db:
+        session_maker = await self._get_session_maker()
+        async with session_maker() as db:
             customer_repo = CustomerRepository(db)
             customer = await customer_repo.get_by_id(customer_id, business_id)
             
@@ -322,7 +331,8 @@ class MessagingService:
             
         logger.info(f"Handling JOB_SCHEDULED for job {job_id}")
         
-        async with self.session_factory() as db:
+        session_maker = await self._get_session_maker()
+        async with session_maker() as db:
             customer_repo = CustomerRepository(db)
             customer = await customer_repo.get_by_id(customer_id, business_id)
             
@@ -353,7 +363,8 @@ class MessagingService:
             
         logger.info(f"Handling ON_MY_WAY for customer {customer_id}")
         
-        async with self.session_factory() as db:
+        session_maker = await self._get_session_maker()
+        async with session_maker() as db:
             customer_repo = CustomerRepository(db)
             customer = await customer_repo.get_by_id(customer_id, business_id)
             
