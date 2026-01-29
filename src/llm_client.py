@@ -60,11 +60,26 @@ from src.config.loader import get_channel_config_loader
 class LLMParser:
     def __init__(self, prompts_path: Optional[str] = None):
         self.logger = logging.getLogger(__name__)
-        self.client = AsyncOpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=settings.openrouter_api_key,
-            posthog_client=analytics.client
-        )
+        
+        if os.getenv("MOCK_LLM_MODE") == "true":
+            self.logger.warning("MOCK_LLM_MODE is enabled. Using MockOpenAIClient.")
+            try:
+                from tests.mocks.mock_llm import MockOpenAIClient
+                self.client = MockOpenAIClient()
+            except ImportError as e:
+                self.logger.error(f"Failed to import MockOpenAIClient: {e}. Falling back to real client (which might fail if no key).")
+                self.client = AsyncOpenAI(
+                    base_url="https://openrouter.ai/api/v1",
+                    api_key=settings.openrouter_api_key,
+                    posthog_client=analytics.client
+                )
+        else:
+            self.client = AsyncOpenAI(
+                base_url="https://openrouter.ai/api/v1",
+                api_key=settings.openrouter_api_key,
+                posthog_client=analytics.client
+            )
+            
         self.model = settings.openrouter_model
 
         # Load prompts from external YAML
@@ -496,7 +511,7 @@ class LLMParser:
                     if attempt == 0:
                         self.logger.warning(f"JSON Decode Error: {e}")
                         # We must append the message properly so the API accepts the history
-                        messages.append(message)
+                        messages.append(message.dict())
                         error_msg = f"JSON Decode Error: {str(e)}"
                         messages.append({
                             "role": "USER", 
@@ -543,7 +558,7 @@ class LLMParser:
                     except ValidationError as e:
                         if attempt == 0:
                             self.logger.warning(f"Validation Error: {e}")
-                            messages.append(message)
+                            messages.append(message.dict())
                             error_msg = f"Validation Error: {str(e)}"
                             messages.append({
                                 "role": "USER", 
@@ -571,7 +586,7 @@ class LLMParser:
                 else:
                     self.logger.warning(f"Unknown tool called: {function_name}")
                     if attempt == 0:
-                         messages.append(message)
+                         messages.append(message.dict())
                          messages.append({
                              "role": "USER",
                              "content": self.prompts_service.render("retry_error_instruction", error=f"Unknown tool '{function_name}'. Please use one of the provided tools.")

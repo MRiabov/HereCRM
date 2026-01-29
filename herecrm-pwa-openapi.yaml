@@ -3967,7 +3967,7 @@ components:
           title: Rate Value
         tax_withholding_rate:
           type: number
-          maximum: 1.0
+          maximum: 100.0
           minimum: 0.0
           title: Tax Withholding Rate
         allow_expense_claims:

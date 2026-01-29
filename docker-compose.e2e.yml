@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  backend-e2e:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "0:8000"
+    environment:
+      DATABASE_URL: "sqlite+aiosqlite:///:memory:"
+      PORT: "8000"
+      E2E_TEST_MODE: "true"
+      PYTHONPATH: "/app"
+      OPENROUTER_API_KEY: "dummy_key_for_e2e"
+      WHATSAPP_APP_SECRET: "dummy_secret_for_e2e"
+    volumes:
+      - crm_test_data:/app/data
+    command: >
+      sh -c "python scripts/throwaway/reset_and_populate.py &&
+             uvicorn src.main:app --host 0.0.0.0 --port 8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  crm_test_data:

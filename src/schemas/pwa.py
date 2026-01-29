@@ -20,7 +20,7 @@ EMAIL_PATTERN = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$|^$)"
 class WageConfigurationSchema(BaseModel):
     model_type: WageModelType
     rate_value: float = Field(..., ge=0)
-    tax_withholding_rate: float = Field(..., ge=0, le=1)
+    tax_withholding_rate: float = Field(..., ge=0, le=100)
     allow_expense_claims: bool
 
     model_config = ConfigDict(from_attributes=True)
