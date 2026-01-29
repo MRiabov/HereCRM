@@ -100,14 +100,16 @@ class OnboardingChoice(BaseModel):
     invite_code: Optional[str] = Field(None, min_length=1, max_length=50)
     business_name: Optional[str] = Field(None, min_length=1, max_length=100)
 
-# --- Dashboard Schemas ---
+# --- Pipeline Schemas ---
 
-class DashboardStats(BaseModel):
-    revenue_monthly: float = Field(..., ge=0)
-    active_leads_count: int = Field(..., ge=0)
-    leads_need_followup: int = Field(..., ge=0)
-    pipeline_breakdown: Dict[str, int] = Field(..., description="Map of pipeline stage to count")
+class PipelineStageStats(BaseModel):
+    count: int = Field(..., ge=0)
+    value: float = Field(..., ge=0)
 
+class PipelineStats(BaseModel):
+    pipeline_breakdown: Dict[str, PipelineStageStats] = Field(..., description="Map of pipeline stage to stats object")
+    #dev note: the str above could be an enum BTW.
+    
 class ActivityType(str, Enum):
     INVOICE = "invoice"
     JOB = "job"

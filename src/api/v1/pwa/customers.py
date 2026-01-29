@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.database import get_db
 from src.services.crm_service import CRMService
-from src.schemas.pwa import CustomerSchema, CustomerCreate, CustomerUpdate
+from src.schemas.pwa import CustomerSchema, CustomerCreate, CustomerUpdate, PipelineStats
 from src.models import Customer, PipelineStage, User
 from src.api.dependencies.clerk_auth import get_current_user
 
@@ -46,6 +46,13 @@ async def list_customers(
             c.total_value = c_stats["total_value"]
             
     return customers
+
+@router.get("/stats", response_model=PipelineStats)
+async def get_pipeline_stats(
+    service: CRMService = Depends(get_crm_service)
+):
+    stats = await service.get_pipeline_summary()
+    return {"pipeline_breakdown": stats}
 
 
 @router.get("/{customer_id}", response_model=CustomerSchema)

@@ -597,6 +597,53 @@
         }
       }
     },
+    "/api/v1/pwa/customers/stats": {
+      "get": {
+        "tags": [
+          "pwa-customers"
+        ],
+        "summary": "Get Pipeline Stats",
+        "operationId": "get_pipeline_stats_api_v1_pwa_customers_stats_get",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PipelineStats"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/pwa/customers/{customer_id}": {
       "get": {
         "tags": [
@@ -6504,6 +6551,43 @@
           "LOST"
         ],
         "title": "PipelineStage"
+      },
+      "PipelineStageStats": {
+        "properties": {
+          "count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Count"
+          },
+          "value": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "count",
+          "value"
+        ],
+        "title": "PipelineStageStats"
+      },
+      "PipelineStats": {
+        "properties": {
+          "pipeline_breakdown": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PipelineStageStats"
+            },
+            "type": "object",
+            "title": "Pipeline Breakdown",
+            "description": "Map of pipeline stage to stats object"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pipeline_breakdown"
+        ],
+        "title": "PipelineStats"
       },
       "QuoteCreate": {
         "properties": {
