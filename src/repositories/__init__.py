@@ -1,5 +1,5 @@
 from sqlalchemy import select, or_, and_, event, func
-from sqlalchemy.orm import joinedload, contains_eager
+from sqlalchemy.orm import joinedload, contains_eager, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List, Any
 from datetime import datetime, timezone
@@ -226,12 +226,12 @@ class RequestRepository(BaseRepository[Request]):
         stmt = (
             select(Request)
             .outerjoin(Customer, Request.customer_id == Customer.id)
-            .options(contains_eager(Request.customer))
+            .options(contains_eager(Request.customer), selectinload(Request.line_items))
             .where(and_(*conditions))
             .order_by(Request.created_at.desc())
         )
         result = await self.session.execute(stmt)
-        return list(result.scalars().all())
+        return list(result.scalars().unique().all())
 
     async def get_by_id(self, id: int, business_id: int) -> Optional[Request]:
         query = (

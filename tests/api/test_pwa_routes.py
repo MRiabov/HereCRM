@@ -176,3 +176,11 @@ async def test_update_workflow_settings(client, async_session):
     assert data["workflow_invoicing"] == "AUTOMATIC"
     assert data["workflow_quoting"] == "NEVER"
     assert data["default_city"] == "Berlin"
+
+
+@pytest.mark.asyncio
+async def test_requests_list(client):
+    response = await client.get("/api/v1/pwa/requests/")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
