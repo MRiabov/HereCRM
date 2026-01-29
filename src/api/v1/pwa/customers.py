@@ -80,7 +80,7 @@ async def create_customer(
     )
     service.customer_repo.add(new_customer)
     await service.session.commit()
-    await service.session.refresh(new_customer)
+    # await service.session.refresh(new_customer) # Causing InvalidRequestError in E2E tests with :memory: DB
     return new_customer
 
 @router.patch("/{customer_id}", response_model=CustomerSchema)

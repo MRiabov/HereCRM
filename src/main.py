@@ -1,7 +1,10 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 import logging
+import traceback
+from src.config import settings
 from src.database import engine, Base
 from src.api.routes import router as webhook_router
 from src.api.webhooks.stripe_webhook import router as stripe_router
@@ -84,6 +87,29 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+class BackendErrorMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        try:
+            return await call_next(request)
+        except Exception as e:
+            if settings.dev_mode:
+                # Capture error for test introspection
+                if not hasattr(request.app.state, "backend_errors"):
+                    request.app.state.backend_errors = []
+                
+                error_detail = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
+                request.app.state.backend_errors.append(error_detail)
+                
+                # Keep the list manageable
+                if len(request.app.state.backend_errors) > 50:
+                    request.app.state.backend_errors.pop(0)
+            
+            # Re-raise to let FastAPI handle the 500 response/logging as usual
+            raise e
+
+if settings.dev_mode:
+    app.add_middleware(BackendErrorMiddleware)
 
 app.include_router(webhook_router)
 app.include_router(stripe_router, prefix="/webhooks", tags=["webhooks"])
