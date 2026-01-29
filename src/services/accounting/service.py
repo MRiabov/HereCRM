@@ -4,9 +4,10 @@ from .quickbooks_sync import QuickBooksSyncManager
 
 logger = logging.getLogger(__name__)
 
+
 class AccountingService:
     """Facade for all accounting-related operations (QuickBooks)."""
-    
+
     def __init__(self, session: AsyncSession):
         self.session = session
         self.sync_manager = QuickBooksSyncManager(session)

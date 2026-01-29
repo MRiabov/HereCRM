@@ -2,16 +2,42 @@ from typing import Optional, List, Dict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
-from src.models import Job, JobStatus, Customer, PipelineStage, Business, PaymentTiming, Request, LineItem, Service, Urgency, RequestStatus, PromotionAction, User, UserRole
+from src.models import (
+    Job,
+    JobStatus,
+    Customer,
+    PipelineStage,
+    Business,
+    PaymentTiming,
+    Request,
+    LineItem,
+    Service,
+    Urgency,
+    RequestStatus,
+    PromotionAction,
+    User,
+    UserRole,
+)
 from src.repositories import JobRepository, CustomerRepository, RequestRepository
-from src.events import event_bus, JOB_CREATED, JOB_BOOKED, JOB_SCHEDULED, JOB_UPDATED, JOB_ASSIGNED, JOB_UNASSIGNED, JOB_PAID
+from src.events import (
+    event_bus,
+    JOB_CREATED,
+    JOB_BOOKED,
+    JOB_SCHEDULED,
+    JOB_UPDATED,
+    JOB_ASSIGNED,
+    JOB_UNASSIGNED,
+    JOB_PAID,
+)
 from datetime import datetime, timedelta, timezone, date
 from src.services.quote_service import QuoteService
 from src.services.geocoding import GeocodingService
 
 
 class CRMService:
-    def __init__(self, session: AsyncSession, business_id: int, user_id: Optional[int] = None):
+    def __init__(
+        self, session: AsyncSession, business_id: int, user_id: Optional[int] = None
+    ):
         self.session = session
         self.business_id = business_id
         self.user_id = user_id
@@ -30,9 +56,11 @@ class CRMService:
         """Calculates total duration and total value from line items."""
         total_duration = 0
         total_value = 0.0
-        
+
         # Get all unique service IDs
-        service_ids = {item.get('service_id') for item in items if item.get('service_id')}
+        service_ids = {
+            item.get("service_id") for item in items if item.get("service_id")
+        }
         services_map = {}
         if service_ids:
             stmt = select(Service).where(Service.id.in_(service_ids))
@@ -41,21 +69,21 @@ class CRMService:
             services_map = {s.id: s for s in services}
 
         for item in items:
-            qty = item.get('quantity', 1.0)
-            price = item.get('unit_price', 0.0)
+            qty = item.get("quantity", 1.0)
+            price = item.get("unit_price", 0.0)
             total_value += qty * price
-            
-            s_id = item.get('service_id')
+
+            s_id = item.get("service_id")
             if s_id and s_id in services_map:
                 total_duration += services_map[s_id].estimated_duration * qty
             else:
                 # Default duration if no service is linked
                 # Maybe we should have a default per item?
-                # For now, if no service is linked, we don't add to duration 
+                # For now, if no service is linked, we don't add to duration
                 # OR we add a default 60 if it's the only item?
                 # User said: "line items have a default time for execution ... so the time should be auto calculated"
                 pass
-        
+
         return int(total_duration), total_value
 
     async def create_job(
@@ -77,16 +105,26 @@ class CRMService:
         # [T009] Check payment timing
         paid = False
         business = await self.session.get(Business, self.business_id)
-        if business and business.workflow_payment_timing in [PaymentTiming.ALWAYS_PAID_ON_SPOT, PaymentTiming.USUALLY_PAID_ON_SPOT]:
+        if business and business.workflow_payment_timing in [
+            PaymentTiming.ALWAYS_PAID_ON_SPOT,
+            PaymentTiming.USUALLY_PAID_ON_SPOT,
+        ]:
             paid = True
 
         calculated_duration = 0
         calculated_value = 0.0
         if items:
-            calculated_duration, calculated_value = await self._calculate_duration_and_total(items)
-        
+            (
+                calculated_duration,
+                calculated_value,
+            ) = await self._calculate_duration_and_total(items)
+
         # If estimated_duration not provided, use calculated one (if > 0)
-        final_duration = estimated_duration if estimated_duration is not None else (calculated_duration or 60)
+        final_duration = (
+            estimated_duration
+            if estimated_duration is not None
+            else (calculated_duration or 60)
+        )
         final_value = value if value is not None else calculated_value
 
         job = Job(
@@ -109,39 +147,50 @@ class CRMService:
         if items:
             job.line_items = [
                 LineItem(
-                    service_id=item.get('service_id'),
-                    description=item.get('description'),
-                    quantity=item.get('quantity', 1.0),
-                    unit_price=item.get('unit_price', 0.0),
-                    total_price=item.get('quantity', 1.0) * item.get('unit_price', 0.0)
-                ) for item in items
+                    service_id=item.get("service_id"),
+                    description=item.get("description"),
+                    quantity=item.get("quantity", 1.0),
+                    unit_price=item.get("unit_price", 0.0),
+                    total_price=item.get("quantity", 1.0) * item.get("unit_price", 0.0),
+                )
+                for item in items
             ]
 
         # Automatic Geocoding
         if location and (not job.latitude or not job.longitude):
             geocoder = GeocodingService()
-            lat, lon, street, city, country, postcode, full_address = await geocoder.geocode(
+            (
+                lat,
+                lon,
+                street,
+                city,
+                country,
+                postcode,
+                full_address,
+            ) = await geocoder.geocode(
                 location,
                 default_city=business.default_city if business else None,
                 default_country=business.default_country if business else None,
                 session=self.session,
-                user_id=self.user_id
+                user_id=self.user_id,
             )
             if lat and lon:
                 job.latitude = lat
                 job.longitude = lon
                 if street:
-                    job.location = full_address # Update with normalized address
+                    job.location = full_address  # Update with normalized address
                 if postcode:
                     job.postal_code = postcode
 
         self.job_repo.add(job)
-        await self.session.flush() # Generate ID for default description
-        
+        await self.session.flush()  # Generate ID for default description
+
         if not job.description or not job.description.strip():
             job.description = f"Job #{job.id}"
-            
-        await self.session.commit() # Must commit for other sessions (handlers) to see it
+
+        await (
+            self.session.commit()
+        )  # Must commit for other sessions (handlers) to see it
         # Reload with relationships for schema validation
         job = await self.job_repo.get_with_line_items(job.id, self.business_id)
         assert job is not None
@@ -149,17 +198,30 @@ class CRMService:
         # Emit events
         await event_bus.emit(
             JOB_CREATED,
-            {"job_id": job.id, "customer_id": customer_id, "business_id": self.business_id},
+            {
+                "job_id": job.id,
+                "customer_id": customer_id,
+                "business_id": self.business_id,
+            },
         )
         if job.employee_id:
-             await event_bus.emit(
+            await event_bus.emit(
                 JOB_ASSIGNED,
-                {"job_id": job.id, "employee_id": job.employee_id, "business_id": self.business_id},
+                {
+                    "job_id": job.id,
+                    "employee_id": job.employee_id,
+                    "business_id": self.business_id,
+                },
             )
         if status == JobStatus.BOOKED:
             await event_bus.emit(
                 JOB_BOOKED,
-                {"job_id": job.id, "customer_id": customer_id, "business_id": self.business_id, "value": job.value},
+                {
+                    "job_id": job.id,
+                    "customer_id": customer_id,
+                    "business_id": self.business_id,
+                    "value": job.value,
+                },
             )
         return job
 
@@ -179,8 +241,11 @@ class CRMService:
         calculated_duration = 0
         calculated_value = 0.0
         if items:
-            calculated_duration, calculated_value = await self._calculate_duration_and_total(items)
-        
+            (
+                calculated_duration,
+                calculated_value,
+            ) = await self._calculate_duration_and_total(items)
+
         final_value = expected_value if expected_value is not None else calculated_value
 
         request = Request(
@@ -194,23 +259,24 @@ class CRMService:
             tax_rate=tax_rate,
             follow_up_date=follow_up_date,
             customer_details=customer_details,
-            status=RequestStatus.PENDING
+            status=RequestStatus.PENDING,
         )
 
         if items:
             request.line_items = [
                 LineItem(
-                    service_id=item.get('service_id'),
-                    description=item.get('description'),
-                    quantity=item.get('quantity', 1.0),
-                    unit_price=item.get('unit_price', 0.0),
-                    total_price=item.get('quantity', 1.0) * item.get('unit_price', 0.0)
-                ) for item in items
+                    service_id=item.get("service_id"),
+                    description=item.get("description"),
+                    quantity=item.get("quantity", 1.0),
+                    unit_price=item.get("unit_price", 0.0),
+                    total_price=item.get("quantity", 1.0) * item.get("unit_price", 0.0),
+                )
+                for item in items
             ]
 
         self.request_repo.add(request)
         await self.session.commit()
-        await self.session.refresh(request, attribute_names=['line_items'])
+        await self.session.refresh(request, attribute_names=["line_items"])
         return request
 
     async def update_request(
@@ -229,26 +295,27 @@ class CRMService:
     ) -> Request:
         request = await self.request_repo.get_by_id(request_id, self.business_id)
         if not request:
-             raise ValueError(f"Request with ID {request_id} not found.")
+            raise ValueError(f"Request with ID {request_id} not found.")
 
         if items is not None:
             _, calculated_value = await self._calculate_duration_and_total(items)
-            
+
             # Clear existing items
             request.line_items.clear()
-            
+
             # Update line items
             for item in items:
                 request.line_items.append(
                     LineItem(
-                        service_id=item.get('service_id'),
-                        description=item.get('description'),
-                        quantity=item.get('quantity', 1.0),
-                        unit_price=item.get('unit_price', 0.0),
-                        total_price=item.get('quantity', 1.0) * item.get('unit_price', 0.0)
+                        service_id=item.get("service_id"),
+                        description=item.get("description"),
+                        quantity=item.get("quantity", 1.0),
+                        unit_price=item.get("unit_price", 0.0),
+                        total_price=item.get("quantity", 1.0)
+                        * item.get("unit_price", 0.0),
                     )
                 )
-            
+
             # Update expected value if not strictly provided but items changed
             if expected_value is None:
                 request.expected_value = calculated_value
@@ -274,7 +341,7 @@ class CRMService:
             request.customer_id = customer_id
 
         await self.session.commit()
-        await self.session.refresh(request, attribute_names=['line_items'])
+        await self.session.refresh(request, attribute_names=["line_items"])
         return request
 
     async def get_active_job_for_customer(self, phone_number: str) -> Optional[Job]:
@@ -294,30 +361,34 @@ class CRMService:
         jobs = result.scalars().all()
 
         now = datetime.now(timezone.utc)
-        
+
         for job in jobs:
             if not job.scheduled_at:
                 continue
-                
+
             # Ensure scheduled_at is aware
             start = job.scheduled_at
             if start.tzinfo is None:
                 start = start.replace(tzinfo=timezone.utc)
-                
+
             duration_min = job.estimated_duration or 60
             end = start + timedelta(minutes=duration_min)
-            
+
             # Allow 30m buffer before and after
             buffered_start = start - timedelta(minutes=30)
             buffered_end = end + timedelta(minutes=30)
-            
+
             if buffered_start <= now <= buffered_end:
                 return job
-                
+
         return None
 
-    async def get_jobs_for_customer(self, customer_id: int, skip: int = 0, limit: int = 100) -> list:
-        return await self.job_repo.get_by_customer(customer_id, self.business_id, skip=skip, limit=limit)
+    async def get_jobs_for_customer(
+        self, customer_id: int, skip: int = 0, limit: int = 100
+    ) -> list:
+        return await self.job_repo.get_by_customer(
+            customer_id, self.business_id, skip=skip, limit=limit
+        )
 
     async def convert_request(
         self,
@@ -370,15 +441,20 @@ class CRMService:
                 scheduled_at=scheduled_at,
                 employee_id=assigned_to,
                 value=price or req.expected_value,
-                items=[{
-                    'description': item.description,
-                    'quantity': item.quantity,
-                    'unit_price': item.unit_price,
-                    'service_id': item.service_id
-                } for item in req.line_items] if req.line_items else None,
+                items=[
+                    {
+                        "description": item.description,
+                        "quantity": item.quantity,
+                        "unit_price": item.unit_price,
+                        "service_id": item.service_id,
+                    }
+                    for item in req.line_items
+                ]
+                if req.line_items
+                else None,
                 subtotal=req.subtotal,
                 tax_amount=req.tax_amount,
-                tax_rate=req.tax_rate
+                tax_rate=req.tax_rate,
             )
             await self.session.delete(req)
             await self.session.commit()
@@ -405,14 +481,14 @@ class CRMService:
             }
 
         elif action == PromotionAction.LOG:
-             old_status = req.status
-             req.status = RequestStatus.LOGGED
-             return f"✔ Request logged: {req.description[:30]}", {
-                 "action": "update",
-                 "entity": "request",
-                 "id": req.id,
-                 "old_status": old_status,
-             }
+            old_status = req.status
+            req.status = RequestStatus.LOGGED
+            return f"✔ Request logged: {req.description[:30]}", {
+                "action": "update",
+                "entity": "request",
+                "id": req.id,
+                "old_status": old_status,
+            }
 
         elif action == PromotionAction.QUOTE:
             # Promotion logic: Request -> Quote
@@ -433,16 +509,15 @@ class CRMService:
                 customer_id = customers[0].id
 
             quote = await self.quote_service.create_from_request(
-                request_id=req.id,
-                customer_id=customer_id
+                request_id=req.id, customer_id=customer_id
             )
-            
+
             # Apply initial value if provided (assuming the quote service handles it, or we update it here)
             if price is not None:
                 quote.total_amount = price
                 # If it's a quote, we might want to add a default line item if it's currently empty
                 # But for now let's just update the total.
-            
+
             # Deletion logic matches 'schedule' action
             await self.session.delete(req)
             await self.session.commit()
@@ -469,7 +544,6 @@ class CRMService:
             }
             for stage, data in summary_data.items()
         }
-
 
     async def format_pipeline_summary(self) -> str:
         summary = await self.get_pipeline_summary()
@@ -499,7 +573,9 @@ class CRMService:
             lines.append(line)
         return "\n".join(lines)
 
-    async def update_customer_stage(self, customer_id: int, stage: PipelineStage) -> Customer:
+    async def update_customer_stage(
+        self, customer_id: int, stage: PipelineStage
+    ) -> Customer:
         customer = await self.customer_repo.get_by_id(customer_id, self.business_id)
         if not customer:
             raise ValueError(f"Customer with ID {customer_id} not found.")
@@ -514,11 +590,12 @@ class CRMService:
         name: Optional[str] = None,
         first_name: Optional[str] = None,
         last_name: Optional[str] = None,
+        company_name: Optional[str] = None,
         phone: Optional[str] = None,
         email: Optional[str] = None,
         street: Optional[str] = None,
         city: Optional[str] = None,
-        pipeline_stage: Optional[PipelineStage] = None
+        pipeline_stage: Optional[PipelineStage] = None,
     ) -> Customer:
         customer = await self.customer_repo.get_by_id(customer_id, self.business_id)
         if not customer:
@@ -530,10 +607,14 @@ class CRMService:
             customer.first_name = first_name
         if last_name is not None:
             customer.last_name = last_name
+        if company_name is not None:
+            customer.company_name = company_name
 
         # Auto-update full name if it's missing or if we just updated components and name was derived
         if not customer.name and (customer.first_name or customer.last_name):
-            customer.name = f"{customer.first_name or ''} {customer.last_name or ''}".strip()
+            customer.name = (
+                f"{customer.first_name or ''} {customer.last_name or ''}".strip()
+            )
 
         if phone is not None:
             customer.phone = phone
@@ -577,20 +658,24 @@ class CRMService:
         old_longitude = job.longitude
 
         if items is not None:
-            calculated_duration, calculated_value = await self._calculate_duration_and_total(items)
-            
+            (
+                calculated_duration,
+                calculated_value,
+            ) = await self._calculate_duration_and_total(items)
+
             # Clear existing items first to avoid any lazy-load issues during list replacement
             job.line_items.clear()
-            
+
             # Update line items
             for item in items:
                 job.line_items.append(
                     LineItem(
-                        service_id=item.get('service_id'),
-                        description=item.get('description'),
-                        quantity=item.get('quantity', 1.0),
-                        unit_price=item.get('unit_price', 0.0),
-                        total_price=item.get('quantity', 1.0) * item.get('unit_price', 0.0)
+                        service_id=item.get("service_id"),
+                        description=item.get("description"),
+                        quantity=item.get("quantity", 1.0),
+                        unit_price=item.get("unit_price", 0.0),
+                        total_price=item.get("quantity", 1.0)
+                        * item.get("unit_price", 0.0),
                     )
                 )
             # If duration or value not explicitly provided, update with calculated ones
@@ -605,15 +690,22 @@ class CRMService:
         if status is not None:
             # Handle Time Tracking transitions
             from src.services.time_tracking import TimeTrackingService
+
             tt_service = TimeTrackingService(self.session)
-            
+
             new_status = status
-            
-            if new_status == JobStatus.IN_PROGRESS and old_status != JobStatus.IN_PROGRESS:
+
+            if (
+                new_status == JobStatus.IN_PROGRESS
+                and old_status != JobStatus.IN_PROGRESS
+            ):
                 await tt_service.start_job(job.id, self.user_id or job.employee_id)
             elif new_status == JobStatus.PAUSED and old_status == JobStatus.IN_PROGRESS:
                 await tt_service.pause_job(job.id)
-            elif new_status == JobStatus.COMPLETED and old_status in [JobStatus.IN_PROGRESS, JobStatus.PAUSED]:
+            elif new_status == JobStatus.COMPLETED and old_status in [
+                JobStatus.IN_PROGRESS,
+                JobStatus.PAUSED,
+            ]:
                 await tt_service.finish_job(job.id)
             else:
                 job.status = new_status
@@ -636,15 +728,26 @@ class CRMService:
 
         # Automatic Geocoding on Update
         addr_to_geocode = location or job.location
-        if ((location is not None and location != old_location) or (job.location and (old_latitude is None or old_longitude is None))) and addr_to_geocode:
+        if (
+            (location is not None and location != old_location)
+            or (job.location and (old_latitude is None or old_longitude is None))
+        ) and addr_to_geocode:
             business = await self.session.get(Business, self.business_id)
             geocoder = GeocodingService()
-            lat, lon, street, city, country, postcode, full_address = await geocoder.geocode(
+            (
+                lat,
+                lon,
+                street,
+                city,
+                country,
+                postcode,
+                full_address,
+            ) = await geocoder.geocode(
                 addr_to_geocode,
                 default_city=business.default_city if business else None,
                 default_country=business.default_country if business else None,
                 session=self.session,
-                user_id=self.user_id
+                user_id=self.user_id,
             )
             if lat and lon:
                 job.latitude = lat
@@ -660,27 +763,36 @@ class CRMService:
 
         # Emit JOB_PAID if paid status changed to True
         if job.paid and not old_paid:
-            await event_bus.emit(JOB_PAID, {
-                "job_id": job.id,
-                "customer_id": job.customer_id,
-                "business_id": self.business_id,
-                "value": job.value
-            })
+            await event_bus.emit(
+                JOB_PAID,
+                {
+                    "job_id": job.id,
+                    "customer_id": job.customer_id,
+                    "business_id": self.business_id,
+                    "value": job.value,
+                },
+            )
 
         # Handle Assignment Events
         if employee_id is not None and job.employee_id != old_employee_id:
             if old_employee_id:
-                await event_bus.emit(JOB_UNASSIGNED, {
-                    "job_id": job.id,
-                    "employee_id": old_employee_id,
-                    "business_id": self.business_id
-                })
+                await event_bus.emit(
+                    JOB_UNASSIGNED,
+                    {
+                        "job_id": job.id,
+                        "employee_id": old_employee_id,
+                        "business_id": self.business_id,
+                    },
+                )
             if job.employee_id:
-                await event_bus.emit(JOB_ASSIGNED, {
-                    "job_id": job.id,
-                    "employee_id": job.employee_id,
-                    "business_id": self.business_id
-                })
+                await event_bus.emit(
+                    JOB_ASSIGNED,
+                    {
+                        "job_id": job.id,
+                        "employee_id": job.employee_id,
+                        "business_id": self.business_id,
+                    },
+                )
 
         # Emit JOB_SCHEDULED if scheduled_at changed and is now set
         if scheduled_at and scheduled_at != old_scheduled_at:
@@ -705,7 +817,7 @@ class CRMService:
                     "value": job.value,
                 },
             )
-        
+
         # Always emit JOB_UPDATED for any change
         await event_bus.emit(
             JOB_UPDATED,
@@ -717,9 +829,9 @@ class CRMService:
                     "description": description,
                     "status": status,
                     "scheduled_at": scheduled_at.isoformat() if scheduled_at else None,
-                    "estimated_duration": estimated_duration
-                }
-            }
+                    "estimated_duration": estimated_duration,
+                },
+            },
         )
 
         return job
@@ -731,12 +843,12 @@ class CRMService:
         """
         from src.models import Expense, LedgerEntry, LedgerEntryType
         from sqlalchemy import select
-        
+
         job = await self.job_repo.get_by_id(job_id, self.business_id)
         if not job:
-             raise ValueError(f"Job {job_id} not found")
+            raise ValueError(f"Job {job_id} not found")
 
-        # Revenue from job.line_items? Job model has line_items JSON or related? 
+        # Revenue from job.line_items? Job model has line_items JSON or related?
         # Check Job model. It usually has .value as a summary or line_items JSON.
         revenue = job.value or 0.0
 
@@ -748,8 +860,7 @@ class CRMService:
 
         # Labor (Ledger entries linked to job)
         stmt_labor = select(LedgerEntry).where(
-            LedgerEntry.job_id == job_id,
-            LedgerEntry.entry_type == LedgerEntryType.WAGE
+            LedgerEntry.job_id == job_id, LedgerEntry.entry_type == LedgerEntryType.WAGE
         )
         result_labor = await self.session.execute(stmt_labor)
         labor_entries = result_labor.scalars().all()
@@ -762,18 +873,21 @@ class CRMService:
             "revenue": revenue,
             "cost_expenses": cost_expenses,
             "cost_labor": cost_labor,
-            "net_profit": net_profit
+            "net_profit": net_profit,
         }
 
-    async def get_employee_schedules(self, target_date: date, timezone_str: str = "UTC") -> Dict[Optional[User], List[Job]]:
+    async def get_employee_schedules(
+        self, target_date: date, timezone_str: str = "UTC"
+    ) -> Dict[Optional[User], List[Job]]:
         """
         Query all users with roles member or owner for the business.
         Query all jobs for the given date assigned to these users OR unassigned.
         Return a structured dict: {user_obj_or_None: [job_list]}.
-        
+
         The query is timezone-aware: target_date is interpreted in timezone_str.
         """
         import pytz
+
         try:
             tz = pytz.timezone(timezone_str)
         except Exception:
@@ -782,7 +896,7 @@ class CRMService:
         # 1. Fetch all employees (Owners and Members)
         stmt = select(User).where(
             User.business_id == self.business_id,
-            User.role.in_([UserRole.OWNER, UserRole.MANAGER, UserRole.EMPLOYEE])
+            User.role.in_([UserRole.OWNER, UserRole.MANAGER, UserRole.EMPLOYEE]),
         )
         result = await self.session.execute(stmt)
         employees = result.scalars().all()
@@ -791,7 +905,7 @@ class CRMService:
         # Convert local date range to UTC
         local_start = datetime.combine(target_date, datetime.min.time())
         local_end = datetime.combine(target_date, datetime.max.time())
-        
+
         # Localize and then normalize to UTC
         start_of_day = tz.localize(local_start).astimezone(pytz.UTC)
         end_of_day = tz.localize(local_end).astimezone(pytz.UTC)
@@ -802,21 +916,26 @@ class CRMService:
 
         # Query jobs assigned to any of these employees OR unassigned on this date
         employee_ids = [emp.id for emp in employees]
-        
-        job_stmt = select(Job).where(
-            Job.business_id == self.business_id,
-            or_(
-                Job.employee_id.in_(employee_ids) if employee_ids else False,
-                Job.employee_id.is_(None)
-            ),
-            Job.scheduled_at >= start_of_day,
-            Job.scheduled_at <= end_of_day
-        ).options(
-            selectinload(Job.customer),
-            selectinload(Job.employee),
-            selectinload(Job.employee).selectinload(User.wage_config),
-            selectinload(Job.line_items)
-        ).order_by(Job.scheduled_at.asc())
+
+        job_stmt = (
+            select(Job)
+            .where(
+                Job.business_id == self.business_id,
+                or_(
+                    Job.employee_id.in_(employee_ids) if employee_ids else False,
+                    Job.employee_id.is_(None),
+                ),
+                Job.scheduled_at >= start_of_day,
+                Job.scheduled_at <= end_of_day,
+            )
+            .options(
+                selectinload(Job.customer),
+                selectinload(Job.employee),
+                selectinload(Job.employee).selectinload(User.wage_config),
+                selectinload(Job.line_items),
+            )
+            .order_by(Job.scheduled_at.asc())
+        )
 
         job_result = await self.session.execute(job_stmt)
         jobs = job_result.scalars().all()
@@ -826,7 +945,7 @@ class CRMService:
             if job.employee_id is None:
                 schedule[None].append(job)
                 continue
-                
+
             for emp in employees:
                 if job.employee_id == emp.id:
                     schedule[emp].append(job)
@@ -838,21 +957,21 @@ class CRMService:
         """
         Query all jobs where (employee_id is None OR scheduled_at is None) AND status is pending.
         """
-        stmt = select(Job).where(
-            Job.business_id == self.business_id,
-            or_(
-                Job.employee_id.is_(None),
-                Job.scheduled_at.is_(None)
-            ),
-            Job.status == JobStatus.PENDING
-        ).options(
-            selectinload(Job.customer),
-            selectinload(Job.employee),
-            selectinload(Job.employee).selectinload(User.wage_config),
-            selectinload(Job.line_items)
-        ).order_by(Job.created_at.desc())
+        stmt = (
+            select(Job)
+            .where(
+                Job.business_id == self.business_id,
+                or_(Job.employee_id.is_(None), Job.scheduled_at.is_(None)),
+                Job.status == JobStatus.PENDING,
+            )
+            .options(
+                selectinload(Job.customer),
+                selectinload(Job.employee),
+                selectinload(Job.employee).selectinload(User.wage_config),
+                selectinload(Job.line_items),
+            )
+            .order_by(Job.created_at.desc())
+        )
 
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
-
-

@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import Expense
 from src.repositories import ExpenseRepository
 
+
 class ExpenseService:
     def __init__(self, session: AsyncSession, business_id: int):
         self.session = session
@@ -32,7 +33,7 @@ class ExpenseService:
             category=category,
             description=description,
             receipt_url=receipt_url,
-            created_at=created_at or datetime.now(timezone.utc)
+            created_at=created_at or datetime.now(timezone.utc),
         )
         self.expense_repo.add(expense)
         await self.session.flush()
@@ -56,5 +57,5 @@ class ExpenseService:
             job_id=job_id,
             employee_id=employee_id,
             min_date=min_date,
-            max_date=max_date
+            max_date=max_date,
         )

@@ -25,6 +25,7 @@ from src.uimodels import (
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.employee_management import InviteUserTool, ExitEmployeeManagementTool
 
+
 class DraftExecutor:
     def __init__(self, session: AsyncSession, template_service: TemplateService):
         self.session = session
@@ -61,7 +62,7 @@ class DraftExecutor:
             "LocateEmployeeTool": LocateEmployeeTool,
             "CheckETATool": CheckETATool,
             "InviteUserTool": InviteUserTool,
-            "ExitEmployeeManagementTool": ExitEmployeeManagementTool
+            "ExitEmployeeManagementTool": ExitEmployeeManagementTool,
         }
 
         tool_cls = model_map.get(tool_name)
@@ -74,7 +75,11 @@ class DraftExecutor:
 
         # Execute
         executor = ToolExecutor(
-            self.session, user.business_id, user.id, user.phone_number or "", self.template_service
+            self.session,
+            user.business_id,
+            user.id,
+            user.phone_number or "",
+            self.template_service,
         )
         try:
             result, metadata = await executor.execute(tool_call)

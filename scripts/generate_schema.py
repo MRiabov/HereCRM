@@ -35,11 +35,13 @@ if project_root not in sys.path:
 os.chdir(project_root)
 
 from fastapi import FastAPI
+
 try:
     from src.api.v1.pwa.router import router as pwa_router
 except ImportError as e:
     print(f"Error importing router: {e}")
     sys.exit(1)
+
 
 def generate_schema():
     print("Generating PWA OpenAPI Schema...")
@@ -61,14 +63,14 @@ def generate_schema():
     # Paths to save
     files_to_save = {
         "herecrm-pwa-openapi.json": lambda f: json.dump(schema, f, indent=2),
-        "herecrm-pwa-openapi.yaml": lambda f: yaml.dump(schema, f, sort_keys=False)
+        "herecrm-pwa-openapi.yaml": lambda f: yaml.dump(schema, f, sort_keys=False),
     }
 
     # Determine potential target directories
     # 1. Current directory (Backend root)
     # 2. Sibling PWA directory (if exists)
     target_dirs = ["."]
-    
+
     # Check for PWA sibling directory
     pwa_sibling = os.path.abspath(os.path.join(os.getcwd(), "..", "HereCRM-PWA"))
     if os.path.isdir(pwa_sibling):
@@ -81,6 +83,7 @@ def generate_schema():
             with open(path, "w") as f:
                 save_fn(f)
             print(f"Saved {filename} to {target_dir}")
+
 
 if __name__ == "__main__":
     generate_schema()

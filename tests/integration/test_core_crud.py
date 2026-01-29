@@ -5,6 +5,7 @@ from src.services.crm_service import CRMService
 from src.services.quote_service import QuoteService
 from datetime import datetime, timezone
 
+
 @pytest.mark.asyncio
 async def test_core_crud_operations(async_session):
     # 1. Setup Business and User
@@ -13,11 +14,7 @@ async def test_core_crud_operations(async_session):
     await async_session.commit()
     await async_session.refresh(business)
 
-    user = User(
-        email="core@example.com",
-        business_id=business.id,
-        role="OWNER"
-    )
+    user = User(email="core@example.com", business_id=business.id, role="OWNER")
     async_session.add(user)
     await async_session.commit()
 
@@ -31,7 +28,7 @@ async def test_core_crud_operations(async_session):
         name="Test Customer",
         phone="+1234567890",
         business_id=business.id,
-        street="123 Main St"
+        street="123 Main St",
     )
     customer_repo.add(customer)
     await async_session.commit()
@@ -44,7 +41,7 @@ async def test_core_crud_operations(async_session):
         customer_id=customer.id,
         description="Initial Job",
         value=100.0,
-        scheduled_at=datetime.now(timezone.utc)
+        scheduled_at=datetime.now(timezone.utc),
     )
     assert job.id is not None
     assert job.customer_id == customer.id
@@ -54,7 +51,7 @@ async def test_core_crud_operations(async_session):
     quote = await quote_service.create_quote(
         business_id=business.id,
         customer_id=customer.id,
-        lines=[{"description": "Service 1", "quantity": 1, "unit_price": 50.0}]
+        lines=[{"description": "Service 1", "quantity": 1, "unit_price": 50.0}],
     )
     assert quote.id is not None
     assert quote.total_amount == 50.0
@@ -83,14 +80,14 @@ async def test_core_crud_operations(async_session):
     today = datetime.now(timezone.utc).date()
     # Assuming list_jobs returns jobs for a date range
     schedules = await crm_service.get_employee_schedules(today)
-    
+
     # Check if our job is in there (might be under 'unassigned' if no employee set)
     all_jobs = []
     for user_jobs in schedules.values():
         all_jobs.extend(user_jobs)
-    
+
     # Also check unscheduled if it wasn't scheduled correctly
     unscheduled = await crm_service.get_unscheduled_jobs()
     all_jobs.extend(unscheduled)
-    
+
     assert any(j.id == job.id for j in all_jobs)

@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from src.services.time_tracking import TimeTrackingService
 from src.models import User, Job, Business, UserRole, Customer, JobStatus
 
+
 @pytest.mark.asyncio
 async def test_time_tracking_flow(async_session):
     # Setup data
@@ -14,11 +15,11 @@ async def test_time_tracking_flow(async_session):
         name="Time Employee",
         phone_number="+15555555555",
         business_id=business.id,
-        role=UserRole.EMPLOYEE
+        role=UserRole.EMPLOYEE,
     )
     async_session.add(user)
     await async_session.flush()
-    
+
     customer = Customer(name="Time Customer", business_id=business.id)
     async_session.add(customer)
     await async_session.flush()
@@ -37,11 +38,11 @@ async def test_time_tracking_flow(async_session):
     # 1. Test Check In
     user = await service.check_in(user.id)
     assert user.current_shift_start is not None
-    
+
     # 2. Test Check In Idempotency/Refresh (Optional in spec, but basic behavior check)
     original_start = user.current_shift_start
     # ... actually spec says "Check if already checked in? (Optional)"
-    
+
     # 3. Test Check Out
     user, start, end, completed_jobs = await service.check_out(user.id)
     assert user.current_shift_start is None
@@ -67,4 +68,3 @@ async def test_time_tracking_flow(async_session):
     # 7. Test Finish Job without Start
     with pytest.raises(ValueError, match="Job not started"):
         await service.finish_job(job.id)
-

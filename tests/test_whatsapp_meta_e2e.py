@@ -18,28 +18,31 @@ TestingSessionLocal = async_sessionmaker(
     bind=engine_test, class_=AsyncSession, expire_on_commit=False
 )
 
+
 @pytest.fixture
 async def setup_db():
     # Create tables
     async with engine_test.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     # Pre-create User
     phone = "16505551234"
     async with TestingSessionLocal() as db:
         from src.models import Business, User, UserRole
+
         biz = Business(name="Meta Review Biz")
         db.add(biz)
         await db.flush()
         user = User(phone_number=phone, business_id=biz.id, role=UserRole.OWNER)
         db.add(user)
         await db.commit()
-    
+
     yield phone
-    
+
     # Teardown
     async with engine_test.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
 
 @pytest.mark.asyncio
 async def test_meta_webhook_format_e2e(setup_db):
@@ -61,35 +64,37 @@ async def test_meta_webhook_format_e2e(setup_db):
                             "messaging_product": "whatsapp",
                             "metadata": {
                                 "display_phone_number": "15550000000",
-                                "phone_number_id": "123456789"
+                                "phone_number_id": "123456789",
                             },
                             "contacts": [
-                                {
-                                    "profile": {"name": "Test User"},
-                                    "wa_id": phone
-                                }
+                                {"profile": {"name": "Test User"}, "wa_id": phone}
                             ],
                             "messages": [
                                 {
                                     "from": phone,
                                     "id": "wamid.HBgLMTY1MDU1NTEyMzQfAhIAEhgWM0VCMDY1RUVCOUM4ODlDMDVCOUMyNwA=",
                                     "timestamp": "1677610000",
-                                    "text": {"body": "Add a job for John $100 fix leak"},
-                                    "type": "text"
+                                    "text": {
+                                        "body": "Add a job for John $100 fix leak"
+                                    },
+                                    "type": "text",
                                 }
-                            ]
+                            ],
                         },
-                        "field": "messages"
+                        "field": "messages",
                     }
-                ]
+                ],
             }
-        ]
+        ],
     }
 
     # Patch dependencies
     with (
         patch("src.llm_client.parser.parse", new_callable=AsyncMock) as mock_parse,
-        patch("src.services.messaging_service.MessagingService.send_message", new_callable=AsyncMock) as mock_send,
+        patch(
+            "src.services.messaging_service.MessagingService.send_message",
+            new_callable=AsyncMock,
+        ) as mock_send,
         patch("src.api.routes.template_service") as mock_template_service,
     ):
         # Mock LLM behavior
@@ -100,7 +105,9 @@ async def test_meta_webhook_format_e2e(setup_db):
         )
 
         # Mock template response
-        mock_template_service.render.return_value = "Please confirm the job for John at $100."
+        mock_template_service.render.return_value = (
+            "Please confirm the job for John at $100."
+        )
 
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
@@ -132,6 +139,7 @@ async def test_meta_webhook_format_e2e(setup_db):
             assert call_args.kwargs["recipient_phone"] == phone
             assert "confirm the job for John" in call_args.kwargs["content"]
 
+
 @pytest.mark.asyncio
 async def test_meta_webhook_image_handling(setup_db):
     phone = setup_db
@@ -158,21 +166,27 @@ async def test_meta_webhook_image_handling(setup_db):
                                         "caption": "Photo of the damage",
                                         "mime_type": "image/jpeg",
                                         "sha256": "sha_hash",
-                                        "id": "meta_media_id"
-                                    }
+                                        "id": "meta_media_id",
+                                    },
                                 }
-                            ]
+                            ],
                         },
-                        "field": "messages"
+                        "field": "messages",
                     }
-                ]
+                ],
             }
-        ]
+        ],
     }
 
     with (
-        patch("src.services.whatsapp_service.WhatsappService.handle_message", new_callable=AsyncMock) as mock_handle,
-        patch("src.services.messaging_service.MessagingService.send_message", new_callable=AsyncMock) as mock_send,
+        patch(
+            "src.services.whatsapp_service.WhatsappService.handle_message",
+            new_callable=AsyncMock,
+        ) as mock_handle,
+        patch(
+            "src.services.messaging_service.MessagingService.send_message",
+            new_callable=AsyncMock,
+        ) as mock_send,
     ):
         mock_handle.return_value = "Received your photo."
 
@@ -183,7 +197,7 @@ async def test_meta_webhook_image_handling(setup_db):
             signature = hmac.new(
                 secret.encode("utf-8"), payload_bytes, hashlib.sha256
             ).hexdigest()
-            
+
             response = await ac.post(
                 "/webhook",
                 content=payload_bytes,
@@ -198,21 +212,22 @@ async def test_meta_webhook_image_handling(setup_db):
             # Verify it recognized the image
             args = mock_handle.call_args
             assert args.kwargs["media_type"] == "image"
-            
+
             # Verify reply sent
             mock_send.assert_called_with(
                 recipient_phone=phone,
                 content="Received your photo.",
                 trigger_source=ANY,
-                business_id=ANY
+                business_id=ANY,
             )
+
 
 @pytest.mark.asyncio
 async def test_meta_webhook_verification(setup_db):
     """Test the GET challenge for Meta verification."""
-    verify_token = "blue_cat_123" # From src/config/__init__.py default
+    verify_token = "blue_cat_123"  # From src/config/__init__.py default
     challenge = "1158201444"
-    
+
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as ac:
@@ -221,8 +236,8 @@ async def test_meta_webhook_verification(setup_db):
             params={
                 "hub.mode": "subscribe",
                 "hub.verify_token": verify_token,
-                "hub.challenge": challenge
-            }
+                "hub.challenge": challenge,
+            },
         )
         assert response.status_code == 200
         assert response.text == challenge

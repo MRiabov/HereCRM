@@ -6,12 +6,23 @@ from datetime import datetime
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from src.models import Quote, QuoteLineItem, QuoteStatus, Job, LineItem, Request, Business, Customer, MessageTriggerSource
+from src.models import (
+    Quote,
+    QuoteLineItem,
+    QuoteStatus,
+    Job,
+    LineItem,
+    Request,
+    Business,
+    Customer,
+    MessageTriggerSource,
+)
 from src.services.pdf_generator import pdf_generator
 from src.services.storage import storage_service
 from src.services.tax_calculator import tax_calculator
 
 logger = logging.getLogger(__name__)
+
 
 class QuoteService:
     def __init__(self, session: AsyncSession):
@@ -24,18 +35,22 @@ class QuoteService:
         Confirms a quote using its external token.
         Updates status to ACCEPTED and creates a corresponding Job.
         """
-        stmt = select(Quote).options(selectinload(Quote.items)).where(Quote.external_token == token)
+        stmt = (
+            select(Quote)
+            .options(selectinload(Quote.items))
+            .where(Quote.external_token == token)
+        )
         result = await self.session.execute(stmt)
         quote = result.scalars().first()
 
         if not quote:
             return None
-        
+
         if quote.status == QuoteStatus.ACCEPTED:
-            return quote # Already accepted
+            return quote  # Already accepted
 
         quote.status = QuoteStatus.ACCEPTED
-        
+
         # Create Job
         job = Job(
             business_id=quote.business_id,
@@ -52,24 +67,29 @@ class QuoteService:
                     quantity=item.quantity,
                     unit_price=item.unit_price,
                     total_price=item.total,
-                    service_id=item.service_id
-                ) for item in quote.items
-            ]
+                    service_id=item.service_id,
+                )
+                for item in quote.items
+            ],
         )
         self.session.add(job)
-        await self.session.flush() # Get Job ID
-        
+        await self.session.flush()  # Get Job ID
+
         quote.job_id = job.id
         await self.session.commit()
         await self.session.refresh(quote)
 
         from src.events import QUOTE_ACCEPTED, event_bus
-        await event_bus.emit(QUOTE_ACCEPTED, {
-            "quote_id": quote.id,
-            "business_id": quote.business_id,
-            "customer_id": quote.customer_id
-        })
-        
+
+        await event_bus.emit(
+            QUOTE_ACCEPTED,
+            {
+                "quote_id": quote.id,
+                "business_id": quote.business_id,
+                "customer_id": quote.customer_id,
+            },
+        )
+
         return quote
 
     async def create_quote(
@@ -77,18 +97,20 @@ class QuoteService:
     ) -> Quote:
         """
         Creates a new quote with line items.
-        
+
         Args:
             customer_id: ID of the customer
             business_id: ID of the business
             lines: List of dicts with keys: service_id (opt), description, quantity, unit_price
         """
-        logger.info(f"Creating quote for customer {customer_id}, business {business_id}")
-        
+        logger.info(
+            f"Creating quote for customer {customer_id}, business {business_id}"
+        )
+
         # Fetch business to check tax settings
         business = await self.session.get(Business, business_id)
         if not business:
-             raise ValueError(f"Business {business_id} not found")
+            raise ValueError(f"Business {business_id} not found")
 
         # Fetch customer (for future location-based tax)
         customer = await self.session.get(Customer, customer_id)
@@ -126,7 +148,7 @@ class QuoteService:
         self.session.add(quote)
         await self.session.commit()
         await self.session.refresh(quote)
-        
+
         return quote
 
     async def get_quote(self, quote_id: int) -> Optional[Quote]:
@@ -157,7 +179,7 @@ class QuoteService:
         quote = await self.get_quote(quote_id)
         if not quote:
             raise ValueError(f"Quote {quote_id} not found")
-        
+
         logger.info(f"Generating PDF for Quote #{quote.id}")
 
         try:
@@ -167,9 +189,7 @@ class QuoteService:
             # Upload to S3
             filename = f"quotes/quote_{quote.id}_{int(datetime.now().timestamp())}.pdf"
             public_url = self.s3_service.upload_file(
-                file_content=pdf_bytes,
-                key=filename,
-                content_type="application/pdf"
+                file_content=pdf_bytes, key=filename, content_type="application/pdf"
             )
 
             quote.blob_url = public_url
@@ -187,7 +207,7 @@ class QuoteService:
 
         customer_repo = CustomerRepository(self.session)
         customer = await customer_repo.get_by_id(quote.customer_id, quote.business_id)
-        
+
         if customer and customer.phone:
             content = f"Here is your quote from {customer.business.name}: {public_url}"
             await messaging_service.enqueue_message(
@@ -196,20 +216,23 @@ class QuoteService:
                 trigger_source=MessageTriggerSource.QUOTE_SENT,
                 business_id=quote.business_id,
             )
-        
+
         logger.info(f"Sending Quote #{quote.id} to Customer #{quote.customer_id}")
-        
+
         quote.status = QuoteStatus.SENT
         await self.session.commit()
         await self.session.refresh(quote)
 
         # Emit event for follow-up scheduling
-        await event_bus.emit(QUOTE_SENT, {
-            "quote_id": quote.id,
-            "customer_id": quote.customer_id,
-            "business_id": quote.business_id,
-            "total_amount": quote.total_amount
-        })
+        await event_bus.emit(
+            QUOTE_SENT,
+            {
+                "quote_id": quote.id,
+                "customer_id": quote.customer_id,
+                "business_id": quote.business_id,
+                "total_amount": quote.total_amount,
+            },
+        )
 
     async def create_from_request(
         self, request_id: int, customer_id: int, items: Optional[List[Dict]] = None
@@ -217,10 +240,14 @@ class QuoteService:
         """
         Promotes a customer request to a quote.
         """
-        stmt = select(Request).options(selectinload(Request.line_items)).where(Request.id == request_id)
+        stmt = (
+            select(Request)
+            .options(selectinload(Request.line_items))
+            .where(Request.id == request_id)
+        )
         result = await self.session.execute(stmt)
         request = result.scalars().first()
-        
+
         if not request:
             raise ValueError(f"Request {request_id} not found")
 
@@ -231,8 +258,9 @@ class QuoteService:
                     "description": item.description,
                     "quantity": item.quantity,
                     "unit_price": item.unit_price,
-                    "service_id": item.service_id
-                } for item in request.line_items
+                    "service_id": item.service_id,
+                }
+                for item in request.line_items
             ]
 
         # Reuse create_quote logic if items provided
@@ -243,13 +271,19 @@ class QuoteService:
         else:
             # Create a draft quote with a single descriptive item from the request description
             quote = await self.create_quote(
-                customer_id, 
-                request.business_id, 
-                [{"description": f"Request: {request.description}", "quantity": 1, "unit_price": 0.0}]
+                customer_id,
+                request.business_id,
+                [
+                    {
+                        "description": f"Request: {request.description}",
+                        "quantity": 1,
+                        "unit_price": 0.0,
+                    }
+                ],
             )
 
         # Update request status instead of deleting (or follow Job conversion pattern)
         # CRMService.convert_request deletes the request, so we should probably follow that.
         # But we'll let CRMService handle the deletion to match the 'schedule' action pattern.
-        
+
         return quote

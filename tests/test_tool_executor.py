@@ -2,7 +2,13 @@ from src.models import RequestStatus, UserRole, JobStatus
 import pytest
 from src.models import Business, Job, Customer, User, Request, PipelineStage
 from src.tool_executor import ToolExecutor
-from src.uimodels import AddJobTool, AddLeadTool, ConvertRequestTool, SearchTool, GetPipelineTool
+from src.uimodels import (
+    AddJobTool,
+    AddLeadTool,
+    ConvertRequestTool,
+    SearchTool,
+    GetPipelineTool,
+)
 from src.services.template_service import TemplateService
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,19 +32,24 @@ async def test_execute_add_job_new_customer(
     await test_session.flush()
 
     from unittest.mock import MagicMock, patch, AsyncMock
-    
+
     # Mock GeocodingService to prevent unclosed client sessions
-    with patch("src.events.event_bus.emit", new_callable=AsyncMock), \
-         patch("src.tool_executor.GeocodingService") as link_mock, \
-         patch("src.services.crm_service.GeocodingService") as crm_mock:
-        
+    with (
+        patch("src.events.event_bus.emit", new_callable=AsyncMock),
+        patch("src.tool_executor.GeocodingService") as link_mock,
+        patch("src.services.crm_service.GeocodingService") as crm_mock,
+    ):
         mock_geo = MagicMock()
-        mock_geo.geocode = AsyncMock(return_value=(None, None, None, None, None, None, None))
-        
+        mock_geo.geocode = AsyncMock(
+            return_value=(None, None, None, None, None, None, None)
+        )
+
         link_mock.return_value = mock_geo
         crm_mock.return_value = mock_geo
-        
-        executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
+
+        executor = ToolExecutor(
+            test_session, biz.id, user.id, user.phone_number, template_service
+        )
         tool = AddJobTool(
             customer_name="Alice",
             customer_phone="5551234",
@@ -79,11 +90,17 @@ async def test_execute_convert_request(
     await test_session.flush()
 
     # Pre-existing request
-    req = Request(business_id=biz.id, description="I want to fix my roof", status=RequestStatus.PENDING)
+    req = Request(
+        business_id=biz.id,
+        description="I want to fix my roof",
+        status=RequestStatus.PENDING,
+    )
     test_session.add(req)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
+    executor = ToolExecutor(
+        test_session, biz.id, user.id, user.phone_number, template_service
+    )
     tool = ConvertRequestTool(query="roof", action="SCHEDULE", time="tomorrow")
 
     result, metadata = await executor.execute(tool)
@@ -117,11 +134,17 @@ async def test_execute_log_request(
     await test_session.flush()
 
     # Pre-existing request
-    req = Request(business_id=biz.id, description="Info only request", status=RequestStatus.PENDING)
+    req = Request(
+        business_id=biz.id,
+        description="Info only request",
+        status=RequestStatus.PENDING,
+    )
     test_session.add(req)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
+    executor = ToolExecutor(
+        test_session, biz.id, user.id, user.phone_number, template_service
+    )
     tool = ConvertRequestTool(query="Info", action="LOG")
 
     result, metadata = await executor.execute(tool)
@@ -150,7 +173,9 @@ async def test_execute_add_lead_implicit(
     test_session.add(user)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
+    executor = ToolExecutor(
+        test_session, biz.id, user.id, user.phone_number, template_service
+    )
 
     # 1. Add Lead
     tool = AddLeadTool(
@@ -210,7 +235,9 @@ async def test_deduplication(
     test_session.add(user)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
+    executor = ToolExecutor(
+        test_session, biz.id, user.id, user.phone_number, template_service
+    )
 
     # 1. Add Customer Case-Sensitive
     tool = AddLeadTool(name="John Doe", phone="5550000")
@@ -254,11 +281,15 @@ async def test_execute_get_pipeline(
     await test_session.flush()
 
     # Add a customer to have something in the pipeline
-    c1 = Customer(name="Alice", business_id=biz.id, pipeline_stage=PipelineStage.NOT_CONTACTED)
+    c1 = Customer(
+        name="Alice", business_id=biz.id, pipeline_stage=PipelineStage.NOT_CONTACTED
+    )
     test_session.add(c1)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
+    executor = ToolExecutor(
+        test_session, biz.id, user.id, user.phone_number, template_service
+    )
     tool = GetPipelineTool()
 
     result, metadata = await executor.execute(tool)

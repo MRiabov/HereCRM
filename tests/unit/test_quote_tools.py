@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 from src.tools.quote_tools import QuoteCreationHandler
 from src.uimodels import CreateQuoteTool, QuoteLineItemInput
 
+
 @pytest.mark.asyncio
 async def test_create_quote_tool_run():
     # Mock services
@@ -13,7 +14,7 @@ async def test_create_quote_tool_run():
     mock_quote.id = 1
     mock_quote.total_amount = 100.0
     mock_quote_service.create_quote.return_value = mock_quote
-    
+
     # Mock send_quote (even if it doesn't exist on real class, we mocked the service)
     mock_quote_service.send_quote = AsyncMock()
 
@@ -25,18 +26,22 @@ async def test_create_quote_tool_run():
     mock_customer_repo.search.return_value = [mock_customer]
 
     business_id = 999
-    
+
     # Mock TemplateService
     mock_template_service = MagicMock()
-    mock_template_service.render.return_value = "Quote #1 created and sent to Test Customer"
+    mock_template_service.render.return_value = (
+        "Quote #1 created and sent to Test Customer"
+    )
 
-    tool = QuoteCreationHandler(mock_quote_service, mock_customer_repo, business_id, mock_template_service)
+    tool = QuoteCreationHandler(
+        mock_quote_service, mock_customer_repo, business_id, mock_template_service
+    )
 
     input_data = CreateQuoteTool(
         customer_identifier="Test Customer",
         items=[
             QuoteLineItemInput(description="Window Cleaning", quantity=1, price=100.0)
-        ]
+        ],
     )
 
     result_msg, result_data = await tool.run(input_data)
@@ -50,11 +55,12 @@ async def test_create_quote_tool_run():
     assert result_data["id"] == 1
     assert result_data["action"] == "create_quote"
 
+
 @pytest.mark.asyncio
 async def test_create_quote_tool_customer_not_found():
     mock_quote_service = AsyncMock()
     mock_customer_repo = AsyncMock()
-    mock_customer_repo.search.return_value = [] # No results
+    mock_customer_repo.search.return_value = []  # No results
 
     tool = QuoteCreationHandler(mock_quote_service, mock_customer_repo, 1, MagicMock())
     input_data = CreateQuoteTool(customer_identifier="Unknown", items=[])
@@ -63,11 +69,12 @@ async def test_create_quote_tool_customer_not_found():
     assert "Could not find customer" in msg
     assert data is None
 
+
 @pytest.mark.asyncio
 async def test_create_quote_tool_ambiguous_customer():
     mock_quote_service = AsyncMock()
     mock_customer_repo = AsyncMock()
-    mock_customer_repo.search.return_value = [MagicMock(), MagicMock()] # Two results
+    mock_customer_repo.search.return_value = [MagicMock(), MagicMock()]  # Two results
 
     tool = QuoteCreationHandler(mock_quote_service, mock_customer_repo, 1, MagicMock())
     input_data = CreateQuoteTool(customer_identifier="Ambiguous", items=[])

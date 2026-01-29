@@ -9,7 +9,8 @@ from alembic import context
 
 import sys
 import os
-sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..')))
+
+sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.models import Base
 

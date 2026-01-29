@@ -26,10 +26,14 @@ def auth_service(async_session, mock_credentials_db):
     env_vars = {
         "QB_CLIENT_ID": "test_client_id",
         "QB_CLIENT_SECRET": "test_client_secret",
-        "QB_REDIRECT_URI": f"http://localhost:{os.getenv('BACKEND_PORT', '8000')}/callback"
+        "QB_REDIRECT_URI": f"http://localhost:{os.getenv('BACKEND_PORT', '8000')}/callback",
     }
-    with mock.patch("src.services.accounting.quickbooks_auth.get_credentials_db") as mock_get_db, \
-         mock.patch.dict(os.environ, env_vars):
+    with (
+        mock.patch(
+            "src.services.accounting.quickbooks_auth.get_credentials_db"
+        ) as mock_get_db,
+        mock.patch.dict(os.environ, env_vars),
+    ):
         mock_get_db.return_value = mock_credentials_db
         service = QuickBooksAuthService(async_session)
         yield service
@@ -40,7 +44,7 @@ async def test_generate_auth_url(auth_service):
     """Test generating the authorization URL."""
     business_id = 1
     url = auth_service.generate_auth_url(business_id)
-    
+
     assert "client_id=" in url
     assert "response_type=code" in url
     assert "scope=com.intuit.quickbooks.accounting" in url
@@ -60,7 +64,9 @@ async def test_handle_callback(auth_service, async_session, mock_credentials_db)
     state = "1:random_state"
 
     # Mock OAuth client
-    with mock.patch("src.services.accounting.quickbooks_client.AuthClient") as MockOAuth:
+    with mock.patch(
+        "src.services.accounting.quickbooks_client.AuthClient"
+    ) as MockOAuth:
         mock_instance = MockOAuth.return_value
         mock_instance.access_token = "access_123"
         mock_instance.refresh_token = "refresh_456"
@@ -73,7 +79,11 @@ async def test_handle_callback(auth_service, async_session, mock_credentials_db)
         assert token_data["realm_id"] == realm_id
 
         # Verify saved in credentials DB
-        cred = mock_credentials_db.query(QuickBooksCredential).filter_by(business_id=1).first()
+        cred = (
+            mock_credentials_db.query(QuickBooksCredential)
+            .filter_by(business_id=1)
+            .first()
+        )
         assert cred is not None
         assert cred.access_token == "access_123"
         assert cred.realm_id == "12345"
@@ -93,14 +103,14 @@ async def test_ensure_active_token_no_refresh(auth_service, mock_credentials_db)
         realm_id="12345",
         access_token="valid_access",
         refresh_token="valid_refresh",
-        token_expiry=expiry
+        token_expiry=expiry,
     )
     mock_credentials_db.add(cred)
     mock_credentials_db.commit()
 
     # Call ensure_active_token
     result = await auth_service.ensure_active_token(cred)
-    
+
     assert result.access_token == "valid_access"
 
 
@@ -114,13 +124,15 @@ async def test_ensure_active_token_with_refresh(auth_service, mock_credentials_d
         realm_id="12345",
         access_token="old_access",
         refresh_token="old_refresh",
-        token_expiry=expiry
+        token_expiry=expiry,
     )
     mock_credentials_db.add(cred)
     mock_credentials_db.commit()
 
     # Mock OAuth client refresh
-    with mock.patch("src.services.accounting.quickbooks_client.AuthClient") as MockOAuth:
+    with mock.patch(
+        "src.services.accounting.quickbooks_client.AuthClient"
+    ) as MockOAuth:
         mock_instance = MockOAuth.return_value
         mock_instance.access_token = "new_access"
         mock_instance.refresh_token = "new_refresh"
@@ -133,9 +145,13 @@ async def test_ensure_active_token_with_refresh(auth_service, mock_credentials_d
 
         assert result.access_token == "new_access"
         assert result.refresh_token == "new_refresh"
-        
+
         # Verify it was updated in mock_credentials_db
-        updated_cred = mock_credentials_db.query(QuickBooksCredential).filter_by(business_id=1).first()
+        updated_cred = (
+            mock_credentials_db.query(QuickBooksCredential)
+            .filter_by(business_id=1)
+            .first()
+        )
         assert updated_cred.access_token == "new_access"
 
 
@@ -152,7 +168,7 @@ async def test_disconnect(auth_service, async_session, mock_credentials_db):
         realm_id="12345",
         access_token="access",
         refresh_token="refresh",
-        token_expiry=datetime.now(timezone.utc)
+        token_expiry=datetime.now(timezone.utc),
     )
     mock_credentials_db.add(cred)
     mock_credentials_db.commit()
@@ -161,7 +177,9 @@ async def test_disconnect(auth_service, async_session, mock_credentials_db):
     await auth_service.disconnect(1)
 
     # Verify credentials deleted
-    cred_after = mock_credentials_db.query(QuickBooksCredential).filter_by(business_id=1).first()
+    cred_after = (
+        mock_credentials_db.query(QuickBooksCredential).filter_by(business_id=1).first()
+    )
     assert cred_after is None
 
     # Verify business updated

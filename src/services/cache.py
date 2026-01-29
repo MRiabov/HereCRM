@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional, Any
 import threading
 
+
 class ServiceCatalogCache:
     _instance = None
     _lock = threading.Lock()

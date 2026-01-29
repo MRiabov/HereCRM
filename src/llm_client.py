@@ -545,13 +545,13 @@ class LLMParser:
                         # Append the assistant's content (if any) and the retry instruction
                         messages.append(
                             {
-                                "role": "ASSISTANT",
+                                "role": "assistant",
                                 "content": message.content or "[no tool call produced]",
                             }
                         )
                         messages.append(
                             {
-                                "role": "USER",
+                                "role": "user",
                                 "content": self.prompts_service.render(
                                     "retry_instruction"
                                 ),
@@ -581,7 +581,7 @@ class LLMParser:
 
                 # Check for JSON errors
                 try:
-                    arguments = json.loads(tool_call.function.arguments)
+                    arguments = json.loads(tool_call.function.arguments) or {}
                 except json.JSONDecodeError as e:
                     if attempt == 0:
                         self.logger.warning(f"JSON Decode Error: {e}")
@@ -590,7 +590,7 @@ class LLMParser:
                         error_msg = f"JSON Decode Error: {str(e)}"
                         messages.append(
                             {
-                                "role": "USER",
+                                "role": "user",
                                 "content": self.prompts_service.render(
                                     "retry_error_instruction", error=error_msg
                                 ),
@@ -725,7 +725,7 @@ class LLMParser:
                 "If they ask to export, use ExportQueryTool. "
                 "If they want to leave, use ExitDataManagementTool.",
             },
-            {"role": "USER", "content": text},
+            {"role": "user", "content": text},
         ]
 
         model_map = {
@@ -765,7 +765,7 @@ class LLMParser:
 
         messages = [
             {"role": "system", "content": system_instruction},
-            {"role": "USER", "content": text},
+            {"role": "user", "content": text},
         ]
 
         model_map = {
@@ -799,7 +799,7 @@ class LLMParser:
                 "The user wants to invite new employees or manage existing ones. "
                 "Map their request to the appropriate tool.",
             },
-            {"role": "USER", "content": text},
+            {"role": "user", "content": text},
         ]
 
         model_map = {
@@ -890,7 +890,20 @@ class LLMParser:
                 "user_time_prompt", system_time=system_time, text=text
             )
 
-        messages.append({"role": "USER", "content": user_prompt})
+        # Targeted instruction for help-like queries to reduce chatter and force HelpTool
+        help_keywords = [
+            "how do i",
+            "how to",
+            "explain how",
+            "why did my last prompt fail",
+        ]
+        if any(kw in lower_text for kw in help_keywords):
+            user_prompt += "\n\n(Note: For help or 'how-to' queries, use HelpTool. Do not reply with text.)"
+        else:
+            # General strictness for other queries
+            user_prompt += "\n\n(IMPORTANT: Always use a tool call if possible. Do not reply with text.)"
+
+        messages.append({"role": "user", "content": user_prompt})
 
         if feedback:
             messages.append(

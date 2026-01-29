@@ -3,13 +3,14 @@ import yaml
 from functools import lru_cache
 from typing import Dict, Any
 
+
 class ChannelConfig:
     def __init__(self, config_path: str = None):
         if config_path is None:
             # Default to channels.yaml in the same directory
             current_dir = os.path.dirname(os.path.abspath(__file__))
             config_path = os.path.join(current_dir, "channels.yaml")
-        
+
         self.config = self._load_config(config_path)
 
     def _load_config(self, path: str) -> Dict[str, Any]:
@@ -25,6 +26,7 @@ class ChannelConfig:
         if config is None:
             config = channels.get(channel_name.lower())
         return config or {}
+
 
 @lru_cache()
 def get_channel_config_loader() -> ChannelConfig:

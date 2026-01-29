@@ -8,6 +8,7 @@ from src.database import Base
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
+
 @pytest.fixture
 async def test_session():
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
@@ -22,6 +23,7 @@ async def test_session():
 
     await engine.dispose()
 
+
 @pytest.mark.asyncio
 async def test_assignment_service(test_session: AsyncSession):
     # Setup
@@ -31,21 +33,26 @@ async def test_assignment_service(test_session: AsyncSession):
 
     user = User(business_id=biz.id, phone_number="12345", role=UserRole.EMPLOYEE)
     test_session.add(user)
-    
+
     customer = Customer(business_id=biz.id, name="Test Customer")
     test_session.add(customer)
     await test_session.flush()
 
-    job = Job(business_id=biz.id, customer_id=customer.id, description="Test Job", status=JobStatus.PENDING)
+    job = Job(
+        business_id=biz.id,
+        customer_id=customer.id,
+        description="Test Job",
+        status=JobStatus.PENDING,
+    )
     test_session.add(job)
     await test_session.commit()
 
     # Test assign_job
     assignment_service = AssignmentService(test_session, biz.id)
     result = await assignment_service.assign_job(job.id, user.id)
-    
+
     assert result.job.employee_id == user.id
-    
+
     # Verify persistence
     await test_session.refresh(job)
     assert job.employee_id == user.id
@@ -54,6 +61,7 @@ async def test_assignment_service(test_session: AsyncSession):
     await assignment_service.unassign_job(job.id)
     await test_session.refresh(job)
     assert job.employee_id is None
+
 
 @pytest.mark.asyncio
 async def test_crm_service_schedules(test_session: AsyncSession):
@@ -65,39 +73,39 @@ async def test_crm_service_schedules(test_session: AsyncSession):
     user1 = User(business_id=biz.id, phone_number="111", role=UserRole.OWNER)
     user2 = User(business_id=biz.id, phone_number="222", role=UserRole.EMPLOYEE)
     test_session.add_all([user1, user2])
-    
+
     customer = Customer(business_id=biz.id, name="Test Customer")
     test_session.add(customer)
     await test_session.flush()
 
     today = date.today()
     job1 = Job(
-        business_id=biz.id, 
-        customer_id=customer.id, 
-        description="Job 1", 
+        business_id=biz.id,
+        customer_id=customer.id,
+        description="Job 1",
         scheduled_at=datetime.combine(today, time(10, 0)),
-        employee_id=user1.id
+        employee_id=user1.id,
     )
     job2 = Job(
-        business_id=biz.id, 
-        customer_id=customer.id, 
-        description="Job 2", 
+        business_id=biz.id,
+        customer_id=customer.id,
+        description="Job 2",
         scheduled_at=datetime.combine(today, time(14, 0)),
-        employee_id=user2.id
+        employee_id=user2.id,
     )
     test_session.add_all([job1, job2])
     await test_session.commit()
 
     crm_service = CRMService(test_session, biz.id)
     schedules = await crm_service.get_employee_schedules(today)
-    
+
     # schedules contains user1, user2 AND None (for unassigned)
     assert len(schedules) == 3
     # Check if user1 and user2 are in keys
     user_ids = [u.id for u in schedules.keys() if u is not None]
     assert user1.id in user_ids
     assert user2.id in user_ids
-    
+
     # Check jobs
     for user, jobs in schedules.items():
         if user is None:
@@ -108,6 +116,7 @@ async def test_crm_service_schedules(test_session: AsyncSession):
         if user.id == user2.id:
             assert len(jobs) == 1
             assert jobs[0].description == "Job 2"
+
 
 @pytest.mark.asyncio
 async def test_crm_service_unscheduled(test_session: AsyncSession):
@@ -124,13 +133,26 @@ async def test_crm_service_unscheduled(test_session: AsyncSession):
     test_session.add(user)
     await test_session.flush()
 
-    job1 = Job(business_id=biz.id, customer_id=customer.id, description="Unscheduled Job", employee_id=None, status=JobStatus.PENDING)
-    job2 = Job(business_id=biz.id, customer_id=customer.id, description="Scheduled Job", employee_id=user.id, status=JobStatus.PENDING, scheduled_at=datetime.now())
+    job1 = Job(
+        business_id=biz.id,
+        customer_id=customer.id,
+        description="Unscheduled Job",
+        employee_id=None,
+        status=JobStatus.PENDING,
+    )
+    job2 = Job(
+        business_id=biz.id,
+        customer_id=customer.id,
+        description="Scheduled Job",
+        employee_id=user.id,
+        status=JobStatus.PENDING,
+        scheduled_at=datetime.now(),
+    )
     test_session.add_all([job1, job2])
     await test_session.commit()
 
     crm_service = CRMService(test_session, biz.id)
     unscheduled = await crm_service.get_unscheduled_jobs()
-    
+
     assert len(unscheduled) == 1
     assert unscheduled[0].description == "Unscheduled Job"

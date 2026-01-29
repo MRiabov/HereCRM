@@ -76,7 +76,9 @@ async def main():
             if user_input.lower() == "switch":
                 new_phone = input("Enter new phone number: ").strip()
                 if new_phone:
-                    current_phone = "".join(c for c in new_phone if c.isdigit() or c == "+")
+                    current_phone = "".join(
+                        c for c in new_phone if c.isdigit() or c == "+"
+                    )
                 continue
 
             if not user_input:
@@ -91,4 +93,3 @@ if __name__ == "__main__":
         asyncio.run(main())
     except KeyboardInterrupt:
         print("\nExiting...")
-

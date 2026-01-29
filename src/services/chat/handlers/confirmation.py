@@ -5,13 +5,14 @@ from src.services.chat.handlers.base import ChatHandler
 from src.services.chat.utils.draft_executor import DraftExecutor
 import logging
 
+
 class ConfirmationHandler(ChatHandler):
     def __init__(
         self,
         session: AsyncSession,
         template_service: TemplateService,
         draft_executor: DraftExecutor,
-        idle_handler # We need idle handler for fallback
+        idle_handler,  # We need idle handler for fallback
     ):
         self.session = session
         self.template_service = template_service
@@ -19,13 +20,17 @@ class ConfirmationHandler(ChatHandler):
         self.idle_handler = idle_handler
         self.logger = logging.getLogger(__name__)
 
-    async def handle(self, user: User, state_record: ConversationState, message_text: str) -> str:
+    async def handle(
+        self, user: User, state_record: ConversationState, message_text: str
+    ) -> str:
         if state_record.state == ConversationStatus.WAITING_CONFIRM:
             return await self._handle_waiting_confirm(user, state_record, message_text)
         elif state_record.state == ConversationStatus.PENDING_AUTO_CONFIRM:
-            return await self._handle_pending_auto_confirm(user, state_record, message_text)
+            return await self._handle_pending_auto_confirm(
+                user, state_record, message_text
+            )
         else:
-             return "Error: Invalid state for ConfirmationHandler"
+            return "Error: Invalid state for ConfirmationHandler"
 
     async def _handle_waiting_confirm(
         self, user: User, state_record: ConversationState, text: str

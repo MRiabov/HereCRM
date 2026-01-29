@@ -4,6 +4,7 @@ from src.database import Base
 import src.database
 
 import os
+
 # Use a temporary file for tests to ensure visibility across multiple sessions
 TEST_DB_FILE = "./test_crm.db"
 TEST_DATABASE_URL = f"sqlite+aiosqlite:///{TEST_DB_FILE}"
@@ -14,12 +15,13 @@ TestAsyncSessionLocal = async_sessionmaker(
     expire_on_commit=False,
 )
 
+
 @pytest_asyncio.fixture(scope="function", autouse=True)
 async def patch_db(monkeypatch):
     # Patch the app's database engine and session maker
     monkeypatch.setattr(src.database, "engine", test_engine)
     monkeypatch.setattr(src.database, "AsyncSessionLocal", TestAsyncSessionLocal)
-    
+
     if os.path.exists(TEST_DB_FILE):
         os.remove(TEST_DB_FILE)
 
@@ -36,4 +38,3 @@ async def patch_db(monkeypatch):
 async def session():
     async with TestAsyncSessionLocal() as s:
         yield s
-

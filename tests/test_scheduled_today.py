@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
+
 @pytest_asyncio.fixture
 async def test_session():
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
@@ -24,16 +25,21 @@ async def test_session():
 
     await engine.dispose()
 
+
 @pytest.fixture
 def template_service():
     return TemplateService()
+
 
 @pytest.mark.asyncio
 async def test_execute_add_job_scheduled_today(
     test_session: AsyncSession, template_service: TemplateService
 ):
     # Setup business with SCHEDULED_TODAY preference
-    biz = Business(name="Biz Scheduled Today", workflow_job_creation_default=JobCreationDefault.SCHEDULED_TODAY)
+    biz = Business(
+        name="Biz Scheduled Today",
+        workflow_job_creation_default=JobCreationDefault.SCHEDULED_TODAY,
+    )
     test_session.add(biz)
     await test_session.flush()
 
@@ -42,18 +48,23 @@ async def test_execute_add_job_scheduled_today(
     await test_session.flush()
 
     from unittest.mock import MagicMock, patch, AsyncMock
+
     with patch("src.services.geocoding.GeocodingService") as geo_mock:
         mock_instance = MagicMock()
-        mock_instance.geocode = AsyncMock(return_value=(None, None, None, None, None, None, "123 Mock Lane"))
+        mock_instance.geocode = AsyncMock(
+            return_value=(None, None, None, None, None, None, "123 Mock Lane")
+        )
         geo_mock.return_value = mock_instance
-        
-        executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
-        
+
+        executor = ToolExecutor(
+            test_session, biz.id, user.id, user.phone_number, template_service
+        )
+
         tool = AddJobTool(
             customer_name="Scheduled Alice",
             description="Fix AC",
             price=200.0,
-            location="123 Mock Lane"
+            location="123 Mock Lane",
         )
 
         # Patch EventBus.emit to ensure all instances (including imports) use the mock
@@ -65,12 +76,13 @@ async def test_execute_add_job_scheduled_today(
 
     # Verify Job is scheduled for today
     from sqlalchemy import select
+
     res = await test_session.execute(select(Job))
     job = res.scalar_one()
-    
+
     assert job.status == JobStatus.SCHEDULED
     assert job.scheduled_at is not None
-    
+
     # Check if scheduled_at is close to now
     now = datetime.now(timezone.utc)
     diff = abs((job.scheduled_at.replace(tzinfo=timezone.utc) - now).total_seconds())

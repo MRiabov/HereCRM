@@ -22,15 +22,15 @@ if "sqlite" in DATABASE_URL:
         # Handle "sqlite+aiosqlite:///" (absolute) vs "sqlite+aiosqlite:///" (relative) logic roughly
         # This is a basic check for typical usage
         db_path = DATABASE_URL.split("///")[-1]
-        
+
         # If it's a file path (not :memory:), make sure directory exists
         if db_path != ":memory:":
-             # Handle absolute paths that might be passed incorrectly in some connection strings
-             # But generally, os.path.dirname works if it looks like a path
-             directory = os.path.dirname(db_path)
-             if directory and not os.path.exists(directory):
-                 os.makedirs(directory, exist_ok=True)
-                 logging.info(f"Created database directory: {directory}")
+            # Handle absolute paths that might be passed incorrectly in some connection strings
+            # But generally, os.path.dirname works if it looks like a path
+            directory = os.path.dirname(db_path)
+            if directory and not os.path.exists(directory):
+                os.makedirs(directory, exist_ok=True)
+                logging.info(f"Created database directory: {directory}")
     except Exception as e:
         logging.warning(f"Could not check/create database directory: {e}")
 
@@ -77,18 +77,18 @@ class EngineRegistry:
             # Ensure it's in a safe directory (e.g., ./data/tests/)
             os.makedirs("./data/tests", exist_ok=True)
             db_url = f"sqlite+aiosqlite:///./data/tests/{db_name}.db"
-            
+
             new_engine = create_async_engine(
-                db_url, 
-                echo=False, 
+                db_url,
+                echo=False,
                 connect_args={"check_same_thread": False},
-                poolclass=StaticPool
+                poolclass=StaticPool,
             )
-            
+
             # Initialize schema
             async with new_engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
-            
+
             new_session_maker = async_sessionmaker(
                 bind=new_engine,
                 class_=AsyncSession,
@@ -100,9 +100,11 @@ class EngineRegistry:
 
     async def dispose_all(self):
         for maker in self._engines.values():
-            await maker.kw['bind'].dispose()
+            await maker.kw["bind"].dispose()
+
 
 engine_registry = EngineRegistry()
+
 
 async def get_session_maker() -> async_sessionmaker:
     """Utility to get the correct session maker based on current ContextVar."""
@@ -111,12 +113,13 @@ async def get_session_maker() -> async_sessionmaker:
         return await engine_registry.get_session_maker(db_name)
     return AsyncSessionLocal
 
+
 async def get_db(request: Optional[Any] = None):
     # Try to get database name from header for test isolation
     db_name = None
     if request:
         db_name = request.headers.get("X-Test-Database")
-    
+
     token = current_db_name.set(db_name)
     try:
         if db_name:
@@ -136,23 +139,25 @@ if CREDENTIALS_DB_KEY:
     try:
         # Import pysqlcipher3 dynamically to handle potential import issues
         import pysqlcipher3.dbapi2 as sqlite
-        
+
         credentials_engine = create_engine(
             f"sqlite+pysqlcipher://:{CREDENTIALS_DB_KEY}@/credentials.db?cipher=aes-256-cfb&kdf_iter=64000",
             connect_args={"check_same_thread": False},
-            poolclass=StaticPool
+            poolclass=StaticPool,
         )
-        
+
         CredentialsSessionLocal = sessionmaker(
             bind=credentials_engine,
             expire_on_commit=False,
         )
-        
+
         logging.info("Credentials database engine configured successfully")
-        
+
     except ImportError as e:
         logging.warning(f"pysqlcipher3 not available: {e}")
-        logging.warning("QuickBooks credentials encryption disabled - install sqlcipher system libraries and pysqlcipher3 Python package")
+        logging.warning(
+            "QuickBooks credentials encryption disabled - install sqlcipher system libraries and pysqlcipher3 Python package"
+        )
         logging.warning("Ubuntu/Debian: sudo apt-get install sqlcipher")
         logging.warning("Then: uv sync or pip install pysqlcipher3")
         credentials_engine = None
@@ -162,7 +167,9 @@ if CREDENTIALS_DB_KEY:
         credentials_engine = None
         CredentialsSessionLocal = None
 else:
-    logging.info("CREDENTIALS_DB_KEY environment variable not set - QuickBooks integration disabled")
+    logging.info(
+        "CREDENTIALS_DB_KEY environment variable not set - QuickBooks integration disabled"
+    )
     credentials_engine = None
     CredentialsSessionLocal = None
 

@@ -10,11 +10,13 @@ from src.services.messaging_service import messaging_service
 
 logger = logging.getLogger(__name__)
 
+
 class SchedulerService:
     """
     Service responsible for scheduling background tasks, such as daily shift summaries.
     Wraps AsyncIOScheduler.
     """
+
     def __init__(self):
         self.scheduler = AsyncIOScheduler()
 
@@ -53,23 +55,31 @@ class SchedulerService:
                     return
 
                 # 2. For each employee, check for jobs today
-                today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+                today_start = datetime.now(timezone.utc).replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
                 today_end = today_start + timedelta(days=1)
 
-                logger.info(f"Checking shifts for {len(employees)} employees for date {today_start.date()}")
+                logger.info(
+                    f"Checking shifts for {len(employees)} employees for date {today_start.date()}"
+                )
 
                 for employee in employees:
                     if not employee.phone_number:
                         continue
 
                     # Find jobs assigned to this employee scheduled for today
-                    stmt_jobs = select(Job).where(
-                        Job.employee_id == employee.id,
-                        Job.scheduled_at >= today_start,
-                        Job.scheduled_at < today_end,
-                        Job.status != JobStatus.COMPLETED
-                    ).order_by(Job.scheduled_at)
-                    
+                    stmt_jobs = (
+                        select(Job)
+                        .where(
+                            Job.employee_id == employee.id,
+                            Job.scheduled_at >= today_start,
+                            Job.scheduled_at < today_end,
+                            Job.status != JobStatus.COMPLETED,
+                        )
+                        .order_by(Job.scheduled_at)
+                    )
+
                     result_jobs = await session.execute(stmt_jobs)
                     jobs = result_jobs.scalars().all()
 
@@ -77,16 +87,26 @@ class SchedulerService:
                         continue
 
                     # 3. Generate Summary
-                    summary_lines = [f"🌅 Morning Overview for {employee.name or 'Employee'}:"]
-                    summary_lines.append(f"You have {len(jobs)} jobs scheduled for today.")
-                    
+                    summary_lines = [
+                        f"🌅 Morning Overview for {employee.name or 'Employee'}:"
+                    ]
+                    summary_lines.append(
+                        f"You have {len(jobs)} jobs scheduled for today."
+                    )
+
                     for job in jobs:
-                        time_str = job.scheduled_at.strftime("%H:%M") if job.scheduled_at else "Time TBD"
+                        time_str = (
+                            job.scheduled_at.strftime("%H:%M")
+                            if job.scheduled_at
+                            else "Time TBD"
+                        )
                         loc = job.location or "No location"
                         desc = job.description or "No description"
                         summary_lines.append(f"- {time_str}: {desc} @ {loc}")
 
-                    summary_lines.append("\nReply 'Start shift' when you are ready to begin.")
+                    summary_lines.append(
+                        "\nReply 'Start shift' when you are ready to begin."
+                    )
 
                     # 4. Enqueue Message
                     summary_text = "\n".join(summary_lines)
@@ -94,10 +114,12 @@ class SchedulerService:
                         recipient_phone=employee.phone_number,
                         content=summary_text,
                         channel=MessageType.WHATSAPP,
-                        trigger_source=MessageTriggerSource.SCHEDULER
+                        trigger_source=MessageTriggerSource.SCHEDULER,
                     )
                     logger.info(f"Enqueued shift summary for {employee.id}")
 
         except Exception as e:
             logger.error(f"Error in check_shifts: {e}")
+
+
 scheduler_service = SchedulerService()

@@ -18,11 +18,16 @@ CONTACT_EVENT = "CONTACT_EVENT"
 
 logger = logging.getLogger(__name__)
 
+
 class EventBus:
     def __init__(self):
-        self._subscribers: Dict[str, List[Callable[[Any], Union[None, Awaitable[None]]]]] = {}
+        self._subscribers: Dict[
+            str, List[Callable[[Any], Union[None, Awaitable[None]]]]
+        ] = {}
 
-    def subscribe(self, event_name: str, callback: Callable[[Any], Union[None, Awaitable[None]]]):
+    def subscribe(
+        self, event_name: str, callback: Callable[[Any], Union[None, Awaitable[None]]]
+    ):
         """Subscribe a callback to an event."""
         if event_name not in self._subscribers:
             self._subscribers[event_name] = []
@@ -31,9 +36,11 @@ class EventBus:
 
     def on(self, event_name: str):
         """Decorator to subscribe a function to an event."""
+
         def decorator(func):
             self.subscribe(event_name, func)
             return func
+
         return decorator
 
     async def emit(self, event_name: str, data: Any = None):
@@ -48,15 +55,21 @@ class EventBus:
                     else:
                         callback(data)
                 except Exception as e:
-                    logger.error(f"Error in event handler for {event_name}: {e}", exc_info=True)
+                    logger.error(
+                        f"Error in event handler for {event_name}: {e}", exc_info=True
+                    )
 
             if coroutines:
                 results = await asyncio.gather(*coroutines, return_exceptions=True)
                 for result in results:
                     if isinstance(result, Exception):
-                        logger.error(f"Error in event handler for {event_name}: {result}", exc_info=True)
+                        logger.error(
+                            f"Error in event handler for {event_name}: {result}",
+                            exc_info=True,
+                        )
         else:
             logger.debug(f"No subscribers for {event_name}")
+
 
 # Global EventBus instance
 event_bus = EventBus()

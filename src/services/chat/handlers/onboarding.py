@@ -5,19 +5,22 @@ from src.services.invitation import InvitationService
 from src.services.chat.handlers.base import ChatHandler
 import logging
 
+
 class OnboardingHandler(ChatHandler):
     def __init__(
         self,
         session: AsyncSession,
         template_service: TemplateService,
-        invitation_service: InvitationService
+        invitation_service: InvitationService,
     ):
         self.session = session
         self.template_service = template_service
         self.invitation_service = invitation_service
         self.logger = logging.getLogger(__name__)
 
-    async def handle(self, user: User, state_record: ConversationState, message_text: str) -> str:
+    async def handle(
+        self, user: User, state_record: ConversationState, message_text: str
+    ) -> str:
         lower_text = message_text.lower().strip()
 
         # State 0: Initial choice (1 or 2)
@@ -36,7 +39,9 @@ class OnboardingHandler(ChatHandler):
         # State 1: Joining (processing invitation/code)
         draft = state_record.draft_data
         if draft.get("step") == "joining":
-            success, msg, _ = await self.invitation_service.process_join(user.phone_number or user.email or "", code=message_text)
+            success, msg, _ = await self.invitation_service.process_join(
+                user.phone_number or user.email or "", code=message_text
+            )
             if success:
                 state_record.state = ConversationStatus.IDLE
                 state_record.draft_data = None

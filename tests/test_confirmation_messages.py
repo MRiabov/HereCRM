@@ -46,10 +46,12 @@ async def test_schedule_job_summary(service, mock_user):
         customer_query="John", time="tomorrow at 10am", job_id=None, iso_time=None
     )
     # Mock customer search
-    with patch("src.repositories.CustomerRepository.search", new_callable=AsyncMock) as mock_search:
+    with patch(
+        "src.repositories.CustomerRepository.search", new_callable=AsyncMock
+    ) as mock_search:
         mock_search.return_value = []
         summary = await service.summary_generator.generate_summary(tool, mock_user)
-        assert "Schedule" in summary or "Job" in summary # Check for title
+        assert "Schedule" in summary or "Job" in summary  # Check for title
         assert "John" in summary
         assert "tomorrow at 10am" in summary
 
@@ -76,10 +78,14 @@ async def test_lead_summary(service, mock_user):
 @pytest.mark.asyncio
 async def test_request_summary(service, mock_user):
     tool = AddRequestTool(
-        description="Call John tomorrow", customer_name="John", customer_phone="+353861234567"
+        description="Call John tomorrow",
+        customer_name="John",
+        customer_phone="+353861234567",
     )
     # Mock customer search
-    with patch("src.repositories.CustomerRepository.search", new_callable=AsyncMock) as mock_search:
+    with patch(
+        "src.repositories.CustomerRepository.search", new_callable=AsyncMock
+    ) as mock_search:
         mock_search.return_value = []
         summary = await service.summary_generator.generate_summary(tool, mock_user)
         assert "Request" in summary
@@ -92,13 +98,16 @@ async def test_request_summary(service, mock_user):
         # So "Content:" in summary might still be valid if template hardcodes "Content: {{content}}".
         assert "Call John tomorrow" in summary
 
+
 @pytest.mark.asyncio
 async def test_request_summary_with_time(service, mock_user):
     tool = AddRequestTool(
         description="Call John tomorrow", customer_name="John", time="Tomorrow"
     )
     # Mock customer search
-    with patch("src.repositories.CustomerRepository.search", new_callable=AsyncMock) as mock_search:
+    with patch(
+        "src.repositories.CustomerRepository.search", new_callable=AsyncMock
+    ) as mock_search:
         mock_search.return_value = []
         summary = await service.summary_generator.generate_summary(tool, mock_user)
         assert "Tomorrow" in summary

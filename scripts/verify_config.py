@@ -8,6 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from src.config import load_channels_config
 from src.llm_client import parser
 
+
 async def verify():
     print("--- Verifying Channel Config ---")
     try:
@@ -30,6 +31,7 @@ async def verify():
         print("✅ Chat Completion verified.")
     except Exception as e:
         print(f"❌ Chat Completion failed: {e}")
+
 
 if __name__ == "__main__":
     asyncio.run(verify())

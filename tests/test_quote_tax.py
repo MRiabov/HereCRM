@@ -5,6 +5,7 @@ from src.models import Quote, Business, QuoteStatus, QuoteLineItem, Job
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.services.tax_calculator import tax_calculator
 
+
 @pytest.fixture
 def mock_session():
     session = AsyncMock(spec=AsyncSession)
@@ -15,6 +16,7 @@ def mock_session():
     # Mock get
     session.get = AsyncMock()
     return session
+
 
 @pytest.mark.asyncio
 async def test_create_quote_calculates_tax_added(mock_session):
@@ -28,15 +30,17 @@ async def test_create_quote_calculates_tax_added(mock_session):
 
     # Mock Business
     business = Business(id=business_id, workflow_tax_inclusive=False, name="Test Biz")
-    mock_session.get.side_effect = lambda model, id: business if model == Business else None
+    mock_session.get.side_effect = (
+        lambda model, id: business if model == Business else None
+    )
 
     # Set default tax rate for test
-    tax_calculator.default_tax_rate = 0.10 # 10%
+    tax_calculator.default_tax_rate = 0.10  # 10%
 
     # Define lines
     lines = [
         {"description": "Service A", "quantity": 1, "unit_price": 100.0},
-        {"description": "Service B", "quantity": 2, "unit_price": 50.0}
+        {"description": "Service B", "quantity": 2, "unit_price": 50.0},
     ]
     # Raw Total = 200
     # Subtotal = 200
@@ -52,6 +56,7 @@ async def test_create_quote_calculates_tax_added(mock_session):
     assert quote.total_amount == 220.0
     assert quote.tax_rate == 0.10
 
+
 @pytest.mark.asyncio
 async def test_create_quote_calculates_tax_inclusive(mock_session):
     """
@@ -64,15 +69,15 @@ async def test_create_quote_calculates_tax_inclusive(mock_session):
 
     # Mock Business
     business = Business(id=business_id, workflow_tax_inclusive=True, name="Test Biz")
-    mock_session.get.side_effect = lambda model, id: business if model == Business else None
+    mock_session.get.side_effect = (
+        lambda model, id: business if model == Business else None
+    )
 
     # Set default tax rate for test
-    tax_calculator.default_tax_rate = 0.10 # 10%
+    tax_calculator.default_tax_rate = 0.10  # 10%
 
     # Define lines
-    lines = [
-        {"description": "Service A", "quantity": 1, "unit_price": 110.0}
-    ]
+    lines = [{"description": "Service A", "quantity": 1, "unit_price": 110.0}]
     # Raw Total = 110 (which is Total Amount)
     # Subtotal = 110 / 1.1 = 100
     # Tax = 10
@@ -85,6 +90,7 @@ async def test_create_quote_calculates_tax_inclusive(mock_session):
     assert quote.subtotal == 100.0
     assert quote.tax_amount == 10.0
     assert quote.tax_rate == 0.10
+
 
 @pytest.mark.asyncio
 async def test_confirm_quote_transfers_tax_to_job(mock_session):
@@ -104,7 +110,9 @@ async def test_confirm_quote_transfers_tax_to_job(mock_session):
         tax_amount=10.0,
         tax_rate=0.10,
         total_amount=110.0,
-        items=[QuoteLineItem(description="Item", quantity=1, unit_price=100.0, total=100.0)]
+        items=[
+            QuoteLineItem(description="Item", quantity=1, unit_price=100.0, total=100.0)
+        ],
     )
 
     # Mock Select execution for confirm_quote

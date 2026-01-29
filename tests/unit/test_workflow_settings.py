@@ -20,11 +20,13 @@ TestAsyncSessionLocal = async_sessionmaker(
     expire_on_commit=False,
 )
 
+
 async def setup_db():
     RBACService._config = None  # Force reload of RBAC config
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+
 
 @pytest.mark.asyncio
 async def test_workflow_settings_defaults():
@@ -35,17 +37,18 @@ async def test_workflow_settings_defaults():
             subscription_status="free",
             seat_limit=1,
             active_addons=[],
-            quickbooks_connected=False
+            quickbooks_connected=False,
         )
         session.add(business)
         await session.commit()
-        
+
         service = WorkflowSettingsService(session)
         settings = await service.get_settings(business.id)
-        
+
         assert settings["workflow_invoicing"] == InvoicingWorkflow.MANUAL
         assert settings["workflow_tax_inclusive"] is True
         print("test_workflow_settings_defaults passed!")
+
 
 @pytest.mark.asyncio
 async def test_workflow_tool_rbac():
@@ -56,58 +59,82 @@ async def test_workflow_tool_rbac():
             subscription_status="free",
             seat_limit=2,
             active_addons=[],
-            quickbooks_connected=False
+            quickbooks_connected=False,
         )
         session.add(business)
         await session.flush()
-        
-        owner = User(name="Owner", business_id=business.id, role=UserRole.OWNER, phone_number="123")
-        employee = User(name="Employee", business_id=business.id, role=UserRole.EMPLOYEE, phone_number="456")
+
+        owner = User(
+            name="Owner",
+            business_id=business.id,
+            role=UserRole.OWNER,
+            phone_number="123",
+        )
+        employee = User(
+            name="Employee",
+            business_id=business.id,
+            role=UserRole.EMPLOYEE,
+            phone_number="456",
+        )
         session.add_all([owner, employee])
         await session.commit()
-        
+
         template_service = MagicMock(spec=TemplateService)
-        
+
         # Test as Owner
-        executor_owner = ToolExecutor(session, business.id, owner.id, owner.phone_number, template_service)
+        executor_owner = ToolExecutor(
+            session, business.id, owner.id, owner.phone_number, template_service
+        )
         tool = UpdateWorkflowSettingsTool(invoicing="AUTOMATIC")
         msg, _ = await executor_owner.execute(tool)
         assert "successfully" in msg.lower()
-        
+
         # Verify change
         service = WorkflowSettingsService(session)
         settings = await service.get_settings(business.id)
         assert settings["workflow_invoicing"] == InvoicingWorkflow.AUTOMATIC
-        
+
         # Test as Employee
-        executor_emp = ToolExecutor(session, business.id, employee.id, employee.phone_number, template_service)
+        executor_emp = ToolExecutor(
+            session, business.id, employee.id, employee.phone_number, template_service
+        )
         tool2 = UpdateWorkflowSettingsTool(invoicing="NEVER")
         msg, _ = await executor_emp.execute(tool2)
         assert "don't have permission" in msg.lower()
-        
+
         # Verify NO change
         settings = await service.get_settings(business.id)
         assert settings["workflow_invoicing"] == InvoicingWorkflow.AUTOMATIC
         print("test_workflow_tool_rbac passed!")
 
+
 @pytest.mark.asyncio
 async def test_workflow_tool_validation():
     await setup_db()
     async with TestAsyncSessionLocal() as session:
-        business = Business(name="Val Biz", subscription_status="free", active_addons=[])
+        business = Business(
+            name="Val Biz", subscription_status="free", active_addons=[]
+        )
         session.add(business)
         await session.flush()
-        owner = User(name="Owner", business_id=business.id, role=UserRole.OWNER, phone_number="789")
+        owner = User(
+            name="Owner",
+            business_id=business.id,
+            role=UserRole.OWNER,
+            phone_number="789",
+        )
         session.add(owner)
         await session.commit()
-        
+
         template_service = MagicMock(spec=TemplateService)
-        executor = ToolExecutor(session, business.id, owner.id, owner.phone_number, template_service)
-        
+        executor = ToolExecutor(
+            session, business.id, owner.id, owner.phone_number, template_service
+        )
+
         # Invalid enum value should raise ValidationError at instantiation
         with pytest.raises(ValidationError):
             UpdateWorkflowSettingsTool(invoicing="invalid_value")
-        
+
         # Get settings tool
         tool_get = GetWorkflowSettingsTool()
         msg, data = await executor.execute(tool_get)
@@ -115,38 +142,50 @@ async def test_workflow_tool_validation():
         assert data["SETTINGS"]["workflow_invoicing"] == InvoicingWorkflow.MANUAL
         print("test_workflow_tool_validation passed!")
 
+
 @pytest.mark.asyncio
 async def test_workflow_job_creation_default():
     await setup_db()
     async with TestAsyncSessionLocal() as session:
-        business = Business(name="Job Default Biz", subscription_status="free", active_addons=[])
+        business = Business(
+            name="Job Default Biz", subscription_status="free", active_addons=[]
+        )
         session.add(business)
         await session.flush()
-        
-        owner = User(name="Owner", business_id=business.id, role=UserRole.OWNER, phone_number="999")
+
+        owner = User(
+            name="Owner",
+            business_id=business.id,
+            role=UserRole.OWNER,
+            phone_number="999",
+        )
         session.add(owner)
         await session.commit()
-        
+
         template_service = MagicMock(spec=TemplateService)
         template_service.render.return_value = "Mocked Response"
-        
+
         # Helper to create/execute tool
         async def execute_add_job(settings_value=None):
             # Update setting
             if settings_value:
                 # Update directly in DB for speed
                 import sqlalchemy as sa
+
                 await session.execute(
-                        sa.update(Business)
-                        .where(Business.id == business.id)
-                        .values(workflow_job_creation_default=settings_value)
+                    sa.update(Business)
+                    .where(Business.id == business.id)
+                    .values(workflow_job_creation_default=settings_value)
                 )
                 await session.commit()
 
-            executor = ToolExecutor(session, business.id, owner.id, owner.phone_number, template_service)
+            executor = ToolExecutor(
+                session, business.id, owner.id, owner.phone_number, template_service
+            )
             # Ensure customer exists (mocked or pre-created)
-            
+
             from src.uimodels import AddJobTool
+
             tool = AddJobTool(customer_name="Test Customer", price=100)
             msg, data = await executor.execute(tool)
             return data
@@ -169,11 +208,12 @@ async def test_workflow_job_creation_default():
         data = await execute_add_job(JobCreationDefault.AUTO_SCHEDULE)
         job = await session.get(Job, data["id"])
         assert job.status == JobStatus.PENDING
-        
+
         print("test_workflow_job_creation_default passed!")
 
 
 if __name__ == "__main__":
+
     async def run_all():
         try:
             await test_workflow_settings_defaults()
@@ -184,6 +224,7 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"\nTESTS FAILED: {e}")
             import traceback
+
             traceback.print_exc()
 
     asyncio.run(run_all())

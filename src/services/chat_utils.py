@@ -1,6 +1,7 @@
 from typing import List, Any
 from src.models import Service
 
+
 def format_service_list(services: List[Service]) -> str:
     """
     Format a list of services into a readable string for WhatsApp.
@@ -10,13 +11,14 @@ def format_service_list(services: List[Service]) -> str:
     """
     if not services:
         return "No services found."
-        
+
     lines = []
     for svc in services:
         price_str = f"${svc.default_price:.2f}"
         lines.append(f"{svc.id}. *{svc.name}* — {price_str}")
-        
+
     return "\n".join(lines)
+
 
 def format_line_items(line_items: List[Any]) -> str:
     """
@@ -38,14 +40,14 @@ def format_line_items(line_items: List[Any]) -> str:
         # Extract name/description from various possible attributes
         # LineItemInfo has 'description', LineItem model has 'service_name' or 'description'
         name = (
-            getattr(item, "description", None) 
-            or getattr(item, "service_name", None) 
+            getattr(item, "description", None)
+            or getattr(item, "service_name", None)
             or getattr(item, "name", "Item")
         )
         qty = getattr(item, "quantity", 1.0) or 1.0
         price = getattr(item, "unit_price", None)
         total = getattr(item, "total_price", None)
-        
+
         if total is None and price is not None:
             total = qty * price
 

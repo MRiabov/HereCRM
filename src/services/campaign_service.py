@@ -14,7 +14,7 @@ from src.models import (
     MessageStatus,
     EntityType,
     MessageType,
-    MessageTriggerSource
+    MessageTriggerSource,
 )
 from src.services.search_service import SearchService
 from src.services.messaging_service import messaging_service
@@ -23,8 +23,14 @@ from src.uimodels import SearchTool
 
 logger = logging.getLogger(__name__)
 
+
 class CampaignService:
-    def __init__(self, session: AsyncSession, search_service: SearchService, postmark_service: PostmarkService):
+    def __init__(
+        self,
+        session: AsyncSession,
+        search_service: SearchService,
+        postmark_service: PostmarkService,
+    ):
         self.session = session
         self.search_service = search_service
         self.postmark_service = postmark_service
@@ -47,7 +53,7 @@ class CampaignService:
             subject=subject,
             recipient_query=recipient_query,
             template_id=template_id,
-            status=CampaignStatus.DRAFT
+            status=CampaignStatus.DRAFT,
         )
         self.session.add(campaign)
         await self.session.commit()
@@ -65,7 +71,9 @@ class CampaignService:
 
         # Use SearchService to segment audience
         search_params = SearchTool(
-            query=str(campaign.recipient_query) if campaign.recipient_query and campaign.recipient_query != "all" else "",
+            query=str(campaign.recipient_query)
+            if campaign.recipient_query and campaign.recipient_query != "all"
+            else "",
             entity_type=EntityType.CUSTOMER,
             detailed=False,
             query_type="ALL",
@@ -76,7 +84,7 @@ class CampaignService:
             center_lat=None,
             center_lon=None,
             center_address=None,
-            pipeline_stage=None
+            pipeline_stage=None,
         )
 
         # Note: We need a way to get all results from SearchService, not just top 10.
@@ -84,10 +92,7 @@ class CampaignService:
         # Actually, let's look at SearchService._search_customers.
 
         results = await self.search_service._search_customers(
-            search_params,
-            campaign.business_id,
-            None,
-            None
+            search_params, campaign.business_id, None, None
         )
 
         # Clear existing recipients in case of re-run
@@ -101,13 +106,16 @@ class CampaignService:
         for customer in results:
             if campaign.channel == CampaignChannel.EMAIL and not customer.email:
                 continue
-            if campaign.channel in [CampaignChannel.WHATSAPP, CampaignChannel.SMS] and not customer.phone:
+            if (
+                campaign.channel in [CampaignChannel.WHATSAPP, CampaignChannel.SMS]
+                and not customer.phone
+            ):
                 continue
 
             recipient = CampaignRecipient(
                 campaign_id=campaign_id,
                 customer_id=customer.id,
-                status=RecipientStatus.PENDING
+                status=RecipientStatus.PENDING,
             )
             self.session.add(recipient)
             total_count += 1
@@ -134,7 +142,7 @@ class CampaignService:
         # Fetch all pending recipients
         stmt = select(CampaignRecipient).where(
             CampaignRecipient.campaign_id == campaign_id,
-            CampaignRecipient.status == RecipientStatus.PENDING
+            CampaignRecipient.status == RecipientStatus.PENDING,
         )
         result = await self.session.execute(stmt)
         recipients = result.scalars().all()
@@ -154,7 +162,7 @@ class CampaignService:
                         success = await self.postmark_service.send_email(
                             to_email=customer.email,
                             subject=campaign.subject or "Notification",
-                            body=campaign.body
+                            body=campaign.body,
                         )
                 elif campaign.channel == CampaignChannel.WHATSAPP:
                     if customer.phone:
@@ -164,7 +172,7 @@ class CampaignService:
                             channel=MessageType.WHATSAPP,
                             trigger_source=MessageTriggerSource.CAMPAIGN,
                             business_id=campaign.business_id,
-                            log_metadata={"campaign_id": campaign.id}
+                            log_metadata={"campaign_id": campaign.id},
                         )
                         success = msg_log.status == MessageStatus.SENT
                         external_id = msg_log.external_id
@@ -177,7 +185,7 @@ class CampaignService:
                             channel=MessageType.SMS,
                             trigger_source=MessageTriggerSource.CAMPAIGN,
                             business_id=campaign.business_id,
-                            log_metadata={"campaign_id": campaign.id}
+                            log_metadata={"campaign_id": campaign.id},
                         )
                         success = msg_log.status == MessageStatus.SENT
                         external_id = msg_log.external_id
@@ -194,7 +202,9 @@ class CampaignService:
                     campaign.failed_count += 1
 
             except Exception as e:
-                logger.error(f"Error sending campaign {campaign_id} to recipient {recipient.id}: {e}")
+                logger.error(
+                    f"Error sending campaign {campaign_id} to recipient {recipient.id}: {e}"
+                )
                 recipient.status = RecipientStatus.FAILED
                 recipient.error_message = str(e)
                 campaign.failed_count += 1

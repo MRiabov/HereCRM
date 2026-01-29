@@ -1,6 +1,17 @@
 import pytest
-from src.models import Business, Customer, Request, Quote, QuoteStatus, User, UserRole, PromotionAction, RequestStatus
+from src.models import (
+    Business,
+    Customer,
+    Request,
+    Quote,
+    QuoteStatus,
+    User,
+    UserRole,
+    PromotionAction,
+    RequestStatus,
+)
 from src.services.crm_service import CRMService
+
 
 @pytest.mark.asyncio
 async def test_request_to_quote_promotion(async_session):
@@ -10,18 +21,14 @@ async def test_request_to_quote_promotion(async_session):
     await async_session.commit()
     await async_session.refresh(business)
 
-    customer = Customer(
-        name="Alice", 
-        phone="+111222333", 
-        business_id=business.id
-    )
+    customer = Customer(name="Alice", phone="+111222333", business_id=business.id)
     async_session.add(customer)
-    
+
     # Include Alice in content so search works
     request = Request(
         business_id=business.id,
         description="Alice: I need a quote for a new terrace",
-        status=RequestStatus.PENDING
+        status=RequestStatus.PENDING,
     )
     async_session.add(request)
     await async_session.commit()
@@ -32,24 +39,25 @@ async def test_request_to_quote_promotion(async_session):
 
     # 2. Promote Request to Quote
     msg, metadata = await crm_service.convert_request(
-        query="Alice", # Identifying by query which matches content
-        action=PromotionAction.QUOTE
+        query="Alice",  # Identifying by query which matches content
+        action=PromotionAction.QUOTE,
     )
 
     # 3. Verify Result
     assert "Converted Request to Quote" in msg
     assert metadata["action"] == "promote"
     assert metadata["entity"] == "quote"
-    
+
     quote_id = metadata["id"]
-    
+
     # Use joinedload to avoid MissingGreenlet
     from sqlalchemy.orm import selectinload
     from sqlalchemy import select
+
     stmt = select(Quote).options(selectinload(Quote.items)).where(Quote.id == quote_id)
     res = await async_session.execute(stmt)
     quote = res.scalar_one_or_none()
-    
+
     assert quote is not None
     assert quote.customer_id == customer.id
     assert quote.status == QuoteStatus.DRAFT
@@ -63,6 +71,7 @@ async def test_request_to_quote_promotion(async_session):
     res = await async_session.execute(stmt)
     assert res.scalars().first() is None
 
+
 @pytest.mark.asyncio
 async def test_request_to_quote_promotion_with_id(async_session):
     # Testing that it finds request by content search
@@ -73,11 +82,11 @@ async def test_request_to_quote_promotion_with_id(async_session):
 
     customer = Customer(name="Bob", business_id=business.id)
     async_session.add(customer)
-    
+
     request = Request(
         business_id=business.id,
         description="Bob: Fix my window please",
-        status=RequestStatus.PENDING
+        status=RequestStatus.PENDING,
     )
     async_session.add(request)
     await async_session.commit()
@@ -86,21 +95,22 @@ async def test_request_to_quote_promotion_with_id(async_session):
 
     # Promote using content query
     msg, metadata = await crm_service.convert_request(
-        query="window",
-        action=PromotionAction.QUOTE
+        query="window", action=PromotionAction.QUOTE
     )
 
     assert metadata["entity"] == "quote"
     quote_id = metadata["id"]
-    
+
     from sqlalchemy.orm import selectinload
     from sqlalchemy import select
+
     stmt = select(Quote).options(selectinload(Quote.items)).where(Quote.id == quote_id)
     res = await async_session.execute(stmt)
     quote = res.scalar_one_or_none()
-    
+
     assert quote is not None
     assert "window" in quote.items[0].description.lower()
+
 
 @pytest.mark.asyncio
 async def test_request_promotion_with_assigned_to_and_price(async_session):
@@ -116,11 +126,11 @@ async def test_request_promotion_with_assigned_to_and_price(async_session):
 
     customer = Customer(name="Charlie", business_id=business.id)
     async_session.add(customer)
-    
+
     request = Request(
         business_id=business.id,
         description="Leaky faucet",
-        status=RequestStatus.PENDING
+        status=RequestStatus.PENDING,
     )
     async_session.add(request)
     await async_session.commit()
@@ -132,34 +142,31 @@ async def test_request_promotion_with_assigned_to_and_price(async_session):
         query="faucet",
         action=PromotionAction.SCHEDULE,
         assigned_to=employee.id,
-        price=150.0
+        price=150.0,
     )
 
     assert metadata["entity"] == "job"
     job_id = metadata["id"]
-    
+
     from src.models import Job
+
     job = await async_session.get(Job, job_id)
     assert job.employee_id == employee.id
     assert job.value == 150.0
 
     # 2. Setup again for Quote
     request2 = Request(
-        business_id=business.id,
-        description="Garden work",
-        status=RequestStatus.PENDING
+        business_id=business.id, description="Garden work", status=RequestStatus.PENDING
     )
     async_session.add(request2)
     await async_session.commit()
 
     msg, metadata = await crm_service.convert_request(
-        query="Garden",
-        action=PromotionAction.QUOTE,
-        price=500.0
+        query="Garden", action=PromotionAction.QUOTE, price=500.0
     )
 
     assert metadata["entity"] == "quote"
     quote_id = metadata["id"]
-    
+
     quote = await async_session.get(Quote, quote_id)
     assert quote.total_amount == 500.0

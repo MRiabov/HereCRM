@@ -7,9 +7,11 @@ from src.models import ExportStatus, User, ConversationState, ConversationStatus
 from src.uimodels import ExportQueryTool, ExitDataManagementTool
 from src.services.template_service import TemplateService
 
+
 @pytest.fixture
 def mock_session():
     return AsyncMock(spec=AsyncSession)
+
 
 @pytest.fixture
 def mock_parser():
@@ -18,22 +20,27 @@ def mock_parser():
     parser.parse.return_value = None
     return parser
 
+
 @pytest.fixture
 def mock_template_service():
     service = MagicMock(spec=TemplateService)
     service.render.side_effect = lambda key, **kwargs: f"TEMPLATE:{key}"
     return service
 
+
 @pytest.fixture
 def service(mock_session, mock_parser, mock_template_service):
     # We will patch DataManagementService inside tests or here
-    with patch("src.services.whatsapp_service.DataManagementService") as MockDataService:
+    with patch(
+        "src.services.whatsapp_service.DataManagementService"
+    ) as MockDataService:
         svc = WhatsappService(mock_session, mock_parser, mock_template_service)
         # Mock the instance created inside __init__
         svc.data_service = AsyncMock()
         # Update the handler's reference to the data service
         svc.data_management_handler.data_service = svc.data_service
         return svc
+
 
 @pytest.mark.asyncio
 async def test_enter_data_management_mode(service):
@@ -45,13 +52,16 @@ async def test_enter_data_management_mode(service):
     assert state.state == ConversationStatus.DATA_MANAGEMENT
     assert "Data Management mode" in response
 
+
 @pytest.mark.asyncio
 async def test_data_management_export(service, mock_parser):
     user = User(phone_number="123", business_id=1)
     state = ConversationState(user_id=123, state=ConversationStatus.DATA_MANAGEMENT)
 
     # Mock LLM to return ExportQueryTool
-    mock_parser.parse_data_management.return_value = ExportQueryTool(query="all customers", format="csv")
+    mock_parser.parse_data_management.return_value = ExportQueryTool(
+        query="all customers", format="csv"
+    )
 
     # Mock Data Service return
     mock_export_req = MagicMock()
@@ -59,11 +69,16 @@ async def test_data_management_export(service, mock_parser):
     mock_export_req.public_url = "http://test.com/export.csv"
     service.data_service.export_data.return_value = mock_export_req
 
-    response = await service.data_management_handler.handle(user, state, "export all customers")
+    response = await service.data_management_handler.handle(
+        user, state, "export all customers"
+    )
 
-    service.data_service.export_data.assert_called_once_with(1, "all customers", "csv", filters={})
+    service.data_service.export_data.assert_called_once_with(
+        1, "all customers", "csv", filters={}
+    )
     assert "Export completed" in response
     assert "http://test.com/export.csv" in response
+
 
 @pytest.mark.asyncio
 async def test_data_management_export_filtered(service, mock_parser):
@@ -71,7 +86,12 @@ async def test_data_management_export_filtered(service, mock_parser):
     state = ConversationState(user_id=123, state=ConversationStatus.DATA_MANAGEMENT)
 
     # Mock tool to return filters
-    tool = ExportQueryTool(query="jobs", format="excel", entity_type=EntityType.JOB, status=JobStatus.PENDING)
+    tool = ExportQueryTool(
+        query="jobs",
+        format="excel",
+        entity_type=EntityType.JOB,
+        status=JobStatus.PENDING,
+    )
     mock_parser.parse_data_management.return_value = tool
 
     # Mock Data Service
@@ -79,12 +99,18 @@ async def test_data_management_export_filtered(service, mock_parser):
     mock_export_req.status = "PROCESSING"
     service.data_service.export_data.return_value = mock_export_req
 
-    response = await service.data_management_handler.handle(user, state, "export pending jobs")
+    response = await service.data_management_handler.handle(
+        user, state, "export pending jobs"
+    )
 
     service.data_service.export_data.assert_called_once_with(
-        1, "jobs", "excel", filters={"entity_type": "job", "status": JobStatus.PENDING.name}
+        1,
+        "jobs",
+        "excel",
+        filters={"entity_type": "job", "status": JobStatus.PENDING.name},
     )
     assert "Export processing" in response
+
 
 @pytest.mark.asyncio
 async def test_data_management_import(service):
@@ -103,9 +129,12 @@ async def test_data_management_import(service):
         user, state, "", media_url="http://file.com/data.csv", media_type="text/csv"
     )
 
-    service.data_service.import_data.assert_called_once_with(1, "http://file.com/data.csv", "text/csv")
+    service.data_service.import_data.assert_called_once_with(
+        1, "http://file.com/data.csv", "text/csv"
+    )
     assert "Import started" in response
     assert "10 records processed" in response
+
 
 @pytest.mark.asyncio
 async def test_exit_data_management(service, mock_parser):

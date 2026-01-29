@@ -4,11 +4,12 @@ from typing import Generic, TypeVar, Type, Optional, List
 import math
 import re
 
+
 def normalize_phone(phone: str) -> str:
     """Standardize phone number by removing whitespace and dashes."""
     if not phone:
         return phone
-    return re.sub(r'[\s\-]', '', phone)
+    return re.sub(r"[\s\-]", "", phone)
 
 
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -41,8 +42,15 @@ class BaseRepository(Generic[T]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_all(self, business_id: int, skip: int = 0, limit: int = 100) -> List[T]:
-        query = select(self.model).where(self.model.business_id == business_id).offset(skip).limit(limit)
+    async def get_all(
+        self, business_id: int, skip: int = 0, limit: int = 100
+    ) -> List[T]:
+        query = (
+            select(self.model)
+            .where(self.model.business_id == business_id)
+            .offset(skip)
+            .limit(limit)
+        )
         result = await self.session.execute(query)
         return list(result.scalars().all())
 

@@ -1,5 +1,6 @@
 from pydantic.v1 import BaseModel, Field
 
+
 class SendInvoiceTool(BaseModel):
     """Send an invoice to a customer.
     Triggered when user says 'send invoice to X' or similar."""

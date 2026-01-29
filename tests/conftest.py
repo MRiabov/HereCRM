@@ -9,7 +9,9 @@ os.environ["WA_PHONE_ID"] = "dummy_phone_id"
 os.environ["ALLOW_LOCAL_IMPORT"] = "true"
 os.environ["QB_CLIENT_ID"] = "dummy_qb_client_id"
 os.environ["QB_CLIENT_SECRET"] = "dummy_qb_client_secret"
-os.environ["QB_REDIRECT_URI"] = f"http://localhost:{os.getenv('BACKEND_PORT', '8000')}/callback"
+os.environ["QB_REDIRECT_URI"] = (
+    f"http://localhost:{os.getenv('BACKEND_PORT', '8000')}/callback"
+)
 os.environ["CREDENTIALS_DB_KEY"] = "dummy_key_for_testing_only_12345"
 
 # Clerk Settings for tests
@@ -30,6 +32,7 @@ from src.models import Base
 from src.database import engine
 from src.events import event_bus
 
+
 @pytest.fixture(scope="session", autouse=True)
 def set_test_env():
     # This fixture ensures these remain set, though the top-level
@@ -37,11 +40,13 @@ def set_test_env():
     os.environ["WA_PHONE_ID"] = "dummy_phone_id"
     yield
 
+
 @pytest.fixture(autouse=True)
 def reset_event_bus():
     """Reset EventBus subscribers before each test."""
     event_bus._subscribers = {}
     yield
+
 
 @pytest.fixture(scope="function", autouse=True)
 async def setup_database():
@@ -49,33 +54,35 @@ async def setup_database():
     # Create all tables using the global engine which is now in-memory
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     yield
-    
+
     # Drop all tables after test to ensure isolation
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
 
 @pytest.fixture(scope="function")
 async def async_session():
     # Create an in-memory SQLite database for specific session testing if needed
     # but usually we can just use the global engine if it's also in-memory
     engine_sqlite = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
-    
+
     # Create tables
     async with engine_sqlite.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     # Create session
     async_session_maker = sessionmaker(
         engine_sqlite, class_=AsyncSession, expire_on_commit=False
     )
-    
+
     async with async_session_maker() as session:
         yield session
-    
+
     # Dispose engine
     await engine_sqlite.dispose()
+
 
 # Global engine disposal after each test
 @pytest.fixture(scope="function", autouse=True)

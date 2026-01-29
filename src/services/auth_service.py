@@ -41,12 +41,12 @@ class AuthService:
             user = await self.user_repo.get_by_email(identity)
             if user:
                 return user, False
-            
+
             # Create new Business and User by email
             business = Business(name=f"Business of {identity}")
             self.session.add(business)
             await self.session.flush()
-            
+
             user = User(email=identity, business_id=business.id, role=UserRole.OWNER)
             self.user_repo.add(user)
             await self.session.flush()
@@ -61,9 +61,11 @@ class AuthService:
         clerk_id = data.get("id")
         email_addresses = data.get("email_addresses", [])
         phone_numbers = data.get("phone_numbers", [])
-        primary_email = email_addresses[0].get("email_address") if email_addresses else None
+        primary_email = (
+            email_addresses[0].get("email_address") if email_addresses else None
+        )
         primary_phone = phone_numbers[0].get("phone_number") if phone_numbers else None
-        
+
         first_name = data.get("first_name") or ""
         last_name = data.get("last_name") or ""
         name = f"{first_name} {last_name}".strip() or "Unknown"
@@ -81,17 +83,17 @@ class AuthService:
             business = Business(name=f"Business of {name}", clerk_org_id=None)
             self.session.add(business)
             await self.session.flush()
-            
+
             user = User(
                 clerk_id=clerk_id,
                 email=primary_email,
                 phone_number=primary_phone,
                 name=name,
                 business_id=business.id,
-                role=UserRole.OWNER # Default to owner of their personal business
+                role=UserRole.OWNER,  # Default to owner of their personal business
             )
             self.user_repo.add(user)
-        
+
         await self.session.flush()
 
     async def sync_clerk_org(self, data: dict):
@@ -100,19 +102,16 @@ class AuthService:
         """
         clerk_org_id = data.get("id")
         name = data.get("name")
-        
+
         # Check if business exists
         business = await self.business_repo.get_by_clerk_id(clerk_org_id)
-        
+
         if business:
             business.name = name
         else:
-            business = Business(
-                clerk_org_id=clerk_org_id,
-                name=name
-            )
+            business = Business(clerk_org_id=clerk_org_id, name=name)
             self.session.add(business)
-        
+
         await self.session.flush()
 
     async def sync_clerk_membership(self, data: dict):
@@ -121,22 +120,22 @@ class AuthService:
         """
         user_clerk_id = data.get("public_user_data", {}).get("user_id")
         org_clerk_id = data.get("organization", {}).get("id")
-        role_key = data.get("role", "") # e.g. "org:admin"
-        
+        role_key = data.get("role", "")  # e.g. "org:admin"
+
         user = await self.user_repo.get_by_clerk_id(user_clerk_id)
         if not user:
-             return
-             
+            return
+
         # Resolve business
         business = await self.business_repo.get_by_clerk_id(org_clerk_id)
-        
+
         if not business:
             # Maybe create? Or wait for org.created event.
             # For robustness, we could create.
             return
 
         user.business_id = business.id
-        
+
         # Map roles
         if "admin" in role_key:
             user.role = UserRole.OWNER
@@ -144,5 +143,5 @@ class AuthService:
             user.role = UserRole.MANAGER
         elif "member" in role_key:
             user.role = UserRole.EMPLOYEE
-            
+
         await self.session.flush()

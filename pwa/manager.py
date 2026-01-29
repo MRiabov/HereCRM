@@ -1,9 +1,11 @@
 """
 PWA Injection module for HereCRM.
 """
+
 import streamlit as st
 import json
 from pathlib import Path
+
 
 def inject_pwa(
     name: str = "HereCRM",
@@ -20,11 +22,11 @@ def inject_pwa(
     """
     Injects the PWA Logic into Streamlit with Diagnostic support.
     """
-    
+
     # 1. Ensure manifest exists on disk
     assets_dir = Path(__file__).parent / "assets"
     manifest_file = assets_dir / "manifest.json"
-    
+
     manifest_data = {
         "name": name,
         "short_name": short_name,
@@ -38,17 +40,17 @@ def inject_pwa(
                 "src": icon_path_192,
                 "sizes": "192x192",
                 "type": "image/png",
-                "purpose": "any maskable"
+                "purpose": "any maskable",
             },
             {
                 "src": icon_path_512,
                 "sizes": "512x512",
                 "type": "image/png",
-                "purpose": "any maskable"
-            }
-        ]
+                "purpose": "any maskable",
+            },
+        ],
     }
-    
+
     try:
         with open(manifest_file, "w") as f:
             json.dump(manifest_data, f, indent=4)
@@ -62,14 +64,18 @@ def inject_pwa(
             st.write(f"SW Path: `{sw_path}`")
             st.write(f"Script Location: `{__file__}`")
             if st.button("Force Show Install Toast"):
-                st.components.v1.html("""
+                st.components.v1.html(
+                    """
                     <script>
                         window.parent.document.getElementById('pwa-install-toast').style.visibility = 'visible';
                     </script>
-                """, height=0)
+                """,
+                    height=0,
+                )
 
     # 3. Inject HTML/JS/CSS
-    st.markdown(f"""
+    st.markdown(
+        f"""
     <link rel="manifest" href="{manifest_path}">
     <style>
         #pwa-install-toast {{
@@ -159,4 +165,6 @@ def inject_pwa(
              console.log("PWA: Active and waiting for browser install events.");
         }}, 2000);
     </script>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )

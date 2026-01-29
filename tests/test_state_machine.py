@@ -74,7 +74,14 @@ async def test_state_idle_to_confirm(
     )
 
     # Expect job_summary header
-    expected = template_service.render("job_summary", category="Job", client_details="", price="", description="", status="")
+    expected = template_service.render(
+        "job_summary",
+        category="Job",
+        client_details="",
+        price="",
+        description="",
+        status="",
+    )
     # Check for the static part of the template "Job summary:"
     assert "Job summary:" in response
 
@@ -126,7 +133,16 @@ async def test_state_confirm_yes(
     # Confirm
     response = await service.handle_message("Yes", user_phone="123456789")
 
-    assert template_service.render("job_added", category="Job", name="John Doe", location="No location", price_info="").split(":")[0] in response
+    assert (
+        template_service.render(
+            "job_added",
+            category="Job",
+            name="John Doe",
+            location="No location",
+            price_info="",
+        ).split(":")[0]
+        in response
+    )
 
     # Verify job created
     from sqlalchemy import select
@@ -158,7 +174,10 @@ async def test_undo_functionality(
     test_session.add(user)
 
     job = Job(
-        business_id=biz.id, customer_id=1, description="To be undone", status=JobStatus.PENDING
+        business_id=biz.id,
+        customer_id=1,
+        description="To be undone",
+        status=JobStatus.PENDING,
     )
     test_session.add(job)
     await test_session.flush()
@@ -277,14 +296,15 @@ async def test_undo_settings_update(
     # Undo
     response = await service.handle_message("undo", user_phone="123456789")
 
-    assert template_service.render("undo_setting_reverted", key="confirm_by_default") in response
+    assert (
+        template_service.render("undo_setting_reverted", key="confirm_by_default")
+        in response
+    )
 
     # Verify preference reverted
     from sqlalchemy import select
 
-    res = await test_session.execute(
-        select(User).where(User.id == user.id)
-    )
+    res = await test_session.execute(select(User).where(User.id == user.id))
     user = res.scalar_one()
     assert user.preferences["confirm_by_default"] is False
 
@@ -311,7 +331,10 @@ async def test_schedule_ambiguous_customer(
 
     # Create one job for the first John
     job = Job(
-        business_id=biz.id, customer_id=c1.id, description="Sink", status=JobStatus.PENDING
+        business_id=biz.id,
+        customer_id=c1.id,
+        description="Sink",
+        status=JobStatus.PENDING,
     )
     test_session.add(job)
     await test_session.commit()
@@ -327,15 +350,23 @@ async def test_schedule_ambiguous_customer(
     service = WhatsappService(test_session, mock_parser, template_service)
 
     # 1. User says schedule John
-    response = await service.handle_message("Schedule John tomorrow", user_phone="123456789")
+    response = await service.handle_message(
+        "Schedule John tomorrow", user_phone="123456789"
+    )
 
     # Should ask for confirmation
-    assert template_service.render("confirm_prompt", summary="Schedule").split(":")[0] in response
+    assert (
+        template_service.render("confirm_prompt", summary="Schedule").split(":")[0]
+        in response
+    )
 
     # 2. Confirm -> Should hit ToolExecutor and find multiple customers
     response_confirm = await service.handle_message("Yes", user_phone="123456789")
 
-    assert template_service.render("job_multiple_found", query="John Doe").split("'")[0] in response_confirm
+    assert (
+        template_service.render("job_multiple_found", query="John Doe").split("'")[0]
+        in response_confirm
+    )
 
 
 @pytest.mark.asyncio
@@ -367,7 +398,12 @@ async def test_edit_last_flow(test_session, template_service):
 
     # 2. Check edit last
     reply = await service.handle_message("edit last", user_phone="123456789")
-    assert template_service.render("edit_last_prompt", category="Job", details="MARKER").split("MARKER")[0].strip() in reply
+    assert (
+        template_service.render("edit_last_prompt", category="Job", details="MARKER")
+        .split("MARKER")[0]
+        .strip()
+        in reply
+    )
     assert "John" in reply
     assert "50$" in reply
     assert "faucet" in reply
@@ -390,6 +426,6 @@ async def test_unparseable_input_help(test_session, template_service):
     mock_parser.parse.return_value = None
     reply = await service.handle_message("blablabla", user_phone="123456789")
 
-    assert template_service.render("error_unclear_input").split('\n')[0] in reply
+    assert template_service.render("error_unclear_input").split("\n")[0] in reply
     assert "Available commands" in reply
     assert "help" in reply

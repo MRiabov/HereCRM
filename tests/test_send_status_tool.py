@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
+
 @pytest.fixture
 async def test_session():
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
@@ -24,9 +25,11 @@ async def test_session():
 
     await engine.dispose()
 
+
 @pytest.fixture
 def template_service():
     return TemplateService()
+
 
 @pytest.mark.asyncio
 async def test_send_status_named_customer(test_session, template_service):
@@ -36,27 +39,30 @@ async def test_send_status_named_customer(test_session, template_service):
 
     user = User(phone_number="123456789", business_id=biz.id, role=UserRole.OWNER)
     test_session.add(user)
-    
+
     customer = Customer(name="John Doe", phone="123456", business_id=biz.id)
     test_session.add(customer)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
-    
+    executor = ToolExecutor(
+        test_session, biz.id, user.id, user.phone_number, template_service
+    )
+
     with patch("src.tool_executor.event_bus") as mock_bus:
         mock_bus.emit = AsyncMock()
-        
+
         tool = SendStatusTool(query="John", status_type=StatusType.ON_WAY)
         result, metadata = await executor.execute(tool)
-        
+
         assert "Sent status update to John Doe" in result
         assert metadata["status_type"] == StatusType.ON_WAY
-        
+
         mock_bus.emit.assert_called_once()
         args = mock_bus.emit.call_args
         assert args[0][0] == "SEND_STATUS_MESSAGE"
         payload = args[0][1]
         assert payload["status_type"] == StatusType.ON_WAY
+
 
 @pytest.mark.asyncio
 async def test_send_status_next_client(test_session, template_service):
@@ -66,34 +72,38 @@ async def test_send_status_next_client(test_session, template_service):
 
     user = User(phone_number="123456789", business_id=biz.id, role=UserRole.OWNER)
     test_session.add(user)
-    
+
     customer = Customer(name="Next Client", phone="999999", business_id=biz.id)
     test_session.add(customer)
     await test_session.flush()
-    
+
     # Create a scheduled job in the future
     future_time = datetime.now() + timedelta(hours=1)
     job = Job(
         business_id=biz.id,
         customer_id=customer.id,
         status=JobStatus.SCHEDULED,
-        scheduled_at=future_time
+        scheduled_at=future_time,
     )
-    
+
     test_session.add(job)
     await test_session.flush()
 
-    executor = ToolExecutor(test_session, biz.id, user.id, user.phone_number, template_service)
-    
+    executor = ToolExecutor(
+        test_session, biz.id, user.id, user.phone_number, template_service
+    )
+
     with patch("src.tool_executor.event_bus") as mock_bus:
         mock_bus.emit = AsyncMock()
-        
-        tool = SendStatusTool(query="next_scheduled_client", status_type=StatusType.RUNNING_LATE)
+
+        tool = SendStatusTool(
+            query="next_scheduled_client", status_type=StatusType.RUNNING_LATE
+        )
         result, metadata = await executor.execute(tool)
-        
+
         assert "Sent status update to Next Client" in result
         assert metadata["status_type"] == StatusType.RUNNING_LATE
-        
+
         mock_bus.emit.assert_called_once()
         args = mock_bus.emit.call_args
         payload = args[0][1]

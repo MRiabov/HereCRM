@@ -22,6 +22,7 @@ from src.uimodels import (
 import logging
 from datetime import datetime, timezone, timedelta
 
+
 class IdleHandler(ChatHandler):
     def __init__(
         self,
@@ -32,7 +33,7 @@ class IdleHandler(ChatHandler):
         undo_handler: UndoHandler,
         geocoding_service: GeocodingService,
         invitation_service: InvitationService,
-        auto_confirm_service
+        auto_confirm_service,
     ):
         self.session = session
         self.parser = parser
@@ -45,8 +46,10 @@ class IdleHandler(ChatHandler):
         self.logger = logging.getLogger(__name__)
         self._current_metadata = {}
 
-    async def handle(self, user: User, state_record: ConversationState, message_text: str) -> str:
-        self._current_metadata = {} # Reset metadata
+    async def handle(
+        self, user: User, state_record: ConversationState, message_text: str
+    ) -> str:
+        self._current_metadata = {}  # Reset metadata
         lower_text = message_text.lower().strip()
 
         # Handle Greetings
@@ -75,11 +78,18 @@ class IdleHandler(ChatHandler):
         if lower_text in ["billing", "subscription", "upgrade", "my plan", "limits"]:
             state_record.state = ConversationStatus.BILLING
             executor = ToolExecutor(
-                self.session, user.business_id, user.id, user.phone_number or "", self.template_service
+                self.session,
+                user.business_id,
+                user.id,
+                user.phone_number or "",
+                self.template_service,
             )
             try:
                 result, _ = await executor.execute(GetBillingStatusTool())
-                return result + "\n\n(Type 'upgrade seat' or 'buy addon' to purchase extras, or 'back' to exit)"
+                return (
+                    result
+                    + "\n\n(Type 'upgrade seat' or 'buy addon' to purchase extras, or 'back' to exit)"
+                )
             except Exception as e:
                 self.logger.error(f"Failed to auto-show billing status: {e}")
                 return "You are now in Billing mode. Type 'status', 'upgrade', or 'back' to exit."
@@ -87,23 +97,27 @@ class IdleHandler(ChatHandler):
         # Handle Employee Management Entry
         if lower_text in ["employee management", "manage employees", "employees"]:
             if user.role not in ["OWNER", "MANAGER"]:
-                 return "Access denied: Employee Management is restricted to authorized roles."
+                return "Access denied: Employee Management is restricted to authorized roles."
 
             state_record.state = ConversationStatus.EMPLOYEE_MANAGEMENT
             return "You are now in Employee Management mode. You can 'Invite <phone>'. Type 'exit' to return."
 
         # Handle Join (for existing users)
         if lower_text.startswith("join"):
-             success, msg, _ = await self.invitation_service.process_join(user.phone_number or "")
-             return msg
+            success, msg, _ = await self.invitation_service.process_join(
+                user.phone_number or ""
+            )
+            return msg
 
         # Parse with LLM
         service_repo = ServiceRepository(self.session)
         services = await service_repo.get_all_for_business(user.business_id)
 
-        service_catalog_str = "\n".join(
-            [f"- ID {s.id}: {s.name} (${s.default_price})" for s in services]
-        ) if services else None
+        service_catalog_str = (
+            "\n".join([f"- ID {s.id}: {s.name} (${s.default_price})" for s in services])
+            if services
+            else None
+        )
 
         channel_name = state_record.active_channel or "WHATSAPP"
 
@@ -113,20 +127,20 @@ class IdleHandler(ChatHandler):
             "name": user.name,
             "business_id": user.business_id,
             "phone_number": user.phone_number,
-            "clerk_id": user.clerk_id
+            "clerk_id": user.clerk_id,
         }
 
         feedback = None
         tool_call = None
 
-        for attempt in range(2): # Up to 2 attempts
+        for attempt in range(2):  # Up to 2 attempts
             tool_call = await self.parser.parse(
                 message_text,
                 system_time=system_time,
                 service_catalog=service_catalog_str,
                 channel_name=channel_name,
                 user_context=user_context,
-                feedback=feedback
+                feedback=feedback,
             )
 
             if not tool_call:
@@ -139,7 +153,7 @@ class IdleHandler(ChatHandler):
                     user_query=message_text,
                     business_id=user.business_id,
                     user_id=user.id,
-                    channel=channel_name
+                    channel=channel_name,
                 )
 
             # Geocode
@@ -147,12 +161,21 @@ class IdleHandler(ChatHandler):
                 business = await self.session.get(Business, user.business_id)
                 prefs = user.preferences or {}
 
-                default_city = (business.default_city if business else None) or prefs.get("default_city")
-                default_country = (business.default_country if business else None) or prefs.get("default_country")
+                default_city = (
+                    business.default_city if business else None
+                ) or prefs.get("default_city")
+                default_country = (
+                    business.default_country if business else None
+                ) or prefs.get("default_country")
 
                 safeguard_enabled = prefs.get("geocoding_safeguard_enabled", False)
                 if isinstance(safeguard_enabled, str):
-                    safeguard_enabled = safeguard_enabled.lower() in ["true", "yes", "on", "1"]
+                    safeguard_enabled = safeguard_enabled.lower() in [
+                        "true",
+                        "yes",
+                        "on",
+                        "1",
+                    ]
 
                 max_dist = prefs.get("geocoding_max_distance_km", 100.0)
                 try:
@@ -160,24 +183,37 @@ class IdleHandler(ChatHandler):
                 except (ValueError, TypeError):
                     max_dist = 100.0
 
-                phone = getattr(tool_call, "customer_phone", None) or getattr(tool_call, "phone", None)
+                phone = getattr(tool_call, "customer_phone", None) or getattr(
+                    tool_call, "phone", None
+                )
                 if not default_country and phone:
                     if phone.startswith("+353") or phone.startswith("08"):
                         default_country = "Ireland"
                     elif phone.startswith("+1"):
                         default_country = "USA"
 
-                lat, lon, street, city, country, postal_code, full_address = await self.geocoding_service.geocode(
+                (
+                    lat,
+                    lon,
+                    street,
+                    city,
+                    country,
+                    postal_code,
+                    full_address,
+                ) = await self.geocoding_service.geocode(
                     tool_call.location,
                     default_city=getattr(tool_call, "city", None) or default_city,
-                    default_country=getattr(tool_call, "country", None) or default_country,
+                    default_country=getattr(tool_call, "country", None)
+                    or default_country,
                     safeguard_enabled=safeguard_enabled,
-                    max_distance_km=max_dist
+                    max_distance_km=max_dist,
                 )
 
                 if safeguard_enabled and default_city and not lat:
                     if attempt == 0:
-                        self.logger.info(f"Geocoding rejected by safeguard for '{tool_call.location}', retrying with feedback...")
+                        self.logger.info(
+                            f"Geocoding rejected by safeguard for '{tool_call.location}', retrying with feedback..."
+                        )
                         feedback = f"The location '{tool_call.location}' is too far from {default_city} or not found. Please try to infer a more accurate address or city."
                         continue
                     else:
@@ -205,7 +241,7 @@ class IdleHandler(ChatHandler):
             if not isinstance(tool_call, str):
                 self._current_metadata["tool_call"] = {
                     "name": tool_call.__class__.__name__,
-                    "arguments": tool_call.dict()
+                    "arguments": tool_call.dict(),
                 }
 
             if isinstance(tool_call, str):
@@ -226,7 +262,9 @@ class IdleHandler(ChatHandler):
 
             summary = await self.summary_generator.generate_summary(tool_call, user)
 
-            if auto_confirm and not isinstance(tool_call, (EditCustomerTool, UpdateSettingsTool)):
+            if auto_confirm and not isinstance(
+                tool_call, (EditCustomerTool, UpdateSettingsTool)
+            ):
                 state_record.state = ConversationStatus.PENDING_AUTO_CONFIRM
                 execution_time = datetime.now(timezone.utc) + timedelta(seconds=timeout)
                 state_record.pending_action_timestamp = execution_time

@@ -5,11 +5,21 @@ import os
 from unittest.mock import patch
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
-from src.models import Business, Customer, Job, PipelineStage, ExportStatus, ExportFormat, JobStatus, EntityType
+from src.models import (
+    Business,
+    Customer,
+    Job,
+    PipelineStage,
+    ExportStatus,
+    ExportFormat,
+    JobStatus,
+    EntityType,
+)
 from src.services.data_management import DataManagementService
 from src.repositories import CustomerRepository, JobRepository
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
 
 @pytest_asyncio.fixture
 async def test_session():
@@ -25,12 +35,14 @@ async def test_session():
 
     await engine.dispose()
 
+
 @pytest_asyncio.fixture
 async def setup_business(test_session):
     biz = Business(name="Test Biz")
     test_session.add(biz)
     await test_session.commit()
     return biz
+
 
 @pytest.mark.asyncio
 async def test_import_data_csv(test_session, setup_business, tmp_path):
@@ -43,7 +55,7 @@ async def test_import_data_csv(test_session, setup_business, tmp_path):
         "notes": ["Note 1", "Note 2"],
         "job_description": ["Clean windows", "Clean gutters"],
         "job_price": [100.0, 150.0],
-        "job_status": ["PENDING", "COMPLETED"]
+        "job_status": ["PENDING", "COMPLETED"],
     }
     df = pd.DataFrame(data)
     csv_path = tmp_path / "test_import.csv"
@@ -53,9 +65,7 @@ async def test_import_data_csv(test_session, setup_business, tmp_path):
 
     # 2. Run Import
     import_job = await service.import_data(
-        business_id=setup_business.id,
-        file_url=str(csv_path),
-        media_type="text/csv"
+        business_id=setup_business.id, file_url=str(csv_path), media_type="text/csv"
     )
 
     assert import_job.status == ExportStatus.COMPLETED
@@ -75,6 +85,7 @@ async def test_import_data_csv(test_session, setup_business, tmp_path):
     assert jobs1[0].customer_id == cust1.id
     assert jobs1[0].value == 100.0
 
+
 @pytest.mark.asyncio
 async def test_export_data_csv(test_session, setup_business):
     # 1. Seed Data
@@ -83,7 +94,7 @@ async def test_export_data_csv(test_session, setup_business):
         name="Export Test",
         phone="5555555555",
         city="Dublin",
-        pipeline_stage=PipelineStage.CONTACTED
+        pipeline_stage=PipelineStage.CONTACTED,
     )
     test_session.add(cust)
     await test_session.flush()
@@ -92,7 +103,7 @@ async def test_export_data_csv(test_session, setup_business):
         business_id=setup_business.id,
         customer_id=cust.id,
         description="Test Job",
-        value=200.0
+        value=200.0,
     )
     test_session.add(job)
     await test_session.commit()
@@ -105,16 +116,14 @@ async def test_export_data_csv(test_session, setup_business):
         # (Though in reality it would be a URL)
         export_file = "test_export_output.csv"
         mock_storage.upload_file.return_value = export_file
-        
+
         export_req = await service.export_data(
-            business_id=setup_business.id,
-            query="Dublin",
-            format=ExportFormat.CSV
+            business_id=setup_business.id, query="Dublin", format=ExportFormat.CSV
         )
 
         assert export_req.status == ExportStatus.COMPLETED
         assert export_req.public_url == export_file
-        
+
         # Capture the content written to mock storage
         args, _ = mock_storage.upload_file.call_args
         file_bytes, _, _ = args

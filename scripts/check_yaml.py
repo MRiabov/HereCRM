@@ -2,7 +2,7 @@ import yaml
 import sys
 
 try:
-    with open('/home/maksym/Work/proj/HereCRM/src/assets/prompts.yaml', 'r') as f:
+    with open("/home/maksym/Work/proj/HereCRM/src/assets/prompts.yaml", "r") as f:
         data = yaml.safe_load(f)
     print("YAML is valid.")
     # check for tool_descriptions key

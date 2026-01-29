@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     whatsapp_app_secret: str
     whatsapp_phone_number_id: Optional[str] = None
     whatsapp_access_token: Optional[str] = None
-    whatsapp_verify_token: Optional[str] = "blue_cat_123" # Default or env
+    whatsapp_verify_token: Optional[str] = "blue_cat_123"  # Default or env
     whatsapp_api_version: str = "v18.0"
     waba_id: Optional[str] = None
 
@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     s3_access_key_id: Optional[str] = None
     s3_secret_access_key: Optional[str] = None
     s3_region_name: str = "us-east-1"
-    
+
     # Generic Webhook Settings
     generic_webhook_secret: Optional[str] = None
 
@@ -78,33 +78,39 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
-
 class ChannelSettings(BaseModel):
     max_length: int
     style: str
     provider: Optional[str] = "textgrid"
 
+
 class ChannelsConfig(BaseModel):
     channels: Dict[str, ChannelSettings]
+
 
 def load_channels_config() -> ChannelsConfig:
     # Get the directory of the current file
     current_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(current_dir, "assets", "channels.yaml")
-    
+
     if not os.path.exists(config_path):
         # Default configuration if file is missing
-        return ChannelsConfig(channels={
-            "WHATSAPP": ChannelSettings(max_length=150, style="concise"),
-            "email": ChannelSettings(max_length=1000, style="detailed"),
-            "SMS": ChannelSettings(max_length=160, style="direct", provider="textgrid")
-        })
-        
+        return ChannelsConfig(
+            channels={
+                "WHATSAPP": ChannelSettings(max_length=150, style="concise"),
+                "email": ChannelSettings(max_length=1000, style="detailed"),
+                "SMS": ChannelSettings(
+                    max_length=160, style="direct", provider="textgrid"
+                ),
+            }
+        )
+
     with open(config_path, "r") as f:
         data = yaml.safe_load(f)
-        return ChannelsConfig(channels={
-            k: ChannelSettings(**v) for k, v in data.items()
-        })
+        return ChannelsConfig(
+            channels={k: ChannelSettings(**v) for k, v in data.items()}
+        )
+
 
 settings = Settings()
 channels_config = load_channels_config()

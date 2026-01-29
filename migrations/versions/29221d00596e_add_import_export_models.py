@@ -1,16 +1,16 @@
 """Add import_export models
 
 Revision ID: 29221d00596e
-Revises: 
+Revises:
 Create Date: 2026-01-17 16:35:40.514396
 
 """
+
 from typing import Sequence, Union
 
 
-
 # revision identifiers, used by Alembic.
-revision: str = '29221d00596e'
+revision: str = "29221d00596e"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

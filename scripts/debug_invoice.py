@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 from src.services.pdf_generator import InvoicePDFGenerator
 from src.models import Job, Customer, LineItem
 
+
 def generate_debug_invoice():
     # Setup mocks
     mock_customer = MagicMock(spec=Customer)
@@ -38,8 +39,9 @@ def generate_debug_invoice():
 
     with open("debug_invoice.pdf", "wb") as f:
         f.write(pdf_bytes)
-    
+
     print("Success! debug_invoice.pdf created in current directory.")
+
 
 if __name__ == "__main__":
     generate_debug_invoice()

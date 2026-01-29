@@ -13,8 +13,11 @@ class AssignmentResult(BaseModel):
     warning: Optional[str] = None
     job: Optional[Job] = None
     error: Optional[str] = None
-    
-    model_config = ConfigDict(arbitrary_types_allowed=True) # Replaced class Config with model_config
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True
+    )  # Replaced class Config with model_config
+
 
 class AssignmentService:
     def __init__(self, session: AsyncSession, business_id: int):
@@ -37,10 +40,10 @@ class AssignmentService:
             User.business_id == self.business_id,
             or_(
                 User.name.ilike(f"%{name_fragment}%"),
-                User.email.ilike(f"%{name_fragment}%")
-            )
+                User.email.ilike(f"%{name_fragment}%"),
+            ),
         )
-        
+
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
@@ -57,7 +60,10 @@ class AssignmentService:
         # Validation 1: Ensure employee_id belongs to the same business
         employee = await self.user_repo.get_by_id(employee_id)
         if not employee or employee.business_id != self.business_id:
-            return AssignmentResult(success=False, error=f"Employee {employee_id} not found or not in business")
+            return AssignmentResult(
+                success=False,
+                error=f"Employee {employee_id} not found or not in business",
+            )
 
         warning = None
         # Validation 2: Ensure (softly) no overlap.
@@ -69,11 +75,11 @@ class AssignmentService:
                 Job.business_id == self.business_id,
                 Job.employee_id == employee_id,
                 Job.scheduled_at == job.scheduled_at,
-                Job.id != job_id
+                Job.id != job_id,
             )
             conflict_res = await self.session.execute(conflict_stmt)
             conflicts = conflict_res.scalars().all()
-            
+
             if conflicts:
                 warning = "Double booked"
 
@@ -82,11 +88,14 @@ class AssignmentService:
         await self.session.commit()
         await self.session.refresh(job)
 
-        await event_bus.emit(JOB_ASSIGNED, {
-            "job_id": job.id,
-            "employee_id": employee_id,
-            "business_id": self.business_id
-        })
+        await event_bus.emit(
+            JOB_ASSIGNED,
+            {
+                "job_id": job.id,
+                "employee_id": employee_id,
+                "business_id": self.business_id,
+            },
+        )
 
         return AssignmentResult(success=True, warning=warning, job=job)
 
@@ -98,17 +107,20 @@ class AssignmentService:
         job = await self.job_repo.get_by_id(job_id, self.business_id)
         if not job:
             return AssignmentResult(success=False, error=f"Job {job_id} not found")
-        
+
         old_employee_id = job.employee_id
         job.employee_id = None
         await self.session.commit()
         await self.session.refresh(job)
-        
+
         if old_employee_id:
-            await event_bus.emit(JOB_UNASSIGNED, {
-                "job_id": job.id,
-                "employee_id": old_employee_id,
-                "business_id": self.business_id
-            })
-            
+            await event_bus.emit(
+                JOB_UNASSIGNED,
+                {
+                    "job_id": job.id,
+                    "employee_id": old_employee_id,
+                    "business_id": self.business_id,
+                },
+            )
+
         return AssignmentResult(success=True, job=job)

@@ -1,6 +1,7 @@
 import asyncio
 import httpx
 
+
 async def verify_routing_api():
     base_url = "http://localhost:8000/api/v1/pwa"
     # We'd need a token, but let's see if we can at least check if the endpoint is registered (401 is better than 404)
@@ -17,6 +18,7 @@ async def verify_routing_api():
                 print(response.text)
         except Exception as e:
             print(f"Connection failed: {e}")
+
 
 if __name__ == "__main__":
     asyncio.run(verify_routing_api())

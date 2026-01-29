@@ -1,4 +1,3 @@
-
 import pytest
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.database import Base
@@ -7,13 +6,16 @@ from src.repositories import JobRepository
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
+
 @pytest.mark.asyncio
 async def test_job_spatial_optimization():
     # Setup DB
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    SessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+    SessionLocal = async_sessionmaker(
+        bind=engine, class_=AsyncSession, expire_on_commit=False
+    )
 
     async with SessionLocal() as session:
         # Create Business
@@ -26,7 +28,7 @@ async def test_job_spatial_optimization():
             name="Dublin Customer",
             business_id=biz.id,
             latitude=53.3498,
-            longitude=-6.2603
+            longitude=-6.2603,
         )
         session.add(cust_dublin)
         await session.flush()
@@ -39,7 +41,7 @@ async def test_job_spatial_optimization():
             customer_id=cust_dublin.id,
             latitude=51.8985,
             longitude=-8.4756,
-            status=JobStatus.PENDING
+            status=JobStatus.PENDING,
         )
 
         # Job B: No location, falls back to Customer (Dublin)
@@ -49,7 +51,7 @@ async def test_job_spatial_optimization():
             customer_id=cust_dublin.id,
             latitude=None,
             longitude=None,
-            status=JobStatus.PENDING
+            status=JobStatus.PENDING,
         )
 
         session.add_all([job_cork, job_dublin_implicit])
@@ -64,7 +66,7 @@ async def test_job_spatial_optimization():
             business_id=biz.id,
             center_lat=53.3498,
             center_lon=-6.2603,
-            radius=20000.0
+            radius=20000.0,
         )
 
         assert len(results_dublin) == 1
@@ -77,7 +79,7 @@ async def test_job_spatial_optimization():
             business_id=biz.id,
             center_lat=51.8985,
             center_lon=-8.4756,
-            radius=20000.0
+            radius=20000.0,
         )
 
         assert len(results_cork) == 1
@@ -90,7 +92,7 @@ async def test_job_spatial_optimization():
             business_id=biz.id,
             center_lat=53.4239,
             center_lon=-7.9407,
-            radius=20000.0
+            radius=20000.0,
         )
 
         assert len(results_athlone) == 0

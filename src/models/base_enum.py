@@ -1,6 +1,7 @@
 import enum
 from sqlalchemy import TypeDecorator, String, Text
 
+
 class RobustEnum(str, enum.Enum):
     @classmethod
     def _missing_(cls, value):
@@ -11,12 +12,14 @@ class RobustEnum(str, enum.Enum):
                     return member
         return None
 
+
 class SafeSAEnum(TypeDecorator):
     """
     SQLAlchemy TypeDecorator that makes Enum handling case-insensitive on load.
     Uses String as the underlying implementation to avoid strict Enum validation
     in SQLAlchemy, allowing us to handle casing in Python.
     """
+
     impl = String
     cache_ok = True
 

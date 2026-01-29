@@ -11,23 +11,28 @@ from src.services.whatsapp_template_service import WhatsAppTemplateService
 
 router = APIRouter()
 
+
 def get_service(session: AsyncSession = Depends(get_db)):
     return WhatsAppTemplateService(session)
+
 
 @router.get("/", response_model=List[WhatsAppTemplateSchema])
 async def list_templates(
     session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    stmt = select(WhatsAppTemplate).where(WhatsAppTemplate.business_id == current_user.business_id)
+    stmt = select(WhatsAppTemplate).where(
+        WhatsAppTemplate.business_id == current_user.business_id
+    )
     result = await session.execute(stmt)
     return result.scalars().all()
+
 
 @router.post("/", response_model=WhatsAppTemplateSchema)
 async def create_template(
     data: WhatsAppTemplateCreate,
     service: WhatsAppTemplateService = Depends(get_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     try:
         # Check if category is valid string and convert to Enum
@@ -36,8 +41,8 @@ async def create_template(
         category_enum = WhatsAppTemplateCategory(data.category)
     except ValueError:
         raise HTTPException(
-            status_code=400, 
-            detail=f"Invalid category. Must be one of {[e.value for e in WhatsAppTemplateCategory]}"
+            status_code=400,
+            detail=f"Invalid category. Must be one of {[e.value for e in WhatsAppTemplateCategory]}",
         )
 
     return await service.create_template(
@@ -45,13 +50,14 @@ async def create_template(
         name=data.name,
         category=category_enum,
         components=data.components,
-        language=data.language
+        language=data.language,
     )
+
 
 @router.post("/sync")
 async def sync_templates(
     service: WhatsAppTemplateService = Depends(get_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     await service.sync_templates(current_user.business_id)
     return {"status": "synced"}

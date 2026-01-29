@@ -7,9 +7,12 @@ from src.config import settings
 
 logger = logging.getLogger(__name__)
 
+
 class StorageError(Exception):
     """Base class for storage related errors."""
+
     pass
+
 
 class S3Service:
     def __init__(self):
@@ -22,17 +25,21 @@ class S3Service:
         self.s3_client = None
         if all([self.endpoint_url, self.access_key, self.secret_key]):
             self.s3_client = boto3.client(
-                's3',
+                "s3",
                 endpoint_url=self.endpoint_url,
                 aws_access_key_id=self.access_key,
                 aws_secret_access_key=self.secret_key,
                 region_name=self.region,
-                config=Config(s3={'addressing_style': 'path'})
+                config=Config(s3={"addressing_style": "path"}),
             )
         else:
-            logger.warning("S3 credentials not fully configured. S3Service will be inoperable.")
+            logger.warning(
+                "S3 credentials not fully configured. S3Service will be inoperable."
+            )
 
-    def upload_file(self, file_content: bytes, key: str, content_type: str = 'application/pdf') -> str:
+    def upload_file(
+        self, file_content: bytes, key: str, content_type: str = "application/pdf"
+    ) -> str:
         """
         Uploads file content to S3 and returns the public URL.
         """
@@ -44,7 +51,7 @@ class S3Service:
                 Bucket=self.bucket_name,
                 Key=key,
                 Body=file_content,
-                ContentType=content_type
+                ContentType=content_type,
             )
             return self.get_public_url(key)
         except Exception as e:
@@ -57,12 +64,12 @@ class S3Service:
         """
         if not self.s3_client:
             raise StorageError("S3 client not initialized.")
-        
+
         try:
             url = self.s3_client.generate_presigned_url(
-                'get_object',
-                Params={'Bucket': self.bucket_name, 'Key': key},
-                ExpiresIn=604800 # 7 days
+                "get_object",
+                Params={"Bucket": self.bucket_name, "Key": key},
+                ExpiresIn=604800,  # 7 days
             )
             return url
         except ClientError as e:
@@ -72,5 +79,5 @@ class S3Service:
                 return f"{self.endpoint_url}/{self.bucket_name}/{key}"
             return f"{self.endpoint_url.rstrip('/')}/{self.bucket_name}/{key}"
 
-storage_service = S3Service()
 
+storage_service = S3Service()

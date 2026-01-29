@@ -8,32 +8,34 @@ from src.repositories import IntegrationRepository
 from src.models import Business
 from src.database import get_db
 
+
 @pytest.fixture
 def client():
     # Use TestClient with a fresh instance or the global app
     return TestClient(app)
+
 
 @pytest.mark.asyncio
 async def test_provisioning_flow(client, async_session):
     """Test the provisioning endpoint with signature verification."""
     # Override DB
     app.dependency_overrides[get_db] = lambda: async_session
-    
+
     try:
         # 1. Prepare valid signature
         config_type = "INBOUND_KEY"
         label = "Zapier Primary"
         # We sign the same string as the server expects
         auth_id = Signer.sign(config_type + label, settings.secret_key)
-        
+
         # 2. Call provisioning
         payload = {
             "auth_id": auth_id,
             "config_type": config_type,
             "label": label,
-            "payload": {"business_id": 1, "OWNER": "John"}
+            "payload": {"business_id": 1, "OWNER": "John"},
         }
-        
+
         response = client.post("/api/v1/integrations/provision", json=payload)
         assert response.status_code == 201
 
@@ -46,6 +48,7 @@ async def test_provisioning_flow(client, async_session):
     finally:
         app.dependency_overrides.clear()
 
+
 @pytest.mark.asyncio
 async def test_leads_ingestion_api_key(client, async_session):
     """Test lead ingestion with API Key authentication."""
@@ -54,15 +57,15 @@ async def test_leads_ingestion_api_key(client, async_session):
     async_session.add(biz)
     await async_session.commit()
     await async_session.refresh(biz)
-    
+
     # Use real service to generate key and hash
     service = IntegrationService(IntegrationRepository(async_session))
     config, raw_key = await service.create_inbound_integration(biz.id, "Test Key")
     await async_session.commit()
-    
+
     # Override get_db to use our async_session
     app.dependency_overrides[get_db] = lambda: async_session
-    
+
     try:
         # 1. Valid API Key
         headers = {"X-API-Key": raw_key}
@@ -70,10 +73,12 @@ async def test_leads_ingestion_api_key(client, async_session):
             "name": "New Lead",
             "phone": "353899485670",
             "email": "lead@example.com",
-            "source": "fb_ads"
+            "source": "fb_ads",
         }
-        
-        response = client.post("/api/v1/integrations/leads", json=payload, headers=headers)
+
+        response = client.post(
+            "/api/v1/integrations/leads", json=payload, headers=headers
+        )
         assert response.status_code == 201
 
         data = response.json()
@@ -82,16 +87,19 @@ async def test_leads_ingestion_api_key(client, async_session):
 
         # 2. Invalid API Key
         headers = {"X-API-Key": "invalid_key"}
-        response = client.post("/api/v1/integrations/leads", json=payload, headers=headers)
+        response = client.post(
+            "/api/v1/integrations/leads", json=payload, headers=headers
+        )
         assert response.status_code == 401
 
         # 3. Missing API Key
         response = client.post("/api/v1/integrations/leads", json=payload)
         # FastAPI returns 422 if required Header is missing
         assert response.status_code == 422
-        
+
     finally:
         app.dependency_overrides.clear()
+
 
 @pytest.mark.asyncio
 async def test_requests_ingestion(client, async_session):
@@ -100,13 +108,13 @@ async def test_requests_ingestion(client, async_session):
     async_session.add(biz)
     await async_session.commit()
     await async_session.refresh(biz)
-    
+
     service = IntegrationService(IntegrationRepository(async_session))
     config, raw_key = await service.create_inbound_integration(biz.id, "Test Key")
     await async_session.commit()
 
     app.dependency_overrides[get_db] = lambda: async_session
-    
+
     try:
         headers = {"X-API-Key": raw_key}
         payload = {
@@ -114,10 +122,12 @@ async def test_requests_ingestion(client, async_session):
             "phone": "3531234567",
             "address": "123 Dublin St",
             "service_type": "Repair",
-            "notes": "Leaking pipe"
+            "notes": "Leaking pipe",
         }
-        
-        response = client.post("/api/v1/integrations/requests", json=payload, headers=headers)
+
+        response = client.post(
+            "/api/v1/integrations/requests", json=payload, headers=headers
+        )
         assert response.status_code == 201
 
         data = response.json()
