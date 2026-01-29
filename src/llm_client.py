@@ -59,33 +59,36 @@ from src.config.loader import get_channel_config_loader
 class LLMParser:
     def __init__(self, prompts_path: Optional[str] = None):
         self.logger = logging.getLogger(__name__)
-        
+
         if os.getenv("MOCK_LLM_MODE") == "true":
             self.logger.warning("MOCK_LLM_MODE is enabled. Using MockOpenAIClient.")
             try:
                 from tests.mocks.mock_llm import MockOpenAIClient
+
                 self.client = MockOpenAIClient()
             except ImportError as e:
-                self.logger.error(f"Failed to import MockOpenAIClient: {e}. Falling back to real client (which might fail if no key).")
+                self.logger.error(
+                    f"Failed to import MockOpenAIClient: {e}. Falling back to real client (which might fail if no key)."
+                )
                 self.client = AsyncOpenAI(
                     base_url="https://openrouter.ai/api/v1",
                     api_key=settings.openrouter_api_key,
-                    posthog_client=analytics.client
+                    posthog_client=analytics.client,
                 )
         else:
             self.client = AsyncOpenAI(
                 base_url="https://openrouter.ai/api/v1",
                 api_key=settings.openrouter_api_key,
-                posthog_client=analytics.client
+                posthog_client=analytics.client,
             )
-            
+
         self.model = settings.openrouter_model
 
         # Load prompts from external YAML
         if prompts_path is None:
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             prompts_path = os.path.join(base_dir, "src", "assets", "prompts.yaml")
-        
+
         # We reuse TemplateService as a generic YAML loader for prompts
         self.prompts_service = TemplateService(yaml_path=prompts_path)
         tool_desc = self.prompts_service.templates.get("tool_descriptions", {})
@@ -177,7 +180,10 @@ class LLMParser:
                 "type": "function",
                 "function": {
                     "name": "GetBillingStatusTool",
-                    "description": tool_desc.get("GetBillingStatusTool", "Check the current subscription status, limits, and usage."),
+                    "description": tool_desc.get(
+                        "GetBillingStatusTool",
+                        "Check the current subscription status, limits, and usage.",
+                    ),
                     "parameters": GetBillingStatusTool.schema(),
                 },
             },
@@ -185,145 +191,202 @@ class LLMParser:
                 "type": "function",
                 "function": {
                     "name": "RequestUpgradeTool",
-                    "description": tool_desc.get("RequestUpgradeTool", "Request an upgrade for seats or addons."),
+                    "description": tool_desc.get(
+                        "RequestUpgradeTool", "Request an upgrade for seats or addons."
+                    ),
                     "parameters": RequestUpgradeTool.schema(),
                 },
             },
         ]
 
-        self.tools.append({
-            "type": "function",
-            "function": {
-                "name": "CreateQuoteTool",
-                "description": tool_desc.get("CreateQuoteTool", "Create and send a quote to a customer"),
-                "parameters": CreateQuoteTool.schema(),
-            },
-        })
-
-        self.tools.append({
-            "type": "function",
-            "function": {
-                "name": "SendStatusTool",
-                "description": tool_desc.get("SendStatusTool", ""),
-                "parameters": SendStatusTool.schema(),
-            },
-        })
-
-        self.tools.append({
-            "type": "function",
-            "function": {
-                "name": "SendInvoiceTool",
-                "description": "Send a professional PDF invoice to a customer for their last job.",
-                "parameters": SendInvoiceTool.schema(),
-            },
-        })
-        self.tools.append({
-            "type": "function",
-            "function": {
-                "name": "AssignJobTool",
-                "description": tool_desc.get("AssignJobTool", "Assign a specific job to an employee by name."),
-                "parameters": AssignJobTool.schema(),
-            },
-        })
-        self.tools.append({
-            "type": "function",
-            "function": {
-                "name": "LocateEmployeeTool",
-                "description": tool_desc.get("LocateEmployeeTool", "Locate an employee or list location of all employees."),
-                "parameters": LocateEmployeeTool.schema(),
-            },
-        })
-        self.tools.append({
-            "type": "function",
-            "function": {
-                "name": "CheckETATool",
-                "description": tool_desc.get("CheckETATool", "Check the estimated time of arrival for a technician to a customer."),
-                "parameters": CheckETATool.schema(),
-            },
-        })
-        self.tools.append({
-            "type": "function",
-            "function": {
-                "name": "AutorouteTool",
-                "description": tool_desc.get("AutorouteTool", "Preview or execute automatic job routing to minimize distance and maximize jobs."),
-                "parameters": AutorouteTool.schema(),
-            },
-        })
-
-        self.tools.extend([
+        self.tools.append(
             {
                 "type": "function",
                 "function": {
-                    "name": "UpdateCustomerStageTool",
-                    "description": tool_desc.get("UpdateCustomerStageTool", "Update a customer's pipeline stage (e.g. mark as lost, contacted)."),
-                    "parameters": UpdateCustomerStageTool.schema(),
-                },
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "MassEmailTool",
-                    "description": tool_desc.get("MassEmailTool", "Send a broadcast message to many customers at once."),
-                    "parameters": MassEmailTool.schema(),
-                },
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "SyncQuickBooksTool",
-                    "description": tool_desc.get("SyncQuickBooksTool", "Manually trigger a sync with QuickBooks accounting."),
-                    "parameters": SyncQuickBooksTool.schema(),
-                },
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "QuickBooksStatusTool",
-                    "description": tool_desc.get("QuickBooksStatusTool", "Check the status of QuickBooks integration."),
-                    "parameters": QuickBooksStatusTool.schema(),
-                },
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "UpdateWorkflowSettingsTool",
-                    "description": tool_desc.get("UpdateWorkflowSettingsTool", "Update business workflow settings like invoicing/quoting frequency."),
-                    "parameters": UpdateWorkflowSettingsTool.schema(),
-                },
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "ExportQueryTool",
-                    "description": tool_desc.get("ExportQueryTool", "Export data as CSV based on search query."),
-                    "parameters": ExportQueryTool.schema(),
-                },
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "ConnectGoogleCalendarTool",
-                    "description": tool_desc.get("ConnectGoogleCalendarTool", "Initiate Google Calendar connection."),
-                    "parameters": ConnectGoogleCalendarTool.schema(),
-                },
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "DisconnectGoogleCalendarTool",
-                    "description": tool_desc.get("DisconnectGoogleCalendarTool", "Disconnect Google Calendar."),
-                    "parameters": DisconnectGoogleCalendarTool.schema(),
-                },
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "GoogleCalendarStatusTool",
-                    "description": tool_desc.get("GoogleCalendarStatusTool", "Check Google Calendar status."),
-                    "parameters": GoogleCalendarStatusTool.schema(),
+                    "name": "CreateQuoteTool",
+                    "description": tool_desc.get(
+                        "CreateQuoteTool", "Create and send a quote to a customer"
+                    ),
+                    "parameters": CreateQuoteTool.schema(),
                 },
             }
-        ])
+        )
+
+        self.tools.append(
+            {
+                "type": "function",
+                "function": {
+                    "name": "SendStatusTool",
+                    "description": tool_desc.get("SendStatusTool", ""),
+                    "parameters": SendStatusTool.schema(),
+                },
+            }
+        )
+
+        self.tools.append(
+            {
+                "type": "function",
+                "function": {
+                    "name": "SendInvoiceTool",
+                    "description": "Send a professional PDF invoice to a customer for their last job.",
+                    "parameters": SendInvoiceTool.schema(),
+                },
+            }
+        )
+        self.tools.append(
+            {
+                "type": "function",
+                "function": {
+                    "name": "AssignJobTool",
+                    "description": tool_desc.get(
+                        "AssignJobTool", "Assign a specific job to an employee by name."
+                    ),
+                    "parameters": AssignJobTool.schema(),
+                },
+            }
+        )
+        self.tools.append(
+            {
+                "type": "function",
+                "function": {
+                    "name": "LocateEmployeeTool",
+                    "description": tool_desc.get(
+                        "LocateEmployeeTool",
+                        "Locate an employee or list location of all employees.",
+                    ),
+                    "parameters": LocateEmployeeTool.schema(),
+                },
+            }
+        )
+        self.tools.append(
+            {
+                "type": "function",
+                "function": {
+                    "name": "CheckETATool",
+                    "description": tool_desc.get(
+                        "CheckETATool",
+                        "Check the estimated time of arrival for a technician to a customer.",
+                    ),
+                    "parameters": CheckETATool.schema(),
+                },
+            }
+        )
+        self.tools.append(
+            {
+                "type": "function",
+                "function": {
+                    "name": "AutorouteTool",
+                    "description": tool_desc.get(
+                        "AutorouteTool",
+                        "Preview or execute automatic job routing to minimize distance and maximize jobs.",
+                    ),
+                    "parameters": AutorouteTool.schema(),
+                },
+            }
+        )
+
+        self.tools.extend(
+            [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "UpdateCustomerStageTool",
+                        "description": tool_desc.get(
+                            "UpdateCustomerStageTool",
+                            "Update a customer's pipeline stage (e.g. mark as lost, contacted).",
+                        ),
+                        "parameters": UpdateCustomerStageTool.schema(),
+                    },
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "MassEmailTool",
+                        "description": tool_desc.get(
+                            "MassEmailTool",
+                            "Send a broadcast message to many customers at once.",
+                        ),
+                        "parameters": MassEmailTool.schema(),
+                    },
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "SyncQuickBooksTool",
+                        "description": tool_desc.get(
+                            "SyncQuickBooksTool",
+                            "Manually trigger a sync with QuickBooks accounting.",
+                        ),
+                        "parameters": SyncQuickBooksTool.schema(),
+                    },
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "QuickBooksStatusTool",
+                        "description": tool_desc.get(
+                            "QuickBooksStatusTool",
+                            "Check the status of QuickBooks integration.",
+                        ),
+                        "parameters": QuickBooksStatusTool.schema(),
+                    },
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "UpdateWorkflowSettingsTool",
+                        "description": tool_desc.get(
+                            "UpdateWorkflowSettingsTool",
+                            "Update business workflow settings like invoicing/quoting frequency.",
+                        ),
+                        "parameters": UpdateWorkflowSettingsTool.schema(),
+                    },
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "ExportQueryTool",
+                        "description": tool_desc.get(
+                            "ExportQueryTool",
+                            "Export data as CSV based on search query.",
+                        ),
+                        "parameters": ExportQueryTool.schema(),
+                    },
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "ConnectGoogleCalendarTool",
+                        "description": tool_desc.get(
+                            "ConnectGoogleCalendarTool",
+                            "Initiate Google Calendar connection.",
+                        ),
+                        "parameters": ConnectGoogleCalendarTool.schema(),
+                    },
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "DisconnectGoogleCalendarTool",
+                        "description": tool_desc.get(
+                            "DisconnectGoogleCalendarTool",
+                            "Disconnect Google Calendar.",
+                        ),
+                        "parameters": DisconnectGoogleCalendarTool.schema(),
+                    },
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "GoogleCalendarStatusTool",
+                        "description": tool_desc.get(
+                            "GoogleCalendarStatusTool", "Check Google Calendar status."
+                        ),
+                        "parameters": GoogleCalendarStatusTool.schema(),
+                    },
+                },
+            ]
+        )
 
         self.settings_tools = [
             {
@@ -415,15 +478,15 @@ class LLMParser:
         ]
 
     async def _chat_with_retry(
-        self, 
-        messages: list[dict], 
-        tools: list[dict], 
+        self,
+        messages: list[dict],
+        tools: list[dict],
         model_map: dict[str, Any],
         distinct_id: str = "anonymous",
-        original_query: str = ""
+        original_query: str = "",
     ) -> Optional[Any]:
         """
-        Executes a chat completion with retry logic for missing tool calls, 
+        Executes a chat completion with retry logic for missing tool calls,
         JSON parsing errors, and Pydantic validation errors.
         """
         for attempt in range(2):
@@ -440,39 +503,57 @@ class LLMParser:
                         }
                     },
                     posthog_distinct_id=distinct_id,
-                    posthog_properties={
-                        "original_query": original_query
-                    }
+                    posthog_properties={"original_query": original_query},
                 )
                 latency = time.perf_counter() - start_time
                 usage = response.usage
                 input_tokens = usage.prompt_tokens if usage else None
                 output_tokens = usage.completion_tokens if usage else None
-                
+
                 # Format output choices for PostHog
                 output_choices = [
-                    {"message": choice.message.dict(), "finish_reason": choice.finish_reason}
+                    {
+                        "message": choice.message.dict(),
+                        "finish_reason": choice.finish_reason,
+                    }
                     for choice in response.choices
                 ]
 
                 message = response.choices[0].message
-                
+
                 # Extract reasoning/thought if available
                 # OpenRouter/OpenAI models might provide it in .reasoning or sometimes in the content
                 reasoning = getattr(message, "reasoning", None)
                 if not reasoning and message.content and "<thought>" in message.content:
                     import re
-                    match = re.search(r"<thought>(.*?)</thought>", message.content, re.DOTALL)
+
+                    match = re.search(
+                        r"<thought>(.*?)</thought>", message.content, re.DOTALL
+                    )
                     if match:
                         reasoning = match.group(1).strip()
-                
+
                 # Case 1: No tool calls produced
                 if not message.tool_calls:
                     if attempt == 0:
-                        self.logger.info("LLM failed to produce tool call, retrying...")
+                        self.logger.info(
+                            f"LLM failed to produce tool call. Content: {message.content}. Retrying..."
+                        )
                         # Append the assistant's content (if any) and the retry instruction
-                        messages.append({"role": "ASSISTANT", "content": message.content or "[no tool call produced]"})
-                        messages.append({"role": "USER", "content": self.prompts_service.render("retry_instruction")})
+                        messages.append(
+                            {
+                                "role": "ASSISTANT",
+                                "content": message.content or "[no tool call produced]",
+                            }
+                        )
+                        messages.append(
+                            {
+                                "role": "USER",
+                                "content": self.prompts_service.render(
+                                    "retry_instruction"
+                                ),
+                            }
+                        )
                         continue
                     else:
                         # Return None if final attempt failed, so the caller can handle it as an error/help message
@@ -487,14 +568,14 @@ class LLMParser:
                             input_tokens=input_tokens,
                             output_tokens=output_tokens,
                             input_messages=messages,
-                            output_choices=output_choices
+                            output_choices=output_choices,
                         )
                         return None
 
                 # Process the first tool call
                 tool_call = message.tool_calls[0]
                 function_name = tool_call.function.name
-                
+
                 # Check for JSON errors
                 try:
                     arguments = json.loads(tool_call.function.arguments)
@@ -504,10 +585,14 @@ class LLMParser:
                         # We must append the message properly so the API accepts the history
                         messages.append(message.dict())
                         error_msg = f"JSON Decode Error: {str(e)}"
-                        messages.append({
-                            "role": "USER", 
-                            "content": self.prompts_service.render("retry_error_instruction", error=error_msg)
-                        })
+                        messages.append(
+                            {
+                                "role": "USER",
+                                "content": self.prompts_service.render(
+                                    "retry_error_instruction", error=error_msg
+                                ),
+                            }
+                        )
                         continue
                     else:
                         self.logger.error(f"JSON Decode Error on retry: {e}")
@@ -522,7 +607,7 @@ class LLMParser:
                             input_tokens=input_tokens,
                             output_tokens=output_tokens,
                             input_messages=messages,
-                            output_choices=output_choices
+                            output_choices=output_choices,
                         )
                         return None
 
@@ -543,7 +628,7 @@ class LLMParser:
                             output_tokens=output_tokens,
                             input_messages=messages,
                             output_choices=output_choices,
-                            thought=reasoning
+                            thought=reasoning,
                         )
                         return result
                     except ValidationError as e:
@@ -551,10 +636,14 @@ class LLMParser:
                             self.logger.warning(f"Validation Error: {e}")
                             messages.append(message.dict())
                             error_msg = f"Validation Error: {str(e)}"
-                            messages.append({
-                                "role": "USER", 
-                                "content": self.prompts_service.render("retry_error_instruction", error=error_msg)
-                            })
+                            messages.append(
+                                {
+                                    "role": "USER",
+                                    "content": self.prompts_service.render(
+                                        "retry_error_instruction", error=error_msg
+                                    ),
+                                }
+                            )
                             continue
                         else:
                             self.logger.error(f"Validation Error on retry: {e}")
@@ -571,25 +660,32 @@ class LLMParser:
                                 output_tokens=output_tokens,
                                 input_messages=messages,
                                 output_choices=output_choices,
-                                thought=reasoning
+                                thought=reasoning,
                             )
                             return None
                 else:
                     self.logger.warning(f"Unknown tool called: {function_name}")
                     if attempt == 0:
-                         messages.append(message.dict())
-                         messages.append({
-                             "role": "USER",
-                             "content": self.prompts_service.render("retry_error_instruction", error=f"Unknown tool '{function_name}'. Please use one of the provided tools.")
-                         })
-                         continue
+                        messages.append(message.dict())
+                        messages.append(
+                            {
+                                "role": "USER",
+                                "content": self.prompts_service.render(
+                                    "retry_error_instruction",
+                                    error=f"Unknown tool '{function_name}'. Please use one of the provided tools.",
+                                ),
+                            }
+                        )
+                        continue
                     return None
 
             except Exception as e:
-                self.logger.error(f"LLM Parse Error (attempt {attempt+1}): {e}", exc_info=True)
+                self.logger.error(
+                    f"LLM Parse Error (attempt {attempt + 1}): {e}", exc_info=True
+                )
                 if attempt == 1:
                     return None
-        
+
         return None
 
     async def chat_completion(
@@ -606,7 +702,7 @@ class LLMParser:
                     "sort": "throughput",
                 }
             },
-            posthog_distinct_id="anonymous", # Or pass if available
+            posthog_distinct_id="anonymous",  # Or pass if available
         )
         return response.choices[0].message.content or ""
 
@@ -635,11 +731,11 @@ class LLMParser:
         }
 
         return await self._chat_with_retry(
-            messages, 
-            self.datamgmt_tools, 
+            messages,
+            self.datamgmt_tools,
             model_map,
-            distinct_id=text, # Defaulting to text if unknown, but better context would be ideal
-            original_query=text
+            distinct_id=text,  # Defaulting to text if unknown, but better context would be ideal
+            original_query=text,
         )
 
     async def parse_settings(
@@ -677,13 +773,13 @@ class LLMParser:
             "ExitSettingsTool": ExitSettingsTool,
             "UpdateSettingsTool": UpdateSettingsTool,
         }
-        
+
         return await self._chat_with_retry(
-            messages, 
-            self.settings_tools, 
+            messages,
+            self.settings_tools,
             model_map,
             distinct_id=text,
-            original_query=text
+            original_query=text,
         )
 
     async def parse_employee_management(
@@ -709,21 +805,21 @@ class LLMParser:
         }
 
         return await self._chat_with_retry(
-            messages, 
-            self.employee_mgmt_tools, 
+            messages,
+            self.employee_mgmt_tools,
             model_map,
             distinct_id=text,
-            original_query=text
+            original_query=text,
         )
 
     async def parse(
-        self, 
-        text: str, 
-        system_time: Optional[str] = None, 
+        self,
+        text: str,
+        system_time: Optional[str] = None,
         service_catalog: Optional[str] = None,
         channel_name: str = "WHATSAPP",
         user_context: Optional[dict] = None,
-        feedback: Optional[str] = None
+        feedback: Optional[str] = None,
     ) -> Optional[
         Union[
             AddJobTool,
@@ -748,11 +844,11 @@ class LLMParser:
         # 1. Keyword pre-filtering
         lower_text = text.lower().strip()
         if lower_text == "help":
-            return HelpTool()
+            return HelpTool(query=None)
         if lower_text in ["undo", "cancel"]:
             return None
-        
-        # We removed strict "help" and "hi" filtering to let the LLM handle 
+
+        # We removed strict "help" and "hi" filtering to let the LLM handle
         # varied intents and context better, especially for PWA chat.
 
         # 2. Construct Prompt
@@ -761,23 +857,27 @@ class LLMParser:
             system_instruction += self.prompts_service.render(
                 "service_catalog_matching", service_catalog=service_catalog
             )
-        
+
         if user_context:
-            system_instruction += f"\n\nUSER CONTEXT:\n- Role: {user_context.get('role', 'unknown')}\n"
+            system_instruction += (
+                f"\n\nUSER CONTEXT:\n- Role: {user_context.get('role', 'unknown')}\n"
+            )
             if "active_addons" in user_context:
-                system_instruction += f"- Active Addons: {user_context['active_addons']}\n"
+                system_instruction += (
+                    f"- Active Addons: {user_context['active_addons']}\n"
+                )
             for key, val in user_context.items():
                 if key not in ["role", "active_addons", "channel"]:
-                     system_instruction += f"- {key}: {val}\n"
+                    system_instruction += f"- {key}: {val}\n"
 
         # 3. Channel constraints
         config_loader = get_channel_config_loader()
         channel_config = config_loader.get_channel_config(channel_name)
         max_length = channel_config.get("max_length", 4096)
-        
+
         # If max_length is restrictive (e.g. SMS), add instruction
         if max_length < 200:
-             system_instruction += f"\nIMPORTANT: The user is on a character-limited channel (max {max_length} chars). Keep your response Extremely concise. No fluff."
+            system_instruction += f"\nIMPORTANT: The user is on a character-limited channel (max {max_length} chars). Keep your response Extremely concise. No fluff."
 
         messages = [{"role": "system", "content": system_instruction}]
 
@@ -790,8 +890,15 @@ class LLMParser:
         messages.append({"role": "USER", "content": user_prompt})
 
         if feedback:
-            messages.append({"role": "ASSISTANT", "content": "I will try to find the location."}) # Placeholder assistant response
-            messages.append({"role": "USER", "content": f"ERROR: {feedback}\nPlease try parsing the original request again with better inputs."})
+            messages.append(
+                {"role": "ASSISTANT", "content": "I will try to find the location."}
+            )  # Placeholder assistant response
+            messages.append(
+                {
+                    "role": "USER",
+                    "content": f"ERROR: {feedback}\nPlease try parsing the original request again with better inputs.",
+                }
+            )
 
         model_map = {
             "AddJobTool": AddJobTool,
@@ -828,16 +935,19 @@ class LLMParser:
 
         distinct_id = "anonymous"
         if user_context:
-            distinct_id = user_context.get("phone_number") or user_context.get("clerk_id") or "anonymous"
+            distinct_id = (
+                user_context.get("phone_number")
+                or user_context.get("clerk_id")
+                or "anonymous"
+            )
 
         return await self._chat_with_retry(
-            messages, 
-            self.tools, 
+            messages,
+            self.tools,
             model_map,
             distinct_id=distinct_id,
-            original_query=text
+            original_query=text,
         )
-
 
 
 # Singleton instance

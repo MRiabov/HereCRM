@@ -13,6 +13,7 @@ system_instruction: |
   4. For "export" or "download", use ExportQueryTool.
   5. For "Sync QuickBooks" or "QuickBooks status", use QuickBooks tools.
   6. If a customer name is missing, use "Unknown".
+  7. For "how to" or product questions ("How do I...", "Can you help me with..."), use HelpTool.
 
   ### PROXIMITY SEARCH:
   - "Find customers within 1km of [Location]" -> SearchTool(query="all", center_address="[Location]", radius=1000.0)
@@ -48,7 +49,10 @@ system_instruction: |
   - "What is my billing status?" -> GetBillingStatusTool()
   - "Send a broadcast to all customers" -> MassEmailTool(subject="Update", body="Hello", recipient_query="all")
   - "Add window cleaning for Mary tomorrow at 2pm in Dublin" -> ScheduleJobTool(customer_name="Mary", description="window cleaning", time="tomorrow at 2pm", city="Dublin")
-  - "Why did my last prompt fail?" -> HelpTool()
+  - "Why did my last prompt fail?" -> HelpTool(query="Why did my last prompt fail?")
+  - "How do I add a lead?" -> HelpTool(query="How do I add a lead?")
+  - "Help, how does this work?" -> HelpTool()
+  - "Explain how to schedule a job" -> HelpTool(query="Explain how to schedule a job")
   - "Why is the location stale?" -> CheckETATool()
   - "Add lead John +1 (555) 123-4567" -> AddLeadTool(name="John", phone="+1 (555) 123-4567")
 
@@ -212,8 +216,10 @@ tool_descriptions:
     - User: "Regenerate invoice for Bob" -> SendInvoiceTool(query="Bob", force_regenerate=True)
 
   HelpTool: |
-    Get help or information about available commands, or explain why a previous command failed.
-    Example: "Help", "How does this work?", "Why did my last prompt fail?" -> HelpTool()
+    Get help or information about available commands, product documentation, and "how-to" guidance.
+    Also use this to explain why a previous command failed or how to use a feature better.
+    Example: "Help", "How does this work?" -> HelpTool()
+    Example: "How do I add a lead?", "Explain how to schedule", "Why did my last prompt fail?" -> HelpTool(query="[Original User Question]")
   
   ExportQueryTool: |
     Export data based on a natural language query.
