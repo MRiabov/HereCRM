@@ -4742,6 +4742,18 @@
             "minimum": 1.0,
             "title": "Job Id"
           },
+          "invoice_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Number"
+          },
           "total_amount": {
             "type": "number",
             "minimum": 0.0,
@@ -5603,6 +5615,18 @@
             "type": "integer",
             "minimum": 1.0,
             "title": "Customer Id"
+          },
+          "quote_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quote Number"
           },
           "total_amount": {
             "type": "number",

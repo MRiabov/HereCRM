@@ -48,7 +48,29 @@ async def list_quotes(
     
     result = await session.execute(stmt)
     quotes = result.scalars().unique().all()
-    return quotes
+    
+    response = []
+    for q in quotes:
+        response.append(QuoteSchema(
+            id=q.id,
+            customer_id=q.customer_id,
+            quote_number=f"QT-{q.id:03d}",
+            total_amount=q.total_amount,
+            status=q.status,
+            external_token=q.external_token,
+            public_url=q.blob_url,
+            created_at=q.created_at,
+            items=[{
+                "id": i.id,
+                "description": i.description,
+                "quantity": i.quantity,
+                "unit_price": i.unit_price,
+                "total": i.total,
+                "service_id": i.service_id
+            } for i in q.items],
+            customer=q.customer
+        ))
+    return response
 
 @router.get("/{quote_id}", response_model=QuoteSchema)
 async def get_quote(
@@ -70,7 +92,25 @@ async def get_quote(
     if not quote:
         raise HTTPException(status_code=404, detail="Quote not found")
 
-    return quote
+    return QuoteSchema(
+        id=quote.id,
+        customer_id=quote.customer_id,
+        quote_number=f"QT-{quote.id:03d}",
+        total_amount=quote.total_amount,
+        status=quote.status,
+        external_token=quote.external_token,
+        public_url=quote.blob_url,
+        created_at=quote.created_at,
+        items=[{
+            "id": i.id,
+            "description": i.description,
+            "quantity": i.quantity,
+            "unit_price": i.unit_price,
+            "total": i.total,
+            "service_id": i.service_id
+        } for i in quote.items],
+        customer=quote.customer
+    )
 
 @router.post("/", response_model=QuoteSchema)
 async def create_quote(
@@ -92,17 +132,17 @@ async def create_quote(
     total = 0.0
     line_items = []
     for item in quote_in.items:
-        qty = float(item.get("quantity", 1))
-        price = float(item.get("unit_price", 0))
+        qty = float(item.quantity)
+        price = float(item.unit_price)
         item_total = qty * price
         total += item_total
         
         line_items.append(QuoteLineItem(
-            description=item.get("description", ""),
+            description=item.description,
             quantity=qty,
             unit_price=price,
             total=item_total,
-            service_id=item.get("service_id")
+            service_id=item.service_id
         ))
 
     quote = Quote(
@@ -131,5 +171,25 @@ async def create_quote(
         .where(Quote.id == quote.id)
     )
     result = await session.execute(stmt)
-    return result.scalar_one()
+    q = result.scalar_one()
+    
+    return QuoteSchema(
+        id=q.id,
+        customer_id=q.customer_id,
+        quote_number=f"QT-{q.id:03d}",
+        total_amount=q.total_amount,
+        status=q.status,
+        external_token=q.external_token,
+        public_url=q.blob_url,
+        created_at=q.created_at,
+        items=[{
+            "id": i.id,
+            "description": i.description,
+            "quantity": i.quantity,
+            "unit_price": i.unit_price,
+            "total": i.total,
+            "service_id": i.service_id
+        } for i in q.items],
+        customer=q.customer
+    )
 

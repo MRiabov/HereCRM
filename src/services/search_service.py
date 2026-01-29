@@ -82,7 +82,7 @@ class SearchService:
         for item in results:
             if isinstance(item, Customer):
                 serialized_results.append({
-                    "type": "customer",
+                    "type": "CUSTOMER",
                     "id": item.id,
                     "name": item.name,
                     "phone": item.phone,
@@ -92,7 +92,7 @@ class SearchService:
                 })
             elif isinstance(item, Job):
                 serialized_results.append({
-                    "type": "job",
+                    "type": "JOB",
                     "id": item.id,
                     "description": item.description,
                     "status": item.status,
@@ -102,7 +102,7 @@ class SearchService:
                 })
             elif isinstance(item, Request):
                 serialized_results.append({
-                    "type": "request",
+                    "type": "REQUEST",
                     "id": item.id,
                     "description": item.description,
                     "status": item.status,

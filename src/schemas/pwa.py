@@ -205,6 +205,7 @@ class CustomerUpdate(BaseModel):
 class InvoiceSchema(BaseModel):
     id: int = Field(..., ge=1)
     job_id: int = Field(..., ge=1)
+    invoice_number: Optional[str] = Field(None, max_length=50) # Added
     total_amount: float = Field(..., ge=0)
     status: InvoiceStatus
     created_at: datetime
@@ -238,6 +239,7 @@ class QuoteLineItemSchema(BaseModel):
 class QuoteSchema(BaseModel):
     id: int = Field(..., ge=1)
     customer_id: int = Field(..., ge=1)
+    quote_number: Optional[str] = Field(None, max_length=50) # Added
     total_amount: float = Field(..., ge=0)
     status: QuoteStatus
     external_token: str = Field(..., min_length=1, max_length=100)

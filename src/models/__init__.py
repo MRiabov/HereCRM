@@ -241,13 +241,13 @@ class TriggerSource(RobustEnum):
 
 
 class EntityType(RobustEnum):
-    JOB = "job"
-    REQUEST = "request"
-    EXPENSE = "expense"
-    LEDGER = "ledger"
-    CUSTOMER = "customer"
-    LEAD = "lead"
-    ALL = "all"
+    JOB = "JOB"
+    REQUEST = "REQUEST"
+    EXPENSE = "EXPENSE"
+    LEDGER = "LEDGER"
+    CUSTOMER = "CUSTOMER"
+    LEAD = "LEAD"
+    ALL = "ALL"
 
 
 class JobStatus(RobustEnum):

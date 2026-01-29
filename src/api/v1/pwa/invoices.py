@@ -43,6 +43,7 @@ async def create_invoice(
         return InvoiceSchema(
             id=invoice.id,
             job_id=invoice.job_id,
+            invoice_number=f"INV-{invoice.id:03d}", # Added
             total_amount=job.value or 0.0,
             status=invoice.status,
             created_at=invoice.created_at,
@@ -94,6 +95,7 @@ async def list_invoices(
         response.append(InvoiceSchema(
             id=inv.id,
             job_id=inv.job_id,
+            invoice_number=f"INV-{inv.id:03d}", # Added
             total_amount=inv.job.value or 0.0,
             status=inv.status,
             created_at=inv.created_at,
@@ -125,6 +127,7 @@ async def get_invoice(
     return InvoiceSchema(
         id=invoice.id,
         job_id=invoice.job_id,
+        invoice_number=f"INV-{invoice.id:03d}", # Added
         total_amount=invoice.job.value or 0.0,
         status=invoice.status,
         created_at=invoice.created_at,
