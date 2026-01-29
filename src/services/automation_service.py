@@ -16,6 +16,14 @@ class AutomationService:
         self._running = False
         self._worker_task = None
 
+    async def _get_session_maker(self):
+        from src.database import current_db_name
+        db_name = current_db_name.get()
+        if db_name:
+            from src.database import engine_registry
+            return await engine_registry.get_session_maker(db_name)
+        return AsyncSessionLocal
+
     def register_handlers(self):
         """Register event handlers for automation."""
         event_bus.subscribe(QUOTE_SENT, self.handle_quote_sent)
