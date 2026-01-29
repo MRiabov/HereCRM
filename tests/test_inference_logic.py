@@ -126,3 +126,45 @@ async def test_tool_executor_with_line_items(
 
     # Check Job total value (updated by event listener)
     assert job.value == 110.0
+
+
+@pytest.mark.asyncio
+async def test_inference_preserves_exact_total(test_session: AsyncSession):
+    """
+    Test that total price is preserved even if it results in infinite decimal unit price.
+    Example: 12 items for $50. Unit price is 4.1666...
+    If we round unit price to 4.17, total becomes 50.04.
+    We must ensure total stays 50.0.
+    """
+    biz = Business(name="Rounding Biz")
+    test_session.add(biz)
+    await test_session.flush()
+
+    svc = Service(
+        business_id=biz.id,
+        name="Window Clean",
+        default_price=5.0, # Irrelevant here as user overrides
+        description="Standard window cleaning"
+    )
+    test_session.add(svc)
+    await test_session.flush()
+
+    inference_service = InferenceService(test_session)
+
+    # User says "12 windows for $50"
+    # Matched service "Window Clean" ($5 default)
+    # Quantity = 12, Total = 50.
+
+    raw_items = [LineItemInfo(description="Window Clean", quantity=12.0, total_price=50.0)]
+    inferred = await inference_service.infer_line_items(biz.id, raw_items)
+
+    assert len(inferred) == 1
+    item = inferred[0]
+
+    assert item.service_id == svc.id
+    assert item.quantity == 12.0
+    assert item.total_price == 50.0  # Must be exactly 50.0
+
+    # Unit price should be close to 4.1666...
+    # We don't enforce exact float equality for unit price, but it should be correct
+    assert abs(item.unit_price - (50.0 / 12.0)) < 0.0001
