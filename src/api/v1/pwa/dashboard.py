@@ -43,7 +43,7 @@ async def get_dashboard_stats(
         revenue_monthly=revenue,
         active_leads_count=active_leads,
         leads_need_followup=needs_followup,
-        pipeline_breakdown=pipeline_data
+        pipeline_breakdown={k: v["count"] for k, v in pipeline_data.items()}
     )
 
 @router.get("/recent-activity", response_model=List[RecentActivity])
