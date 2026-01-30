@@ -609,6 +609,14 @@ class QuoteLineItemInput(BaseModel):
     )
     quantity: float = Field(1.0, description="Quantity or amount")
     price: float = Field(..., description="Price per unit", ge=0)
+    service_id: Optional[int] = Field(
+        None, description="The ID of the matching service from the catalog", ge=1
+    )
+    service_name: Optional[str] = Field(
+        None,
+        description="The canonical name of the service from the catalog",
+        max_length=100,
+    )
 
     @validator("quantity", "price")
     def validate_positive(cls, v):

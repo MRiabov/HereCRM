@@ -2,13 +2,20 @@ import logging
 import json
 import os
 import time
+
 from typing import Union, Optional, Any
 from posthog.ai.openai import AsyncOpenAI
 
 try:
-    from pydantic.v1 import ValidationError
+    from pydantic.v1 import ValidationError as ValidationErrorV1
 except ImportError:
-    from pydantic import ValidationError
+    ValidationErrorV1 = None
+
+try:
+    from pydantic import ValidationError as ValidationErrorV2
+except ImportError:
+    ValidationErrorV2 = None
+
 
 from src.config import settings
 from src.services.analytics import analytics
@@ -56,6 +63,15 @@ from src.uimodels import (
     ConnectQuickBooksTool,
     DisconnectQuickBooksTool,
 )
+
+
+# Create a tuple of available error types to catch
+ValidationErrors = tuple(
+    e for e in [ValidationErrorV1, ValidationErrorV2] if e is not None
+)
+if not ValidationErrors:
+    # Fallback to generic Exception if no pydantic found (unlikely)
+    ValidationErrors = (Exception,)
 from src.services.template_service import TemplateService
 from src.config.loader import get_channel_config_loader
 
@@ -652,14 +668,14 @@ class LLMParser:
                             thought=reasoning,
                         )
                         return result
-                    except ValidationError as e:
+                    except ValidationErrors as e:
                         if attempt < 2:
                             self.logger.warning(f"Validation Error: {e}")
                             messages.append(message.dict())
                             error_msg = f"Validation Error: {str(e)}"
                             messages.append(
                                 {
-                                    "role": "USER",
+                                    "role": "user",
                                     "content": self.prompts_service.render(
                                         "retry_error_instruction", error=error_msg
                                     ),

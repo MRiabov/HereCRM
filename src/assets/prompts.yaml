@@ -20,7 +20,7 @@ system_instruction: |
 
   ### STATUS UPDATES:
   - "Done #[ID]" -> SendStatusTool(query="[ID]", status_type="finish_job")
-  - "Next Job" -> SendStatusTool(query="next", status_type="on_way")
+  - "Next Job" or "next job" -> SendStatusTool(query="next", status_type="on_way")
 
   ### AUTOROUTE:
   - If the user says "autoroute" or "optimize route", ALWAYS prioritize safety and use `apply=False` (preview mode) unless the user explicitly commands "apply", "execute", "save", or "commit".
@@ -28,7 +28,7 @@ system_instruction: |
   - "execute autoroute" -> AutorouteTool(apply=True)
 
   ### MATH & PRICE:
-  - "12 windows for $60" -> total price is $60. Do NOT multiply. AddJobTool(price=60.0, line_items=[{"description": "windows", "quantity": 12.0, "unit_price": 5.0}])
+  - "12 windows for $60" -> total price is $60. Do NOT multiply. AddJobTool(customer_name="Unknown", price=60.0, line_items=[{"description": "Window Cleaning", "quantity": 12.0, "unit_price": 5.0}])
 
   ### PHONE NUMBERS:
   - Use E.164 format if possible (e.g. +1 (555) 123-4567).
@@ -37,7 +37,7 @@ system_instruction: |
   - Always identify the tool even if you think the user shouldn't have access. The system handles permissions.
 
   ### FEW-SHOT EXAMPLES:
-  - "Add job for John 085123123 fix faucet $50" -> AddJobTool(customer_name="John", customer_phone="085123123", price=50.0, description="fix faucet")
+  - "Add job for John 085123123 fix faucet $50" -> AddJobTool(customer_name="John", customer_phone="085123123", price=50.0, description="Fix faucet")
   - "Promote John's request to a quote" -> ConvertRequestTool(query="John", action="QUOTE")
   - "Promote this request to a quote" -> ConvertRequestTool(query="current_request", action="QUOTE")
   - "Find customers within 1km of High Street 10" -> SearchTool(query="all", center_address="High Street 10", radius=1000.0)
@@ -48,7 +48,7 @@ system_instruction: |
   - "Done #101" -> SendStatusTool(query="101", status_type="finish_job")
   - "What is my billing status?" -> GetBillingStatusTool()
   - "Send a broadcast to all customers" -> MassEmailTool(subject="Update", body="Hello", recipient_query="all")
-  - "Add window cleaning for Mary tomorrow at 2pm in Dublin" -> ScheduleJobTool(customer_name="Mary", description="window cleaning", time="tomorrow at 2pm", city="Dublin")
+  - "Add window cleaning for Mary tomorrow at 2pm in Dublin" -> ScheduleJobTool(customer_name="Mary", description="Window Cleaning", time="tomorrow at 2pm", city="Dublin")
   - "Why did my last prompt fail?" -> HelpTool(query="Why did my last prompt fail?")
   - "How do I add a lead?" -> HelpTool(query="How do I add a lead?")
   - "Help, how does this work?" -> HelpTool()
@@ -93,20 +93,24 @@ tool_descriptions:
     Add a new job with price or task details.
     Examples of when to call:
     - User: "Add job for John at 123 Main St, cleaned windows for $50."
-      -> AddJobTool(customer_name="John", location="123 Main St", price=50.0, description="cleaned windows")
+      -> AddJobTool(customer_name="John", location="123 Main St", price=50.0, description="Window Cleaning")
     - User: "John Doe, 086123123, gutter cleaning $100 done"
-      -> AddJobTool(customer_name="John Doe", customer_phone="086123123", price=100.0, description="gutter cleaning", status="COMPLETED")
+      -> AddJobTool(customer_name="John Doe", customer_phone="086123123", price=100.0, description="Gutter Cleaning", status="COMPLETED")
     - User: "Add job for Tom: 5 windows and 1 door"
       (Catalog contains: ID 1: window ($10), ID 2: door ($50))
-      -> AddJobTool(customer_name="Tom", line_items=[{"service_id": 1, "service_name": "window", "quantity": 5.0, "unit_price": 10.0, "description": "windows"}, {"service_id": 2, "service_name": "door", "quantity": 1.0, "unit_price": 50.0, "description": "door"}])
-    - User: "Add job for Sarah, 12 windows for $60"
-      -> AddJobTool(customer_name="Sarah", price=60.0, line_items=[{"description": "windows", "quantity": 12.0, "unit_price": 5.0}])
+      -> AddJobTool(customer_name="Tom", line_items=[{"service_id": 1, "service_name": "Window Cleaning", "quantity": 5.0, "unit_price": 10.0, "description": "Window Cleaning"}, {"service_id": 2, "service_name": "Door Installation", "quantity": 1.0, "unit_price": 50.0, "description": "Door Installation"}])
+    - User: "Add job for Sarah, 12 exterior window cleaning for $60"
+      (Catalog contains: ID 1: Exterior Window Cleaning)
+      -> AddJobTool(customer_name="Sarah", price=60.0, line_items=[{"description": "Exterior Window Cleaning", "service_id": 1, "unit_price": 5.0, "quantity": 12.0}])
+    - User: "Add job for Mike, windows for $60"
+      (Catalog contains: ID 1: Exterior Window Cleaning)
+      -> AddJobTool(customer_name="Mike", price=60.0, line_items=[{"description": "Exterior Window Cleaning", "service_id": 1}])
     - User: "Add John 085123123 fix faucet $50"
-      -> AddJobTool(customer_name="John", customer_phone="085123123", price=50.0, description="fix faucet")
+      -> AddJobTool(customer_name="John", customer_phone="085123123", price=50.0, description="Faucet fix")
     - User: "Add job: Fix lamp $45.50"
       -> AddJobTool(customer_name="Unknown", price=45.50, description="Fix lamp")
     - User: "Add job for Mike, 3 hours of cleaning for $50"
-      -> AddJobTool(customer_name="Mike", price=50.0, description="3 hours of cleaning")
+      -> AddJobTool(customer_name="Mike", price=50.0, description="Cleaning Service (3 hours)")
   
   AddLeadTool: |
     Add a new lead or customer logic. 
@@ -115,9 +119,9 @@ tool_descriptions:
     - User: "Add new lead: Mike, 089999999"
       -> AddLeadTool(name="Mike", phone="089999999")
     - User: "New customer Sarah needs a quote, lives in Cork"
-      -> AddLeadTool(name="Sarah", city="Cork", details="needs a quote")
+      -> AddLeadTool(name="Sarah", city="Cork", details="Needs a quote")
     - User: "New customer Sarah needs a quote, lives in Cork"
-      -> AddLeadTool(name="Sarah", city="Cork", details="needs a quote")
+      -> AddLeadTool(name="Sarah", city="Cork", details="Needs a quote")
     - User: "Register client: TechCorp, Dublin"
       -> AddLeadTool(name="TechCorp", location="Dublin")
   
@@ -126,8 +130,7 @@ tool_descriptions:
     Examples of when to call:
     - User: "Update John's phone to 087111111"
       -> EditCustomerTool(query="John", phone="087111111")
-    - User: "Change stats for Mike: new address is 44 High St"
-      -> EditCustomerTool(query="Mike", location="44 High St")
+
 
   ScheduleJobTool: |
     Schedule an existing or new job for a specific time.
@@ -143,11 +146,11 @@ tool_descriptions:
     Store a general request or note.
     Examples of when to call:
     - User: "Remind me to call Dave tomorrow"
-      -> AddRequestTool(description="call Dave", customer_name="Dave", time="tomorrow")
+      -> AddRequestTool(description="Call Dave", customer_name="Dave", time="tomorrow")
     - User: "Note: order more supplies"
-      -> AddRequestTool(description="order more supplies")
+      -> AddRequestTool(description="Order supplies")
     - User: "Customer Alice requested a callback"
-      -> AddRequestTool(description="requested a callback", customer_name="Alice")
+      -> AddRequestTool(description="Callback Request", customer_name="Alice")
 
   SearchTool: |
     Search for jobs, customers, or requests.
@@ -197,7 +200,7 @@ tool_descriptions:
     - User: "On my way to John"
       -> SendStatusTool(query="John", status_type="on_way")
     - User: "Tell Mary I'm running late"
-      -> SendStatusTool(query="Mary", status_type="running_late", message_content="running late")
+      -> SendStatusTool(query="Mary", status_type="running_late", message_content="Running late")
     - User: "Done #101"
       -> SendStatusTool(query="101", status_type="finish_job")
 
@@ -248,15 +251,19 @@ tool_descriptions:
     - User: "Assign job 123 to John" -> AssignJobTool(job_id=123, assign_to_name="John")
     - User: "Give this job to Sarah" -> AssignJobTool(assign_to_name="Sarah")
     - User (Manager): "Assign Job #101 to John" -> AssignJobTool(job_id=101, assign_to_name="John")
+    - User: "Assign #101 to Dave" -> AssignJobTool(job_id=101, assign_to_name="Dave")
     - User: "Assign the job at 15 Low St to Josh" -> AssignJobTool(job_query="15 Low St", assign_to_name="Josh")
 
   CreateQuoteTool: |
     Create and send a quote/proposal to a customer.
     Examples of when to call:
     - User: "Send a quote to John for window cleaning $50"
-      -> CreateQuoteTool(customer_identifier="John", items=[{"description": "window cleaning", "price": 50.0, "quantity": 1.0}])
+      -> CreateQuoteTool(customer_identifier="John", items=[{"description": "Window Cleaning", "price": 50.0, "quantity": 1.0}])
     - User: "Create proposal for Mary: 5 windows at $10 each, 1 gutter job $100"
-      -> CreateQuoteTool(customer_identifier="Mary", items=[{"description": "windows", "price": 10.0, "quantity": 5.0}, {"description": "gutter job", "price": 100.0, "quantity": 1.0}])
+      -> CreateQuoteTool(customer_identifier="Mary", items=[{"description": "Window Cleaning", "price": 10.0, "quantity": 5.0}, {"description": "Gutter Cleaning", "price": 100.0, "quantity": 1.0}])
+    - User: "Send quote to Brian for full house windows and conservatory"
+      (Catalog contains: ID 1: Full House Window Cleaning, ID 2: Conservatory Cleaning)
+      -> CreateQuoteTool(customer_identifier="Brian", items=[{"description": "Full House Window Cleaning", "service_id": 1, "price": 150.0, "quantity": 1}, {"description": "Conservatory Cleaning", "service_id": 2, "price": 80.0, "quantity": 1}])
 
   LocateEmployeeTool: |
     Locate one or more employees on the map.
@@ -281,9 +288,13 @@ tool_descriptions:
     Example: "Mark John as Lost" -> UpdateCustomerStageTool(query="John", stage="lost")
 
   MassEmailTool: |
-    Send a broadcast message to multiple customers.
+    Send a broadcast message to multiple customers. Unless the user states otherwise, improve the message for the user.
     Requires 'campaigns' addon.
     Example: "Send a broadcast to all customers: Hello everyone!" -> MassEmailTool(subject="Broadcast", body="Hello everyone!", recipient_query="all")
+# the below isn't true.
+# IMPORTANT: Use the body text EXACTLY as provided by the user. Do NOT rewrite, summarize, or "spruce up" the content.
+# Negative Example: If user says "Spring Sale!", body must be "Spring Sale!", NOT "Check out our Spring Sale!".
+
 
   SyncQuickBooksTool: |
     [ACCOUNTING] Manually trigger a synchronization with QuickBooks accounting.
@@ -333,6 +344,7 @@ service_catalog_matching: |
        Example: If catalog has "Exterior Window Cleaning", use "Exterior Window Cleaning" - NOT "windows".
      - Set 'unit_price' to the catalog price (unless user specifies a custom overriding price).
      - ALWAYS leave 'total_price' as NULL; the backend will calculate it from quantity and unit price.
+     - Match loosely: "gutter job" should match "Gutter Cleaning" in catalog. "wash windows" should match "Window Cleaning".
   2. If NO match is found in the catalog, leave 'service_id' and 'service_name' as null and extract details from text.
   
 settings_current_services: |
