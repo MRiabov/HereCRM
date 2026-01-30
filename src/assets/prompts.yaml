@@ -80,9 +80,7 @@ settings_system_instruction: |
   6. If the user wants to change a preference like 'default city' or 'language', use UpdateSettingsTool.
 
 retry_instruction: |
-  The previous attempt failed to produce a structured tool call. 
-  Please try again. If the user's intent is clear, map it to one of the available tools. 
-  If it's still unclear, you may provide a brief clarifying response, but prioritize tool calls if possible.
+  You haven't picked a tool which means the user didn't request anything in their response. But is it so? Please think step by step about which tool matches the user's intent. Then call the tool.
 
 retry_error_instruction: |
   The previous attempt resulting in an error: {error}.

@@ -4,7 +4,11 @@ import os
 import time
 from typing import Union, Optional, Any
 from posthog.ai.openai import AsyncOpenAI
-from pydantic import ValidationError
+
+try:
+    from pydantic.v1 import ValidationError
+except ImportError:
+    from pydantic import ValidationError
 
 from src.config import settings
 from src.services.analytics import analytics
@@ -489,7 +493,7 @@ class LLMParser:
         Executes a chat completion with retry logic for missing tool calls,
         JSON parsing errors, and Pydantic validation errors.
         """
-        for attempt in range(2):
+        for attempt in range(3):
             try:
                 start_time = time.perf_counter()
                 if os.getenv("DEBUG_LLM"):
@@ -538,7 +542,7 @@ class LLMParser:
 
                 # Case 1: No tool calls produced
                 if not message.tool_calls:
-                    if attempt == 0:
+                    if attempt < 2:
                         self.logger.info(
                             f"LLM failed to produce tool call. Content: {message.content}. Retrying..."
                         )
@@ -559,13 +563,20 @@ class LLMParser:
                         )
                         continue
                     else:
-                        # Return None if final attempt failed, so the caller can handle it as an error/help message
+                        # Fallback to HelpTool if all retries fail
+                        fallback_msg = (
+                            "The user has requested to help them with something, but the previous agent was not able to determine which tool to call.\n\n"
+                            "Now help the user understand why the model was unable to call something, and suggest how he can improve his prompt.\n\n"
+                            "Don't go into specifics, rather say 'sorry, it seems you were trying to [...] but the AI wasn't able to determine what you want done. Please (tweak your response as they should).\n\n"
+                            f"User request:\n{original_query}"
+                        )
+
                         analytics.capture_llm_query(
                             user_id=distinct_id,
                             query=original_query,
                             success=False,
                             attempts=attempt + 1,
-                            error_type="no_tool_call",
+                            error_type="no_tool_call_fallback",
                             model=self.model,
                             latency=latency,
                             input_tokens=input_tokens,
@@ -573,7 +584,8 @@ class LLMParser:
                             input_messages=messages,
                             output_choices=output_choices,
                         )
-                        return None
+                        # Return a HelpTool call with the fallback message
+                        return HelpTool(query=fallback_msg)
 
                 # Process the first tool call
                 tool_call = message.tool_calls[0]
@@ -583,7 +595,7 @@ class LLMParser:
                 try:
                     arguments = json.loads(tool_call.function.arguments) or {}
                 except json.JSONDecodeError as e:
-                    if attempt == 0:
+                    if attempt < 2:
                         self.logger.warning(f"JSON Decode Error: {e}")
                         # We must append the message properly so the API accepts the history
                         messages.append(message.dict())
@@ -612,7 +624,13 @@ class LLMParser:
                             input_messages=messages,
                             output_choices=output_choices,
                         )
-                        return None
+                        fallback_msg = (
+                            "The user has requested to help them with something, but the previous agent was not able to determine which tool to call.\n\n"
+                            "Now help the user understand why the model was unable to call something, and suggest how he can improve his prompt.\n\n"
+                            "Don't go into specifics, rather say 'sorry, it seems you were trying to [...] but the AI wasn't able to determine what you want done. Please (tweak your response as they should).\n\n"
+                            f"User request:\n{original_query}"
+                        )
+                        return HelpTool(query=fallback_msg)
 
                 # Check for Validation errors
                 model_cls = model_map.get(function_name)
@@ -635,7 +653,7 @@ class LLMParser:
                         )
                         return result
                     except ValidationError as e:
-                        if attempt == 0:
+                        if attempt < 2:
                             self.logger.warning(f"Validation Error: {e}")
                             messages.append(message.dict())
                             error_msg = f"Validation Error: {str(e)}"
@@ -665,10 +683,16 @@ class LLMParser:
                                 output_choices=output_choices,
                                 thought=reasoning,
                             )
-                            return None
+                            fallback_msg = (
+                                "The user has requested to help them with something, but the previous agent was not able to determine which tool to call.\n\n"
+                                "Now help the user understand why the model was unable to call something, and suggest how he can improve his prompt.\n\n"
+                                "Don't go into specifics, rather say 'sorry, it seems you were trying to [...] but the AI wasn't able to determine what you want done. Please (tweak your response as they should).\n\n"
+                                f"User request:\n{original_query}"
+                            )
+                            return HelpTool(query=fallback_msg)
                 else:
                     self.logger.warning(f"Unknown tool called: {function_name}")
-                    if attempt == 0:
+                    if attempt < 2:
                         messages.append(message.dict())
                         messages.append(
                             {
@@ -680,14 +704,26 @@ class LLMParser:
                             }
                         )
                         continue
-                    return None
+                    fallback_msg = (
+                        "The user has requested to help them with something, but the previous agent was not able to determine which tool to call.\n\n"
+                        "Now help the user understand why the model was unable to call something, and suggest how he can improve his prompt.\n\n"
+                        "Don't go into specifics, rather say 'sorry, it seems you were trying to [...] but the AI wasn't able to determine what you want done. Please (tweak your response as they should).\n\n"
+                        f"User request:\n{original_query}"
+                    )
+                    return HelpTool(query=fallback_msg)
 
             except Exception as e:
                 self.logger.error(
                     f"LLM Parse Error (attempt {attempt + 1}): {e}", exc_info=True
                 )
-                if attempt == 1:
-                    return None
+                if attempt == 2:
+                    fallback_msg = (
+                        "The user has requested to help them with something, but the previous agent was not able to determine which tool to call.\n\n"
+                        "Now help the user understand why the model was unable to call something, and suggest how he can improve his prompt.\n\n"
+                        "Don't go into specifics, rather say 'sorry, it seems you were trying to [...] but the AI wasn't able to determine what you want done. Please (tweak your response as they should).\n\n"
+                        f"User request:\n{original_query}"
+                    )
+                    return HelpTool(query=fallback_msg)
 
         return None
 
