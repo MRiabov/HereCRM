@@ -395,6 +395,7 @@ async def populate_demo_data(db: AsyncSession, owner_clerk_id: str):
     await db.flush()
 
     le1 = LedgerEntry(
+        business_id=business.id,
         employee_id=staff.id,
         amount=1250.0,
         entry_type=LedgerEntryType.WAGE,

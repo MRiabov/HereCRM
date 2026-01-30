@@ -26,10 +26,10 @@ class SchedulerService:
             self.scheduler.start()
             logger.info("SchedulerService started.")
 
-    def stop(self):
+    async def stop(self):
         """Stop the scheduler."""
         if self.scheduler.running:
-            self.scheduler.shutdown()
+            self.scheduler.shutdown(wait=False)
             logger.info("SchedulerService stopped.")
 
     def add_daily_job(self, func, hour=6, minute=30, id="daily_shift_check"):

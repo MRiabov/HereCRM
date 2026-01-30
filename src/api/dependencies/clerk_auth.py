@@ -48,6 +48,7 @@ class VerifyToken:
                 algorithms=["RS256"],
                 audience=None,
                 issuer=settings.clerk_issuer,
+                leeway=60,
             )
         except Exception as e:
             if os.getenv("MOCK_AUTH_MODE") == "true":

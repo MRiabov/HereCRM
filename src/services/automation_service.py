@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from datetime import datetime, timezone, timedelta
 from sqlalchemy import select
@@ -17,13 +16,15 @@ from src.models import (
 from src.events import event_bus, QUOTE_SENT, JOB_PAID
 from src.services.messaging_service import messaging_service
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+
 logger = logging.getLogger(__name__)
 
 
 class AutomationService:
     def __init__(self):
-        self._running = False
-        self._worker_task = None
+        self.scheduler = AsyncIOScheduler()
 
     async def _get_session_maker(self):
         from src.database import current_db_name
@@ -74,18 +75,13 @@ class AutomationService:
 
     async def check_and_trigger_automations(self):
         """
-        Background job that scans for pending automations.
-        - Quotes sent > X hours ago with no follow-up draft.
-        - Jobs paid > X hours ago with no review request sent.
+        Runs both quote follow-ups and review requests processes.
         """
-        while self._running:
-            try:
-                await self._process_quote_followups()
-                await self._process_review_requests()
-            except Exception as e:
-                logger.error(f"Error in automation checker: {e}")
-
-            await asyncio.sleep(300)  # Check every 5 minutes
+        try:
+            await self._process_quote_followups()
+            await self._process_review_requests()
+        except Exception as e:
+            logger.error(f"Error in automation jobs: {e}")
 
     async def _process_quote_followups(self):
         async with AsyncSessionLocal() as db:
@@ -210,18 +206,22 @@ class AutomationService:
             await db.commit()
 
     async def start(self):
-        if not self._running:
-            self._running = True
-            self._worker_task = asyncio.create_task(
-                self.check_and_trigger_automations()
+        """Start the background scheduler."""
+        if not self.scheduler.running:
+            self.scheduler.add_job(
+                self.check_and_trigger_automations,
+                IntervalTrigger(minutes=5),
+                id="automation_checker",
+                replace_existing=True,
             )
-            logger.info("AutomationService worker started")
+            self.scheduler.start()
+            logger.info("AutomationService scheduler started")
 
     async def stop(self):
-        self._running = False
-        if self._worker_task:
-            await self._worker_task
-            logger.info("AutomationService worker stopped")
+        """Stop the scheduler."""
+        if self.scheduler.running:
+            self.scheduler.shutdown(wait=False)
+            logger.info("AutomationService stopped.")
 
 
 automation_service = AutomationService()

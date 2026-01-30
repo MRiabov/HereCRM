@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -87,16 +88,29 @@ async def lifespan(app: FastAPI):
     yield
 
     # Shutdown
-    scheduler_service.stop()
-    await automation_service.stop()
-    await messaging_service.stop()
-    from src.services.geocoding import GeocodingService
+    async def shutdown_all():
+        await scheduler_service.stop()
+        await automation_service.stop()
+        await messaging_service.stop()
+        from src.services.geocoding import GeocodingService
 
-    await GeocodingService.close_client()
-    from src.api.v1.pwa.analytics_proxy import close_client as close_analytics_client
+        await GeocodingService.close_client()
+        from src.api.v1.pwa.analytics_proxy import (
+            close_client as close_analytics_client,
+        )
 
-    await close_analytics_client()
-    await engine.dispose()
+        await close_analytics_client()
+        await engine.dispose()
+
+    try:
+        # Fallback timeout to ensure the process always exits during dev reload/shutdown
+        await asyncio.wait_for(shutdown_all(), timeout=5.0)
+    except asyncio.TimeoutError:
+        logger = logging.getLogger("src.main")
+        logger.warning("Lifespan shutdown timed out after 5 seconds")
+    except Exception as e:
+        logger = logging.getLogger("src.main")
+        logger.error(f"Error during lifespan shutdown: {e}")
 
 
 app = FastAPI(lifespan=lifespan)
