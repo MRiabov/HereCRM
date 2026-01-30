@@ -1,7 +1,3 @@
-from src.models import Urgency
-from datetime import datetime
-from typing import List, Optional, Any, Dict
-from pydantic import BaseModel, ConfigDict, Field, AnyHttpUrl
 from src.models import (
     JobStatus,
     PipelineStage,
@@ -27,14 +23,34 @@ from src.models import (
     EntityType,
     DistanceUnit,
     OnboardingChoiceType,
+    Urgency,
 )
+from datetime import datetime
+from typing import List, Optional, Any, Dict
 from enum import Enum
+import re
+from pydantic import BaseModel, ConfigDict, Field, AnyHttpUrl, field_validator
 
 # --- Constants ---
 PHONE_PATTERN = r"(^\+?\d{1,15}$|^$)"
 EMAIL_PATTERN = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$|^$)"
 
-# --- Shared / Base Schemas ---
+ALLOWED_TEMPLATE_VARIABLES = {
+    "customer.name",
+    "customer.first_name",
+    "customer.phone",
+    "customer.address",
+    "job.type",
+    "job.date",
+    "job.time",
+    "job.total",
+    "business.name",
+    "business.phone",
+    "invoice.link",
+    "review.link",
+    "technician.name",
+    "arrival.time",
+}
 
 
 class WageConfigurationSchema(BaseModel):
@@ -637,6 +653,11 @@ class ExportCreateRequest(BaseModel):
     format: ExportFormat  # 'CSV', 'Excel', 'JSON'
 
 
+class ImportCreateRequest(BaseModel):
+    file_url: str = Field(..., max_length=500)
+    entity_type: EntityType = EntityType.CUSTOMER
+
+
 # --- Marketing Schemas ---
 
 
@@ -683,6 +704,17 @@ class WhatsAppTemplateComponentSchema(BaseModel):
     text: Optional[str] = Field(None, max_length=2000)
     example: Optional[Dict[str, Any]] = None
     buttons: Optional[List[WhatsAppButtonSchema]] = None
+
+    @field_validator("text")
+    @classmethod
+    def validate_variables(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        matches = re.findall(r"\{\{([a-zA-Z0-9._-]+)\}\}", v)
+        invalid = [m for m in matches if m not in ALLOWED_TEMPLATE_VARIABLES]
+        if invalid:
+            raise ValueError(f"Unsupported variables: {', '.join(invalid)}")
+        return v
 
 
 class WhatsAppTemplateSchema(BaseModel):

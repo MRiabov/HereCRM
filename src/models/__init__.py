@@ -267,6 +267,8 @@ class EntityType(RobustEnum):
     LEDGER = "LEDGER"
     CUSTOMER = "CUSTOMER"
     LEAD = "LEAD"
+    QUOTE = "QUOTE"
+    INVOICE = "INVOICE"
     ALL = "ALL"
 
 
@@ -1066,6 +1068,7 @@ class LedgerEntry(Base):
     __tablename__ = "ledger_entries"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     employee_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     amount: Mapped[float] = mapped_column(Float)
     entry_type: Mapped[LedgerEntryType] = mapped_column(SafeSAEnum(LedgerEntryType))
@@ -1078,5 +1081,6 @@ class LedgerEntry(Base):
     )
 
     # Relationships
+    business: Mapped["Business"] = relationship()
     user: Mapped["User"] = relationship(back_populates="ledger_entries")
     job: Mapped[Optional["Job"]] = relationship()

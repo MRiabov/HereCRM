@@ -3,9 +3,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 from src.database import get_db
 from src.services.data_management import DataManagementService
-from src.schemas.pwa import ExportRequestSchema, DataActivitySchema, ExportCreateRequest
+from src.schemas.pwa import (
+    ExportRequestSchema,
+    DataActivitySchema,
+    ExportCreateRequest,
+    ImportCreateRequest,
+    ImportJobSchema,
+)
 from src.api.dependencies.clerk_auth import get_current_user
-from src.models import User, ImportJob, ExportRequest
+from src.models import User, ImportJob, ExportRequest, ExportFormat
 
 router = APIRouter()
 
@@ -36,10 +42,29 @@ async def trigger_export(
     query_text = payload.query or ""
 
     export_req = await service.export_data(
-        business_id=current_user.business_id, query=query_text, format=export_format
+        business_id=current_user.business_id,
+        query=query_text,
+        format=ExportFormat(export_format),
     )
 
     return export_req
+
+
+@router.post("/import", response_model=ImportJobSchema)
+async def trigger_import(
+    payload: ImportCreateRequest,
+    current_user: User = Depends(get_current_user),
+    service: DataManagementService = Depends(get_data_service),
+):
+    # For now, we assume the file is already uploaded to some URL (e.g. temporary storage)
+    # The service method handles downloading and processing.
+    import_job = await service.import_data(
+        business_id=current_user.business_id,
+        file_url=payload.file_url,
+        media_type="text/csv",  # Defaulting or extracting from URL
+        entity_type=payload.entity_type,
+    )
+    return import_job
 
 
 @router.get("/activity", response_model=DataActivitySchema)

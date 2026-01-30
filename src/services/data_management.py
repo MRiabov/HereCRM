@@ -3,8 +3,9 @@ import pandas as pd
 import io
 import httpx
 import zipfile
+import uuid
 from datetime import datetime, timezone
-from typing import Dict, Any, Tuple, Optional, List
+from typing import Dict, Any, Tuple, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from src.models import (
@@ -15,17 +16,21 @@ from src.models import (
     PipelineStage,
     Expense,
     LedgerEntry,
+    Quote,
+    Request,
     ExportStatus,
     JobStatus,
     ExportFormat,
     EntityType,
     ImportStatus,
+    User,
+    QuoteStatus,
+    ExpenseCategory,
 )
 from src.repositories import BusinessRepository, CustomerRepository, JobRepository
+from src.services.storage import storage_service
 
 logger = logging.getLogger(__name__)
-
-from src.services.storage import storage_service
 
 
 class DataManagementService:
@@ -36,7 +41,11 @@ class DataManagementService:
         self.business_repo = BusinessRepository(session)
 
     async def import_data(
-        self, business_id: int, file_url: str, media_type: str
+        self,
+        business_id: int,
+        file_url: str,
+        media_type: str,
+        entity_type: EntityType = EntityType.CUSTOMER,
     ) -> ImportJob:
         """
         Orchestrates the data import process.
@@ -80,7 +89,7 @@ class DataManagementService:
             df.columns = [c.lower().strip().replace(" ", "_") for c in df.columns]
 
             async with self.session.begin_nested():
-                await self._process_dataframe(business_id, df)
+                await self._process_dataframe(business_id, df, entity_type)
 
             import_job.status = ImportStatus.COMPLETED
             import_job.completed_at = datetime.now(timezone.utc)
@@ -110,69 +119,170 @@ class DataManagementService:
         else:
             raise ValueError(f"Unsupported file format: {media_type}")
 
-    async def _process_dataframe(self, business_id: int, df: pd.DataFrame):
-        for index, row in df.iterrows():
-            name = row.get("name")
-            if pd.isna(name):
-                name = row.get("client_name") or row.get("customer_name")
-            if not name:
-                continue
+    async def _process_dataframe(
+        self, business_id: int, df: pd.DataFrame, entity_type: EntityType
+    ):
+        if entity_type == EntityType.CUSTOMER:
+            await self._process_customers_df(business_id, df)
+        elif entity_type == EntityType.JOB:
+            await self._process_jobs_df(business_id, df)
+        elif entity_type == EntityType.QUOTE:
+            await self._process_quotes_df(business_id, df)
+        elif entity_type == EntityType.REQUEST:
+            await self._process_requests_df(business_id, df)
+        elif entity_type == EntityType.EXPENSE:
+            await self._process_expenses_df(business_id, df)
+        elif entity_type == EntityType.INVOICE:
+            await self._process_invoices_df(business_id, df)
+        else:
+            # Fallback to the old logic if type is unknown or generic
+            for index, row in df.iterrows():
+                await self._process_generic_row(business_id, row)
 
-            phone = str(row.get("phone", "")) if not pd.isna(row.get("phone")) else None
-            if phone:
-                phone = "".join(filter(str.isdigit, phone))
+    async def _process_customers_df(self, business_id: int, df: pd.DataFrame):
+        for _, row in df.iterrows():
+            await self._process_customer_row(business_id, row)
 
-            customer = None
-            if phone:
-                customer = await self.customer_repo.get_by_phone(phone, business_id)
-
+    async def _process_jobs_df(self, business_id: int, df: pd.DataFrame):
+        for _, row in df.iterrows():
+            customer = await self._get_or_create_customer_from_row(business_id, row)
             if not customer:
-                customer = Customer(
-                    business_id=business_id,
-                    name=name,
-                    phone=phone,
-                    pipeline_stage=PipelineStage.NOT_CONTACTED,
-                )
-                self.session.add(customer)
-                await self.session.flush()
+                continue
+            job = Job(
+                business_id=business_id,
+                customer_id=customer.id,
+                description=row.get("description") or row.get("job_description"),
+                value=float(row.get("value") or row.get("job_price") or 0),
+                status=JobStatus.PENDING,
+                location=row.get("address") or customer.street,
+            )
+            self.session.add(job)
 
-            if not pd.isna(row.get("address")):
-                customer.street = row.get("address")
-            if not pd.isna(row.get("city")):
-                customer.city = row.get("city")
-            if not pd.isna(row.get("notes")):
-                customer.details = row.get("notes")
+    async def _process_quotes_df(self, business_id: int, df: pd.DataFrame):
+        for _, row in df.iterrows():
+            customer = await self._get_or_create_customer_from_row(business_id, row)
+            if not customer:
+                continue
+            quote = Quote(
+                business_id=business_id,
+                customer_id=customer.id,
+                description=row.get("description") or row.get("quote_description"),
+                total_amount=float(row.get("total_price") or row.get("amount") or 0),
+                status=QuoteStatus.DRAFT,
+                external_token=str(uuid.uuid4()),
+            )
+            self.session.add(quote)
 
-            if not pd.isna(row.get("job_description")) or not pd.isna(
-                row.get("job_price")
-            ):
-                job_status_raw = row.get("job_status", "PENDING")
-                try:
-                    job_status = JobStatus(str(job_status_raw).upper())
-                except ValueError:
-                    job_status = JobStatus.PENDING
+    async def _process_requests_df(self, business_id: int, df: pd.DataFrame):
+        for _, row in df.iterrows():
+            customer = await self._get_or_create_customer_from_row(business_id, row)
+            request = Request(
+                business_id=business_id,
+                customer_id=customer.id if customer else None,
+                description=row.get("description") or row.get("details"),
+                status="PENDING",
+            )
+            self.session.add(request)
 
-                job = Job(
-                    business_id=business_id,
-                    customer_id=customer.id,
-                    description=row.get("job_description"),
-                    value=float(row.get("job_price", 0))
-                    if not pd.isna(row.get("job_price"))
-                    else None,
-                    status=job_status,
-                    location=row.get("address"),
-                )
-                self.session.add(job)
+    async def _process_expenses_df(self, business_id: int, df: pd.DataFrame):
+        # We need an employee_id for Expense. We'll try to find one.
+        stmt = select(User).where(User.business_id == business_id).limit(1)
+        res = await self.session.execute(stmt)
+        default_user = res.scalars().first()
+
+        for _, row in df.iterrows():
+            cat_raw = row.get("category") or "General"
+            try:
+                category = ExpenseCategory(str(cat_raw).upper())
+            except ValueError:
+                category = ExpenseCategory.OTHER
+
+            expense = Expense(
+                business_id=business_id,
+                amount=float(row.get("amount") or row.get("total") or 0),
+                description=row.get("description") or row.get("vendor"),
+                category=category,
+                employee_id=default_user.id if default_user else None,
+            )
+            self.session.add(expense)
+
+    async def _process_invoices_df(self, business_id: int, df: pd.DataFrame):
+        # Invoices usually need a job. This is a bit complex for a simple CSV import
+        # but we'll try to find a job or just create a record if possible.
+        # For now, let's keep it simple.
+        for index, row in df.iterrows():
+            logger.warning(f"Invoice import not fully implemented for row {index}")
+
+    async def _get_or_create_customer_from_row(self, business_id: int, row: pd.Series):
+        name = row.get("name") or row.get("client_name") or row.get("customer_name")
+        if not name or pd.isna(name):
+            return None
+
+        phone_val = row.get("phone")
+        phone = str(phone_val) if not pd.isna(phone_val) else None
+        if phone:
+            phone = "".join(filter(str.isdigit, phone))
+
+        customer = None
+        if phone:
+            customer = await self.customer_repo.get_by_phone(phone, business_id)
+
+        if not customer:
+            customer = Customer(
+                business_id=business_id,
+                name=name,
+                phone=phone,
+                pipeline_stage=PipelineStage.NOT_CONTACTED,
+                street=row.get("address")
+                or row.get("street")
+                or row.get("address_line_1"),
+                city=row.get("city"),
+                details=row.get("notes") or row.get("details"),
+            )
+            self.session.add(customer)
+            await self.session.flush()
+
+        return customer
+
+    async def _process_customer_row(self, business_id: int, row: pd.Series):
+        await self._get_or_create_customer_from_row(business_id, row)
+
+    async def _process_generic_row(self, business_id: int, row: pd.Series):
+        # Legacy behavior: Customer + Job
+        customer = await self._get_or_create_customer_from_row(business_id, row)
+        if not customer:
+            return
+
+        if not pd.isna(row.get("job_description")) or not pd.isna(row.get("job_price")):
+            job_status_raw = row.get("job_status", "PENDING")
+            try:
+                job_status = JobStatus(str(job_status_raw).upper())
+            except ValueError:
+                job_status = JobStatus.PENDING
+
+            job = Job(
+                business_id=business_id,
+                customer_id=customer.id,
+                description=row.get("job_description"),
+                value=float(row.get("job_price", 0))
+                if not pd.isna(row.get("job_price"))
+                else None,
+                status=job_status,
+                location=row.get("address") or customer.street,
+            )
+            self.session.add(job)
 
     async def _get_export_data(
         self,
         business_id: int,
         entity_type: Optional[EntityType],
         query: str,
-        filters: Dict[str, Any],
+        filters: Optional[Dict[str, Any]],
     ) -> Tuple[pd.DataFrame, str]:
         min_date = None
         max_date = None
+        filters = filters or {}
+
         if filters.get("min_date"):
             try:
                 min_date = datetime.fromisoformat(
@@ -337,7 +447,7 @@ class DataManagementService:
         business_id: int,
         query: str,
         format: ExportFormat,
-        filters: Dict[str, Any] = None,
+        filters: Optional[Dict[str, Any]] = None,
     ) -> ExportRequest:
         query = query or ""
         filters = filters or {}

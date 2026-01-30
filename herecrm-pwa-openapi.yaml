@@ -2060,6 +2060,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/pwa/data-management/import:
+    post:
+      tags:
+      - pwa-data-management
+      summary: Trigger Import
+      operationId: trigger_import_api_v1_pwa_data_management_import_post
+      parameters:
+      - name: request
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportCreateRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJobSchema'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/pwa/data-management/activity:
     get:
       tags:
@@ -3224,6 +3258,19 @@ components:
       - mi
       - km
       title: DistanceUnit
+    EntityType:
+      type: string
+      enum:
+      - JOB
+      - REQUEST
+      - EXPENSE
+      - LEDGER
+      - CUSTOMER
+      - LEAD
+      - QUOTE
+      - INVOICE
+      - ALL
+      title: EntityType
     ExpenseCategory:
       type: string
       enum:
@@ -3435,6 +3482,19 @@ components:
           title: Detail
       type: object
       title: HTTPValidationError
+    ImportCreateRequest:
+      properties:
+        file_url:
+          type: string
+          maxLength: 500
+          title: File Url
+        entity_type:
+          $ref: '#/components/schemas/EntityType'
+          default: CUSTOMER
+      type: object
+      required:
+      - file_url
+      title: ImportCreateRequest
     ImportJobSchema:
       properties:
         id:

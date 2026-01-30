@@ -1564,27 +1564,30 @@ class ToolExecutor:
     async def _execute_assign_job(
         self, tool: AssignJobTool
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
-        # 1. Resolve Job ID
+        # 1. Resolve Job
         job_id = tool.job_id
+        query = tool.job_query.strip() if tool.job_query else ""
 
-        if not job_id and tool.job_query:
-            # Search for job
-            jobs = await self.job_repo.search(
-                query=tool.job_query, business_id=self.business_id
-            )
+        # Fallback: Try parsing job_query as ID if job_id is missing
+        if not job_id and query:
+            potential_id = query.lstrip("#")
+            if potential_id.isdigit():
+                job_id = int(potential_id)
 
+        if job_id:
+            job = await self.job_repo.get_by_id(job_id, self.business_id)
+            if not job:
+                return self.template_service.render("job_not_found", query=str(job_id)), None
+        elif query:
+            # Search for job by description, location, or customer name
+            jobs = await self.job_repo.search(query, self.business_id)
             if not jobs:
-                return f"Could not find any job matching '{tool.job_query}'.", None
-
+                return self.template_service.render("job_not_found", query=query), None
             if len(jobs) > 1:
-                return (
-                    f"Multiple jobs found matching '{tool.job_query}'. Please be more specific (e.g. use ID).",
-                    None,
-                )
-
-            job_id = jobs[0].id
-
-        if not job_id:
+                return self.template_service.render("job_ambiguous", query=query), None
+            job = jobs[0]
+            job_id = job.id
+        else:
             return "Please provide a Job ID or a clear Job description/address.", None
 
         # 2. Ambiguity Handling: Find employee by name
