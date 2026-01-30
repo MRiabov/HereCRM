@@ -334,10 +334,7 @@ class ToolExecutor:
         elif isinstance(tool_call, DeleteServiceTool):
             return await self._execute_delete_service(tool_call)
         elif isinstance(tool_call, ListServicesTool):
-            return (
-                "List services is handled by the service layer directly (for formatting).",
-                None,
-            )
+            return await self._execute_list_services(tool_call)
         elif isinstance(tool_call, ExitSettingsTool):
             return "Exit settings is handled by the service layer directly.", None
         elif isinstance(tool_call, HelpTool):
@@ -1197,6 +1194,23 @@ class ToolExecutor:
             "entity": "service",
             "id": target.id,
             "name": target.name,
+        }
+
+    async def _execute_list_services(
+        self, tool: ListServicesTool
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        services = await self.service_repo.get_all_for_business(self.business_id)
+
+        if not services:
+            return "No services found in the catalog.", None
+
+        lines = [f"- {s.name}: €{s.default_price:.2f}" for s in services]
+        report = "Available Services:\n" + "\n".join(lines)
+
+        return report, {
+            "action": "list",
+            "entity": "service",
+            "count": len(services),
         }
 
     async def _execute_send_invoice(

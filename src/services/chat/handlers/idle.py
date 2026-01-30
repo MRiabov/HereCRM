@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models import User, ConversationState, ConversationStatus, Business
+from src.models import User, ConversationState, ConversationStatus, Business, UserRole
 from src.llm_client import LLMParser
 from src.services.template_service import TemplateService
 from src.services.geocoding import GeocodingService
@@ -149,12 +149,17 @@ class IdleHandler(ChatHandler):
             # Handle HelpTool separately
             if isinstance(tool_call, HelpTool):
                 help_service = HelpService(self.session, self.parser)
-                return await help_service.generate_help_response(
+                response = await help_service.generate_help_response(
                     user_query=message_text,
                     business_id=user.business_id,
                     user_id=user.id,
                     channel=channel_name,
                 )
+
+                if user.role != UserRole.OWNER:
+                    response += "\n\nThe user does not have role-based access to this feature because he doesn't have a status."
+
+                return response
 
             # Geocode
             if isinstance(tool_call, (AddJobTool, AddLeadTool)) and tool_call.location:
