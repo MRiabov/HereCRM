@@ -250,6 +250,7 @@ tool_descriptions:
     - User: "Assign job 123 to John" -> AssignJobTool(job_id=123, assign_to_name="John")
     - User: "Give this job to Sarah" -> AssignJobTool(assign_to_name="Sarah")
     - User (Manager): "Assign Job #101 to John" -> AssignJobTool(job_id=101, assign_to_name="John")
+    - User: "Assign the job at 15 Low St to Josh" -> AssignJobTool(job_query="15 Low St", assign_to_name="Josh")
 
   CreateQuoteTool: |
     Create and send a quote/proposal to a customer.
