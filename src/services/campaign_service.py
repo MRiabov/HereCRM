@@ -11,6 +11,7 @@ from src.models import (
     CampaignChannel,
     RecipientStatus,
     Customer,
+    Business,
     MessageStatus,
     EntityType,
     MessageType,
@@ -19,6 +20,8 @@ from src.models import (
 from src.services.search_service import SearchService
 from src.services.messaging_service import messaging_service
 from src.services.postmark_service import PostmarkService
+from src.services.template_service import TemplateService
+from src.services.chat.utils.context_builder import build_template_context
 from src.uimodels import SearchTool
 
 logger = logging.getLogger(__name__)
@@ -34,6 +37,7 @@ class CampaignService:
         self.session = session
         self.search_service = search_service
         self.postmark_service = postmark_service
+        self.template_service = TemplateService()
 
     async def create_campaign(
         self,
@@ -152,6 +156,12 @@ class CampaignService:
             if not customer:
                 continue
 
+            business = await self.session.get(Business, campaign.business_id)
+            
+            # Build context for variable replacement
+            context = build_template_context(business=business, customer=customer)
+            rendered_body = self.template_service.render_string(campaign.body, **context)
+
             success = False
             external_id = None
             error_message = None
@@ -162,13 +172,13 @@ class CampaignService:
                         success = await self.postmark_service.send_email(
                             to_email=customer.email,
                             subject=campaign.subject or "Notification",
-                            body=campaign.body,
+                            body=rendered_body,
                         )
                 elif campaign.channel == CampaignChannel.WHATSAPP:
                     if customer.phone:
                         msg_log = await messaging_service.send_message(
                             recipient_phone=customer.phone,
-                            content=campaign.body,
+                            content=rendered_body,
                             channel=MessageType.WHATSAPP,
                             trigger_source=MessageTriggerSource.CAMPAIGN,
                             business_id=campaign.business_id,
@@ -181,7 +191,7 @@ class CampaignService:
                     if customer.phone:
                         msg_log = await messaging_service.send_message(
                             recipient_phone=customer.phone,
-                            content=campaign.body,
+                            content=rendered_body,
                             channel=MessageType.SMS,
                             trigger_source=MessageTriggerSource.CAMPAIGN,
                             business_id=campaign.business_id,

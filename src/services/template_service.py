@@ -1,7 +1,10 @@
 import os
 import yaml
 import re
+import logging
 from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
 
 
 class TemplateService:
@@ -29,14 +32,29 @@ class TemplateService:
         if template is None:
             return f"[{template_key}]"  # Return key as fallback
 
-        # Normalize {{var}} to {var} for .format()
-        # This regex finds {{something}} and replaces it with {something}
-        normalized_template = re.sub(r"\{\{(.*?)\}\}", r"{\1}", template)
+        return self.render_string(template, **kwargs)
+
+    def render_string(self, text: str, **kwargs: Any) -> str:
+        """
+        Renders a string template by replacing {{var}} or {var} with kwargs.
+        Supports dot notation for object attributes.
+        """
+        if not text:
+            return ""
+
+        # Normalize {{var.field}} to {var.field} for .format()
+        # Using a more specific regex to avoid breaking legitimate double braces if any
+        normalized = re.sub(r"\{\{([a-zA-Z0-9._-]+)\}\}", r"{\1}", text)
 
         try:
-            return normalized_template.format(**kwargs)
-        except KeyError:
-            # If a key is missing, return the template as is or with placeholders
-            return normalized_template
-        except Exception:
-            return normalized_template
+            return normalized.format(**kwargs)
+        except KeyError as e:
+            # Missing variable: keep the placeholder
+            missing_var = str(e).strip("'")
+            logger.warning(f"Missing template variable: {missing_var}")
+            # Recursively handle or just return as is. 
+            # Simple approach: leave the {var} in place
+            return normalized
+        except Exception as e:
+            logger.error(f"Error rendering template string: {e}")
+            return text

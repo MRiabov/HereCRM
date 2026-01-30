@@ -1,14 +1,16 @@
 import asyncio
 import logging
 from typing import Optional
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import httpx
 
-from src.models import MessageLog, MessageType, MessageStatus, MessageTriggerSource
+from src.models import MessageLog, MessageType, MessageStatus, MessageTriggerSource, Business, Job
 from src.events import event_bus
 from src.database import AsyncSessionLocal
 from src.repositories import CustomerRepository
 from src.config import settings
+from src.services.template_service import TemplateService
+from src.services.chat.utils.context_builder import build_template_context
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +26,7 @@ class MessagingService:
         self._running = False
         self._worker_task: Optional[asyncio.Task] = None
         self.session_factory = session_factory or AsyncSessionLocal
+        self.template_service = TemplateService()
 
     async def send_message(
         self,
@@ -337,7 +340,18 @@ class MessagingService:
                 )
                 return
 
-            content = f"Your job has been booked! Job ID: {job_id}"
+            business = await db.get(Business, business_id)
+            job = await db.get(Job, job_id)
+            
+            # Check for user-defined template
+            content = f"Your job has been booked! Job ID: {job_id}" # Default
+            
+            if business and business.marketing_settings:
+                # Use key 'jobBooked' from DEFAULT_TEMPLATES in PWA
+                tpl = business.marketing_settings.get("templates", {}).get("jobBooked", {})
+                if tpl and tpl.get("text"):
+                    context = build_template_context(business=business, customer=customer, job=job)
+                    content = self.template_service.render_string(tpl["text"], **context)
 
             await self.enqueue_message(
                 recipient_phone=customer.phone,
@@ -372,7 +386,18 @@ class MessagingService:
                 )
                 return
 
+            business = await db.get(Business, business_id)
+            job = await db.get(Job, job_id)
+            
+            # Default
             content = f"Your job has been scheduled for {scheduled_at_str}"
+            
+            if business and business.marketing_settings:
+                # Use key 'jobBooked' as it's the primary confirmation template in PWA
+                tpl = business.marketing_settings.get("templates", {}).get("jobBooked", {})
+                if tpl and tpl.get("text"):
+                    context = build_template_context(business=business, customer=customer, job=job)
+                    content = self.template_service.render_string(tpl["text"], **context)
 
             await self.enqueue_message(
                 recipient_phone=customer.phone,
@@ -388,6 +413,7 @@ class MessagingService:
         customer_id = data.get("customer_id")
         business_id = data.get("business_id")
         eta_minutes = data.get("eta_minutes")
+        job_id = data.get("job_id")
 
         if customer_id is None or business_id is None:
             logger.error(f"Missing data in ON_MY_WAY event: {data}")
@@ -406,8 +432,19 @@ class MessagingService:
                 )
                 return
 
+            business = await db.get(Business, business_id)
+            job = await db.get(Job, job_id) if job_id else None
+            
+            # Default
             eta_text = f" ETA: {eta_minutes} minutes" if eta_minutes else ""
             content = f"We're on our way!{eta_text}"
+            
+            if business and business.marketing_settings:
+                tpl = business.marketing_settings.get("templates", {}).get("onMyWay", {})
+                if tpl and tpl.get("text"):
+                    extra = {"arrival.time": (datetime.now(timezone.utc) + timedelta(minutes=eta_minutes)).strftime("%H:%M")} if eta_minutes else {}
+                    context = build_template_context(business=business, customer=customer, job=job, extra=extra)
+                    content = self.template_service.render_string(tpl["text"], **context)
 
             await self.enqueue_message(
                 recipient_phone=customer.phone,

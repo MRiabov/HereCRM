@@ -44,6 +44,9 @@ class WhatsAppTemplateService:
         # 2. Call Meta API
         if not self.access_token or not self.waba_id:
             logger.warning("WhatsApp settings missing. Template created locally only.")
+            template.status = WhatsAppTemplateStatus.REJECTED
+            template.rejection_reason = "WhatsApp credentials missing in system settings (Access Token or WABA ID). Please contact administrator."
+            await self.session.commit()
             return template
 
         url = f"https://graph.facebook.com/{self.api_version}/{self.waba_id}/message_templates"
