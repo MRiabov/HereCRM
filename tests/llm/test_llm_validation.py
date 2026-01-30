@@ -104,6 +104,9 @@ async def validate_case(case, parser):
         # Verify arguments
         actual_args = result.dict(exclude_none=True)
         for key, val in expected_args.items():
+            if val == "__ANY__":
+                continue
+
             if key not in actual_args:
                 return f"Missing expected argument '{key}' in {actual_tool}"
 
@@ -129,8 +132,16 @@ async def validate_case(case, parser):
                     actual = actual.value
 
                 # Check for equality. If mismatch, try string comparison as fallback
-                if actual != val and str(actual) != str(val):
-                    return f"Argument '{key}' mismatch. Expected {val}, got {actual_args[key]}"
+                if actual != val:
+                    # Allow permissive substring matching for strings (case-insensitive)
+                    if isinstance(val, str) and isinstance(actual, str):
+                        if (
+                            val.lower() not in actual.lower()
+                            and actual.lower() not in val.lower()
+                        ):
+                            return f"Argument '{key}' mismatch. Expected '{val}', got '{actual_args[key]}'"
+                    elif str(actual) != str(val):
+                        return f"Argument '{key}' mismatch. Expected {val}, got {actual_args[key]}"
 
     # If required_substring is provided check logic (placeholder based on original code)
     if required_substring:

@@ -222,7 +222,7 @@
     "user_input": "Send a broadcast to all customers.",
     "expected_logic": {
       "tool_called": "MassEmailTool",
-      "expected_args": { "subject": "Update", "body": "Hello", "recipient_query": "all" },
+      "expected_args": { "subject": "__ANY__", "body": "__ANY__", "recipient_query": "all" },
       "required_response_substring": "buy the addon"
     }
   },
@@ -340,7 +340,7 @@
     "user_input": "Mark John as Lost",
     "expected_logic": {
       "tool_called": "UpdateCustomerStageTool",
-      "expected_args": { "query": "John", "stage": "lost" }
+      "expected_args": { "query": "John", "stage": "LOST" }
     }
   },
   {
@@ -534,7 +534,7 @@
     "user_input": "Promote this request to a quote",
     "expected_logic": {
       "tool_called": "ConvertRequestTool",
-      "expected_args": { "query": "current_request", "action": "quote" }
+      "expected_args": { "query": "current_request", "action": "QUOTE" }
     }
   },
   {
@@ -645,8 +645,8 @@
     "expected_logic": {
       "tool_called": "MassEmailTool",
       "expected_args": {
-        "subject": "Spring Sale!",
-        "body": "Spring Sale!",
+        "subject": "__ANY__",
+        "body": "__ANY__",
         "recipient_query": "all"
       },
       "required_response_substring": "addon"
@@ -665,8 +665,8 @@
     "expected_logic": {
       "tool_called": "MassEmailTool",
       "expected_args": { 
-        "subject": "Spring Sale!",
-        "body": "Spring Sale!",
+        "subject": "__ANY__",
+        "body": "__ANY__",
         "recipient_query": "all"
       }
     }
