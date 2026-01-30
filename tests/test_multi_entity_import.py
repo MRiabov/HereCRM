@@ -42,9 +42,6 @@ async def test_import_quotes(async_session: AsyncSession):
             business.id, filename, "text/csv", entity_type=EntityType.QUOTE
         )
 
-        if job.status != ImportStatus.COMPLETED:
-            print(f"DEBUG: Quote Import Error: {job.error_log}")
-
         assert job.status == ImportStatus.COMPLETED
 
         # Verify Quote exists
@@ -53,7 +50,7 @@ async def test_import_quotes(async_session: AsyncSession):
         )
         quotes = result.scalars().all()
         assert len(quotes) == 1
-        assert quotes[0].description == "New Roof"
+        assert quotes[0].title == "New Roof"
         assert quotes[0].total_amount == 5000.00
 
         # Verify Customer was created

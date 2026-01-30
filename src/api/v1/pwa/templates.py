@@ -49,7 +49,7 @@ async def create_template(
         business_id=current_user.business_id,
         name=data.name,
         category=category_enum,
-        components=data.components,
+        components=[c.dict() for c in data.components],
         language=data.language,
     )
 
@@ -61,3 +61,20 @@ async def sync_templates(
 ):
     await service.sync_templates(current_user.business_id)
     return {"status": "synced"}
+
+
+@router.get("/{template_id}", response_model=WhatsAppTemplateSchema)
+async def get_template(
+    template_id: int,
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    stmt = select(WhatsAppTemplate).where(
+        WhatsAppTemplate.id == template_id,
+        WhatsAppTemplate.business_id == current_user.business_id,
+    )
+    result = await session.execute(stmt)
+    template = result.scalar_one_or_none()
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return template

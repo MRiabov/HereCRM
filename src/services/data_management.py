@@ -166,7 +166,9 @@ class DataManagementService:
             quote = Quote(
                 business_id=business_id,
                 customer_id=customer.id,
-                description=row.get("description") or row.get("quote_description"),
+                title=row.get("description")
+                or row.get("quote_description")
+                or row.get("title"),
                 total_amount=float(row.get("total_price") or row.get("amount") or 0),
                 status=QuoteStatus.DRAFT,
                 external_token=str(uuid.uuid4()),
