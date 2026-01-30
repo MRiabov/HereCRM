@@ -21,6 +21,7 @@ from src.uimodels import (
     LocateEmployeeTool,
     CheckETATool,
     SendStatusTool,
+    ListServicesTool,
 )
 from src.tools.invoice_tools import SendInvoiceTool
 from src.tools.employee_management import InviteUserTool, ExitEmployeeManagementTool
@@ -63,6 +64,7 @@ class DraftExecutor:
             "CheckETATool": CheckETATool,
             "InviteUserTool": InviteUserTool,
             "ExitEmployeeManagementTool": ExitEmployeeManagementTool,
+            "ListServicesTool": ListServicesTool,
         }
 
         tool_cls = model_map.get(tool_name)

@@ -55,6 +55,9 @@ tools:
   FinishJobTool:
     role: employee
     friendly_name: "finish job timer"
+  ListServicesTool:
+    role: employee
+    friendly_name: "list services"
 
   # Manager Level (Mid tier - Oversight)
   LocateEmployeeTool:
