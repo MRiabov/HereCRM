@@ -63,6 +63,7 @@ class Settings(BaseSettings):
 
     # Dev Mode
     dev_mode: bool = False
+    automigrate: bool = False
 
     # Security
     secret_key: str = "dev_secret_key_change_me_in_production"

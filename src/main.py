@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 import logging
@@ -23,42 +23,40 @@ async def lifespan(app: FastAPI):
     setup_logging()
 
     # Run migrations automatically
-    # if ":memory:" not in str(engine.url):
-    #     logger = logging.getLogger("src.main")
-    #     logger.info("Running database migrations...")
-    #     try:
-    #         import alembic.config
-    #         import alembic.command
+    if settings.automigrate:
+        if ":memory:" not in str(engine.url):
+            logger = logging.getLogger("src.main")
+            logger.info("Running database migrations...")
+            try:
+                import alembic.config
+                import alembic.command
 
-    #         alembic_cfg = alembic.config.Config("alembic.ini")
-    #         # Ensure we are in the correct directory for alembic.ini if needed,
-    #         # but usually it's in the root
-    #         alembic.command.upgrade(alembic_cfg, "head")
-    #         logger.info("Migrations completed successfully.")
-    #     except Exception as e:
-    #         logger.error(f"Failed to run migrations: {e}")
-    #         # Continue anyway, as validation might still pass if it was already at head
+                alembic_cfg = alembic.config.Config("alembic.ini")
+                alembic.command.upgrade(alembic_cfg, "head")
+                logger.info("Migrations completed successfully.")
+            except Exception as e:
+                logger.error(f"Failed to run migrations: {e}")
 
-    # Startup: Create tables (as a fallback/for new tables not in migrations yet)
-    # async with engine.begin() as conn:
-    #     await conn.run_sync(Base.metadata.create_all)
+        # Startup: Create tables (as a fallback/for new tables not in migrations yet)
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
-    # Force-check schema consistency - SKIP for in-memory database as validation uses a separate connection
-    # if ":memory:" not in str(engine.url):
-    #     from src.utils.schema_validation import validate_db_schema
+        # Force-check schema consistency - SKIP for in-memory database as validation uses a separate connection
+        if ":memory:" not in str(engine.url):
+            from src.utils.schema_validation import validate_db_schema
 
-    #     mismatches = validate_db_schema()
-    #     if mismatches:
-    #         # Filter out minor things or handle specific cases if needed
-    #         # For now, we throw on ANY mismatch to ensure dev discipline
-    #         error_msg = f"Database schema mismatch detected: {mismatches}"
-    #         logger_for_mismatch = logging.getLogger("src.main")
-    #         logger_for_mismatch.error(error_msg)
-    #         raise RuntimeError(error_msg)
-    # else:
-    #     logging.getLogger("src.main").info(
-    #         "Skipping schema validation for in-memory database"
-    #     )
+            mismatches = validate_db_schema()
+            if mismatches:
+                # Filter out minor things or handle specific cases if needed
+                # For now, we throw on ANY mismatch to ensure dev discipline
+                error_msg = f"Database schema mismatch detected: {mismatches}"
+                logger_for_mismatch = logging.getLogger("src.main")
+                logger_for_mismatch.error(error_msg)
+                raise RuntimeError(error_msg)
+        else:
+            logging.getLogger("src.main").info(
+                "Skipping schema validation for in-memory database"
+            )
 
     # Register Event Listeners
     app.state.event_bus = event_bus

@@ -3163,6 +3163,54 @@
         }
       }
     },
+    "/api/v1/pwa/business/me": {
+      "get": {
+        "tags": [
+          "pwa-business"
+        ],
+        "summary": "Get Me",
+        "description": "Returns the current user profile information.",
+        "operationId": "get_me_api_v1_pwa_business_me_get",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/pwa/business/employees": {
       "get": {
         "tags": [
@@ -3957,6 +4005,51 @@
         ],
         "summary": "Get Backend Errors",
         "operationId": "get_backend_errors_api_v1_pwa_dev_errors_get",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Request"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pwa/dev/users": {
+      "get": {
+        "tags": [
+          "pwa-dev"
+        ],
+        "summary": "Get Dev Users",
+        "operationId": "get_dev_users_api_v1_pwa_dev_users_get",
         "parameters": [
           {
             "name": "request",
