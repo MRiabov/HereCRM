@@ -593,8 +593,9 @@ class Job(Base):
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), index=True)
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), index=True)
     description: Mapped[Optional[str]] = mapped_column(Text)
+    # Indexed for faster filtering by status (e.g. pending jobs)
     status: Mapped[JobStatus] = mapped_column(
-        SafeSAEnum(JobStatus), default=JobStatus.PENDING
+        SafeSAEnum(JobStatus), default=JobStatus.PENDING, index=True
     )
     value: Mapped[Optional[float]] = mapped_column(Float)
 
@@ -611,7 +612,8 @@ class Job(Base):
 
     # Google Calendar Integration
     gcal_event_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    # Indexed for efficient date range queries (calendar view, dashboard)
+    scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
@@ -821,7 +823,8 @@ class Quote(Base):
 
     external_token: Mapped[str] = mapped_column(String, unique=True, index=True)
     blob_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True)
+    # Indexed foreign key for fast lookups and joins
+    job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
