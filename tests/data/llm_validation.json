@@ -744,5 +744,16 @@
       "tool_called": "CheckETATool",
       "expected_args": { "customer_query": "Mary" }
     }
+  },
+  {
+    "id": "fix-search-failure-assign-job",
+    "feature_spec": "search-failures",
+    "description": "Tests assignment by job query when ID is unknown",
+    "user_context": { "role": "OWNER", "channel": "WHATSAPP" },
+    "user_input": "assign a job to 15 low St to Josh",
+    "expected_logic": {
+      "tool_called": "AssignJobTool",
+      "expected_args": { "job_query": "15 Low St", "assign_to_name": "Josh" }
+    }
   }
 ]

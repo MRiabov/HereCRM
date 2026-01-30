@@ -1564,23 +1564,28 @@ class ToolExecutor:
     async def _execute_assign_job(
         self, tool: AssignJobTool
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
-        # 1. Resolve Job
-        job = None
-        query = tool.job_query.strip()
+        # 1. Resolve Job ID
+        job_id = tool.job_id
 
-        # Try parsing as ID first (e.g. "123" or "#123")
-        potential_id = query.lstrip("#")
-        if potential_id.isdigit():
-            job = await self.job_repo.get_by_id(int(potential_id), self.business_id)
+        if not job_id and tool.job_query:
+            # Search for job
+            jobs = await self.job_repo.search(
+                query=tool.job_query, business_id=self.business_id
+            )
 
-        if not job:
-            # Search for job by description, location, or customer name
-            jobs = await self.job_repo.search(query, self.business_id)
             if not jobs:
-                return self.template_service.render("job_not_found", query=query), None
+                return f"Could not find any job matching '{tool.job_query}'.", None
+
             if len(jobs) > 1:
-                return self.template_service.render("job_ambiguous", query=query), None
-            job = jobs[0]
+                return (
+                    f"Multiple jobs found matching '{tool.job_query}'. Please be more specific (e.g. use ID).",
+                    None,
+                )
+
+            job_id = jobs[0].id
+
+        if not job_id:
+            return "Please provide a Job ID or a clear Job description/address.", None
 
         # 2. Ambiguity Handling: Find employee by name
         employees = await self.assignment_service.find_employee_by_name(
@@ -1601,13 +1606,13 @@ class ToolExecutor:
         employee = employees[0]
 
         # 3. Call AssignmentService
-        result = await self.assignment_service.assign_job(job.id, employee.id)
+        result = await self.assignment_service.assign_job(job_id, employee.id)
 
         if not result.success:
             return f"Error: {result.error}", None
 
         msg = self.template_service.render(
-            "job_assigned", job_id=job.id, employee_name=employee.name
+            "job_assigned", job_id=job_id, employee_name=employee.name
         )
         if result.warning:
             msg += f" (Note: {result.warning})"
@@ -1615,7 +1620,7 @@ class ToolExecutor:
         return msg, {
             "action": "update",
             "entity": "job",
-            "id": job.id,
+            "id": job_id,
             "employee_id": employee.id,
             "employee_name": employee.name,
             "warning": result.warning,
