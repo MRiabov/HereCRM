@@ -29,10 +29,17 @@ async def lifespan(app: FastAPI):
             logger = logging.getLogger("src.main")
             logger.info("Running database migrations...")
             try:
+                import os
                 import alembic.config
                 import alembic.command
 
-                alembic_cfg = alembic.config.Config("alembic.ini")
+                # Resolve absolute path to alembic.ini
+                # This file is in src/, alembic.ini is in the parent directory
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                project_root = os.path.dirname(current_dir)
+                alembic_ini_path = os.path.join(project_root, "alembic.ini")
+
+                alembic_cfg = alembic.config.Config(alembic_ini_path)
                 alembic.command.upgrade(alembic_cfg, "head")
                 logger.info("Migrations completed successfully.")
             except Exception as e:
