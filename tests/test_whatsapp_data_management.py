@@ -107,7 +107,7 @@ async def test_data_management_export_filtered(service, mock_parser):
         1,
         "jobs",
         "excel",
-        filters={"entity_type": "job", "status": JobStatus.PENDING.name},
+        filters={"entity_type": EntityType.JOB, "status": JobStatus.PENDING},
     )
     assert "Export processing" in response
 
