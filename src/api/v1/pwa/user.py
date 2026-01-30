@@ -18,13 +18,25 @@ async def get_integrations(
     """
     Returns the status of all user integrations.
     """
+    messenger_connected = False
+    if current_user.business and current_user.business.messenger_settings:
+        ms = current_user.business.messenger_settings
+        messenger_connected = bool(
+            ms.get("meta_access_token")
+            and ms.get("waba_id")
+            and ms.get("phone_number_id")
+        )
+
     return {
         "google_calendar": {
             "connected": current_user.google_calendar_sync_enabled,
             "email": current_user.google_calendar_credentials.get("email")
             if current_user.google_calendar_credentials
             else None,
-        }
+        },
+        "messenger": {
+            "connected": messenger_connected,
+        },
     }
 
 

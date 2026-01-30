@@ -351,6 +351,7 @@ class Business(Base):
 
     # Automatic Messaging Templates & Triggers
     marketing_settings: Mapped[dict] = mapped_column(JSON, default={})
+    messenger_settings: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True, default={})
 
     default_city: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     default_country: Mapped[Optional[str]] = mapped_column(String, nullable=True)

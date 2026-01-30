@@ -26,9 +26,17 @@ def build_template_context(
             # Split from name if first_name is missing
             name = customer.name or "Client"
             customer.first_name = name.split()[0]
+        
+        # Add 'address' attribute if not present
+        if not hasattr(customer, "address"):
+            customer.address = customer.street or customer.city or "your address"
             
     if job:
         context["job"] = job
+        # Ensure job.description is available for templates that use {{job.description}}
+        if not hasattr(job, "description") or not job.description:
+            job.description = "scheduled service"
+            
         # Format date/time helpers if scheduled
         if job.scheduled_at:
             # We add these as attributes to a proxy or just directly to job if it's safe (SQLAlchemy objects)

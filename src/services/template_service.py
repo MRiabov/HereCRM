@@ -42,19 +42,22 @@ class TemplateService:
         if not text:
             return ""
 
-        # Normalize {{var.field}} to {var.field} for .format()
-        # Using a more specific regex to avoid breaking legitimate double braces if any
-        normalized = re.sub(r"\{\{([a-zA-Z0-9._-]+)\}\}", r"{\1}", text)
+        # Use a more robust way to substitute variables including dot notation
+        # We'll normalize {{var}} to {var} and then use format.
+        # To avoid issues with literal braces, we'll be careful.
+        
+        # 1. Normalize {{var.field}} to {var.field}
+        # We use a pattern that matches the standard allowed variables
+        pattern = r"\{\{([a-zA-Z0-9._-]+)\}\}"
+        normalized = re.sub(pattern, r"{\1}", text)
 
         try:
+            # 2. Use string.format() which natively supports dot notation for objects
             return normalized.format(**kwargs)
-        except KeyError as e:
-            # Missing variable: keep the placeholder
-            missing_var = str(e).strip("'")
-            logger.warning(f"Missing template variable: {missing_var}")
-            # Recursively handle or just return as is. 
-            # Simple approach: leave the {var} in place
+        except (KeyError, AttributeError, ValueError) as e:
+            logger.warning(f"Template rendering issue: {e} in string '{text}'")
+            # If format fails, return the normalized version so user sees {missing_var}
             return normalized
         except Exception as e:
-            logger.error(f"Error rendering template string: {e}")
+            logger.error(f"Unexpected error rendering template string: {e}")
             return text

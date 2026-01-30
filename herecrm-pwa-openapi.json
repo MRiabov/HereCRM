@@ -4341,6 +4341,16 @@
                 "type": "null"
               }
             ]
+          },
+          "messenger_settings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MessengerSettingsSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -4580,6 +4590,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/MarketingSettingsSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "messenger_settings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MessengerSettingsSchema"
               },
               {
                 "type": "null"
@@ -6663,6 +6683,53 @@
           "ASSISTANT"
         ],
         "title": "MessageRole"
+      },
+      "MessengerSettingsSchema": {
+        "properties": {
+          "meta_access_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta Access Token"
+          },
+          "waba_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Waba Id"
+          },
+          "phone_number_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone Number Id"
+          },
+          "is_connected": {
+            "type": "boolean",
+            "title": "Is Connected",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "MessengerSettingsSchema"
       },
       "OnboardingChoice": {
         "properties": {

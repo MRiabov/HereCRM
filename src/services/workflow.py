@@ -59,6 +59,18 @@ class WorkflowSettingsService:
             "seat_count": business.seat_limit,
             "billing_cycle_anchor": business.billing_cycle_anchor,
             "marketing_settings": business.marketing_settings or {},
+            "messenger_settings": {
+                **(business.messenger_settings or {}),
+                "is_connected": bool(
+                    (business.messenger_settings or {}).get("meta_access_token")
+                    and (business.messenger_settings or {}).get("waba_id")
+                    and (business.messenger_settings or {}).get("phone_number_id")
+                ),
+                # Mask the token for security in GET
+                "meta_access_token": "********"
+                if (business.messenger_settings or {}).get("meta_access_token")
+                else None,
+            },
         }
 
         with open("/tmp/backend_debug_get.log", "a") as f:
@@ -97,6 +109,7 @@ class WorkflowSettingsService:
             "default_country",
             "default_tax_rate",
             "marketing_settings",
+            "messenger_settings",
         }
 
         for key, value in settings.items():
@@ -111,7 +124,14 @@ class WorkflowSettingsService:
                 elif key == "workflow_job_creation_default" and isinstance(value, str):
                     value = JobCreationDefault(value.upper())
 
-                if key == "marketing_settings":
+                if key == "messenger_settings":
+                    current = business.messenger_settings or {}
+                    # Don't overwrite with masked value from UI if it hasn't changed
+                    if value.get("meta_access_token") == "********":
+                        value["meta_access_token"] = current.get("meta_access_token")
+                    setattr(business, key, value)
+                    flag_modified(business, "messenger_settings")
+                elif key == "marketing_settings":
                     with open("/tmp/backend_debug.log", "a") as f:
                         f.write(
                             f"DEBUG: Updating marketing_settings to type {type(value)}: {value}\n"
@@ -119,11 +139,10 @@ class WorkflowSettingsService:
                         f.write(
                             f"DEBUG: Previous marketing_settings: {business.marketing_settings}\n"
                         )
-
-                setattr(business, key, value)
-
-                if key == "marketing_settings":
+                    setattr(business, key, value)
                     flag_modified(business, "marketing_settings")
+                else:
+                    setattr(business, key, value)
 
         await self.session.flush()
         with open("/tmp/backend_debug.log", "a") as f:

@@ -474,6 +474,13 @@ class MarketingSettingsSchema(BaseModel):
     templates: Dict[str, MarketingTemplateSchema] = Field(default_factory=dict)
 
 
+class MessengerSettingsSchema(BaseModel):
+    meta_access_token: Optional[str] = Field(None, max_length=500)
+    waba_id: Optional[str] = Field(None, max_length=100)
+    phone_number_id: Optional[str] = Field(None, max_length=100)
+    is_connected: bool = False
+
+
 class BusinessSettingsSchema(BaseModel):
     workflow_invoicing: Optional[InvoicingWorkflow]
     workflow_quoting: Optional[QuotingWorkflow]
@@ -503,6 +510,7 @@ class BusinessSettingsSchema(BaseModel):
     invite_code: Optional[str] = Field(None, max_length=50)
     billing_cycle_anchor: Optional[datetime] = None
     marketing_settings: Optional[MarketingSettingsSchema] = None
+    messenger_settings: Optional[MessengerSettingsSchema] = None
 
 
 class BusinessSettingsUpdate(BaseModel):
@@ -526,6 +534,7 @@ class BusinessSettingsUpdate(BaseModel):
     default_country: Optional[str] = Field(None, max_length=100)
     default_tax_rate: Optional[float] = Field(None, ge=0)
     marketing_settings: Optional[MarketingSettingsSchema] = None
+    messenger_settings: Optional[MessengerSettingsSchema] = None
 
 
 class WageConfigurationUpdate(BaseModel):

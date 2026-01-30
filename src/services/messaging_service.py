@@ -93,7 +93,7 @@ class MessagingService:
 
                 if message_type == MessageType.WHATSAPP:
                     success, external_id = await self._send_whatsapp(
-                        recipient_phone, content
+                        recipient_phone, content, business_id=business_id
                     )
                 elif message_type == MessageType.SMS:
                     success, external_id = await self._send_sms(
@@ -146,22 +146,37 @@ class MessagingService:
         return message_log
 
     async def _send_whatsapp(
-        self, recipient_phone: str, content: str
+        self, recipient_phone: str, content: str, business_id: Optional[int] = None
     ) -> tuple[bool, Optional[str]]:
         """
         Send WhatsApp message via Meta Graph API.
         Returns: (success, message_id)
         """
-        if not settings.whatsapp_access_token or not settings.whatsapp_phone_number_id:
+        access_token = settings.whatsapp_access_token
+        phone_number_id = settings.whatsapp_phone_number_id
+
+        if business_id:
+            async with self.session_factory() as db:
+                from src.repositories import BusinessRepository
+
+                repo = BusinessRepository(db)
+                business = await repo.get_by_id_global(business_id)
+                if business and business.messenger_settings:
+                    ms = business.messenger_settings
+                    access_token = ms.get("meta_access_token") or access_token
+                    # For messaging, we need phone_number_id. Assuming it's in messenger_settings or use system default
+                    phone_number_id = ms.get("phone_number_id") or phone_number_id
+
+        if not access_token or not phone_number_id:
             logger.warning(
                 "WhatsApp settings not configured. Falling back to MOCK log."
             )
             logger.info(f"[MOCK] WhatsApp to {recipient_phone}: {content}")
             return True, f"mock_wa_{int(datetime.now().timestamp())}"
 
-        url = f"https://graph.facebook.com/{settings.whatsapp_api_version}/{settings.whatsapp_phone_number_id}/messages"
+        url = f"https://graph.facebook.com/{settings.whatsapp_api_version}/{phone_number_id}/messages"
         headers = {
-            "Authorization": f"Bearer {settings.whatsapp_access_token}",
+            "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
         }
 

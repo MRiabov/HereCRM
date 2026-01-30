@@ -18,8 +18,21 @@ class WhatsAppTemplateService:
     def __init__(self, session: AsyncSession):
         self.session = session
         self.api_version = settings.whatsapp_api_version
-        self.access_token = settings.whatsapp_access_token
-        self.waba_id = settings.waba_id
+        self.system_access_token = settings.whatsapp_access_token
+        self.system_waba_id = settings.waba_id
+
+    async def _get_credentials(self, business_id: int):
+        from src.repositories import BusinessRepository
+
+        repo = BusinessRepository(self.session)
+        business = await repo.get_by_id_global(business_id)
+        if not business:
+            return self.system_access_token, self.system_waba_id
+
+        ms = business.messenger_settings or {}
+        access_token = ms.get("meta_access_token") or self.system_access_token
+        waba_id = ms.get("waba_id") or self.system_waba_id
+        return access_token, waba_id
 
     async def create_template(
         self,
@@ -42,16 +55,17 @@ class WhatsAppTemplateService:
         await self.session.flush()
 
         # 2. Call Meta API
-        if not self.access_token or not self.waba_id:
+        access_token, waba_id = await self._get_credentials(business_id)
+        if not access_token or not waba_id:
             logger.warning("WhatsApp settings missing. Template created locally only.")
             template.status = WhatsAppTemplateStatus.REJECTED
             template.rejection_reason = "WhatsApp credentials missing in system settings (Access Token or WABA ID). Please contact administrator."
             await self.session.commit()
             return template
 
-        url = f"https://graph.facebook.com/{self.api_version}/{self.waba_id}/message_templates"
+        url = f"https://graph.facebook.com/{self.api_version}/{waba_id}/message_templates"
         headers = {
-            "Authorization": f"Bearer {self.access_token}",
+            "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
         }
 
@@ -89,15 +103,16 @@ class WhatsAppTemplateService:
         return template
 
     async def sync_templates(self, business_id: int):
-        if not self.access_token or not self.waba_id:
+        access_token, waba_id = await self._get_credentials(business_id)
+        if not access_token or not waba_id:
             logger.warning("WhatsApp settings missing. Cannot sync templates.")
             return
 
-        url = f"https://graph.facebook.com/{self.api_version}/{self.waba_id}/message_templates"
+        url = f"https://graph.facebook.com/{self.api_version}/{waba_id}/message_templates"
         params = {
             "fields": "id,status,name,language,category,components,rejected_reason"
         }
-        headers = {"Authorization": f"Bearer {self.access_token}"}
+        headers = {"Authorization": f"Bearer {access_token}"}
 
         async with httpx.AsyncClient() as client:
             try:
