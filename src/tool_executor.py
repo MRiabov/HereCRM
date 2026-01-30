@@ -1564,7 +1564,25 @@ class ToolExecutor:
     async def _execute_assign_job(
         self, tool: AssignJobTool
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
-        # 1. Ambiguity Handling: Find employee by name
+        # 1. Resolve Job
+        job = None
+        query = tool.job_query.strip()
+
+        # Try parsing as ID first (e.g. "123" or "#123")
+        potential_id = query.lstrip("#")
+        if potential_id.isdigit():
+            job = await self.job_repo.get_by_id(int(potential_id), self.business_id)
+
+        if not job:
+            # Search for job by description, location, or customer name
+            jobs = await self.job_repo.search(query, self.business_id)
+            if not jobs:
+                return self.template_service.render("job_not_found", query=query), None
+            if len(jobs) > 1:
+                return self.template_service.render("job_ambiguous", query=query), None
+            job = jobs[0]
+
+        # 2. Ambiguity Handling: Find employee by name
         employees = await self.assignment_service.find_employee_by_name(
             tool.assign_to_name
         )
@@ -1582,14 +1600,14 @@ class ToolExecutor:
 
         employee = employees[0]
 
-        # 2. Call AssignmentService
-        result = await self.assignment_service.assign_job(tool.job_id, employee.id)
+        # 3. Call AssignmentService
+        result = await self.assignment_service.assign_job(job.id, employee.id)
 
         if not result.success:
             return f"Error: {result.error}", None
 
         msg = self.template_service.render(
-            "job_assigned", job_id=tool.job_id, employee_name=employee.name
+            "job_assigned", job_id=job.id, employee_name=employee.name
         )
         if result.warning:
             msg += f" (Note: {result.warning})"
@@ -1597,11 +1615,12 @@ class ToolExecutor:
         return msg, {
             "action": "update",
             "entity": "job",
-            "id": tool.job_id,
+            "id": job.id,
             "employee_id": employee.id,
             "employee_name": employee.name,
             "warning": result.warning,
         }
+
 
     async def _execute_locate_employee(
         self, tool: LocateEmployeeTool

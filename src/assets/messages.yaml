@@ -161,8 +161,11 @@ error_invalid_service_format: "❌ Invalid format. Usage: 'Add Service [Name] [P
 # Employee Management
 employee_not_found: "❌ Could not find employee named '{name}'."
 employee_ambiguous: "❓ Status: Ambiguous. Did you mean {matches}?"
+job_not_found: "❌ Could not find a job matching '{query}'."
+job_ambiguous: "❓ Multiple jobs found for '{query}'. Please use a Job ID (e.g. #123) or more specific address."
 job_assigned: "✅ Assigned Job #{job_id} to {employee_name}."
 error_invalid_date: "❌ Invalid date format: {date}. Please use YYYY-MM-DD."
+
 
 # Help Message
 help_message: |
