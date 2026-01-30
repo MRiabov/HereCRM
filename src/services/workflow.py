@@ -126,7 +126,36 @@ class WorkflowSettingsService:
 
                 if key == "messenger_settings":
                     current = business.messenger_settings or {}
-                    # Don't overwrite with masked value from UI if it hasn't changed
+                    
+                    # Resolve token (might be masked)
+                    token_to_validate = value.get("meta_access_token")
+                    if token_to_validate == "********":
+                        token_to_validate = current.get("meta_access_token")
+                    
+                    # Validate if any relevant field changed or if specifically requested (value provided)
+                    # We only validate if we have all 3 pieces
+                    waba_id = value.get("waba_id")
+                    phone_id = value.get("phone_number_id")
+                    
+                    if token_to_validate and waba_id and phone_id:
+                        # Only validate if something changed from current
+                        if (token_to_validate != current.get("meta_access_token") or 
+                            waba_id != current.get("waba_id") or 
+                            phone_id != current.get("phone_number_id")):
+                            
+                            from src.services.whatsapp_template_service import WhatsAppTemplateService
+                            tpl_service = WhatsAppTemplateService(self.session)
+                            try:
+                                await tpl_service.validate_credentials(
+                                    access_token=token_to_validate,
+                                    waba_id=waba_id,
+                                    phone_number_id=phone_id
+                                )
+                            except Exception as e:
+                                # Wrap in ValueError so it can be handled by API layer
+                                raise ValueError(f"Meta Credentials Validation Failed: {str(e)}")
+
+                    # Update business object
                     if value.get("meta_access_token") == "********":
                         value["meta_access_token"] = current.get("meta_access_token")
                     setattr(business, key, value)

@@ -1,6 +1,6 @@
 import logging
 import httpx
-from typing import List
+from typing import List, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,6 +20,42 @@ class WhatsAppTemplateService:
         self.api_version = settings.whatsapp_api_version
         self.system_access_token = settings.whatsapp_access_token
         self.system_waba_id = settings.waba_id
+
+    async def validate_credentials(
+        self, access_token: str, waba_id: str, phone_number_id: str = None
+    ) -> bool:
+        """
+        Verifies if the provided Meta access token and IDs are valid.
+        """
+        # 1. Check WABA ID
+        url = f"https://graph.facebook.com/{self.api_version}/{waba_id}"
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.get(url, headers=headers)
+                if response.status_code != 200:
+                    error_data = response.json()
+                    error_msg = error_data.get("error", {}).get(
+                        "message", "Invalid WABA ID or Access Token"
+                    )
+                    raise Exception(error_msg)
+
+                # 2. Check Phone Number ID if provided
+                if phone_number_id:
+                    url = f"https://graph.facebook.com/{self.api_version}/{phone_number_id}"
+                    response = await client.get(url, headers=headers)
+                    if response.status_code != 200:
+                        error_data = response.json()
+                        error_msg = error_data.get("error", {}).get(
+                            "message", "Invalid Phone Number ID"
+                        )
+                        raise Exception(error_msg)
+
+                return True
+            except Exception as e:
+                logger.error(f"Credential validation failed: {e}")
+                raise Exception(f"Meta API validation failed: {str(e)}")
 
     async def _get_credentials(self, business_id: int):
         from src.repositories import BusinessRepository

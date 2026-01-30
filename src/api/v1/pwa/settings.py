@@ -63,8 +63,11 @@ async def update_workflow_settings(
     # Filter out None values to avoid overwriting with None if not provided in PATCH
     updates = update_data.model_dump(exclude_unset=True)
 
-    settings = await service.update_settings(current_user.business_id, **updates)
-    await service.session.commit()
+    try:
+        settings = await service.update_settings(current_user.business_id, **updates)
+        await service.session.commit()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     return BusinessSettingsSchema(
         **settings,
