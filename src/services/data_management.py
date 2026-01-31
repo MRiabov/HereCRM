@@ -477,7 +477,7 @@ class DataManagementService:
             else:
                 entity_type = None
 
-            # Decide if we are doing a single file or a ZIP
+            # Decide if we are doing a single file or a ZIP/Multi-sheet Excel
             if (
                 format == ExportFormat.ZIP
                 or entity_type == EntityType.ALL
@@ -491,26 +491,47 @@ class DataManagementService:
                     EntityType.EXPENSE,
                     EntityType.LEDGER,
                 ]
-                zip_buffer = io.BytesIO()
-                with zipfile.ZipFile(
-                    zip_buffer, "a", zipfile.ZIP_DEFLATED, False
-                ) as zip_file:
-                    for ent in entities:
-                        df, name = await self._get_export_data(
-                            business_id, ent, query, filters
-                        )
-                        if not df.empty:
-                            csv_buffer = io.BytesIO()
-                            df.to_csv(csv_buffer, index=False)
-                            zip_file.writestr(f"{name}.csv", csv_buffer.getvalue())
 
-                zip_buffer.seek(0)
-                file_bytes = zip_buffer.read()
-                content_type = "application/zip"
-                filename = (
-                    f"export_all_{business_id}_{int(datetime.now().timestamp())}.zip"
-                )
-                export_req.format = ExportFormat.ZIP
+                if format == ExportFormat.EXCEL:
+                    # Multi-sheet Excel export
+                    output = io.BytesIO()
+                    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+                        for ent in entities:
+                            df, name = await self._get_export_data(
+                                business_id, ent, query, filters
+                            )
+                            if not df.empty:
+                                # Clean up dates for Excel
+                                for col in df.columns:
+                                    if pd.api.types.is_datetime64_any_dtype(df[col]):
+                                        df[col] = df[col].dt.tz_localize(None)
+                                df.to_excel(writer, sheet_name=name, index=False)
+
+                    output.seek(0)
+                    file_bytes = output.read()
+                    content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    filename = f"export_all_{business_id}_{int(datetime.now().timestamp())}.xlsx"
+                    export_req.format = ExportFormat.EXCEL
+                else:
+                    # Default to ZIP of CSVs
+                    zip_buffer = io.BytesIO()
+                    with zipfile.ZipFile(
+                        zip_buffer, "a", zipfile.ZIP_DEFLATED, False
+                    ) as zip_file:
+                        for ent in entities:
+                            df, name = await self._get_export_data(
+                                business_id, ent, query, filters
+                            )
+                            if not df.empty:
+                                csv_buffer = io.BytesIO()
+                                df.to_csv(csv_buffer, index=False)
+                                zip_file.writestr(f"{name}.csv", csv_buffer.getvalue())
+
+                    zip_buffer.seek(0)
+                    file_bytes = zip_buffer.read()
+                    content_type = "application/zip"
+                    filename = f"export_all_{business_id}_{int(datetime.now().timestamp())}.zip"
+                    export_req.format = ExportFormat.ZIP
             else:
                 # Single file export
                 df, name = await self._get_export_data(
