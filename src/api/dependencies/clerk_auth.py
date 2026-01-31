@@ -135,6 +135,10 @@ class VerifyToken:
                     await db.refresh(existing_user)
                     return existing_user
 
+            # [Reverted based on user feedback] Just because they have an org doesn't make them an employee.
+            # They stay OWNER of their context unless the invitation flow says otherwise.
+            role = UserRole.OWNER
+
             user = User(
                 clerk_id=clerk_id,
                 name=f"{clerk_user.first_name} {clerk_user.last_name}".strip()
@@ -145,11 +149,25 @@ class VerifyToken:
                 if clerk_user.phone_numbers
                 else None,
                 business_id=business.id,
-                role=UserRole.OWNER,
+                role=role,
             )
             db.add(user)
             await db.commit()
             await db.refresh(user)
+
+            # Update Clerk Metadata so role is explicit and frontend doesn't guestimate
+            try:
+                await self.clerk_client.users.update_metadata_async(
+                    user_id=clerk_id,
+                    public_metadata={
+                        "business_id": business.id,
+                        "role": role.value,
+                    },
+                )
+            except Exception as e:
+                # Log but don't fail JIT
+                print(f"Failed to sync Clerk metadata for user {clerk_id}: {e}")
+
             return user
         except Exception as e:
             await db.rollback()

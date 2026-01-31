@@ -1,6 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+import logging
+from clerk_backend_api import Clerk
+from src.config import settings
 from src.models import User, Business, UserRole
 from src.repositories import UserRepository, BusinessRepository
+
+logger = logging.getLogger(__name__)
 
 
 class AuthService:
@@ -8,6 +13,7 @@ class AuthService:
         self.session = session
         self.user_repo = UserRepository(session)
         self.business_repo = BusinessRepository(session)
+        self.clerk_client = Clerk(bearer_auth=settings.clerk_secret_key)
 
     async def get_or_create_user(self, phone: str) -> tuple[User, bool]:
         """
@@ -59,6 +65,9 @@ class AuthService:
         Syncs a user from Clerk webhook data.
         """
         clerk_id = data.get("id")
+        if not clerk_id:
+            return
+
         email_addresses = data.get("email_addresses", [])
         phone_numbers = data.get("phone_numbers", [])
         primary_email = (
@@ -86,31 +95,61 @@ class AuthService:
                     user.name = name
                     user.phone_number = primary_phone
                     await self.session.flush()
-                    return
+                else:
+                    # User model requires business_id (NOT NULL)
+                    # Create a personal business for the user
+                    business = Business(name=f"Business of {name}", clerk_org_id=None)
+                    self.session.add(business)
+                    await self.session.flush()
 
-            # User model requires business_id (NOT NULL)
-            # Create a personal business for the user
-            business = Business(name=f"Business of {name}", clerk_org_id=None)
-            self.session.add(business)
-            await self.session.flush()
+                    user = User(
+                        clerk_id=clerk_id,
+                        email=primary_email,
+                        phone_number=primary_phone,
+                        name=name,
+                        business_id=business.id,
+                        role=UserRole.OWNER,  # Default to owner of their personal business
+                    )
+                    self.user_repo.add(user)
+            else:
+                # Fallback for phone-only or no-email signups
+                business = Business(name=f"Business of {name}", clerk_org_id=None)
+                self.session.add(business)
+                await self.session.flush()
 
-            user = User(
-                clerk_id=clerk_id,
-                email=primary_email,
-                phone_number=primary_phone,
-                name=name,
-                business_id=business.id,
-                role=UserRole.OWNER,  # Default to owner of their personal business
-            )
-            self.user_repo.add(user)
+                user = User(
+                    clerk_id=clerk_id,
+                    email=None,
+                    phone_number=primary_phone,
+                    name=name,
+                    business_id=business.id,
+                    role=UserRole.OWNER,
+                )
+                self.user_repo.add(user)
 
         await self.session.flush()
+
+        # Update explicit Clerk Metadata
+        if clerk_id and user:
+            try:
+                await self.clerk_client.users.update_metadata_async(
+                    user_id=clerk_id,
+                    public_metadata={
+                        "business_id": user.business_id,
+                        "role": user.role.value,
+                    },
+                )
+            except Exception as e:
+                logger.error(f"Failed to sync metadata for Clerk user {clerk_id}: {e}")
 
     async def sync_clerk_org(self, data: dict):
         """
         Syncs an organization from Clerk webhook data.
         """
         clerk_org_id = data.get("id")
+        if not clerk_org_id:
+            return
+
         name = data.get("name")
 
         # Check if business exists
@@ -131,6 +170,9 @@ class AuthService:
         user_clerk_id = data.get("public_user_data", {}).get("user_id")
         org_clerk_id = data.get("organization", {}).get("id")
         role_key = data.get("role", "")  # e.g. "org:admin"
+
+        if not user_clerk_id or not org_clerk_id:
+            return
 
         user = await self.user_repo.get_by_clerk_id(user_clerk_id)
         if not user:
@@ -155,6 +197,20 @@ class AuthService:
             user.role = UserRole.EMPLOYEE
 
         await self.session.flush()
+
+        # Update Clerk Metadata for membership sync
+        try:
+            await self.clerk_client.users.update_metadata_async(
+                user_id=user_clerk_id,
+                public_metadata={
+                    "business_id": user.business_id,
+                    "role": user.role.value,
+                },
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to sync membership metadata for Clerk user {user_clerk_id}: {e}"
+            )
 
     async def delete_clerk_user(self, data: dict):
         """
