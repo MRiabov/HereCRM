@@ -544,6 +544,10 @@ class WageConfigurationUpdate(BaseModel):
     allow_expense_claims: Optional[bool] = None
 
 
+class UserRoleUpdate(BaseModel):
+    role: UserRole
+
+
 # --- Search ---
 
 
@@ -660,6 +664,7 @@ class DataActivitySchema(BaseModel):
 class ExportCreateRequest(BaseModel):
     query: Optional[str] = Field(None, max_length=500)
     format: ExportFormat  # 'CSV', 'Excel', 'JSON'
+    entity_type: Optional[EntityType] = EntityType.ALL
 
 
 class ImportCreateRequest(BaseModel):

@@ -1923,6 +1923,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/pwa/business/employees/{employee_id}/role:
+    patch:
+      tags:
+      - pwa-business
+      summary: Update Employee Role
+      description: 'Updates the role for a specific employee.
+
+        Only owners and managers can update roles.
+
+        Cannot change the role of an OWNER.'
+      operationId: update_employee_role_api_v1_pwa_business_employees__employee_id__role_patch
+      parameters:
+      - name: employee_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Employee Id
+      - name: request
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRoleUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/pwa/business/employees:
     get:
       tags:
@@ -3409,6 +3453,11 @@ components:
           title: Query
         format:
           $ref: '#/components/schemas/ExportFormat'
+        entity_type:
+          anyOf:
+          - $ref: '#/components/schemas/EntityType'
+          - type: 'null'
+          default: ALL
       type: object
       required:
       - format
@@ -4694,6 +4743,14 @@ components:
       - MANAGER
       - EMPLOYEE
       title: UserRole
+    UserRoleUpdate:
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRole'
+      type: object
+      required:
+      - role
+      title: UserRoleUpdate
     UserSchema:
       properties:
         id:

@@ -6,10 +6,44 @@ from typing import List
 
 from src.database import get_db
 from src.models import User, UserRole, Business, WageConfiguration, WageModelType
-from src.schemas.pwa import UserSchema, WageConfigurationUpdate
+from src.schemas.pwa import UserSchema, WageConfigurationUpdate, UserRoleUpdate
 from src.api.dependencies.clerk_auth import get_current_user
 
 router = APIRouter()
+
+
+@router.patch("/employees/{employee_id}/role")
+async def update_employee_role(
+    employee_id: int,
+    role_update: UserRoleUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Updates the role for a specific employee.
+    Only owners and managers can update roles.
+    Cannot change the role of an OWNER.
+    """
+    if current_user.role not in [UserRole.OWNER, UserRole.MANAGER]:
+        raise HTTPException(
+            status_code=403,
+            detail="Only owners and managers can update employee roles",
+        )
+
+    # Ensure employee is in the same business
+    employee = await db.get(User, employee_id)
+    if not employee or employee.business_id != current_user.business_id:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    # Prevent changing OWNER role or demoting OWNER
+    if employee.role == UserRole.OWNER:
+        raise HTTPException(status_code=403, detail="Cannot change role of an owner")
+
+    # Update role
+    employee.role = role_update.role
+    await db.commit()
+
+    return {"status": "SUCCESS", "new_role": employee.role}
 
 
 @router.get("/employees", response_model=List[UserSchema])
