@@ -69,7 +69,10 @@ def run_migrations_online() -> None:
     """
     configuration = config.get_section(config.config_ini_section, {})
     if os.getenv("DATABASE_URL"):
-        configuration["sqlalchemy.url"] = os.getenv("DATABASE_URL")
+        url = os.getenv("DATABASE_URL")
+        if url and url.startswith("sqlite+aiosqlite://"):
+            url = url.replace("sqlite+aiosqlite://", "sqlite://")
+        configuration["sqlalchemy.url"] = url
 
     connectable = engine_from_config(
         configuration,
