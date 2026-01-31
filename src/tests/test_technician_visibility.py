@@ -2,7 +2,7 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.main import app
-from src.api.dependencies.clerk_auth import get_current_user
+from src.api.dependencies.clerk_auth import verify_token, get_current_user
 from src.models import User, UserRole, Business, Job, Customer, JobStatus
 from datetime import datetime, timezone, date
 
@@ -10,22 +10,36 @@ from datetime import datetime, timezone, date
 @pytest.fixture
 def manager_user():
     return User(
-        id=1, name="Manager", role=UserRole.OWNER, business_id=1, timezone="UTC"
+        id=1,
+        name="Manager",
+        role=UserRole.OWNER,
+        business_id=1,
+        timezone="UTC",
+        clerk_id="manager_clerk",
     )
 
 
 @pytest.fixture
 def tech_user():
     return User(
-        id=2, name="Tech", role=UserRole.EMPLOYEE, business_id=1, timezone="UTC"
+        id=2,
+        name="Tech",
+        role=UserRole.EMPLOYEE,
+        business_id=1,
+        timezone="UTC",
+        clerk_id="tech_clerk",
     )
 
 
 @pytest.fixture
-async def setup_data(session: AsyncSession):
+async def setup_data(session: AsyncSession, manager_user, tech_user):
     # Setup Business
     biz = Business(id=1, name="Test Biz")
     session.add(biz)
+
+    # Add Users
+    session.add(manager_user)
+    session.add(tech_user)
     await session.flush()
 
     # Setup Customers
@@ -71,6 +85,7 @@ async def setup_data(session: AsyncSession):
 
 @pytest.mark.asyncio
 async def test_manager_sees_all_jobs(session: AsyncSession, setup_data, manager_user):
+    app.dependency_overrides[verify_token] = lambda: manager_user
     app.dependency_overrides[get_current_user] = lambda: manager_user
 
     async with AsyncClient(
@@ -89,6 +104,7 @@ async def test_manager_sees_all_jobs(session: AsyncSession, setup_data, manager_
 
 @pytest.mark.asyncio
 async def test_tech_sees_only_own_jobs(session: AsyncSession, setup_data, tech_user):
+    app.dependency_overrides[verify_token] = lambda: tech_user
     app.dependency_overrides[get_current_user] = lambda: tech_user
 
     async with AsyncClient(
@@ -107,6 +123,7 @@ async def test_tech_sees_only_own_jobs(session: AsyncSession, setup_data, tech_u
 
 @pytest.mark.asyncio
 async def test_tech_cannot_see_backlog(session: AsyncSession, setup_data, tech_user):
+    app.dependency_overrides[verify_token] = lambda: tech_user
     app.dependency_overrides[get_current_user] = lambda: tech_user
 
     async with AsyncClient(
@@ -123,6 +140,7 @@ async def test_tech_cannot_see_backlog(session: AsyncSession, setup_data, tech_u
 
 @pytest.mark.asyncio
 async def test_manager_sees_backlog(session: AsyncSession, setup_data, manager_user):
+    app.dependency_overrides[verify_token] = lambda: manager_user
     app.dependency_overrides[get_current_user] = lambda: manager_user
 
     async with AsyncClient(
@@ -140,6 +158,7 @@ async def test_manager_sees_backlog(session: AsyncSession, setup_data, manager_u
 
 @pytest.mark.asyncio
 async def test_tech_search_restricted(session: AsyncSession, setup_data, tech_user):
+    app.dependency_overrides[verify_token] = lambda: tech_user
     app.dependency_overrides[get_current_user] = lambda: tech_user
 
     async with AsyncClient(
