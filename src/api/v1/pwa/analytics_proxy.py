@@ -20,6 +20,15 @@ async def proxy_posthog(request: Request, path: str = ""):
     """
     Proxies requests to PostHog to bypass ad-blockers and avoid console errors.
     """
+    if not settings.posthog_host:
+        logger.error("PostHog proxy called but POSTHOG_HOST is not configured.")
+        return Response(status_code=500)
+
+    # Security check for path traversal
+    if ".." in path:
+        logger.warning(f"Path traversal attempt blocked in PostHog proxy: {path}")
+        return Response(status_code=400)
+
     target_url = f"{settings.posthog_host.rstrip('/')}/{path.lstrip('/')}"
 
     # We want to forward the body exactly as is
