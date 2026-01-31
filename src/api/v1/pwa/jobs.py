@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database import get_db
 from src.services.crm_service import CRMService
 from src.schemas.pwa import JobListResponse, JobSchema, JobCreate, JobUpdate
-from src.models import User
+from src.models import User, UserRole
 from src.api.dependencies.clerk_auth import get_current_user
 
 router = APIRouter()
@@ -44,6 +44,9 @@ async def list_jobs(
     skip = (page - 1) * limit
 
     if unscheduled:
+        if current_user.role == UserRole.EMPLOYEE:
+            return [JobListResponse(date="Unscheduled", jobs=[])]
+
         jobs = await crm_service.get_unscheduled_jobs()
         # Apply manual pagination for unscheduled as it's a specialized query
         return [
@@ -57,6 +60,11 @@ async def list_jobs(
         jobs = await crm_service.job_repo.search(
             query=search, business_id=crm_service.business_id, skip=skip, limit=limit
         )
+
+        # Filter for technician
+        if current_user.role == UserRole.EMPLOYEE:
+            jobs = [j for j in jobs if j.employee_id == current_user.id]
+
         # Group search results by date
         from itertools import groupby
 
@@ -81,6 +89,10 @@ async def list_jobs(
         jobs = await crm_service.get_jobs_for_customer(
             customer_id, skip=skip, limit=limit
         )
+
+        # Filter for technician
+        if current_user.role == UserRole.EMPLOYEE:
+            jobs = [j for j in jobs if j.employee_id == current_user.id]
 
         # Group by date
         from itertools import groupby
@@ -113,6 +125,11 @@ async def list_jobs(
 
     target_date = date_from or datetime.now(timezone.utc).date()
 
+    # Enforce technician's own ID if role is EMPLOYEE
+    effective_employee_id = employee_id
+    if current_user.role == UserRole.EMPLOYEE:
+        effective_employee_id = current_user.id
+
     # Get schedules for all employees
     # CRMService returns {User: [Job]}
     schedules = await crm_service.get_employee_schedules(
@@ -123,7 +140,12 @@ async def list_jobs(
     seen_job_ids = set()
 
     for user, jobs in schedules.items():
-        if employee_id and user and user.id != employee_id:
+        # If employee_id filter is active (or forced for technician), skip other users
+        if effective_employee_id and user and user.id != effective_employee_id:
+            continue
+
+        # If a specific employee is being viewed, we skip unassigned jobs
+        if effective_employee_id and user is None:
             continue
 
         for job in jobs:
