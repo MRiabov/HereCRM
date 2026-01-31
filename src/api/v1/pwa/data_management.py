@@ -45,6 +45,7 @@ async def trigger_export(
         business_id=current_user.business_id,
         query=query_text,
         format=ExportFormat(export_format),
+        filters={"entity_type": payload.entity_type},
     )
 
     return export_req

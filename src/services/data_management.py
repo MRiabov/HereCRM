@@ -417,6 +417,59 @@ class DataManagementService:
                 )
             return pd.DataFrame(data, columns=headers), "ledger"
 
+        elif entity_type == EntityType.QUOTE:
+            headers = [
+                "id",
+                "customer",
+                "title",
+                "total_amount",
+                "status",
+                "created_at",
+            ]
+            from src.models import Quote
+
+            stmt = select(Quote).where(Quote.business_id == business_id)
+            if min_date:
+                stmt = stmt.where(Quote.created_at >= min_date)
+            if max_date:
+                stmt = stmt.where(Quote.created_at <= max_date)
+            result = await self.session.execute(stmt)
+            for q in result.scalars().all():
+                data.append(
+                    {
+                        "id": q.id,
+                        "customer": q.customer.name if q.customer else "",
+                        "title": q.title,
+                        "total_amount": q.total_amount,
+                        "status": q.status,
+                        "created_at": q.created_at,
+                    }
+                )
+            return pd.DataFrame(data, columns=headers), "quotes"
+
+        elif entity_type == EntityType.INVOICE:
+            headers = ["id", "job_id", "status", "amount", "created_at"]
+            from src.models import Invoice, Job
+
+            # Join with Job to filter by business_id
+            stmt = select(Invoice).join(Job).where(Job.business_id == business_id)
+            if min_date:
+                stmt = stmt.where(Invoice.created_at >= min_date)
+            if max_date:
+                stmt = stmt.where(Invoice.created_at <= max_date)
+            result = await self.session.execute(stmt)
+            for inv in result.scalars().all():
+                data.append(
+                    {
+                        "id": inv.id,
+                        "job_id": inv.job_id,
+                        "status": inv.status,
+                        "amount": inv.job.value if inv.job else 0.0,
+                        "created_at": inv.created_at,
+                    }
+                )
+            return pd.DataFrame(data, columns=headers), "invoices"
+
         else:  # customer
             headers = ["id", "name", "phone", "email", "address", "stage", "created_at"]
             # Fallback to customer if entity_type is None or something else
@@ -478,16 +531,20 @@ class DataManagementService:
                 entity_type = None
 
             # Decide if we are doing a single file or a ZIP/Multi-sheet Excel
-            if (
-                format == ExportFormat.ZIP
-                or entity_type == EntityType.ALL
+            is_all_export = (
+                entity_type == EntityType.ALL
                 or (query.lower() == "all" and not entity_type)
-            ):
+                or (format == ExportFormat.ZIP and not entity_type)
+            )
+
+            if is_all_export:
                 # Export EVERYTHING
                 entities = [
                     EntityType.CUSTOMER,
                     EntityType.JOB,
                     EntityType.REQUEST,
+                    EntityType.QUOTE,
+                    EntityType.INVOICE,
                     EntityType.EXPENSE,
                     EntityType.LEDGER,
                 ]
