@@ -22,6 +22,7 @@ from src.api.v1.pwa import (
     templates,
     dev,
     backup,
+    maintenance,
 )
 from src.api.dependencies.clerk_auth import verify_token
 
@@ -32,6 +33,9 @@ router.include_router(
     analytics_proxy.router, prefix="/analytics/proxy", tags=["pwa-analytics"]
 )
 router.include_router(backup.router, prefix="/backup", tags=["pwa-backup"])
+router.include_router(
+    maintenance.router, prefix="/maintenance", tags=["pwa-maintenance"]
+)
 
 # Protected endpoints
 protected_router = APIRouter(dependencies=[Depends(verify_token)])

@@ -257,6 +257,47 @@
         }
       }
     },
+    "/api/v1/pwa/maintenance/migrate": {
+      "post": {
+        "tags": [
+          "pwa-maintenance"
+        ],
+        "summary": "Trigger Migration",
+        "description": "Endpoint to manually trigger Alembic migrations.\nProtected by a secret header instead of Clerk auth.",
+        "operationId": "trigger_migration_api_v1_pwa_maintenance_migrate_post",
+        "parameters": [
+          {
+            "name": "x-admin-secret",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "X-Admin-Secret"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/pwa/onboarding/choice/": {
       "post": {
         "tags": [
