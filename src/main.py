@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 import logging
 import traceback
+import os
 from src.config import settings
 from src.database import engine, Base
 from src.api.routes import router as webhook_router
@@ -29,7 +30,6 @@ async def lifespan(app: FastAPI):
             logger = logging.getLogger("src.main")
             logger.info("Running database migrations...")
             try:
-                import os
                 import alembic.config
                 import alembic.command
 
@@ -60,7 +60,13 @@ async def lifespan(app: FastAPI):
                 error_msg = f"Database schema mismatch detected: {mismatches}"
                 logger_for_mismatch = logging.getLogger("src.main")
                 logger_for_mismatch.error(error_msg)
-                raise RuntimeError(error_msg)
+
+                if os.getenv("SKIP_SCHEMA_VALIDATION") == "true":
+                    logger_for_mismatch.warning(
+                        "!!! WARNING: SKIP_SCHEMA_VALIDATION is enabled. Proceeding with mismatching schema !!!"
+                    )
+                else:
+                    raise RuntimeError(error_msg)
         else:
             logging.getLogger("src.main").info(
                 "Skipping schema validation for in-memory database"

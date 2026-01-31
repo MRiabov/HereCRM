@@ -34,30 +34,57 @@ class TemplateService:
 
         return self.render_string(template, **kwargs)
 
-    def render_string(self, text: str, **kwargs: Any) -> str:
+    def render_string(self, template_str: str, **kwargs: Any) -> str:
         """
         Renders a string template by replacing {{var}} or {var} with kwargs.
         Supports dot notation for object attributes.
+        Handles literal braces in JSON/YAML content by trying to only format intended variables.
         """
-        if not text:
+        if not template_str:
             return ""
 
-        # Use a more robust way to substitute variables including dot notation
-        # We'll normalize {{var}} to {var} and then use format.
-        # To avoid issues with literal braces, we'll be careful.
-        
-        # 1. Normalize {{var.field}} to {var.field}
-        # We use a pattern that matches the standard allowed variables
+        # Strategy:
+        # 1. Identify all patterns we INTEND to substitute: {{var_name}}
+        # 2. Replace them with a safe, unique placeholder regular format doesn't touch.
+        # 3. Escape ALL remaining braces (turn { into {{, } into }})
+        # 4. Restore placeholders to {var_name} so format() hits them.
+
+        # Matches {{variable}} or {{variable.field}}
         pattern = r"\{\{([a-zA-Z0-9._-]+)\}\}"
-        normalized = re.sub(pattern, r"{\1}", text)
+
+        # Map of placeholder -> original key
+        placeholders = {}
+
+        def replace_with_placeholder(match):
+            key = match.group(1)
+            # Create a unique random-ish placeholder
+            placeholder = f"__TEMPLATE_VAR_{len(placeholders)}_{key}__"
+            placeholders[placeholder] = key
+            return placeholder
+
+        # 1. Replace {{var}} with PLACEHOLDER
+        safe_str = re.sub(pattern, replace_with_placeholder, template_str)
+
+        # 2. Escape all remaining literal braces for str.format behavior
+        # In str.format, "{{" is literal "{", "}}" is literal "}"
+        safe_str = safe_str.replace("{", "{{").replace("}", "}}")
+
+        # 3. Restore placeholders to {key} format
+        for placeholder, key in placeholders.items():
+            safe_str = safe_str.replace(placeholder, f"{{{key}}}")
 
         try:
-            # 2. Use string.format() which natively supports dot notation for objects
-            return normalized.format(**kwargs)
+            return safe_str.format(**kwargs)
         except (KeyError, AttributeError, ValueError) as e:
-            logger.warning(f"Template rendering issue: {e} in string '{text}'")
-            # If format fails, return the normalized version so user sees {missing_var}
-            return normalized
+            logger.warning(
+                f"Template rendering issue: {e} in string '{template_str[:50]}...'"
+            )
+            # Fallback A: Try simple string replacement for known keys (ignoring others)
+            # This is less robust for complex formatting but safer for literal heavy strings
+            fallback = template_str
+            for k, v in kwargs.items():
+                fallback = fallback.replace(f"{{{{{k}}}}}", str(v))
+            return fallback
         except Exception as e:
             logger.error(f"Unexpected error rendering template string: {e}")
-            return text
+            return template_str
