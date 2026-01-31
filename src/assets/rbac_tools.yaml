@@ -58,6 +58,9 @@ tools:
   ListServicesTool:
     role: employee
     friendly_name: "list services"
+  ExitSettingsTool:
+    role: employee
+    friendly_name: "exit settings"
 
   # Manager Level (Mid tier - Oversight)
   LocateEmployeeTool:
@@ -84,6 +87,9 @@ tools:
   SendInvoiceTool:
     role: manager
     friendly_name: "send invoices"
+  ExecuteBlastTool:
+    role: manager
+    friendly_name: "send broadcast"
 
   # Owner Level (Top tier - Admin/Finance/Risk)
   UpdateSettingsTool:
@@ -134,4 +140,19 @@ tools:
   DismissUserTool:
     role: owner
     friendly_name: "dismiss an employee"
+  ConnectGoogleCalendarTool:
+    role: owner
+    friendly_name: "connect Google Calendar"
+  DisconnectGoogleCalendarTool:
+    role: owner
+    friendly_name: "disconnect Google Calendar"
+  GoogleCalendarStatusTool:
+    role: owner
+    friendly_name: "view Google Calendar status"
+  QuickBooksStatusTool:
+    role: owner
+    friendly_name: "view QuickBooks status"
+  ExitAccountingTool:
+    role: owner
+    friendly_name: "exit accounting"
 
