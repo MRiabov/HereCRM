@@ -56,3 +56,6 @@ class BaseRepository(Generic[T]):
 
     def add(self, item: T):
         self.session.add(item)
+
+    async def delete(self, item: T):
+        await self.session.delete(item)

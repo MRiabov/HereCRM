@@ -60,6 +60,8 @@ async def clerk_webhook(
     try:
         if event_type in ["user.created", "user.updated"]:
             await auth_service.sync_clerk_user(data)
+        elif event_type == "user.deleted":
+            await auth_service.delete_clerk_user(data)
         elif event_type in ["organization.created", "organization.updated"]:
             await auth_service.sync_clerk_org(data)
         elif event_type == "organizationMembership.created":

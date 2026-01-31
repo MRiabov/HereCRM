@@ -120,14 +120,27 @@ class VerifyToken:
                     db.add(business)
                     await db.flush()
 
+            # Check if user with this email already exists but has different clerk_id
+            email = (
+                clerk_user.email_addresses[0].email_address
+                if clerk_user.email_addresses
+                else None
+            )
+            if email:
+                email_result = await db.execute(select(User).where(User.email == email))
+                existing_user = email_result.scalar_one_or_none()
+                if existing_user:
+                    existing_user.clerk_id = clerk_id
+                    await db.commit()
+                    await db.refresh(existing_user)
+                    return existing_user
+
             user = User(
                 clerk_id=clerk_id,
                 name=f"{clerk_user.first_name} {clerk_user.last_name}".strip()
                 or clerk_user.username
                 or "Unknown",
-                email=clerk_user.email_addresses[0].email_address
-                if clerk_user.email_addresses
-                else None,
+                email=email,
                 phone_number=clerk_user.phone_numbers[0].phone_number
                 if clerk_user.phone_numbers
                 else None,

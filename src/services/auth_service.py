@@ -78,6 +78,16 @@ class AuthService:
             user.name = name
         else:
             # Create new user
+            # First check if email already exists (orphaned account or re-creation)
+            if primary_email:
+                user = await self.user_repo.get_by_email(primary_email)
+                if user:
+                    user.clerk_id = clerk_id
+                    user.name = name
+                    user.phone_number = primary_phone
+                    await self.session.flush()
+                    return
+
             # User model requires business_id (NOT NULL)
             # Create a personal business for the user
             business = Business(name=f"Business of {name}", clerk_org_id=None)
@@ -144,4 +154,31 @@ class AuthService:
         elif "member" in role_key:
             user.role = UserRole.EMPLOYEE
 
+        await self.session.flush()
+
+    async def delete_clerk_user(self, data: dict):
+        """
+        Handles user.deleted event from Clerk.
+        """
+        clerk_id = data.get("id")
+        if not clerk_id:
+            return
+
+        user = await self.user_repo.get_by_clerk_id(clerk_id)
+        if not user:
+            return
+
+        # Cleanup dependent records that aren't on automatic CASCADE
+        from src.models import ConversationState, WageConfiguration
+        from sqlalchemy import delete
+
+        await self.session.execute(
+            delete(ConversationState).where(ConversationState.user_id == user.id)
+        )
+        await self.session.execute(
+            delete(WageConfiguration).where(WageConfiguration.user_id == user.id)
+        )
+
+        # Delete user
+        await self.user_repo.delete(user)
         await self.session.flush()
