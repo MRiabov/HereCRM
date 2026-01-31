@@ -43,8 +43,10 @@ async def list_jobs(
     """
     skip = (page - 1) * limit
 
+    is_at_least_manager = current_user.role in [UserRole.OWNER, UserRole.MANAGER]
+
     if unscheduled:
-        if current_user.role == UserRole.EMPLOYEE:
+        if not is_at_least_manager:
             return [JobListResponse(date="Unscheduled", jobs=[])]
 
         jobs = await crm_service.get_unscheduled_jobs()
@@ -62,7 +64,7 @@ async def list_jobs(
         )
 
         # Filter for technician
-        if current_user.role == UserRole.EMPLOYEE:
+        if not is_at_least_manager:
             jobs = [j for j in jobs if j.employee_id == current_user.id]
 
         # Group search results by date
@@ -91,7 +93,7 @@ async def list_jobs(
         )
 
         # Filter for technician
-        if current_user.role == UserRole.EMPLOYEE:
+        if not is_at_least_manager:
             jobs = [j for j in jobs if j.employee_id == current_user.id]
 
         # Group by date
@@ -125,9 +127,9 @@ async def list_jobs(
 
     target_date = date_from or datetime.now(timezone.utc).date()
 
-    # Enforce technician's own ID if role is EMPLOYEE
+    # Enforce technician's own ID if role is not OWNER or MANAGER
     effective_employee_id = employee_id
-    if current_user.role == UserRole.EMPLOYEE:
+    if not is_at_least_manager:
         effective_employee_id = current_user.id
 
     # Get schedules for all employees
