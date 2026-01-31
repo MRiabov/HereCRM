@@ -42,6 +42,28 @@ async def test_export_all_multi_sheet_excel(async_session: AsyncSession):
         value=500.0,
     )
     async_session.add(j1)
+    await async_session.flush()
+
+    from src.models import Quote, Invoice, QuoteStatus, InvoiceStatus
+    import uuid
+
+    q1 = Quote(
+        business_id=business.id,
+        customer_id=c1.id,
+        title="Test Quote",
+        total_amount=1200.0,
+        status=QuoteStatus.SENT,
+        external_token=str(uuid.uuid4()),
+    )
+    async_session.add(q1)
+
+    inv1 = Invoice(
+        job_id=j1.id,
+        status=InvoiceStatus.SENT,
+        s3_key="invoices/test.pdf",
+        public_url="http://fake.url/test.pdf",
+    )
+    async_session.add(inv1)
     await async_session.commit()
 
     service = DataManagementService(async_session)
@@ -53,7 +75,10 @@ async def test_export_all_multi_sheet_excel(async_session: AsyncSession):
 
         # Action: Export EVERYTHING as EXCEL
         result = await service.export_data(
-            business_id=business.id, query="all", format=ExportFormat.EXCEL
+            business_id=business.id,
+            query="all",
+            format=ExportFormat.EXCEL,
+            filters={"entity_type": EntityType.ALL},
         )
 
         # Verify status
@@ -77,13 +102,19 @@ async def test_export_all_multi_sheet_excel(async_session: AsyncSession):
         # This will read all sheets into a dict of DataFrames
         xl = pd.read_excel(excel_data, sheet_name=None)
 
-        # Check if sheets "customers" and "jobs" are present
+        # Check if sheets are present
         assert "customers" in xl
         assert "jobs" in xl
+        assert "quotes" in xl
+        assert "invoices" in xl
 
         # Check content of sheets
         customers_df = xl["customers"]
         jobs_df = xl["jobs"]
+        quotes_df = xl["quotes"]
+        invoices_df = xl["invoices"]
 
         assert any(customers_df["name"] == "Alice Excel")
         assert any(jobs_df["description"] == "Excel Job")
+        assert any(quotes_df["title"] == "Test Quote")
+        assert any(invoices_df["amount"] == 500.0)
