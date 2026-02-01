@@ -42,6 +42,9 @@ from src.config import settings
 from src.security_utils import check_rate_limit
 from src.services.google_calendar_service import GoogleCalendarService
 from src.services.analytics import analytics
+from src.utils.security import Signer
+from src.api.dependencies.clerk_auth import get_current_user
+from src.models import User
 
 template_service = TemplateService()
 
@@ -829,19 +832,26 @@ async def quickbooks_callback(
 
 @router.get("/auth/google/login")
 async def google_login(
-    user_id: int,
+    current_user: User = Depends(get_current_user),
+    user_id: Optional[int] = None,
 ):
     """
     Redirects user to Google OAuth login page.
     """
     try:
         service = GoogleCalendarService()
-        # In a real app, we should sign the state to prevent tampering
-        auth_url, _ = service.get_auth_url(state=str(user_id))
+
+        # Sign the state to prevent tampering
+        state_payload = str(current_user.id)
+        signature = Signer.sign(state_payload, settings.secret_key)
+        # Combine payload and signature
+        state = base64.urlsafe_b64encode(f"{state_payload}:{signature}".encode()).decode()
+
+        auth_url, _ = service.get_auth_url(state=state)
         return RedirectResponse(url=auth_url)
     except Exception as e:
         logger.error(f"Google login failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to initiate Google Login")
 
 
 @router.get("/auth/google/callback")
@@ -856,18 +866,19 @@ async def google_callback(
     Exchanges code for tokens and updates User in DB.
     """
     try:
-        # Try to parse state as JSON (new style) or int (legacy style)
+        # Decode and verify signed state
         try:
-            state_data = json.loads(state)
-            if isinstance(state_data, dict):
-                user_id = int(state_data.get("user_id"))
-                # If success_url was passed in state, it overrides the query param
-                if "success_url" in state_data:
-                    success_url = state_data["success_url"]
-            else:
-                user_id = int(state_data)
-        except (json.JSONDecodeError, TypeError, ValueError, AttributeError):
-            user_id = int(state)
+            decoded_state = base64.urlsafe_b64decode(state).decode()
+            state_payload, signature = decoded_state.split(":", 1)
+
+            if not Signer.verify(state_payload, signature, settings.secret_key):
+                raise ValueError("Invalid signature")
+
+            user_id = int(state_payload)
+
+        except (ValueError, base64.binascii.Error) as e:
+            logger.warning(f"Invalid Google Auth State: {e}")
+            raise HTTPException(status_code=403, detail="Invalid State")
 
         service = GoogleCalendarService()
         success = await service.process_auth_callback(code, user_id, db)
@@ -930,6 +941,8 @@ async def google_callback(
         else:
             logger.error(f"Google Auth failed for user {user_id}: User not found")
             raise HTTPException(status_code=404, detail="User not found")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception(f"Google callback failed: {e}")
         if success_url:
@@ -939,4 +952,4 @@ async def google_callback(
                 + "error=google_auth_failed"
             )
             return RedirectResponse(url=error_url)
-        raise HTTPException(status_code=500, detail=f"Connection failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Connection failed")
