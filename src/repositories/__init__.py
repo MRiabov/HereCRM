@@ -291,7 +291,7 @@ class CustomerRepository(BaseRepository[Customer]):
             Customer.name.ilike(name), Customer.business_id == business_id
         )
         result = await self.session.execute(query)
-        return result.scalar_one_or_none()
+        return result.scalars().first()
 
     async def get_by_phone(self, phone: str, business_id: int) -> Optional[Customer]:
         # Phone numbers can be tricky, but for now we'll do literal match or maybe strip spaces/dashes?
