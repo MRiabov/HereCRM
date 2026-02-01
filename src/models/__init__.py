@@ -597,7 +597,7 @@ class Job(Base):
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), index=True)
     description: Mapped[Optional[str]] = mapped_column(Text)
     status: Mapped[JobStatus] = mapped_column(
-        SafeSAEnum(JobStatus), default=JobStatus.PENDING
+        SafeSAEnum(JobStatus), default=JobStatus.PENDING, index=True
     )
     value: Mapped[Optional[float]] = mapped_column(Float)
 
@@ -614,7 +614,7 @@ class Job(Base):
 
     # Google Calendar Integration
     gcal_event_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
