@@ -1,9 +1,9 @@
 import hmac
 import hashlib
 import logging
-import base64
 import email.utils
 import json
+import time
 
 from typing import Tuple, Optional
 from twilio.request_validator import RequestValidator
@@ -42,6 +42,7 @@ from src.config import settings
 from src.security_utils import check_rate_limit
 from src.services.google_calendar_service import GoogleCalendarService
 from src.services.analytics import analytics
+import jwt
 
 template_service = TemplateService()
 
@@ -836,8 +837,11 @@ async def google_login(
     """
     try:
         service = GoogleCalendarService()
-        # In a real app, we should sign the state to prevent tampering
-        auth_url, _ = service.get_auth_url(state=str(user_id))
+        # Create JWT state token (valid for 10 minutes)
+        payload = {"user_id": user_id, "exp": int(time.time()) + 600}
+        signed_state = jwt.encode(payload, settings.secret_key, algorithm="HS256")
+
+        auth_url, _ = service.get_auth_url(state=signed_state)
         return RedirectResponse(url=auth_url)
     except Exception as e:
         logger.error(f"Google login failed: {e}")
@@ -856,18 +860,18 @@ async def google_callback(
     Exchanges code for tokens and updates User in DB.
     """
     try:
-        # Try to parse state as JSON (new style) or int (legacy style)
+        # Verify and decode JWT state
         try:
-            state_data = json.loads(state)
-            if isinstance(state_data, dict):
-                user_id = int(state_data.get("user_id"))
-                # If success_url was passed in state, it overrides the query param
-                if "success_url" in state_data:
-                    success_url = state_data["success_url"]
-            else:
-                user_id = int(state_data)
-        except (json.JSONDecodeError, TypeError, ValueError, AttributeError):
-            user_id = int(state)
+            payload = jwt.decode(state, settings.secret_key, algorithms=["HS256"])
+            user_id = int(payload.get("user_id"))
+            if "success_url" in payload:
+                success_url = payload["success_url"]
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(status_code=400, detail="State expired")
+        except jwt.InvalidTokenError:
+            raise HTTPException(status_code=403, detail="Invalid state token")
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="Invalid payload content")
 
         service = GoogleCalendarService()
         success = await service.process_auth_callback(code, user_id, db)
@@ -930,6 +934,8 @@ async def google_callback(
         else:
             logger.error(f"Google Auth failed for user {user_id}: User not found")
             raise HTTPException(status_code=404, detail="User not found")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception(f"Google callback failed: {e}")
         if success_url:
