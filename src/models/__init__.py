@@ -528,7 +528,7 @@ class Customer(Base):
     first_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     last_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     company_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    phone: Mapped[Optional[str]] = mapped_column(String)
+    phone: Mapped[Optional[str]] = mapped_column(String, index=True)
     email: Mapped[Optional[str]] = mapped_column(String, index=True)
     details: Mapped[Optional[str]] = mapped_column(Text)
     street: Mapped[Optional[str]] = mapped_column(String)
@@ -824,7 +824,9 @@ class Quote(Base):
 
     external_token: Mapped[str] = mapped_column(String, unique=True, index=True)
     blob_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True)
+    job_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("jobs.id"), nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
