@@ -5,7 +5,7 @@ from datetime import datetime, timezone, timedelta
 import httpx
 
 from src.models import MessageLog, MessageType, MessageStatus, MessageTriggerSource, Business, Job
-from src.events import event_bus
+from src.events import event_bus, CONTACT_EVENT
 from src.database import AsyncSessionLocal
 from src.repositories import CustomerRepository
 from src.config import settings
@@ -122,6 +122,25 @@ class MessagingService:
                         await billing_service.track_message_sent(
                             business_id, quantity=quantity
                         )
+
+                        # Trigger pipeline progression
+                        try:
+                            customer_repo = CustomerRepository(db)
+                            customer = await customer_repo.get_by_phone(
+                                recipient_phone, business_id
+                            )
+                            if customer:
+                                await event_bus.emit(
+                                    CONTACT_EVENT,
+                                    {
+                                        "customer_id": customer.id,
+                                        "business_id": business_id,
+                                    },
+                                )
+                        except Exception as e:
+                            logger.error(
+                                f"Failed to emit CONTACT_EVENT for message {message_log.id}: {e}"
+                            )
 
                     logger.info(
                         f"Message {message_log.id} sent successfully via {message_type.value}"
