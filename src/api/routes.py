@@ -824,7 +824,7 @@ async def quickbooks_callback(
         }
     except Exception as e:
         logger.error(f"QuickBooks callback failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Connection failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Connection failed")
 
 
 @router.get("/auth/google/login")
@@ -841,7 +841,7 @@ async def google_login(
         return RedirectResponse(url=auth_url)
     except Exception as e:
         logger.error(f"Google login failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
 @router.get("/auth/google/callback")
@@ -939,4 +939,4 @@ async def google_callback(
                 + "error=google_auth_failed"
             )
             return RedirectResponse(url=error_url)
-        raise HTTPException(status_code=500, detail=f"Connection failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Connection failed")
