@@ -191,3 +191,47 @@ async def test_assign_job_no_conflict_different_time(async_session):
     res = await service.assign_job(job2.id, user1.id)
     assert res.success
     assert res.warning is None
+
+
+async def test_assign_job_reassignment_emits_events(async_session):
+    biz, user1, user2, _ = await setup_data(async_session)
+    service = AssignmentService(async_session, biz.id)
+
+    from src.models import Customer
+    from src.events import JOB_UNASSIGNED, JOB_ASSIGNED
+    from unittest.mock import patch, AsyncMock
+
+    cust = Customer(name="Cust", business_id=biz.id)
+    async_session.add(cust)
+    await async_session.flush()
+
+    job = Job(
+        business_id=biz.id,
+        customer_id=cust.id,
+        description="Reassign Job",
+        employee_id=user1.id  # Start assigned to User 1
+    )
+    async_session.add(job)
+    await async_session.commit()
+
+    # Reassign to User 2
+    with patch("src.services.assignment_service.event_bus.emit", new_callable=AsyncMock) as mock_emit:
+        res = await service.assign_job(job.id, user2.id)
+        assert res.success
+        assert res.job.employee_id == user2.id
+
+        # Verify events
+        calls = mock_emit.await_args_list
+        event_names = [call.args[0] for call in calls]
+
+        # Should contain JOB_UNASSIGNED for User 1 and JOB_ASSIGNED for User 2
+        assert JOB_UNASSIGNED in event_names
+        assert JOB_ASSIGNED in event_names
+
+        # Verify order: UNASSIGNED before ASSIGNED
+        try:
+            unassigned_idx = event_names.index(JOB_UNASSIGNED)
+            assigned_idx = event_names.index(JOB_ASSIGNED)
+            assert unassigned_idx < assigned_idx
+        except ValueError:
+            pytest.fail(f"Events missing. Emitted: {event_names}")
