@@ -1,7 +1,57 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from src.models import PipelineStage, Customer
-from src.services.pipeline_handlers import handle_job_created, handle_contact_event
+from src.services.pipeline_handlers import (
+    handle_job_created,
+    handle_contact_event,
+    handle_quote_sent,
+)
+
+
+@pytest.mark.asyncio
+async def test_handle_quote_sent():
+    """Test that customer moves to QUOTED if currently NOT_CONTACTED/CONTACTED."""
+    mock_session = AsyncMock()
+    mock_session.__aenter__.return_value = mock_session
+
+    mock_customer_repo_cls = MagicMock()
+    mock_business_repo_cls = MagicMock()
+
+    mock_customer_repo = AsyncMock()
+    mock_business_repo = AsyncMock()
+
+    mock_customer_repo_cls.return_value = mock_customer_repo
+    mock_business_repo_cls.return_value = mock_business_repo
+
+    customer = Customer(id=1, business_id=1, pipeline_stage=PipelineStage.CONTACTED)
+    # Mock business with quoting enabled
+    business = MagicMock()
+    business.workflow_pipeline_quoted_stage = True
+    business.id = 1
+
+    mock_customer_repo.get_by_id.return_value = customer
+    mock_business_repo.get_by_id.return_value = business
+
+    mock_session_factory = MagicMock()
+    mock_session_factory.return_value = mock_session
+
+    with (
+        patch(
+            "src.services.pipeline_handlers.src.database.AsyncSessionLocal",
+            mock_session_factory,
+        ),
+        patch(
+            "src.services.pipeline_handlers.CustomerRepository", mock_customer_repo_cls
+        ),
+        patch(
+            "src.services.pipeline_handlers.BusinessRepository", mock_business_repo_cls
+        ),
+    ):
+        event_data = {"customer_id": 1, "business_id": 1}
+        await handle_quote_sent(event_data)
+
+        assert customer.pipeline_stage == PipelineStage.QUOTED
+        mock_session.commit.assert_awaited_once()
 
 
 @pytest.mark.asyncio

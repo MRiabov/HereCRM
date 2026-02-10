@@ -19,7 +19,8 @@ async def handle_quote_sent(data: dict) -> None:
     if not customer_id or not business_id:
         return
 
-    async with src.database.AsyncSessionLocal() as session:
+    session_maker = await src.database.get_session_maker()
+    async with session_maker() as session:
         customer_repo = CustomerRepository(session)
         business_repo = BusinessRepository(session)
 

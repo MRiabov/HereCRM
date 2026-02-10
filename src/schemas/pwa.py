@@ -157,6 +157,12 @@ class PipelineStats(BaseModel):
     # dev note: the str above could be an enum BTW.
 
 
+class DashboardStats(BaseModel):
+    revenue_monthly: float = Field(..., ge=0)
+    active_leads_count: int = Field(..., ge=0)
+    pipeline_breakdown: Dict[str, PipelineStageStats]
+
+
 class ActivityType(str, Enum):
     INVOICE = "invoice"
     JOB = "job"
