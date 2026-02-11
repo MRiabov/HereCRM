@@ -52,7 +52,9 @@ class TestTwilioWebhook:
         assert "<Response></Response>" in response.text
 
         # Verify interactions
-        mock_auth_service.get_or_create_user.assert_called_with("+1234567890")
+        mock_auth_service.get_or_create_user.assert_called_with(
+            "+1234567890", create=False
+        )
         mock_whatsapp_service.handle_message.assert_called_once()
         call_args = mock_whatsapp_service.handle_message.call_args
         assert call_args.kwargs["user_phone"] == "+1234567890"

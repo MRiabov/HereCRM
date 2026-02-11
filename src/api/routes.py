@@ -188,8 +188,29 @@ async def webhook(
 
                             # Get/Create User
                             user, is_new = await auth_service.get_or_create_user(
-                                from_number
+                                from_number, create=False
                             )
+
+                            if not user:
+                                signup_url = (
+                                    settings.clerk_sign_up_url
+                                    or "https://accounts.herecrm.com/sign-up"
+                                )
+                                reply_text = f"Welcome to HereCRM. To verify your identity and start using the system, please register here: {signup_url}"
+
+                                from src.services.messaging_service import (
+                                    messaging_service,
+                                )
+
+                                await messaging_service.send_message(
+                                    recipient_phone=from_number,
+                                    content=reply_text,
+                                    channel=MessageType.WHATSAPP,
+                                    trigger_source=MessageTriggerSource.BOT_REPLY,
+                                    business_id=None,
+                                )
+                                processed_count += 1
+                                continue
 
                             # Handle Message
                             analytics.capture(
@@ -251,7 +272,18 @@ async def webhook(
             if check_rate_limit(from_number):
                 return {"reply": "Too many requests. Please try again later."}
 
-            user, is_new = await auth_service.get_or_create_user(from_number)
+            user, is_new = await auth_service.get_or_create_user(
+                from_number, create=False
+            )
+
+            if not user:
+                signup_url = (
+                    settings.clerk_sign_up_url
+                    or "https://accounts.herecrm.com/sign-up"
+                )
+                return {
+                    "reply": f"Welcome to HereCRM. To verify your identity and start using the system, please register here: {signup_url}"
+                }
 
             analytics.capture(
                 user.phone_number or "unknown",
@@ -412,7 +444,28 @@ async def twilio_webhook(
             )
 
         # Get/Create User
-        user, is_new = await auth_service.get_or_create_user(from_number)
+        user, is_new = await auth_service.get_or_create_user(from_number, create=False)
+
+        if not user:
+            signup_url = (
+                settings.clerk_sign_up_url or "https://accounts.herecrm.com/sign-up"
+            )
+            reply_text = f"Welcome to HereCRM. To verify your identity and start using the system, please register here: {signup_url}"
+
+            from src.services.messaging_service import messaging_service
+
+            await messaging_service.send_message(
+                recipient_phone=from_number,
+                content=reply_text,
+                channel=MessageType.SMS,
+                trigger_source=MessageTriggerSource.BOT_REPLY,
+                business_id=None,
+            )
+            # Return empty TwiML response
+            return Response(
+                content='<?xml version="1.0" encoding="UTF-8"?><Response></Response>',
+                media_type="application/xml",
+            )
 
         # Handle Message
         # The reply text is sent via TwilioService inside handle_message for SMS channel
@@ -511,8 +564,17 @@ async def generic_webhook(
 
         # Identify or Onboard User
         user, is_new = await auth_service.get_or_create_user_by_identity(
-            payload.identity
+            payload.identity, create=False
         )
+
+        if not user:
+            signup_url = (
+                settings.clerk_sign_up_url or "https://accounts.herecrm.com/sign-up"
+            )
+            return {
+                "reply": f"Welcome to HereCRM. To verify your identity and start using the system, please register here: {signup_url}",
+                "status": "registration_required",
+            }
 
         # Process Message
         response_text = await whatsapp_service.handle_message(
@@ -568,7 +630,26 @@ async def textgrid_webhook(
             return {"status": "rate_limited"}
 
         # Identify or Onboard User
-        user, is_new = await auth_service.get_or_create_user(payload.from_number)
+        user, is_new = await auth_service.get_or_create_user(
+            payload.from_number, create=False
+        )
+
+        if not user:
+            signup_url = (
+                settings.clerk_sign_up_url or "https://accounts.herecrm.com/sign-up"
+            )
+            reply_text = f"Welcome to HereCRM. To verify your identity and start using the system, please register here: {signup_url}"
+
+            from src.services.messaging_service import messaging_service
+
+            await messaging_service.send_message(
+                recipient_phone=payload.from_number,
+                content=reply_text,
+                channel=MessageType.SMS,
+                trigger_source=MessageTriggerSource.BOT_REPLY,
+                business_id=None,
+            )
+            return {"status": "registration_required"}
 
         # Process Message
         # We reuse the WhatsappService handle_message logic but for 'SMS' channel

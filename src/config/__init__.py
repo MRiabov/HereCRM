@@ -75,6 +75,7 @@ class Settings(BaseSettings):
     clerk_issuer: Optional[str] = None
     clerk_jwks_url: Optional[str] = None
     clerk_webhook_secret: Optional[str] = None
+    clerk_sign_up_url: Optional[str] = None
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
