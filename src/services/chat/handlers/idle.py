@@ -156,7 +156,22 @@ class IdleHandler(ChatHandler):
                     channel=channel_name,
                 )
 
-                if user.role != UserRole.OWNER:
+                # Check for restricted keywords to append disclaimer
+                restricted_keywords = [
+                    "invoice",
+                    "export",
+                    "billing",
+                    "subscription",
+                    "settings",
+                    "revenue",
+                    "upgrade",
+                    "manage data",
+                    "employee",
+                ]
+                lower_query = message_text.lower()
+                contains_restricted = any(kw in lower_query for kw in restricted_keywords)
+
+                if user.role != UserRole.OWNER and contains_restricted:
                     response += "\n\nThe user does not have role-based access to this feature because he doesn't have a status."
 
                 return response
