@@ -3,6 +3,7 @@ import logging
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
+from sqlalchemy.orm import selectinload
 from datetime import datetime
 
 from src.models import Job, Invoice
@@ -53,6 +54,12 @@ class InvoiceService:
         logger.info(f"Generating new invoice for job {job.id}")
 
         # 0. Fetch payment link snapshot from business
+        # Ensure business is loaded to avoid lazy loading errors
+        if "business" not in job.__dict__:
+            stmt = select(Job).options(selectinload(Job.business)).where(Job.id == job.id)
+            result = await self.session.execute(stmt)
+            job = result.scalar_one()
+
         payment_link = job.business.payment_link if job.business else None
 
         # 1. Generate PDF

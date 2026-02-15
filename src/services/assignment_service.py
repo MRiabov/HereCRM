@@ -84,6 +84,19 @@ class AssignmentService:
                 warning = "Double booked"
 
         # Apply assignment
+        old_employee_id = job.employee_id
+        if old_employee_id and old_employee_id != employee_id:
+            await event_bus.emit(
+                JOB_UNASSIGNED,
+                {
+                    "job_id": job.id,
+                    "employee_id": old_employee_id,
+                    "business_id": self.business_id,
+                },
+            )
+            # Explicitly clear gcal_event_id to prevent syncing issues
+            job.gcal_event_id = None
+
         job.employee_id = employee_id
         await self.session.commit()
         await self.session.refresh(job)
