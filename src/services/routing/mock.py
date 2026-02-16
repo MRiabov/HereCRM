@@ -1,84 +1,187 @@
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, time
 import math
-from typing import List, Dict, Optional
-from src.models import Job, User
+from typing import List, Dict, Optional, Any
+from src.models import Job, User, CustomerAvailability
 from .base import RoutingServiceProvider, RoutingSolution, RoutingStep
 
 
 class MockRoutingService(RoutingServiceProvider):
     """
     A mock implementation of the RoutingServiceProvider for testing and development.
-    Uses simple greedy assignment based on distance to employee's start location.
+    Uses a greedy Nearest Neighbor approach: iteratively assigns the closest job
+    to any employee's current location, respecting availability constraints.
     """
 
     def calculate_routes(
         self, jobs: List[Job], employees: List[User]
     ) -> RoutingSolution:
+        # 1. Initialize
         routes: Dict[int, List[RoutingStep]] = {e.id: [] for e in employees}
         unassigned_jobs: List[Job] = []
 
-        # Mock times
-        current_times = {
-            e.id: datetime.combine(date.today(), datetime.min.time()).replace(hour=9)
-            for e in employees
-        }
+        # Employee State: Current time and location
+        # Default start time is 9:00 AM today
+        start_of_day = datetime.combine(date.today(), datetime.min.time()).replace(
+            hour=9
+        )
+        employee_state: Dict[int, Dict[str, Any]] = {}
 
-        for job in jobs:
-            # Skip jobs without location
-            if job.latitude is None or job.longitude is None:
-                unassigned_jobs.append(job)
-                continue
+        for e in employees:
+            lat = e.default_start_location_lat
+            lng = e.default_start_location_lng
 
-            best_employee = None
-            min_dist = float("inf")
+            # If no start location, we can't route them effectively in a spatial model.
+            # But for mock, maybe assume (0,0)? No, better to skip or treat as (0,0).
+            # If (0,0) is used, distance will be huge to real locations.
+            # Let's assume (0,0) if None to avoid crashing, but usually they should have location.
+            if lat is None or lng is None:
+                lat, lng = 0.0, 0.0
 
-            for employee in employees:
-                # Use default start location. If missing, assume (0,0) or skip.
-                # Here we skip employees without start location to mimic real constraints
-                lat = employee.default_start_location_lat
-                lng = employee.default_start_location_lng
+            employee_state[e.id] = {
+                "time": start_of_day,
+                "lat": lat,
+                "lng": lng,
+            }
 
-                if lat is None or lng is None:
+        pending_jobs = list(jobs)
+
+        # 2. Iterative Assignment
+        while pending_jobs:
+            best_assignment = None
+            min_cost = float("inf")  # Cost = Travel Time + Wait Time? Or just distance?
+
+            # Find the best (Employee, Job) pair
+            for job in pending_jobs:
+                # Skip jobs without location
+                if job.latitude is None or job.longitude is None:
                     continue
 
-                dist = self._haversine(job.latitude, job.longitude, lat, lng)
+                for emp in employees:
+                    state = employee_state[emp.id]
 
-                if dist < min_dist:
-                    min_dist = dist
-                    best_employee = employee
+                    # Calculate Travel
+                    dist_km = self._haversine(
+                        state["lat"], state["lng"], job.latitude, job.longitude
+                    )
 
-            if best_employee:
-                # Estimate travel time: 30km/h = 0.5 km/min
-                travel_time_mins = (min_dist / 1000) * 2
+                    # 30km/h => 0.5 km/min => 2 mins/km
+                    travel_time_mins = dist_km * 2
+                    travel_time_sec = travel_time_mins * 60
+
+                    arrival_time = state["time"] + timedelta(minutes=travel_time_mins)
+
+                    # Check Availability
+                    valid_arrival = self._check_availability(job, arrival_time)
+
+                    if valid_arrival:
+                        # Cost function: Minimize (Travel Time + Wait Time)
+                        wait_time_sec = (valid_arrival - arrival_time).total_seconds()
+                        total_cost = travel_time_sec + wait_time_sec
+
+                        if total_cost < min_cost:
+                            min_cost = total_cost
+                            best_assignment = (
+                                emp,
+                                job,
+                                valid_arrival,
+                                dist_km,
+                                travel_time_sec,
+                            )
+
+            if best_assignment:
+                emp, job, arrival, dist_km, travel_sec = best_assignment
+
+                # Update Route
                 duration_mins = job.estimated_duration or 60
-
-                arrival = current_times[best_employee.id] + timedelta(
-                    minutes=travel_time_mins
-                )
                 departure = arrival + timedelta(minutes=duration_mins)
 
-                routes[best_employee.id].append(
+                routes[emp.id].append(
                     RoutingStep(
                         job=job,
                         arrival_time=arrival,
                         departure_time=departure,
-                        distance_to_prev=min_dist,
-                        duration_from_prev=travel_time_mins * 60,
+                        distance_to_prev=dist_km,
+                        duration_from_prev=travel_sec, # Strictly in seconds
                     )
                 )
-                current_times[best_employee.id] = departure
+
+                # Update State
+                employee_state[emp.id]["time"] = departure
+                employee_state[emp.id]["lat"] = job.latitude
+                employee_state[emp.id]["lng"] = job.longitude
+
+                pending_jobs.remove(job)
             else:
-                unassigned_jobs.append(job)
+                # No valid assignment found for ANY remaining job
+                # Move all remaining valid-location jobs to unassigned
+                # (Jobs without location are skipped in the loop but not removed)
+                # We should separate them.
+
+                # The loop only checks jobs with location.
+                # If we are here, it means for all jobs with location, no employee could take them
+                # (due to availability constraints or no employees).
+                break
+
+        # Add remaining to unassigned
+        unassigned_jobs.extend(pending_jobs)
 
         return RoutingSolution(
             routes=routes,
             unassigned_jobs=unassigned_jobs,
             metrics={
                 "mode": "mock",
-                "algorithm": "greedy_haversine",
+                "algorithm": "nearest_neighbor",
                 "processed_jobs": len(jobs),
             },
         )
+
+    def _check_availability(self, job: Job, arrival_time: datetime) -> Optional[datetime]:
+        """
+        Check if arrival_time is valid for the job's customer availability.
+        Returns the valid arrival time (which might be later than proposed if waiting is needed),
+        or None if not possible.
+        """
+        if not job.customer or not job.customer.availability:
+            return arrival_time  # Unrestricted
+
+        # Filter windows for the specific day
+        target_date = arrival_time.date()
+        # Sort windows by start time
+        windows = sorted(
+            [w for w in job.customer.availability if w.start_time.date() == target_date],
+            key=lambda w: w.start_time
+        )
+
+        if not windows:
+            # If availability is defined but none for this day...
+            # Spec says "treating non-empty availability lists as a whitelist".
+            # If the list on the customer is non-empty, but none match today,
+            # does that mean "unavailable today"? Yes.
+            return None
+
+        duration_mins = job.estimated_duration or 60
+        job_end_time = arrival_time + timedelta(minutes=duration_mins)
+
+        for window in windows:
+            # Check if we can fit in this window
+
+            # Window times are likely datetimes. If they are just times, we need to combine.
+            # Assuming they are full datetimes as per model definition.
+
+            # Case 1: Arrival is within window, and completion is within window
+            if arrival_time >= window.start_time and job_end_time <= window.end_time:
+                return arrival_time
+
+            # Case 2: Arrival is BEFORE window, but we can wait until start.
+            # New arrival = window.start_time
+            # Check if new completion <= window.end_time
+            if arrival_time < window.start_time:
+                new_arrival = window.start_time
+                new_end = new_arrival + timedelta(minutes=duration_mins)
+                if new_end <= window.end_time:
+                    return new_arrival
+
+        return None
 
     def _haversine(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
         """
@@ -98,9 +201,9 @@ class MockRoutingService(RoutingServiceProvider):
         self, start_lat: float, start_lng: float, end_lat: float, end_lng: float
     ) -> Optional[int]:
         """
-        Mock ETA: haversine distance / 40km/h average speed.
+        Mock ETA: haversine distance / 30km/h average speed.
         """
         dist = self._haversine(start_lat, start_lng, end_lat, end_lng)
-        # 40 km/h = 40/60 km/min = 0.66 km/min
-        minutes = dist / 0.66
+        # 30 km/h = 0.5 km/min => dist * 2 mins
+        minutes = dist * 2
         return math.ceil(minutes / 5) * 5
