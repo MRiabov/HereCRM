@@ -110,7 +110,10 @@ async def handle_contact_event(data: dict) -> None:
         customer_repo = CustomerRepository(session)
         customer = await customer_repo.get_by_id(customer_id, business_id)
 
-        if customer and customer.pipeline_stage == PipelineStage.NOT_CONTACTED:
+        if customer and customer.pipeline_stage in [
+            PipelineStage.NOT_CONTACTED,
+            PipelineStage.NEW_LEAD,
+        ]:
             customer.pipeline_stage = PipelineStage.CONTACTED
             await session.commit()
             logger.info(f"Updated customer {customer_id} to CONTACTED")

@@ -11,6 +11,7 @@ from src.models import (
     UserRole,
     Customer,
     Job,
+    JobStatus,
     Request,
     ConversationState,
     PipelineStage,
@@ -649,7 +650,9 @@ class JobRepository(BaseRepository[Job]):
         from sqlalchemy import func
 
         stmt = select(func.count()).where(
-            Job.customer_id == customer_id, Job.business_id == business_id
+            Job.customer_id == customer_id,
+            Job.business_id == business_id,
+            Job.status != JobStatus.CANCELLED,
         )
         result = await self.session.execute(stmt)
         return result.scalar() or 0
