@@ -1,10 +1,11 @@
 import os
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
-from src.models import Message, MessageRole, MessageType
+from src.models import Message, MessageRole, MessageType, UserRole
 from src.config import channels_config
 from src.llm_client import LLMParser
+from src.services.rbac_service import RBACService
 import logging
 
 
@@ -14,6 +15,7 @@ class HelpService:
         self.llm_client = llm_client
         self.logger = logging.getLogger(__name__)
         self._manual_cache: Optional[str] = None
+        self.rbac_service = RBACService()
 
     def _load_manual(self) -> str:
         """
@@ -58,7 +60,11 @@ class HelpService:
         return list(reversed(list(messages)))
 
     def construct_help_prompt(
-        self, history: List[Message], channel: MessageType | str
+        self,
+        history: List[Message],
+        channel: MessageType | str,
+        user_role: Optional[UserRole] = None,
+        rbac_config: Optional[Dict[str, Any]] = None
     ) -> List[dict]:
         """
         Construct a list of messages for the LLM including system instructions,
@@ -73,12 +79,35 @@ class HelpService:
         if channel_settings:
             restrictions = f"Max length: {channel_settings.max_length} characters. Style: {channel_settings.style}."
 
+        rbac_instructions = ""
+        if user_role and rbac_config:
+            tools = rbac_config.get("tools", {})
+            rules_lines = []
+            for tool_name, conf in tools.items():
+                friendly = conf.get("friendly_name", tool_name)
+                role = conf.get("role", "unknown")
+                rules_lines.append(f"- {friendly} ({tool_name}): Minimum Role {role.upper()}")
+
+            rules_str = "\n".join(rules_lines)
+            user_role_str = user_role.value if hasattr(user_role, "value") else str(user_role)
+
+            rbac_instructions = (
+                f"\n\n**RBAC CONTEXT**:\n"
+                f"User Role: {user_role_str}\n"
+                f"RBAC Rules:\n{rules_str}\n\n"
+                f"**INSTRUCTION**:\n"
+                f"If the user asks about a feature or tool they do not have permission to use (based on their role and the rules above), "
+                f"you MUST answer the question based on the manual, BUT you MUST append exactly this text to the end of your response:\n"
+                f"'The user does not have role-based access to this feature because he doesn't have a status.'"
+            )
+
         system_content = (
             "You are a helpful CRM assistant.\n"
             "Use the following manual to answer the user's question.\n"
             f"Channel restrictions: {restrictions}\n\n"
             "**MANUAL CONTENT**:\n"
             f"{manual_text}"
+            f"{rbac_instructions}"
         )
 
         messages = [{"role": "system", "content": system_content}]
@@ -113,6 +142,7 @@ class HelpService:
         business_id: int,
         user_id: int,
         channel: MessageType = MessageType.WHATSAPP,
+        user_role: Optional[UserRole] = None,
     ) -> str:
         """
         Main entry point for generating a help response:
@@ -128,7 +158,18 @@ class HelpService:
             # We don't want to mutate the history from DB, so we'll just handle it in prompt construction
             pass
 
-        prompt_messages = self.construct_help_prompt(history, channel)
+        # Get RBAC config
+        rbac_config = None
+        if user_role:
+             # Access _config directly since there's no getter for full config yet
+             # Ensure config is loaded
+             if self.rbac_service._config is None:
+                 self.rbac_service._load_config()
+             rbac_config = self.rbac_service._config
+
+        prompt_messages = self.construct_help_prompt(
+            history, channel, user_role=user_role, rbac_config=rbac_config
+        )
 
         # If the last message in prompt_messages is not the user_query, append it
         if (
