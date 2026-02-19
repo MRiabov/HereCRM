@@ -40,10 +40,14 @@ async def test_invoice_service_captures_payment_link(
     mock_pdf_generator.generate_invoice.return_value = b"%PDF-mock"
     mock_s3_service.upload_file.return_value = "https://s3.example.com/invoice.pdf"
 
-    # Mock get_existing_invoice
-    mock_result = MagicMock()
-    mock_result.scalars.return_value.first.return_value = None
-    mock_session.execute.return_value = mock_result
+    # Mock get_existing_invoice AND job reload
+    mock_result_invoice = MagicMock()
+    mock_result_invoice.scalars.return_value.first.return_value = None
+
+    mock_result_job = MagicMock()
+    mock_result_job.scalars.return_value.first.return_value = job
+
+    mock_session.execute.side_effect = [mock_result_invoice, mock_result_job]
 
     # Execute
     invoice = await service.create_invoice(job)

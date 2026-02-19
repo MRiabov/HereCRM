@@ -87,7 +87,14 @@ class PDFGenerator:
                 "invoice_number": invoice_number,
                 "notes": notes,
                 "items": display_items,
-                "total_amount": sum(item["total_price"] for item in display_items),
+                "subtotal": job.subtotal
+                if job.subtotal is not None
+                else sum(item["total_price"] for item in display_items),
+                "tax_amount": job.tax_amount or 0.0,
+                "tax_rate": (job.tax_rate or 0.0) * 100,
+                "total_amount": job.value
+                if job.value is not None
+                else sum(item["total_price"] for item in display_items),
             }
 
             # Render HTML
