@@ -303,6 +303,21 @@ class ToolExecutor:
                         None,
                     )
 
+        result_text, result_data = await self._dispatch_tool(tool_call)
+
+        # [T007] Persona Disclaimer
+        # If user is not OWNER and tool is restricted/sensitive, append disclaimer.
+        # Restricted Tools: GetPipelineTool, and potentially others in future.
+        RESTRICTED_TOOLS = ["GetPipelineTool"]
+
+        if user.role != UserRole.OWNER and tool_name in RESTRICTED_TOOLS:
+            disclaimer = "\n\nThe user does not have role-based access to this feature because he doesn't have a status."
+            if result_text and disclaimer not in result_text:
+                result_text += disclaimer
+
+        return result_text, result_data
+
+    async def _dispatch_tool(self, tool_call) -> Tuple[str, Optional[Dict[str, Any]]]:
         if isinstance(tool_call, AddJobTool):
             return await self._execute_add_job(tool_call)
         elif isinstance(

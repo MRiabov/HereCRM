@@ -70,7 +70,7 @@ tools:
     role: manager
     friendly_name: "view full schedule"
   GetPipelineTool:
-    role: manager
+    role: employee
     friendly_name: "view pipeline"
   UpdateCustomerStageTool:
     role: manager
