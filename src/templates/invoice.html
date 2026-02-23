@@ -186,7 +186,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for item in job.line_items %}
+            {% for item in items %}
             <tr>
                 <td>{{ item.description }}</td>
                 <td class="text-right">{{ "%.2f"|format(item.quantity) }}</td>
@@ -205,7 +205,11 @@
     </div>
 
     <div class="total-section">
-        <div class="total-amount">Total Amount Due: ${{ "%.2f"|format(job.value or 0) }}</div>
+        <div style="margin-bottom: 5px; font-size: 14px; color: #666;">Subtotal: ${{ "%.2f"|format(subtotal) }}</div>
+        {% if tax_amount and tax_amount > 0 %}
+        <div style="margin-bottom: 5px; font-size: 14px; color: #666;">Tax ({{ "%.1f"|format((tax_rate or 0) * 100) }}%): ${{ "%.2f"|format(tax_amount) }}</div>
+        {% endif %}
+        <div class="total-amount">Total Amount Due: ${{ "%.2f"|format(total_amount) }}</div>
         {% if payment_link %}
         <div style="margin-top: 20px;">
             <a href="{{ payment_link }}" style="background-color: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">Pay Now</a>

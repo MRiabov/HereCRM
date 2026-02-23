@@ -722,6 +722,13 @@ class Invoice(Base):
     status: Mapped[InvoiceStatus] = mapped_column(
         SafeSAEnum(InvoiceStatus), default=InvoiceStatus.SENT
     )
+
+    # Tax Snapshot
+    subtotal: Mapped[float] = mapped_column(Float, default=0.0)
+    tax_amount: Mapped[float] = mapped_column(Float, default=0.0)
+    tax_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    total_amount: Mapped[float] = mapped_column(Float, default=0.0)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )

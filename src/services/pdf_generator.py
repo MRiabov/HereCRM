@@ -27,6 +27,10 @@ class PDFGenerator:
         due_date: Optional[datetime] = None,
         notes: Optional[str] = None,
         items: Optional[list[dict]] = None,
+        subtotal: Optional[float] = None,
+        tax_amount: Optional[float] = None,
+        tax_rate: Optional[float] = None,
+        total_amount: Optional[float] = None,
     ) -> bytes:
         """
         Generates a PDF invoice for a given job.
@@ -39,6 +43,10 @@ class PDFGenerator:
             due_date: Optional due date.
             notes: Optional notes for the customer.
             items: Optional manual line items.
+            subtotal: Optional snapshot subtotal.
+            tax_amount: Optional snapshot tax amount.
+            tax_rate: Optional snapshot tax rate.
+            total_amount: Optional snapshot total amount.
 
         Returns:
             The generated PDF as bytes.
@@ -87,7 +95,10 @@ class PDFGenerator:
                 "invoice_number": invoice_number,
                 "notes": notes,
                 "items": display_items,
-                "total_amount": sum(item["total_price"] for item in display_items),
+                "subtotal": subtotal if subtotal is not None else sum(item["total_price"] for item in display_items),
+                "tax_amount": tax_amount,
+                "tax_rate": tax_rate,
+                "total_amount": total_amount if total_amount is not None else sum(item["total_price"] for item in display_items),
             }
 
             # Render HTML
