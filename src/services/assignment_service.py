@@ -83,6 +83,21 @@ class AssignmentService:
             if conflicts:
                 warning = "Double booked"
 
+        # If there is a reassignment, emit JOB_UNASSIGNED first for the old employee
+        old_employee_id = job.employee_id
+        if old_employee_id and old_employee_id != employee_id:
+            await event_bus.emit(
+                JOB_UNASSIGNED,
+                {
+                    "job_id": job.id,
+                    "employee_id": old_employee_id,
+                    "business_id": self.business_id,
+                },
+            )
+            # The event handler runs in a separate session, so we must refresh our instance
+            # to pick up any changes (e.g. gcal_event_id being set to None)
+            await self.session.refresh(job)
+
         # Apply assignment
         job.employee_id = employee_id
         await self.session.commit()

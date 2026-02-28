@@ -73,11 +73,6 @@ class WorkflowSettingsService:
             },
         }
 
-        with open("/tmp/backend_debug_get.log", "a") as f:
-            f.write(
-                f"DEBUG: get_settings for business {business_id}: {settings_dict['marketing_settings']}\n"
-            )
-
         return settings_dict
 
     async def update_settings(self, business_id: int, **settings) -> Dict[str, Any]:
@@ -161,22 +156,10 @@ class WorkflowSettingsService:
                     setattr(business, key, value)
                     flag_modified(business, "messenger_settings")
                 elif key == "marketing_settings":
-                    with open("/tmp/backend_debug.log", "a") as f:
-                        f.write(
-                            f"DEBUG: Updating marketing_settings to type {type(value)}: {value}\n"
-                        )
-                        f.write(
-                            f"DEBUG: Previous marketing_settings: {business.marketing_settings}\n"
-                        )
                     setattr(business, key, value)
                     flag_modified(business, "marketing_settings")
                 else:
                     setattr(business, key, value)
 
         await self.session.flush()
-        with open("/tmp/backend_debug.log", "a") as f:
-            f.write(f"DEBUG: Session flushed. Dirty: {self.session.dirty}\n")
-            f.write(
-                f"DEBUG: Business marketing_settings after flush: {business.marketing_settings}\n"
-            )
         return await self.get_settings(business_id)

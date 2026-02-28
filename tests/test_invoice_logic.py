@@ -38,11 +38,18 @@ async def test_invoice_service_create(
     mock_pdf_generator.generate_invoice.return_value = b"%PDF-mock"
     mock_s3_service.upload_file.return_value = "https://s3.example.com/invoice.pdf"
 
-    # Mock existing invoice check to return None
-    # We need to explicitly return a MagicMock (not AsyncMock) for the result
-    mock_result = MagicMock()
-    mock_result.scalars.return_value.first.return_value = None
-    mock_session.execute.return_value = mock_result
+    # Mock execute to handle multiple calls:
+    # 1st call: existing invoice check -> returns None
+    # 2nd call: job reload with eager relationships -> returns our mock job
+    mock_result_1 = MagicMock()
+    mock_result_1.scalars.return_value.first.return_value = None
+
+    mock_result_2 = MagicMock()
+    # Using the exact same job we passed in to pretend it's the one from the DB
+    mock_result_2.scalar_one.return_value = job
+
+    # Optional: ensure we can chain the mock if called with `scalars().first()` or `scalar_one()`
+    mock_session.execute.side_effect = [mock_result_1, mock_result_2]
 
     # Execute
     invoice = await service.create_invoice(job)
@@ -51,7 +58,7 @@ async def test_invoice_service_create(
     mock_pdf_generator.generate_invoice.assert_called_once_with(
         job,
         invoice_date=None,
-        payment_link=None,
+        payment_link=None, # It's none since job.business is None
         invoice_number=None,
         due_date=None,
         notes=None,
@@ -95,9 +102,13 @@ async def test_invoice_service_force_regenerate(
     existing_invoice = Invoice(id=10, job_id=1)
 
     # Mock result
-    mock_result = MagicMock()
-    mock_result.scalars.return_value.first.return_value = existing_invoice
-    mock_session.execute.return_value = mock_result
+    mock_result_1 = MagicMock()
+    mock_result_1.scalars.return_value.first.return_value = existing_invoice
+
+    mock_result_2 = MagicMock()
+    mock_result_2.scalar_one.return_value = job
+
+    mock_session.execute.side_effect = [mock_result_1, mock_result_2]
 
     mock_pdf_generator.generate_invoice.return_value = b"%PDF"
     mock_s3_service.upload_file.return_value = "https://new.url"

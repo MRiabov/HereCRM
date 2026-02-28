@@ -50,6 +50,16 @@ class InvoiceService:
                 logger.info(f"Returning existing invoice for job {job.id}")
                 return existing
 
+        # Ensure job has relationships loaded to prevent MissingGreenlet / DetachedInstanceError
+        from sqlalchemy.orm import selectinload
+        stmt = select(Job).options(
+            selectinload(Job.business),
+            selectinload(Job.customer),
+            selectinload(Job.line_items)
+        ).where(Job.id == job.id)
+        result = await self.session.execute(stmt)
+        job = result.scalar_one()
+
         logger.info(f"Generating new invoice for job {job.id}")
 
         # 0. Fetch payment link snapshot from business
