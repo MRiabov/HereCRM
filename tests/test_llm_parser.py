@@ -257,7 +257,10 @@ async def test_parse_no_tool_call(mock_parser):
     mock_message = MagicMock(tool_calls=None)
     mock_response = MagicMock(choices=[MagicMock(message=mock_message)])
     mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
-    assert await parser.parse("Hello") is None
+
+    result = await parser.parse("Hello")
+    assert isinstance(result, HelpTool)
+    assert "The user has requested to help them with something" in result.query
 
 
 @pytest.mark.asyncio
@@ -311,21 +314,24 @@ async def test_parse_retry_success(mock_parser):
 async def test_parse_retry_failure_returns_none(mock_parser):
     parser, mock_client = mock_parser
 
-    # Both calls return no tool calls
+    # All 3 calls return no tool calls (1 initial + 2 retries)
     mock_message_1 = MagicMock(tool_calls=None, content="Initial response.")
     mock_response_1 = MagicMock(choices=[MagicMock(message=mock_message_1)])
 
     mock_message_2 = MagicMock(tool_calls=None, content="Still no idea.")
     mock_response_2 = MagicMock(choices=[MagicMock(message=mock_message_2)])
 
+    mock_message_3 = MagicMock(tool_calls=None, content="Still no idea at all.")
+    mock_response_3 = MagicMock(choices=[MagicMock(message=mock_message_3)])
+
     mock_client.chat.completions.create = AsyncMock(
-        side_effect=[mock_response_1, mock_response_2]
+        side_effect=[mock_response_1, mock_response_2, mock_response_3]
     )
 
     result = await parser.parse("something vague")
 
-    assert mock_client.chat.completions.create.call_count == 2
-    assert result is None
+    assert mock_client.chat.completions.create.call_count == 3
+    assert isinstance(result, HelpTool)
 
 
 @pytest.mark.asyncio
