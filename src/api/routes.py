@@ -39,7 +39,7 @@ from src.services.quote_service import QuoteService
 from src.llm_client import parser as llm_parser
 from src.services.template_service import TemplateService
 from src.config import settings
-from src.security_utils import check_rate_limit
+from src.security_utils import check_rate_limit, validate_redirect_url
 from src.services.google_calendar_service import GoogleCalendarService
 from src.services.analytics import analytics
 
@@ -897,10 +897,15 @@ async def google_callback(
             asyncio.create_task(calendar_sync_handler.sync_all_user_jobs(user_id))
 
             if success_url:
-                logger.info(
-                    f"Google Auth successful for user {user_id}, redirecting to {success_url}"
-                )
-                return RedirectResponse(url=success_url)
+                try:
+                    success_url = validate_redirect_url(success_url)
+                    logger.info(
+                        f"Google Auth successful for user {user_id}, redirecting to {success_url}"
+                    )
+                    return RedirectResponse(url=success_url)
+                except ValueError:
+                    logger.warning(f"Invalid redirect attempt to {success_url}")
+                    return RedirectResponse(url="/")
 
             # Return nice HTML
             html_content = """
@@ -933,10 +938,16 @@ async def google_callback(
     except Exception as e:
         logger.exception(f"Google callback failed: {e}")
         if success_url:
-            error_url = (
-                success_url
-                + ("&" if "?" in success_url else "?")
-                + "error=google_auth_failed"
-            )
-            return RedirectResponse(url=error_url)
+            try:
+                safe_url = validate_redirect_url(success_url)
+                error_url = (
+                    safe_url
+                    + ("&" if "?" in safe_url else "?")
+                    + "error=google_auth_failed"
+                )
+                return RedirectResponse(url=error_url)
+            except ValueError:
+                logger.warning(f"Invalid redirect attempt to {success_url} (error path)")
+                return RedirectResponse(url="/?error=google_auth_failed")
+
         raise HTTPException(status_code=500, detail=f"Connection failed: {str(e)}")
