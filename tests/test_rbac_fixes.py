@@ -2,9 +2,79 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from src.models import User, UserRole, Business
 from src.tool_executor import ToolExecutor
-from src.uimodels import ListServicesTool, HelpTool
+from src.uimodels import ListServicesTool, HelpTool, UpdateSettingsTool
 from src.services.chat.handlers.idle import IdleHandler
 from src.llm_client import LLMParser
+
+@pytest.mark.asyncio
+async def test_tool_executor_permission_denied_message_format():
+    """
+    Verify that ToolExecutor does NOT prefix 'Error: ' to the permission denied message.
+    Spec FR-005 requires exactly: "It seems you are trying to [friendly tool name]. Sorry, you don't have permission for that."
+    """
+    # Setup
+    user = User(id=1, role=UserRole.EMPLOYEE, business_id=1)
+    business = Business(id=1)
+
+    session = AsyncMock()
+    session.get.side_effect = lambda model, id: business if model == Business else None
+
+    user_repo = AsyncMock()
+    user_repo.get_by_id.return_value = user
+
+    executor = ToolExecutor(session, 1, 1, "123", MagicMock())
+    executor.user_repo = user_repo
+
+    # Use UpdateSettingsTool which is OWNER only
+    tool = UpdateSettingsTool(setting_key="default_city", setting_value="Dublin")
+
+    result, _ = await executor.execute(tool)
+
+    expected_message = "It seems you are trying to modify settings. Sorry, you don't have permission for that."
+    assert result == expected_message, f"Expected '{expected_message}', but got '{result}'"
+
+
+@pytest.mark.asyncio
+async def test_idle_handler_disclaimer_on_allowed_topics():
+    """
+    Verify that IdleHandler appends disclaimer for non-owners ONLY when discussing restricted features/data.
+    """
+    # Setup
+    user = User(id=1, role=UserRole.EMPLOYEE, business_id=1)
+
+    session = AsyncMock()
+    parser = MagicMock(spec=LLMParser)
+    parser.parse.return_value = HelpTool()
+
+    with patch("src.services.chat.handlers.idle.HelpService") as MockHelpService:
+        help_instance = MockHelpService.return_value
+        # Simulate a help response for an allowed feature (e.g. adding a job)
+        help_instance.generate_help_response = AsyncMock(return_value="To add a job, type 'Add job for [Customer]'.")
+
+        handler = IdleHandler(
+            session=session,
+            parser=parser,
+            template_service=MagicMock(),
+            summary_generator=MagicMock(),
+            undo_handler=MagicMock(),
+            geocoding_service=MagicMock(),
+            invitation_service=MagicMock(),
+            auto_confirm_service=MagicMock()
+        )
+
+        state_record = MagicMock()
+        state_record.active_channel = "WHATSAPP"
+
+        with patch("src.services.chat.handlers.idle.ServiceRepository") as MockServiceRepo:
+            MockServiceRepo.return_value.get_all_for_business = AsyncMock(return_value=[])
+
+            # User asks about an allowed feature
+            response = await handler.handle(user, state_record, "How do I add a job?")
+
+            # The disclaimer should NOT be present because 'adding a job' is allowed for Employees.
+            disclaimer = "The user does not have role-based access to this feature because he doesn't have a status."
+            assert disclaimer not in response
+
 
 @pytest.mark.asyncio
 async def test_list_services_tool_success():
