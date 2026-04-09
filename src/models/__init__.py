@@ -357,6 +357,12 @@ class Business(Base):
     default_country: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     default_tax_rate: Mapped[float] = mapped_column(Float, default=0.0)
 
+    # Stripe Connect
+    stripe_account_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    legal_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    legal_address: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    tax_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
     invite_code: Mapped[Optional[str]] = mapped_column(
         String(20), unique=True, nullable=True, index=True
     )
@@ -719,6 +725,8 @@ class Invoice(Base):
     s3_key: Mapped[str] = mapped_column(String)
     public_url: Mapped[str] = mapped_column(String)
     payment_link: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    stripe_session_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    payment_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     status: Mapped[InvoiceStatus] = mapped_column(
         SafeSAEnum(InvoiceStatus), default=InvoiceStatus.SENT
     )
