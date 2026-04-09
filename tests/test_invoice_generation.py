@@ -31,6 +31,9 @@ def test_invoice_pdf_generation():
     mock_job.customer = mock_customer
     mock_job.line_items = [mock_line_item1, mock_line_item2]
     mock_job.value = 175.0
+    mock_job.subtotal = 175.0
+    mock_job.tax_amount = 0.0
+    mock_job.tax_rate = 0.0
 
     # Initialize generator
     generator = InvoicePDFGenerator()
@@ -58,6 +61,9 @@ def test_invoice_pdf_generation_with_date():
     mock_job.customer = mock_customer
     mock_job.line_items = []
     mock_job.value = 0.0
+    mock_job.subtotal = 0.0
+    mock_job.tax_amount = 0.0
+    mock_job.tax_rate = 0.0
 
     generator = InvoicePDFGenerator()
     test_date = datetime(2025, 12, 25)
@@ -87,6 +93,9 @@ def test_invoice_pdf_security_escaping(mock_html_class):
     mock_job.customer = mock_customer
     mock_job.line_items = []
     mock_job.value = 0.0
+    mock_job.subtotal = 0.0
+    mock_job.tax_amount = 0.0
+    mock_job.tax_rate = 0.0
 
     # Mock the write_pdf method of the instance returned by HTML()
     mock_html_instance = mock_html_class.return_value

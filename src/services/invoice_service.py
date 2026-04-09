@@ -3,6 +3,7 @@ import logging
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
+from sqlalchemy.orm import selectinload
 from datetime import datetime
 
 from src.models import Job, Invoice
@@ -50,10 +51,67 @@ class InvoiceService:
                 logger.info(f"Returning existing invoice for job {job.id}")
                 return existing
 
+        # Ensure job has necessary relationships loaded for async access
+        stmt = (
+            select(Job)
+            .options(selectinload(Job.business), selectinload(Job.line_items))
+            .where(Job.id == job.id)
+        )
+        result = await self.session.execute(stmt)
+        job = result.scalars().first()
+
         logger.info(f"Generating new invoice for job {job.id}")
 
         # 0. Fetch payment link snapshot from business
         payment_link = job.business.payment_link if job.business else None
+
+        # 0.1 Calculate tax details and update job snapshot
+        if job.business:
+            # Determine line items source (manual items or job items)
+            subtotal = 0.0
+            if items:
+                for item in items:
+                    # item is a dict with 'quantity' and 'unit_price'
+                    qty = float(item.get("quantity", 0))
+                    price = float(item.get("unit_price", 0))
+                    subtotal += qty * price
+            else:
+                for item in job.line_items:
+                    subtotal += item.total_price
+
+            tax_rate = job.business.default_tax_rate or 0.0
+            tax_inclusive = job.business.workflow_tax_inclusive or False
+
+            if tax_inclusive:
+                # subtotal calculated above is the sum of line items which are tax-inclusive
+                # So it represents the Grand Total (job.value)
+                total_value = subtotal
+
+                # Calculate Tax Amount from the inclusive total
+                # Tax Amount = Total Value - (Total Value / (1 + tax_rate))
+                tax_amount = total_value - (total_value / (1 + tax_rate))
+
+                # Net Subtotal (Pre-Tax)
+                net_subtotal = total_value - tax_amount
+
+                job.value = round(total_value, 2)
+                job.tax_rate = tax_rate
+                job.tax_amount = round(tax_amount, 2)
+                job.subtotal = round(net_subtotal, 2)
+            else:
+                # subtotal calculated above is exclusive of tax (Net)
+                net_subtotal = subtotal
+
+                # Calculate Tax Amount
+                tax_amount = net_subtotal * tax_rate
+
+                # Total Value
+                total_value = net_subtotal + tax_amount
+
+                job.subtotal = round(net_subtotal, 2)
+                job.tax_rate = tax_rate
+                job.tax_amount = round(tax_amount, 2)
+                job.value = round(total_value, 2)
 
         # 1. Generate PDF
         try:
