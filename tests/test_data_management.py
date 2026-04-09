@@ -64,8 +64,12 @@ async def test_import_data_csv(test_session, setup_business, tmp_path):
     service = DataManagementService(test_session)
 
     # 2. Run Import
+    # Use EntityType.JOB to ensure both customers and jobs are processed
     import_job = await service.import_data(
-        business_id=setup_business.id, file_url=str(csv_path), media_type="text/csv"
+        business_id=setup_business.id,
+        file_url=str(csv_path),
+        media_type="text/csv",
+        entity_type=EntityType.JOB
     )
 
     assert import_job.status == ExportStatus.COMPLETED

@@ -29,6 +29,7 @@ from src.models import (
 )
 from src.repositories import BusinessRepository, CustomerRepository, JobRepository
 from src.services.storage import storage_service
+from src.utils.url_validator import validate_safe_url
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +69,7 @@ class DataManagementService:
             )
 
             if file_url.startswith(("http://", "https://")):
+                await validate_safe_url(file_url)
                 async with httpx.AsyncClient() as client:
                     response = await client.get(file_url)
                     response.raise_for_status()
