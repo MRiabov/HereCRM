@@ -154,10 +154,8 @@ class IdleHandler(ChatHandler):
                     business_id=user.business_id,
                     user_id=user.id,
                     channel=channel_name,
+                    user_role=user.role,
                 )
-
-                if user.role != UserRole.OWNER:
-                    response += "\n\nThe user does not have role-based access to this feature because he doesn't have a status."
 
                 return response
 
