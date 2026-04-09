@@ -8,6 +8,7 @@ from datetime import datetime
 from src.models import Job, Invoice
 from src.services.storage import S3Service, StorageError
 from src.services.pdf_generator import PDFGenerator
+from src.services.tax_calculator import tax_calculator
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +56,36 @@ class InvoiceService:
         # 0. Fetch payment link snapshot from business
         payment_link = job.business.payment_link if job.business else None
 
+        # 0.5 Calculate Taxes
+        if items:
+            # Use provided items
+            calc_lines = items
+        else:
+            # Use job line items
+            calc_lines = [
+                {
+                    "quantity": item.quantity,
+                    "unit_price": item.unit_price,
+                    "description": item.description,
+                }
+                for item in job.line_items
+            ]
+
+        tax_result = tax_calculator.calculate_quote_tax(
+            calc_lines, job.business, job.customer
+        )
+
+        # Update Job snapshot (only if we are using job items, strictly speaking,
+        # but spec says snapshot on invoice generation usually updates job too or reflects it)
+        # However, if 'items' are custom, we shouldn't necessarily update the job's master record
+        # unless we want the job to reflect what was invoiced.
+        # Let's assuming for now we update job snapshot values always for consistency.
+        job.subtotal = tax_result["subtotal"]
+        job.tax_amount = tax_result["tax_amount"]
+        job.tax_rate = tax_result["tax_rate"]
+        # job.value usually tracks the total value
+        job.value = tax_result["total_amount"]
+
         # 1. Generate PDF
         try:
             pdf_bytes = self.pdf_generator.generate_invoice(
@@ -65,6 +96,10 @@ class InvoiceService:
                 due_date=due_date,
                 notes=notes,
                 items=items,
+                subtotal=tax_result["subtotal"],
+                tax_amount=tax_result["tax_amount"],
+                tax_rate=tax_result["tax_rate"],
+                total_amount=tax_result["total_amount"],
             )
         except (ValueError, RuntimeError) as e:
             logger.error(f"Failed to generate PDF for job {job.id}: {e}")
@@ -87,6 +122,10 @@ class InvoiceService:
             public_url=public_url,
             payment_link=payment_link,
             status=InvoiceStatus.GENERATED,
+            subtotal=tax_result["subtotal"],
+            tax_amount=tax_result["tax_amount"],
+            tax_rate=tax_result["tax_rate"],
+            total_amount=tax_result["total_amount"],
         )
         self.session.add(invoice)
         await self.session.flush()
