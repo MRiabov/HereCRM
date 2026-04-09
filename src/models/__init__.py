@@ -597,7 +597,7 @@ class Job(Base):
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), index=True)
     description: Mapped[Optional[str]] = mapped_column(Text)
     status: Mapped[JobStatus] = mapped_column(
-        SafeSAEnum(JobStatus), default=JobStatus.PENDING
+        SafeSAEnum(JobStatus), default=JobStatus.PENDING, index=True
     )
     value: Mapped[Optional[float]] = mapped_column(Float)
 
@@ -614,7 +614,7 @@ class Job(Base):
 
     # Google Calendar Integration
     gcal_event_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
@@ -658,10 +658,10 @@ class Request(Base):
     # Frontend uses 'description', Request model had 'content'. I will use 'description' for consistency.
     description: Mapped[str] = mapped_column(Text)
     status: Mapped[RequestStatus] = mapped_column(
-        SafeSAEnum(RequestStatus), default=RequestStatus.PENDING
+        SafeSAEnum(RequestStatus), default=RequestStatus.PENDING, index=True
     )
     urgency: Mapped[Urgency] = mapped_column(
-        SafeSAEnum(Urgency), default=Urgency.MEDIUM
+        SafeSAEnum(Urgency), default=Urgency.MEDIUM, index=True
     )
     expected_value: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
@@ -676,7 +676,7 @@ class Request(Base):
     customer_details: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
+        DateTime, default=lambda: datetime.now(timezone.utc), index=True
     )
 
     # Relationships
@@ -824,7 +824,9 @@ class Quote(Base):
 
     external_token: Mapped[str] = mapped_column(String, unique=True, index=True)
     blob_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    job_id: Mapped[Optional[int]] = mapped_column(ForeignKey("jobs.id"), nullable=True)
+    job_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("jobs.id"), nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
