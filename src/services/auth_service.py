@@ -1,3 +1,4 @@
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 from clerk_backend_api import Clerk
@@ -15,15 +16,20 @@ class AuthService:
         self.business_repo = BusinessRepository(session)
         self.clerk_client = Clerk(bearer_auth=settings.clerk_secret_key)
 
-    async def get_or_create_user(self, phone: str) -> tuple[User, bool]:
+    async def get_or_create_user(
+        self, phone: str, create: bool = True
+    ) -> tuple[Optional[User], bool]:
         """
-        Retrieves a user by phone number. If not found, creates a new Business
+        Retrieves a user by phone number. If not found and create=True, creates a new Business
         and a new User (Owner) linked to that business.
         Returns a tuple of (User, is_new).
         """
         user = await self.user_repo.get_by_phone(phone)
         if user:
             return user, False
+
+        if not create:
+            return None, False
 
         # Create new Business and User
         business = Business(name=f"Business of {phone}")
@@ -87,15 +93,34 @@ class AuthService:
             user.name = name
         else:
             # Create new user
-            # First check if email already exists (orphaned account or re-creation)
+            # 1. Check if email already exists
+            user_by_email = None
             if primary_email:
-                user = await self.user_repo.get_by_email(primary_email)
-                if user:
+                user_by_email = await self.user_repo.get_by_email(primary_email)
+
+            if user_by_email:
+                user = user_by_email
+                user.clerk_id = clerk_id
+                user.name = name
+                # Only update phone if provided, otherwise keep existing
+                if primary_phone:
+                    user.phone_number = primary_phone
+                await self.session.flush()
+            else:
+                # 2. Check if phone already exists (avoid collision)
+                user_by_phone = None
+                if primary_phone:
+                    user_by_phone = await self.user_repo.get_by_phone(primary_phone)
+
+                if user_by_phone:
+                    user = user_by_phone
                     user.clerk_id = clerk_id
                     user.name = name
-                    user.phone_number = primary_phone
+                    if primary_email:
+                        user.email = primary_email
                     await self.session.flush()
                 else:
+                    # 3. Create new Business and User
                     # User model requires business_id (NOT NULL)
                     # Create a personal business for the user
                     business = Business(name=f"Business of {name}", clerk_org_id=None)
@@ -111,21 +136,6 @@ class AuthService:
                         role=UserRole.OWNER,  # Default to owner of their personal business
                     )
                     self.user_repo.add(user)
-            else:
-                # Fallback for phone-only or no-email signups
-                business = Business(name=f"Business of {name}", clerk_org_id=None)
-                self.session.add(business)
-                await self.session.flush()
-
-                user = User(
-                    clerk_id=clerk_id,
-                    email=None,
-                    phone_number=primary_phone,
-                    name=name,
-                    business_id=business.id,
-                    role=UserRole.OWNER,
-                )
-                self.user_repo.add(user)
 
         await self.session.flush()
 

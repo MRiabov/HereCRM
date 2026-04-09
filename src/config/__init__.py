@@ -76,6 +76,9 @@ class Settings(BaseSettings):
     clerk_jwks_url: Optional[str] = None
     clerk_webhook_secret: Optional[str] = None
 
+    # PWA Settings
+    pwa_url: str = "https://app.herecrm.com"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

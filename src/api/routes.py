@@ -186,10 +186,26 @@ async def webhook(
                                 logger.warning(f"Rate limit exceeded for {from_number}")
                                 continue
 
-                            # Get/Create User
+                            # Get/Create User (Do not create if unknown)
                             user, is_new = await auth_service.get_or_create_user(
-                                from_number
+                                from_number, create=False
                             )
+
+                            if not user:
+                                # Unknown sender: Send welcome message with registration link
+                                from src.services.messaging_service import (
+                                    messaging_service,
+                                )
+
+                                welcome_text = f"Welcome to HereCRM. To verify your identity and start using the system, please register here: {settings.pwa_url}/sign-up?phone={from_number}"
+                                await messaging_service.send_message(
+                                    recipient_phone=from_number,
+                                    content=welcome_text,
+                                    channel=MessageType.WHATSAPP,
+                                    trigger_source=MessageTriggerSource.SYSTEM_NOTIFICATION,
+                                )
+                                processed_count += 1
+                                continue
 
                             # Handle Message
                             analytics.capture(
@@ -411,8 +427,23 @@ async def twilio_webhook(
                 media_type="application/xml",
             )
 
-        # Get/Create User
-        user, is_new = await auth_service.get_or_create_user(from_number)
+        # Get/Create User (Do not create if unknown)
+        user, is_new = await auth_service.get_or_create_user(from_number, create=False)
+
+        if not user:
+            from src.services.messaging_service import messaging_service
+
+            welcome_text = f"Welcome to HereCRM. To verify your identity and start using the system, please register here: {settings.pwa_url}/sign-up?phone={from_number}"
+            await messaging_service.send_message(
+                recipient_phone=from_number,
+                content=welcome_text,
+                channel=MessageType.SMS,
+                trigger_source=MessageTriggerSource.SYSTEM_NOTIFICATION,
+            )
+            return Response(
+                content='<?xml version="1.0" encoding="UTF-8"?><Response></Response>',
+                media_type="application/xml",
+            )
 
         # Handle Message
         # The reply text is sent via TwilioService inside handle_message for SMS channel
@@ -568,7 +599,21 @@ async def textgrid_webhook(
             return {"status": "rate_limited"}
 
         # Identify or Onboard User
-        user, is_new = await auth_service.get_or_create_user(payload.from_number)
+        user, is_new = await auth_service.get_or_create_user(
+            payload.from_number, create=False
+        )
+
+        if not user:
+            from src.services.messaging_service import messaging_service
+
+            welcome_text = f"Welcome to HereCRM. To verify your identity and start using the system, please register here: {settings.pwa_url}/sign-up?phone={payload.from_number}"
+            await messaging_service.send_message(
+                recipient_phone=payload.from_number,
+                content=welcome_text,
+                channel=MessageType.SMS,
+                trigger_source=MessageTriggerSource.SYSTEM_NOTIFICATION,
+            )
+            return {"status": "SUCCESS"}
 
         # Process Message
         # We reuse the WhatsappService handle_message logic but for 'SMS' channel
