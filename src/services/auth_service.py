@@ -1,3 +1,4 @@
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 from clerk_backend_api import Clerk
@@ -15,7 +16,9 @@ class AuthService:
         self.business_repo = BusinessRepository(session)
         self.clerk_client = Clerk(bearer_auth=settings.clerk_secret_key)
 
-    async def get_or_create_user(self, phone: str) -> tuple[User, bool]:
+    async def get_or_create_user(
+        self, phone: str, create: bool = True
+    ) -> tuple[Optional[User], bool]:
         """
         Retrieves a user by phone number. If not found, creates a new Business
         and a new User (Owner) linked to that business.
@@ -24,6 +27,9 @@ class AuthService:
         user = await self.user_repo.get_by_phone(phone)
         if user:
             return user, False
+
+        if not create:
+            return None, False
 
         # Create new Business and User
         business = Business(name=f"Business of {phone}")
@@ -39,7 +45,9 @@ class AuthService:
 
         return user, True
 
-    async def get_or_create_user_by_identity(self, identity: str) -> tuple[User, bool]:
+    async def get_or_create_user_by_identity(
+        self, identity: str, create: bool = True
+    ) -> tuple[Optional[User], bool]:
         """
         Identify user by email or phone.
         """
@@ -47,6 +55,9 @@ class AuthService:
             user = await self.user_repo.get_by_email(identity)
             if user:
                 return user, False
+
+            if not create:
+                return None, False
 
             # Create new Business and User by email
             business = Business(name=f"Business of {identity}")
@@ -58,7 +69,7 @@ class AuthService:
             await self.session.flush()
             return user, True
         else:
-            return await self.get_or_create_user(identity)
+            return await self.get_or_create_user(identity, create=create)
 
     async def sync_clerk_user(self, data: dict):
         """
