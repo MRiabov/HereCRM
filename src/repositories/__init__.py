@@ -516,6 +516,37 @@ class JobRepository(BaseRepository[Job]):
     def __init__(self, session: AsyncSession):
         super().__init__(session, Job)
 
+    async def get_monthly_revenue(
+        self, business_id: int, year: int, month: int
+    ) -> float:
+        import calendar
+        from datetime import timezone
+
+        # Start of month
+        start_date = datetime(year, month, 1, tzinfo=timezone.utc)
+        # End of month
+        last_day = calendar.monthrange(year, month)[1]
+        end_date = datetime(
+            year, month, last_day, 23, 59, 59, 999999, tzinfo=timezone.utc
+        )
+
+        from src.models import JobStatus
+
+        stmt = select(func.sum(Job.value)).where(
+            Job.business_id == business_id,
+            Job.status == JobStatus.COMPLETED,
+            or_(
+                Job.completed_at.between(start_date, end_date),
+                # Fallback to scheduled_at if completed_at is null but status is completed
+                and_(
+                    Job.completed_at.is_(None),
+                    Job.scheduled_at.between(start_date, end_date),
+                ),
+            ),
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0.0
+
     async def search(
         self,
         query: str,

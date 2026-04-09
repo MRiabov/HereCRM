@@ -23,6 +23,7 @@ from src.api.v1.pwa import (
     dev,
     backup,
     maintenance,
+    dashboard,
 )
 from src.api.dependencies.clerk_auth import verify_token
 
@@ -39,6 +40,9 @@ router.include_router(
 
 # Protected endpoints
 protected_router = APIRouter(dependencies=[Depends(verify_token)])
+protected_router.include_router(
+    dashboard.router, prefix="/dashboard", tags=["pwa-dashboard"]
+)
 protected_router.include_router(
     onboarding.router, prefix="/onboarding", tags=["pwa-onboarding"]
 )
