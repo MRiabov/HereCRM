@@ -253,7 +253,7 @@ class ToolExecutor:
                 else "perform this action"
             )
             return (
-                f"Error: It seems you are trying to {friendly_name}. Sorry, you don't have permission for that.",
+                f"It seems you are trying to {friendly_name}. Sorry, you don't have permission for that.",
                 None,
             )
 
@@ -451,7 +451,10 @@ class ToolExecutor:
     ) -> Tuple[str, Optional[Dict[str, Any]]]:  # Changed return type hint
         # 1. Check for duplicates
         customer_name = tool.name.title() if tool.name else "Unknown"
-        existing = await self.customer_repo.get_by_name(customer_name, self.business_id)
+        existing = None
+        if customer_name != "Unknown":
+            existing = await self.customer_repo.get_by_name(customer_name, self.business_id)
+
         if not existing and tool.phone:
             existing = await self.customer_repo.get_by_phone(
                 tool.phone, self.business_id
@@ -631,7 +634,10 @@ class ToolExecutor:
     ) -> Tuple[str, Optional[Dict[str, Any]]]:  # Changed return type hint
         # 1. Find or create customer (Deduplication)
         customer_name = tool.customer_name.title() if tool.customer_name else "Unknown"
-        customer = await self.customer_repo.get_by_name(customer_name, self.business_id)
+        customer = None
+        if customer_name != "Unknown":
+            customer = await self.customer_repo.get_by_name(customer_name, self.business_id)
+
         if not customer and tool.customer_phone:
             customer = await self.customer_repo.get_by_phone(
                 tool.customer_phone, self.business_id
