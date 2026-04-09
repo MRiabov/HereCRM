@@ -253,7 +253,7 @@ class ToolExecutor:
                 else "perform this action"
             )
             return (
-                f"Error: It seems you are trying to {friendly_name}. Sorry, you don't have permission for that.",
+                f"It seems you are trying to {friendly_name}. Sorry, you don't have permission for that.",
                 None,
             )
 
