@@ -107,6 +107,37 @@ from src.services.accounting.quickbooks_sync import QuickBooksSyncManager
 from src.config import settings
 
 
+def _render_schedule_report_fallback(context: Dict[str, Any]) -> str:
+    employees = context.get("employees", [])
+    unscheduled = context.get("UNSCHEDULED", [])
+    date_str = context.get("date_str", "")
+
+    lines = [f"Schedule report for {date_str}"]
+    if employees:
+        for employee in employees:
+            name = employee.get("name", "Unknown")
+            jobs = employee.get("jobs", [])
+            lines.append(f"- {name}: {len(jobs)} job(s)")
+    else:
+        lines.append("- No scheduled employees")
+
+    if unscheduled:
+        lines.append(f"Unscheduled jobs: {len(unscheduled)}")
+
+    return "\n".join(lines)
+
+
+try:
+    from src.lib.text_formatter import render_schedule_report
+except Exception as exc:  # pragma: no cover - deployment safety fallback
+    logging.getLogger(__name__).warning(
+        "Falling back to inline schedule report renderer: %s", exc
+    )
+
+    def render_schedule_report(context: Dict[str, Any]) -> str:
+        return _render_schedule_report_fallback(context)
+
+
 class ToolExecutor:
     def __init__(
         self,
