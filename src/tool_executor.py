@@ -43,7 +43,6 @@ from src.services.workflow import WorkflowSettingsService
 from src.services.expenses import ExpenseService
 from src.services.time_tracking import TimeTrackingService
 from src.services.quote_service import QuoteService
-from src.lib.text_formatter import render_schedule_report
 from src.uimodels import (
     AddJobTool,
     AddLeadTool,
