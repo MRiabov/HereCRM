@@ -7,7 +7,7 @@ import logging
 import traceback
 import os
 from src.config import settings
-from src.database import engine, Base
+from src.database import engine, Base, repair_sqlite_schema
 from src.api.routes import router as webhook_router
 from src.api.webhooks.stripe_webhook import router as stripe_router
 from src.api.webhooks.clerk import router as clerk_router
@@ -23,6 +23,19 @@ from src.logging_config import setup_logging
 async def lifespan(app: FastAPI):
     # Initialize logging configuration
     setup_logging()
+
+    # SQLite deployments can drift when a refactor lands before the live DB is migrated.
+    # Repair missing columns first so the app can boot against an older volume.
+    if settings.automigrate is False and ":memory:" not in str(engine.url):
+        repaired_columns = await repair_sqlite_schema()
+        if repaired_columns:
+            logger = logging.getLogger("src.main")
+            logger.info(
+                "Repaired SQLite schema columns: %s",
+                ", ".join(f"{table}.{column}" for table, column in repaired_columns),
+            )
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
     # Run migrations automatically
     if settings.automigrate:
