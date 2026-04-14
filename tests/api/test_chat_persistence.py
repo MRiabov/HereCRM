@@ -124,13 +124,26 @@ async def test_ai_chat_persistence(client):
 
 @pytest.mark.asyncio
 async def test_strict_ai_logic_no_tool(client):
+    from unittest.mock import AsyncMock, patch
+    from src.uimodels import HelpTool
+
     # Send non-tool message
     payload = {"customer_id": 0, "message": "How are you today?"}
-    response = await client.post("/api/v1/pwa/chat/send", json=payload)
+
+    with patch(
+        "src.api.v1.pwa.chat.parser.parse", new_callable=AsyncMock
+    ) as mock_parse, patch(
+        "src.llm_client.LLMParser.chat_completion", new_callable=AsyncMock
+    ) as mock_chat_completion:
+        mock_parse.return_value = HelpTool(query="How are you today?")
+        mock_chat_completion.side_effect = Exception("OpenRouter unavailable")
+
+        response = await client.post("/api/v1/pwa/chat/send", json=payload)
+
     assert response.status_code == 200
     data = response.json()
-    # Fallback to help message
-    assert "status" in data
+    assert data["status"] == "SENT"
+    assert "help" in data["content"].lower() or "assist" in data["content"].lower()
 
 
 @pytest.mark.asyncio

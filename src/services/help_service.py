@@ -5,6 +5,7 @@ from sqlalchemy import select, desc
 from src.models import Message, MessageRole, MessageType
 from src.config import channels_config
 from src.llm_client import LLMParser
+from src.services.template_service import TemplateService
 import logging
 
 
@@ -14,6 +15,7 @@ class HelpService:
         self.llm_client = llm_client
         self.logger = logging.getLogger(__name__)
         self._manual_cache: Optional[str] = None
+        self._messages = TemplateService()
 
     def _load_manual(self) -> str:
         """
@@ -137,4 +139,13 @@ class HelpService:
         ):
             prompt_messages.append({"role": "USER", "content": user_query})
 
-        return await self.llm_client.chat_completion(prompt_messages)
+        try:
+            return await self.llm_client.chat_completion(prompt_messages)
+        except Exception as e:
+            self.logger.error(
+                "Help response generation failed, using template fallback: %s",
+                e,
+                exc_info=True,
+            )
+            fallback = self._messages.render("help_message")
+            return fallback or "Sorry, I can't generate help right now. Please try again."

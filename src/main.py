@@ -24,19 +24,6 @@ async def lifespan(app: FastAPI):
     # Initialize logging configuration
     setup_logging()
 
-    # SQLite deployments can drift when a refactor lands before the live DB is migrated.
-    # Repair missing columns first so the app can boot against an older volume.
-    if settings.automigrate is False and ":memory:" not in str(engine.url):
-        repaired_columns = await repair_sqlite_schema()
-        if repaired_columns:
-            logger = logging.getLogger("src.main")
-            logger.info(
-                "Repaired SQLite schema columns: %s",
-                ", ".join(f"{table}.{column}" for table, column in repaired_columns),
-            )
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-
     # Run migrations automatically
     if settings.automigrate:
         if ":memory:" not in str(engine.url):
@@ -62,7 +49,19 @@ async def lifespan(app: FastAPI):
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
-        # Force-check schema consistency - SKIP for in-memory database as validation uses a separate connection
+    # SQLite deployments can drift when a refactor lands before the live DB is migrated.
+    # Repair missing columns after migrations so the app can boot against an older volume.
+    if ":memory:" not in str(engine.url) and getattr(engine.dialect, "name", "") == "sqlite":
+        repaired_columns = await repair_sqlite_schema()
+        if repaired_columns:
+            logger = logging.getLogger("src.main")
+            logger.info(
+                "Repaired SQLite schema columns: %s",
+                ", ".join(f"{table}.{column}" for table, column in repaired_columns),
+            )
+
+    # Force-check schema consistency - SKIP for in-memory database as validation uses a separate connection
+    if settings.automigrate:
         if ":memory:" not in str(engine.url):
             from src.utils.schema_validation import validate_db_schema
 
