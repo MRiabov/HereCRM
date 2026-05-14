@@ -157,7 +157,21 @@ class IdleHandler(ChatHandler):
                 )
 
                 if user.role != UserRole.OWNER:
-                    response += "\n\nThe user does not have role-based access to this feature because he doesn't have a status."
+                    restricted_keywords = [
+                        "invoice",
+                        "export",
+                        "billing",
+                        "subscription",
+                        "settings",
+                        "revenue",
+                        "upgrade",
+                        "manage data",
+                        "employee",
+                    ]
+                    if any(
+                        keyword in message_text.lower() for keyword in restricted_keywords
+                    ):
+                        response += "\n\nThe user does not have role-based access to this feature because he doesn't have a status."
 
                 return response
 
