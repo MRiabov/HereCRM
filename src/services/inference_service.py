@@ -71,9 +71,9 @@ class InferenceService:
                     # Case: Quantity and total provided. Calculate unit price.
                     quantity = round(quantity, 2)
                     if quantity > 0:
-                        unit_price = round(total_price / quantity, 2)
-                        # Re-adjust total to match rounded values
-                        total_price = round(quantity * unit_price, 2)
+                        # Do not round unit_price aggressively to ensure total_price is preserved
+                        unit_price = total_price / quantity
+                        total_price = round(total_price, 2)
                     else:
                         unit_price = 0.0
                         total_price = round(total_price, 2)
@@ -101,7 +101,7 @@ class InferenceService:
                         service_id=matched_service.id,
                         description=matched_service.name,  # Use catalog name
                         quantity=round(quantity, 2),
-                        unit_price=round(unit_price, 2),
+                        unit_price=unit_price,
                         total_price=round(total_price, 2),
                     )
                 )
@@ -114,8 +114,8 @@ class InferenceService:
                 ):
                     quantity = round(quantity, 2)
                     if quantity > 0:
-                        unit_price = round(total_price / quantity, 2)
-                        total_price = round(quantity * unit_price, 2)
+                        unit_price = total_price / quantity
+                        total_price = round(total_price, 2)
                     else:
                         unit_price = 0.0
                         total_price = round(total_price, 2)
@@ -141,7 +141,7 @@ class InferenceService:
                         service_id=None,
                         description=raw.description,
                         quantity=round(quantity, 2),
-                        unit_price=round(unit_price, 2),
+                        unit_price=unit_price,
                         total_price=round(total_price, 2),
                     )
                 )
