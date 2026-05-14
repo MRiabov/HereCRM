@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database import get_db
 from src.services.data_management import DataManagementService
 import os
+import secrets
 
 router = APIRouter()
 
@@ -29,7 +30,7 @@ async def trigger_backup(
             detail="Backup service misconfigured: CRON_SECRET not set on server",
         )
 
-    if x_cron_secret != expected_secret:
+    if not x_cron_secret or not secrets.compare_digest(x_cron_secret, expected_secret):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid cron secret"
         )
