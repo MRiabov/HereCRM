@@ -135,6 +135,25 @@ class VerifyToken:
                     await db.refresh(existing_user)
                     return existing_user
 
+            # Check if user with this phone number already exists
+            phone = (
+                clerk_user.phone_numbers[0].phone_number
+                if clerk_user.phone_numbers
+                else None
+            )
+            if phone:
+                phone_result = await db.execute(
+                    select(User).where(User.phone_number == phone)
+                )
+                existing_user = phone_result.scalar_one_or_none()
+                if existing_user:
+                    existing_user.clerk_id = clerk_id
+                    if email and not existing_user.email:
+                        existing_user.email = email
+                    await db.commit()
+                    await db.refresh(existing_user)
+                    return existing_user
+
             # [Reverted based on user feedback] Just because they have an org doesn't make them an employee.
             # They stay OWNER of their context unless the invitation flow says otherwise.
             role = UserRole.OWNER
@@ -145,9 +164,7 @@ class VerifyToken:
                 or clerk_user.username
                 or "Unknown",
                 email=email,
-                phone_number=clerk_user.phone_numbers[0].phone_number
-                if clerk_user.phone_numbers
-                else None,
+                phone_number=phone,
                 business_id=business.id,
                 role=role,
             )
