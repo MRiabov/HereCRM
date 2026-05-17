@@ -49,8 +49,8 @@ class TemplateService:
         # 3. Escape ALL remaining braces (turn { into {{, } into }})
         # 4. Restore placeholders to {var_name} so format() hits them.
 
-        # Matches {{variable}} or {{variable.field}}
-        pattern = r"\{\{([a-zA-Z0-9._-]+)\}\}"
+        # Matches {{variable}} or {variable}
+        pattern = r"\{{1,2}([a-zA-Z0-9._-]+)\}{1,2}"
 
         # Map of placeholder -> original key
         placeholders = {}

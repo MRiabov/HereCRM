@@ -156,7 +156,22 @@ class IdleHandler(ChatHandler):
                     channel=channel_name,
                 )
 
-                if user.role != UserRole.OWNER:
+                # FR-007: Append disclaimer only when discussing restricted features
+                # Heuristic: Check for keywords related to restricted tools (as per rbac_tools.yaml)
+                restricted_keywords = [
+                    "export", "import", "invoice", "billing", "subscription",
+                    "upgrade", "plan", "employee", "manager", "promote", "dismiss",
+                    "settings", "configure", "workflow", "quickbooks", "calendar",
+                    "mass email", "broadcast", "pipeline", "convert"
+                ]
+
+                query_lower = message_text.lower()
+                response_lower = response.lower()
+
+                is_restricted_topic = any(k in query_lower for k in restricted_keywords) or \
+                                      any(k in response_lower for k in restricted_keywords)
+
+                if user.role != UserRole.OWNER and is_restricted_topic:
                     response += "\n\nThe user does not have role-based access to this feature because he doesn't have a status."
 
                 return response
