@@ -19,7 +19,8 @@ async def handle_quote_sent(data: dict) -> None:
     if not customer_id or not business_id:
         return
 
-    async with src.database.AsyncSessionLocal() as session:
+    session_maker = await src.database.get_session_maker()
+    async with session_maker() as session:
         customer_repo = CustomerRepository(session)
         business_repo = BusinessRepository(session)
 
@@ -110,7 +111,10 @@ async def handle_contact_event(data: dict) -> None:
         customer_repo = CustomerRepository(session)
         customer = await customer_repo.get_by_id(customer_id, business_id)
 
-        if customer and customer.pipeline_stage == PipelineStage.NOT_CONTACTED:
+        if customer and customer.pipeline_stage in [
+            PipelineStage.NOT_CONTACTED,
+            PipelineStage.NEW_LEAD,
+        ]:
             customer.pipeline_stage = PipelineStage.CONTACTED
             await session.commit()
             logger.info(f"Updated customer {customer_id} to CONTACTED")
